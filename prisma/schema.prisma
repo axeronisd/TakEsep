@@ -1,0 +1,160 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model WarehouseGroup {
+  id         String      @id @default(cuid())
+  name       String      @unique
+  warehouses Warehouse[]
+  products   Product[]
+}
+
+model Warehouse {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  
+  groupId       String?
+  group         WarehouseGroup? @relation(fields: [groupId], references: [id])
+  
+  users        User[]
+  stocks       Stock[]
+  transactions Transaction[]
+  
+  transfersFrom Transfer[] @relation("FromWarehouse")
+  transfersTo   Transfer[] @relation("ToWarehouse")
+  
+  audits        Audit[]
+  
+  employees     Employee[]
+  financials    FinancialTransaction[]
+}
+
+model Employee {
+  id          String   @id @default(cuid())
+  name        String
+  role        String   @default("staff")
+  phone       String?
+  salary      Float    @default(0) // Base salary per month/period if needed
+  
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  
+  transactions FinancialTransaction[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model FinancialTransaction {
+  id          String   @id @default(cuid())
+  amount      Float
+  type        String   // SALARY, REPAIR, EXPENSE, OTHER_INCOME
+  description String?
+  
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  
+  employeeId  String?
+  employee    Employee? @relation(fields: [employeeId], references: [id])
+  
+  createdAt   DateTime @default(now())
+}
+
+model User {
+  id          String   @id @default(cuid())
+  username    String   @unique
+  password    String
+  role        String   @default("admin")
+  warehouseId String?
+  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
+  createdAt   DateTime @default(now())
+}
+
+model Product {
+  id        String   @id @default(cuid())
+  name      String
+  barcode   String   @unique
+  // Legacy stock field, to be migrated to Stock model
+  stock     Int      @default(0) 
+  buyPrice  Float    @default(0)
+  sellPrice Float    @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  warehouseGroupId String?
+  warehouseGroup   WarehouseGroup? @relation(fields: [warehouseGroupId], references: [id])
+  
+  stocks       Stock[]
+  transactions Transaction[]
+  auditItems   AuditItem[]
+  transfers    Transfer[]
+}
+
+model Stock {
+  id          String    @id @default(cuid())
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  quantity    Int       @default(0)
+
+  @@unique([productId, warehouseId])
+}
+
+model Transfer {
+  id              String    @id @default(cuid())
+  productId       String
+  product         Product   @relation(fields: [productId], references: [id])
+  fromWarehouseId String
+  fromWarehouse   Warehouse @relation("FromWarehouse", fields: [fromWarehouseId], references: [id])
+  toWarehouseId   String
+  toWarehouse     Warehouse @relation("ToWarehouse", fields: [toWarehouseId], references: [id])
+  quantity        Int
+  status          String    @default("PENDING") // PENDING, COMPLETED, REJECTED
+  createdAt       DateTime  @default(now())
+  note            String?
+}
+
+model Transaction {
+  id             String     @id @default(cuid())
+  type           String     // SALE, RESTOCK, ADJUSTMENT, LOSS, TRANSFER_IN, TRANSFER_OUT
+  quantityChange Int
+  productId      String
+  product        Product    @relation(fields: [productId], references: [id])
+  warehouseId    String?
+  warehouse      Warehouse? @relation(fields: [warehouseId], references: [id])
+  createdAt      DateTime   @default(now())
+  snapshotPrice  Float?
+  note           String?
+}
+
+model Audit {
+  id              String      @id @default(cuid())
+  status          String      @default("IN_PROGRESS")
+  startedAt       DateTime    @default(now())
+  completedAt     DateTime?
+  totalDiscrepancyValue Float?
+  
+  items           AuditItem[]
+  
+  warehouseId     String?
+  warehouse       Warehouse? @relation(fields: [warehouseId], references: [id])
+}
+
+model AuditItem {
+  id           String  @id @default(cuid())
+  auditId      String
+  audit        Audit   @relation(fields: [auditId], references: [id])
+  productId    String
+  product      Product @relation(fields: [productId], references: [id])
+  
+  expectedQty  Int
+  actualQty    Int?
+  discrepancy  Int?
+}
