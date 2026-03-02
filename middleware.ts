@@ -1,6 +1,40 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
-import { getSession } from '@/lib/session'
+
+// Inlined session types and parser to avoid Edge Runtime module resolution issues
+interface SessionData {
+    userId: string
+    username: string
+    role: string
+    warehouseId: string | null
+    warehouseName?: string
+    exp: number
+}
+
+function getSession(token: string): SessionData | null {
+    try {
+        const parts = token.split('.')
+        if (parts.length !== 3) return null
+
+        const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/')
+        const payload = JSON.parse(atob(base64))
+
+        if (payload.exp && payload.exp < Date.now() / 1000) {
+            return null
+        }
+
+        return {
+            userId: payload.userId,
+            username: payload.username,
+            role: payload.role,
+            warehouseId: payload.warehouseId,
+            warehouseName: payload.warehouseName,
+            exp: payload.exp * 1000
+        }
+    } catch {
+        return null
+    }
+}
 
 export function middleware(request: NextRequest) {
     const { pathname } = request.nextUrl
