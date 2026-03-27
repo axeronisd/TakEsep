@@ -1,0 +1,21 @@
+name: takesep_api_client
+description: Shared API client for TakEsep ecosystem — HTTP client, interceptors, auth handling.
+
+publish_to: 'none'
+
+version: 0.1.0
+
+environment:
+  sdk: ">=3.2.0 <4.0.0"
+
+dependencies:
+  dio: ^5.4.1
+  retrofit: ^4.1.0
+  takesep_core:
+    path: ../core
+  json_annotation: ^4.9.0
+
+dev_dependencies:
+  build_runner: ^2.4.8
+  retrofit_generator: ^8.1.0
+  json_serializable: ^6.7.1

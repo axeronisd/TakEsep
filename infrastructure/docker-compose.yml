@@ -1,0 +1,70 @@
+version: "3.9"
+
+services:
+  # ─── PostgreSQL ─────────────────────────────────────────────
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    container_name: takesep-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: takesep
+      POSTGRES_PASSWORD: takesep_dev_2026
+      POSTGRES_DB: takesep_platform
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U takesep"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── Redis ─────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: takesep-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ─── NATS (Event Bus) ─────────────────────────────────────
+  nats:
+    image: nats:2-alpine
+    container_name: takesep-nats
+    restart: unless-stopped
+    ports:
+      - "4222:4222"   # Client
+      - "8222:8222"   # Monitoring
+    command: ["--jetstream", "--store_dir", "/data"]
+    volumes:
+      - nats_data:/data
+
+  # ─── MinIO (S3-compatible file storage) ────────────────────
+  minio:
+    image: minio/minio:latest
+    container_name: takesep-minio
+    restart: unless-stopped
+    environment:
+      MINIO_ROOT_USER: takesep_minio
+      MINIO_ROOT_PASSWORD: takesep_minio_2026
+    ports:
+      - "9000:9000"    # API
+      - "9001:9001"    # Console
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+
+volumes:
+  postgres_data:
+  redis_data:
+  nats_data:
+  minio_data:

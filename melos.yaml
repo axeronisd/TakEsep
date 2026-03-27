@@ -1,0 +1,49 @@
+name: takesep
+repository: https://github.com/axeronis/takesep
+
+packages:
+  - apps/**
+  - packages/**
+
+command:
+  bootstrap:
+    usePubspecOverrides: true
+
+scripts:
+  analyze:
+    exec: dart analyze .
+    description: Run dart analyze in all packages
+
+  test:
+    exec: flutter test
+    description: Run tests in all packages
+    packageFilters:
+      dirExists: test
+
+  format:
+    exec: dart format .
+    description: Format all packages
+
+  clean:
+    exec: flutter clean
+    description: Clean all packages
+
+  build:android:
+    exec: flutter build apk --release
+    packageFilters:
+      scope: "warehouse"
+
+  build:ios:
+    exec: flutter build ios --release
+    packageFilters:
+      scope: "warehouse"
+
+  build:windows:
+    exec: flutter build windows --release
+    packageFilters:
+      scope: "warehouse"
+
+  build:macos:
+    exec: flutter build macos --release
+    packageFilters:
+      scope: "warehouse"

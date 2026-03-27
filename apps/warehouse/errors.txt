@@ -1,0 +1,4 @@
+﻿Analyzing warehouse...                                          
+
+   info - 'SimpleBarcodeScannerPage' is deprecated and shouldn't be used. Use SimpleBarcodeScanner followed by scanBarcode instead. This field will be removed in future versions - lib\src\screens\sales\sales_screen.dart:703:37 - deprecated_member_use
+

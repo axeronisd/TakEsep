@@ -1,36 +1,72 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# TakEsep — Бизнес-экосистема
 
-## Getting Started
+> Склад · Маркетплейс · Мессенджер · Доставка · AI Сотрудники
 
-First, run the development server:
+## Быстрый старт
+
+### Требования
+- Flutter SDK >= 3.16
+- Node.js >= 20
+- Docker & Docker Compose
+- Dart SDK >= 3.2
+
+### Установка
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# 1. Запускаем инфраструктуру (PostgreSQL, Redis, NATS, MinIO)
+cd infrastructure
+docker compose up -d
+
+# 2. Устанавливаем Melos и зависимости Flutter
+dart pub global activate melos
+melos bootstrap
+
+# 3. Устанавливаем зависимости бэкенда
+cd services/platform-core
+cp .env.example .env
+npm install
+
+# 4. Запускаем бэкенд
+npm run start:dev
+
+# 5. Запускаем Flutter приложение склада
+cd apps/warehouse
+flutter run
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Структура проекта
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+takesep/
+├── apps/warehouse/             # 📦 Flutter — приложение склада
+├── packages/
+│   ├── design_system/          # 🎨 Shared UI Kit
+│   ├── core/                   # 🧱 Shared модели и константы
+│   └── api_client/             # 🌐 Shared HTTP клиент
+├── services/platform-core/     # ⚙️ NestJS — Auth, Billing, Notifications
+├── infrastructure/             # 🐳 Docker Compose, K8s configs
+├── docs/                       # 📚 Документация
+├── melos.yaml                  # 🔧 Monorepo manager
+└── pubspec.yaml                # Dart workspace root
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Стек технологий
 
-## Learn More
+| Слой | Технология |
+|------|-----------|
+| Frontend | Flutter 3.x + Riverpod + GoRouter |
+| Backend | NestJS + TypeORM + PostgreSQL |
+| Кэш | Redis |
+| Event Bus | NATS |
+| Files | MinIO (S3) |
+| Analytics DB | TimescaleDB |
+| CI/CD | GitHub Actions |
+| Контейнеризация | Docker |
 
-To learn more about Next.js, take a look at the following resources:
+## API документация
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+После запуска бэкенда: http://localhost:3000/api/docs (Swagger UI)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Лицензия
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Proprietary © TakEsep 2026

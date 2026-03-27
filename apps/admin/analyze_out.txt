@@ -1,0 +1,10 @@
+Analyzing admin...                                              
+
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\routing\admin_shell.dart:126:51 - deprecated_member_use
+   info - Don't use 'BuildContext's across async gaps - lib\src\screens\companies\companies_screen.dart:271:29 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\src\screens\companies\companies_screen.dart:276:40 - use_build_context_synchronously
+   info - Don't use 'BuildContext's across async gaps, guarded by an unrelated 'mounted' check - lib\src\screens\companies\companies_screen.dart:283:40 - use_build_context_synchronously
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\screens\companies\companies_screen.dart:309:14 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\screens\companies\company_detail_screen.dart:66:24 - deprecated_member_use
+   info - 'withOpacity' is deprecated and shouldn't be used. Use .withValues() to avoid precision loss - lib\src\screens\login\login_screen.dart:59:48 - deprecated_member_use
+

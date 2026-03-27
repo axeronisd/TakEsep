@@ -1,0 +1,65 @@
+name: admin
+description: TakEsep Admin Panel — Ecosystem management dashboard.
+
+publish_to: 'none'
+
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.2.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Ecosystem shared packages
+  takesep_design_system:
+    path: ../../packages/design_system
+  takesep_core:
+    path: ../../packages/core
+
+  # State management
+  flutter_riverpod: ^2.5.1
+
+  # Navigation
+  go_router: ^14.2.0
+
+  # Backend
+  supabase_flutter: ^2.12.0
+
+  # Utilities
+  intl: ^0.20.2
+  uuid: ^4.5.3
+  fl_chart: ^0.68.0
+  google_fonts: ^6.2.1
+  data_table_2: ^2.5.15
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  flutter_launcher_icons: ^0.13.1
+  msix: ^3.16.7
+
+flutter_launcher_icons:
+  image_path: "../warehouse/assets/images/logo1.JPG"
+  android: "ic_launcher"
+  ios: true
+  macos:
+    generate: true
+    image_path: "../warehouse/assets/images/logo1.JPG"
+  windows:
+    generate: true
+    image_path: "../warehouse/assets/images/logo1.JPG"
+
+msix_config:
+  display_name: "TakEsep Admin"
+  publisher_display_name: "TakEsep"
+  identity_name: "com.takesep.admin"
+  msix_version: "1.0.0.0"
+  logo_path: "C:\\Project TakEsep\\TakEsep\\apps\\warehouse\\assets\\images\\logo1.JPG"
+  trim_logo_to_circle: true
+  bgr_color: "#1A1A3E"
+
+flutter:
+  uses-material-design: true
