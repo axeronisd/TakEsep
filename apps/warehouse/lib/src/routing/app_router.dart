@@ -19,6 +19,7 @@ import '../screens/help/help_screen.dart';
 import '../screens/delivery/delivery_orders_screen.dart';
 import '../screens/delivery/delivery_settings_screen.dart';
 import '../screens/delivery/courier_management_screen.dart';
+import '../screens/delivery/delivery_analytics_screen.dart';
 import 'app_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -167,6 +168,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 ),
               );
             },
+          ),
+
+          GoRoute(
+            path: '/delivery-analytics',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: DeliveryAnalyticsScreen()),
           ),
 
           // ─── Настройки ────────────────────────

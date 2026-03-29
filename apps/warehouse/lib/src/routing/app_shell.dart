@@ -92,6 +92,11 @@ const _navSections = <_NavSection>[
         label: 'Настройки доставки',
         path: '/delivery-settings',
         permissionKey: 'delivery_settings'),
+    _NavItem(
+        icon: Icons.analytics_rounded,
+        label: 'Аналитика',
+        path: '/delivery-analytics',
+        permissionKey: 'delivery_orders'),
   ]),
 ];
 
