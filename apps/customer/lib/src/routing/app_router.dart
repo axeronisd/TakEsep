@@ -1,23 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/home/home_screen.dart';
 import '../screens/store/store_screen.dart';
 import '../screens/cart/cart_screen.dart';
 import '../screens/order/order_tracking_screen.dart';
 import '../screens/profile/profile_screen.dart';
+import '../theme/akjol_theme.dart';
+import '../providers/cart_provider.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    initialLocation: '/login',
+    initialLocation: '/',
+    redirect: (context, state) {
+      final session = Supabase.instance.client.auth.currentSession;
+      final isLoggedIn = session != null;
+      final isLoginRoute = state.matchedLocation == '/login';
+
+      if (!isLoggedIn && !isLoginRoute) return '/login';
+      if (isLoggedIn && isLoginRoute) return '/';
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/login',
         builder: (_, __) => const LoginScreen(),
       ),
       ShellRoute(
-        builder: (_, state, child) => AppShell(child: child),
+        builder: (_, state, child) => _AppShell(child: child),
         routes: [
           GoRoute(
             path: '/',
@@ -49,25 +61,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   );
 });
 
-class AppShell extends StatefulWidget {
+class _AppShell extends ConsumerWidget {
   final Widget child;
-  const AppShell({super.key, required this.child});
+  const _AppShell({required this.child});
 
   @override
-  State<AppShell> createState() => _AppShellState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cart = ref.watch(cartProvider);
+    final location = GoRouterState.of(context).matchedLocation;
 
-class _AppShellState extends State<AppShell> {
-  int _currentIndex = 0;
+    int currentIndex = 0;
+    if (location.startsWith('/cart')) currentIndex = 1;
+    if (location.startsWith('/profile')) currentIndex = 2;
 
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
-      body: widget.child,
+      body: child,
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
+        selectedIndex: currentIndex,
         onDestinationSelected: (i) {
-          setState(() => _currentIndex = i);
           switch (i) {
             case 0:
               context.go('/');
@@ -80,18 +91,26 @@ class _AppShellState extends State<AppShell> {
               break;
           }
         },
-        destinations: const [
-          NavigationDestination(
+        destinations: [
+          const NavigationDestination(
             icon: Icon(Icons.storefront_outlined),
             selectedIcon: Icon(Icons.storefront),
             label: 'Магазины',
           ),
           NavigationDestination(
-            icon: Icon(Icons.shopping_cart_outlined),
-            selectedIcon: Icon(Icons.shopping_cart),
+            icon: Badge(
+              isLabelVisible: cart.itemCount > 0,
+              label: Text('${cart.itemCount}'),
+              child: const Icon(Icons.shopping_cart_outlined),
+            ),
+            selectedIcon: Badge(
+              isLabelVisible: cart.itemCount > 0,
+              label: Text('${cart.itemCount}'),
+              child: const Icon(Icons.shopping_cart),
+            ),
             label: 'Корзина',
           ),
-          NavigationDestination(
+          const NavigationDestination(
             icon: Icon(Icons.person_outlined),
             selectedIcon: Icon(Icons.person),
             label: 'Профиль',

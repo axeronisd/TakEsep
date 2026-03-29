@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../theme/akjol_theme.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -11,10 +12,12 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _supabase = Supabase.instance.client;
   final _phoneController = TextEditingController();
   final _codeController = TextEditingController();
   bool _codeSent = false;
   bool _loading = false;
+  String? _error;
 
   @override
   Widget build(BuildContext context) {
@@ -63,6 +66,29 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 48),
 
+              // Error
+              if (_error != null)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AkJolTheme.error.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.error_outline,
+                          color: AkJolTheme.error, size: 18),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(_error!,
+                            style: const TextStyle(
+                                color: AkJolTheme.error, fontSize: 13)),
+                      ),
+                    ],
+                  ),
+                ),
+
               // Phone input
               if (!_codeSent) ...[
                 TextField(
@@ -91,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
               // Code input
               if (_codeSent) ...[
                 Text(
-                  'Код отправлен на +996 ${_phoneController.text}',
+                  'Код отправлен на +996${_phoneController.text}',
                   style: TextStyle(color: AkJolTheme.textSecondary),
                 ),
                 const SizedBox(height: 16),
@@ -110,6 +136,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   decoration: const InputDecoration(
                     hintText: '------',
                   ),
+                  onChanged: (val) {
+                    if (val.length == 6) _verifyCode();
+                  },
                 ),
                 const SizedBox(height: 16),
                 ElevatedButton(
@@ -124,7 +153,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 12),
                 TextButton(
-                  onPressed: () => setState(() => _codeSent = false),
+                  onPressed: () => setState(() {
+                    _codeSent = false;
+                    _error = null;
+                  }),
                   child: const Text('Изменить номер'),
                 ),
               ],
@@ -147,22 +179,97 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _sendCode() async {
-    if (_phoneController.text.length < 9) return;
-    setState(() => _loading = true);
-    // TODO: Supabase OTP
-    await Future.delayed(const Duration(seconds: 1));
+    final phone = _phoneController.text.replaceAll(' ', '');
+    if (phone.length < 9) {
+      setState(() => _error = 'Введите корректный номер');
+      return;
+    }
+
     setState(() {
-      _loading = false;
-      _codeSent = true;
+      _loading = true;
+      _error = null;
     });
+
+    try {
+      await _supabase.auth.signInWithOtp(
+        phone: '+996$phone',
+      );
+
+      // Ensure customer record exists
+      // Will be created/updated after OTP verification
+
+      setState(() {
+        _loading = false;
+        _codeSent = true;
+      });
+    } catch (e) {
+      setState(() {
+        _loading = false;
+        _error = 'Ошибка отправки SMS: ${_parseError(e)}';
+      });
+    }
   }
 
   Future<void> _verifyCode() async {
-    if (_codeController.text.length < 6) return;
-    setState(() => _loading = true);
-    // TODO: Verify OTP → navigate
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() => _loading = false);
-    if (mounted) context.go('/');
+    final code = _codeController.text;
+    if (code.length < 6) return;
+
+    final phone = _phoneController.text.replaceAll(' ', '');
+
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+
+    try {
+      final response = await _supabase.auth.verifyOTP(
+        phone: '+996$phone',
+        token: code,
+        type: OtpType.sms,
+      );
+
+      if (response.user != null) {
+        // Upsert customer record
+        await _upsertCustomer(response.user!);
+
+        if (mounted) context.go('/');
+      } else {
+        setState(() {
+          _loading = false;
+          _error = 'Неверный код';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _loading = false;
+        _error = 'Ошибка: ${_parseError(e)}';
+      });
+    }
+  }
+
+  Future<void> _upsertCustomer(User user) async {
+    try {
+      await _supabase.from('customers').upsert({
+        'id': user.id,
+        'phone': user.phone,
+        'name': user.phone, // Will be updated later in profile
+      }, onConflict: 'id');
+    } catch (_) {
+      // Non-critical — customer can update later
+    }
+  }
+
+  String _parseError(dynamic e) {
+    final msg = e.toString();
+    if (msg.contains('Invalid login credentials')) {
+      return 'Неверный код';
+    }
+    if (msg.contains('Phone number')) {
+      return 'Некорректный номер';
+    }
+    if (msg.contains('rate limit')) {
+      return 'Слишком много попыток, подождите';
+    }
+    return 'Попробуйте позже';
   }
 }

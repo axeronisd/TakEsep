@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../screens/auth/courier_login_screen.dart';
 import '../screens/shift/shift_screen.dart';
 import '../screens/orders/available_orders_screen.dart';
@@ -9,14 +10,23 @@ import '../screens/profile/courier_profile_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    initialLocation: '/login',
+    initialLocation: '/',
+    redirect: (context, state) {
+      final session = Supabase.instance.client.auth.currentSession;
+      final isLoggedIn = session != null;
+      final isLoginRoute = state.matchedLocation == '/login';
+
+      if (!isLoggedIn && !isLoginRoute) return '/login';
+      if (isLoggedIn && isLoginRoute) return '/';
+      return null;
+    },
     routes: [
       GoRoute(
         path: '/login',
         builder: (_, __) => const CourierLoginScreen(),
       ),
       ShellRoute(
-        builder: (_, state, child) => CourierShell(child: child),
+        builder: (_, state, child) => _CourierShell(child: child),
         routes: [
           GoRoute(
             path: '/',
@@ -42,25 +52,23 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   );
 });
 
-class CourierShell extends StatefulWidget {
+class _CourierShell extends StatelessWidget {
   final Widget child;
-  const CourierShell({super.key, required this.child});
-
-  @override
-  State<CourierShell> createState() => _CourierShellState();
-}
-
-class _CourierShellState extends State<CourierShell> {
-  int _currentIndex = 0;
+  const _CourierShell({required this.child});
 
   @override
   Widget build(BuildContext context) {
+    final location = GoRouterState.of(context).matchedLocation;
+
+    int currentIndex = 0;
+    if (location.startsWith('/shift')) currentIndex = 1;
+    if (location.startsWith('/profile')) currentIndex = 2;
+
     return Scaffold(
-      body: widget.child,
+      body: child,
       bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
+        selectedIndex: currentIndex,
         onDestinationSelected: (i) {
-          setState(() => _currentIndex = i);
           switch (i) {
             case 0:
               context.go('/');
