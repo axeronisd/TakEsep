@@ -8,7 +8,6 @@ import '../screens/store/store_screen.dart';
 import '../screens/cart/cart_screen.dart';
 import '../screens/order/order_tracking_screen.dart';
 import '../screens/profile/profile_screen.dart';
-import '../theme/akjol_theme.dart';
 import '../providers/cart_provider.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {

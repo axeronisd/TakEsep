@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../providers/auth_providers.dart';
 
-class DeliveryOrdersScreen extends StatefulWidget {
+class DeliveryOrdersScreen extends ConsumerStatefulWidget {
   const DeliveryOrdersScreen({super.key});
 
   @override
-  State<DeliveryOrdersScreen> createState() => _DeliveryOrdersScreenState();
+  ConsumerState<DeliveryOrdersScreen> createState() => _DeliveryOrdersScreenState();
 }
 
-class _DeliveryOrdersScreenState extends State<DeliveryOrdersScreen>
+class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
     with SingleTickerProviderStateMixin {
   final _supabase = Supabase.instance.client;
   late TabController _tabController;
@@ -47,11 +49,16 @@ class _DeliveryOrdersScreenState extends State<DeliveryOrdersScreen>
 
   Future<void> _loadOrders() async {
     try {
-      // TODO: filter by actual warehouse_id from user session
-      final data = await _supabase
+      final warehouseId = ref.read(selectedWarehouseIdProvider);
+      var query = _supabase
           .from('delivery_orders')
-          .select('*, customers(name, phone), delivery_order_items(*)')
-          .order('created_at', ascending: false);
+          .select('*, customers(name, phone), delivery_order_items(*)');
+
+      if (warehouseId != null) {
+        query = query.eq('warehouse_id', warehouseId);
+      }
+
+      final data = await query.order('created_at', ascending: false);
 
       final orders = List<Map<String, dynamic>>.from(data);
 

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../services/order_service.dart';
 import '../../theme/akjol_theme.dart';
 
 class AvailableOrdersScreen extends StatefulWidget {
@@ -11,14 +13,61 @@ class AvailableOrdersScreen extends StatefulWidget {
 
 class _AvailableOrdersScreenState extends State<AvailableOrdersScreen> {
   final _supabase = Supabase.instance.client;
+  final _orderService = OrderService();
   List<Map<String, dynamic>> _orders = [];
+  Map<String, dynamic>? _courier;
   bool _loading = true;
   bool _isOnline = false;
+  RealtimeChannel? _channel;
 
   @override
   void initState() {
     super.initState();
-    _loadOrders();
+    _loadCourierAndOrders();
+  }
+
+  @override
+  void dispose() {
+    _channel?.unsubscribe();
+    super.dispose();
+  }
+
+  Future<void> _loadCourierAndOrders() async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) return;
+
+    try {
+      // Get courier profile
+      final courier = await _supabase
+          .from('couriers')
+          .select()
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+      if (courier != null) {
+        _courier = courier;
+        _isOnline = courier['is_online'] ?? false;
+
+        // Check for active delivery
+        final activeOrder = await _supabase
+            .from('delivery_orders')
+            .select()
+            .eq('courier_id', courier['id'])
+            .inFilter('status',
+                ['courier_assigned', 'courier_at_store', 'picked_up'])
+            .maybeSingle();
+
+        if (activeOrder != null && mounted) {
+          context.go('/delivery/${activeOrder['id']}');
+          return;
+        }
+      }
+
+      await _loadOrders();
+      _subscribeToOrders();
+    } catch (e) {
+      setState(() => _loading = false);
+    }
   }
 
   Future<void> _loadOrders() async {
@@ -38,13 +87,53 @@ class _AvailableOrdersScreenState extends State<AvailableOrdersScreen> {
     }
   }
 
+  void _subscribeToOrders() {
+    _channel = _orderService.subscribeToOrders((_) => _loadOrders());
+  }
+
+  Future<void> _toggleOnline(bool value) async {
+    if (_courier == null) return;
+
+    setState(() => _isOnline = value);
+
+    try {
+      await _supabase.from('couriers').update({
+        'is_online': value,
+      }).eq('id', _courier!['id']);
+
+      if (value) _loadOrders();
+    } catch (e) {
+      setState(() => _isOnline = !value);
+    }
+  }
+
+  Future<void> _acceptOrder(Map<String, dynamic> order) async {
+    if (_courier == null) return;
+
+    try {
+      await _orderService.acceptOrder(order['id'], _courier!['id']);
+
+      if (mounted) {
+        context.go('/delivery/${order['id']}');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка: $e'),
+            backgroundColor: AkJolTheme.error,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Доступные заказы'),
         actions: [
-          // Online/Offline toggle
           Padding(
             padding: const EdgeInsets.only(right: 8),
             child: Row(
@@ -54,13 +143,15 @@ class _AvailableOrdersScreenState extends State<AvailableOrdersScreen> {
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: _isOnline ? AkJolTheme.success : AkJolTheme.textTertiary,
+                    color: _isOnline
+                        ? AkJolTheme.success
+                        : AkJolTheme.textTertiary,
                   ),
                 ),
                 const SizedBox(width: 4),
                 Switch(
                   value: _isOnline,
-                  onChanged: (v) => setState(() => _isOnline = v),
+                  onChanged: _toggleOnline,
                   activeColor: AkJolTheme.success,
                 ),
               ],
@@ -79,7 +170,10 @@ class _AvailableOrdersScreenState extends State<AvailableOrdersScreen> {
                       child: ListView.builder(
                         padding: const EdgeInsets.all(16),
                         itemCount: _orders.length,
-                        itemBuilder: (_, i) => _OrderCard(order: _orders[i]),
+                        itemBuilder: (_, i) => _OrderCard(
+                          order: _orders[i],
+                          onAccept: () => _acceptOrder(_orders[i]),
+                        ),
                       ),
                     ),
     );
@@ -97,7 +191,8 @@ class _AvailableOrdersScreenState extends State<AvailableOrdersScreen> {
               color: AkJolTheme.textTertiary.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.wifi_off, size: 40, color: AkJolTheme.textTertiary),
+            child: const Icon(Icons.wifi_off,
+                size: 40, color: AkJolTheme.textTertiary),
           ),
           const SizedBox(height: 16),
           Text('Вы офлайн',
@@ -146,15 +241,19 @@ class _AvailableOrdersScreenState extends State<AvailableOrdersScreen> {
 
 class _OrderCard extends StatelessWidget {
   final Map<String, dynamic> order;
-  const _OrderCard({required this.order});
+  final VoidCallback onAccept;
+  const _OrderCard({required this.order, required this.onAccept});
 
   @override
   Widget build(BuildContext context) {
     final storeName = order['warehouses']?['name'] ?? 'Магазин';
+    final customerName = order['customers']?['name'] ?? '';
     final address = order['delivery_address'] ?? '';
     final total = (order['total'] as num?)?.toDouble() ?? 0;
     final deliveryFee = (order['delivery_fee'] as num?)?.toDouble() ?? 0;
-    final transport = order['approved_transport'] ?? order['requested_transport'] ?? '';
+    final courierEarning = deliveryFee * 0.85; // 85% для курьера
+    final transport =
+        order['approved_transport'] ?? order['requested_transport'] ?? '';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -163,7 +262,7 @@ class _OrderCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Store + transport
+            // Store + earning
             Row(
               children: [
                 Icon(_transportIcon(transport),
@@ -175,23 +274,38 @@ class _OrderCard extends StatelessWidget {
                           fontSize: 16, fontWeight: FontWeight.w600)),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: AkJolTheme.accent.withValues(alpha: 0.15),
+                    color: AkJolTheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    '+${deliveryFee.toStringAsFixed(0)} сом',
+                    '+${courierEarning.toStringAsFixed(0)} сом',
                     style: const TextStyle(
-                      fontSize: 13,
+                      fontSize: 14,
                       fontWeight: FontWeight.w700,
-                      color: AkJolTheme.accentDark,
+                      color: AkJolTheme.primary,
                     ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 10),
+
+            // Customer
+            if (customerName.isNotEmpty)
+              Row(
+                children: [
+                  const Icon(Icons.person_outline,
+                      size: 16, color: AkJolTheme.textTertiary),
+                  const SizedBox(width: 4),
+                  Text(customerName,
+                      style: TextStyle(
+                          fontSize: 13, color: AkJolTheme.textSecondary)),
+                ],
+              ),
+            const SizedBox(height: 4),
 
             // Address
             Row(
@@ -203,30 +317,35 @@ class _OrderCard extends StatelessWidget {
                   child: Text(address,
                       style: TextStyle(
                           fontSize: 13, color: AkJolTheme.textSecondary),
-                      maxLines: 1,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis),
                 ),
               ],
             ),
             const SizedBox(height: 12),
 
-            // Total + Accept button
+            // Total + Accept
             Row(
               children: [
-                Text(
-                  'Сумма: ${total.toStringAsFixed(0)} сом',
-                  style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w500),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Сумма: ${total.toStringAsFixed(0)} сом',
+                        style: const TextStyle(
+                            fontSize: 14, fontWeight: FontWeight.w500)),
+                    Text('Доставка: ${deliveryFee.toStringAsFixed(0)} сом',
+                        style: TextStyle(
+                            fontSize: 12, color: AkJolTheme.textTertiary)),
+                  ],
                 ),
                 const Spacer(),
-                ElevatedButton(
-                  onPressed: () {
-                    // TODO: Accept order
-                  },
+                ElevatedButton.icon(
+                  onPressed: onAccept,
+                  icon: const Icon(Icons.check, size: 18),
+                  label: const Text('Принять'),
                   style: ElevatedButton.styleFrom(
-                    minimumSize: const Size(100, 40),
+                    minimumSize: const Size(110, 42),
                   ),
-                  child: const Text('Принять'),
                 ),
               ],
             ),
