@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../theme/akjol_theme.dart';
+import '../../providers/cart_provider.dart';
 
-class StoreScreen extends StatefulWidget {
+class StoreScreen extends ConsumerStatefulWidget {
   final String storeId;
   const StoreScreen({super.key, required this.storeId});
 
   @override
-  State<StoreScreen> createState() => _StoreScreenState();
+  ConsumerState<StoreScreen> createState() => _StoreScreenState();
 }
 
-class _StoreScreenState extends State<StoreScreen> {
+class _StoreScreenState extends ConsumerState<StoreScreen> {
   final _supabase = Supabase.instance.client;
   List<Map<String, dynamic>> _products = [];
   String _storeName = '';
@@ -24,14 +27,12 @@ class _StoreScreenState extends State<StoreScreen> {
 
   Future<void> _loadProducts() async {
     try {
-      // Load warehouse name
       final warehouse = await _supabase
           .from('warehouses')
           .select('name')
           .eq('id', widget.storeId)
           .single();
-      
-      // Load products
+
       final data = await _supabase
           .from('goods')
           .select('*')
@@ -49,9 +50,25 @@ class _StoreScreenState extends State<StoreScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final cart = ref.watch(cartProvider);
+    final cartCount = cart.warehouseId == widget.storeId ? cart.itemCount : 0;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(_storeName),
+        actions: [
+          if (cartCount > 0)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Badge(
+                label: Text('$cartCount'),
+                child: IconButton(
+                  icon: const Icon(Icons.shopping_cart),
+                  onPressed: () => context.go('/cart'),
+                ),
+              ),
+            ),
+        ],
       ),
       body: _loading
           ? const Center(child: CircularProgressIndicator())
@@ -80,28 +97,77 @@ class _StoreScreenState extends State<StoreScreen> {
                     childAspectRatio: 0.75,
                   ),
                   itemCount: _products.length,
-                  itemBuilder: (_, i) => _ProductCard(product: _products[i]),
+                  itemBuilder: (_, i) => _ProductCard(
+                    product: _products[i],
+                    storeId: widget.storeId,
+                    storeName: _storeName,
+                  ),
                 ),
+      // Floating cart button
+      bottomNavigationBar: cartCount > 0
+          ? Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: ElevatedButton(
+                onPressed: () => context.go('/cart'),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.shopping_cart, size: 20),
+                    const SizedBox(width: 8),
+                    Text('Корзина · $cartCount шт'),
+                    const Spacer(),
+                    Text(
+                      '${cart.itemsTotal.toStringAsFixed(0)} сом',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          : null,
     );
   }
 }
 
-class _ProductCard extends StatelessWidget {
+class _ProductCard extends ConsumerWidget {
   final Map<String, dynamic> product;
-  const _ProductCard({required this.product});
+  final String storeId;
+  final String storeName;
+
+  const _ProductCard({
+    required this.product,
+    required this.storeId,
+    required this.storeName,
+  });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final name = product['name'] ?? '';
     final price = (product['sell_price'] as num?)?.toDouble() ?? 0;
     final imageUrl = product['image_url'] as String?;
+    final productId = product['id']?.toString() ?? '';
+
+    // Check quantity in cart
+    final cart = ref.watch(cartProvider);
+    final inCart = cart.items
+        .where((i) => i.productId == productId)
+        .firstOrNull;
 
     return Card(
       clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image
           Expanded(
             child: Container(
               width: double.infinity,
@@ -113,8 +179,6 @@ class _ProductCard extends StatelessWidget {
                           size: 40, color: AkJolTheme.textTertiary)),
             ),
           ),
-
-          // Info
           Padding(
             padding: const EdgeInsets.all(10),
             child: Column(
@@ -128,41 +192,83 @@ class _ProductCard extends StatelessWidget {
                       fontSize: 13, fontWeight: FontWeight.w500, height: 1.2),
                 ),
                 const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Text(
-                      '${price.toStringAsFixed(0)} сом',
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: AkJolTheme.primary,
-                      ),
-                    ),
-                    const Spacer(),
-                    SizedBox(
-                      width: 32,
-                      height: 32,
-                      child: IconButton.filled(
-                        onPressed: () {
-                          // TODO: add to cart
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('$name добавлен'),
-                              backgroundColor: AkJolTheme.primary,
-                              duration: const Duration(seconds: 1),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.add, size: 16),
-                        style: IconButton.styleFrom(
-                          backgroundColor: AkJolTheme.primary,
-                          foregroundColor: Colors.white,
-                          padding: EdgeInsets.zero,
-                        ),
-                      ),
-                    ),
-                  ],
+                Text(
+                  '${price.toStringAsFixed(0)} сом',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: AkJolTheme.primary,
+                  ),
                 ),
+                const SizedBox(height: 6),
+
+                // Add to cart / quantity controls
+                if (inCart == null)
+                  SizedBox(
+                    width: double.infinity,
+                    height: 32,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        ref.read(cartProvider.notifier).addItem(
+                              warehouseId: storeId,
+                              warehouseName: storeName,
+                              productId: productId,
+                              name: name,
+                              price: price,
+                              imageUrl: imageUrl,
+                            );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        padding: EdgeInsets.zero,
+                        textStyle: const TextStyle(fontSize: 12),
+                      ),
+                      child: const Text('В корзину'),
+                    ),
+                  )
+                else
+                  Container(
+                    height: 32,
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AkJolTheme.primary),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        SizedBox(
+                          width: 32,
+                          child: IconButton(
+                            onPressed: () {
+                              ref.read(cartProvider.notifier)
+                                  .updateQuantity(productId, inCart.quantity - 1);
+                            },
+                            icon: const Icon(Icons.remove, size: 16),
+                            padding: EdgeInsets.zero,
+                            color: AkJolTheme.primary,
+                          ),
+                        ),
+                        Text(
+                          '${inCart.quantity}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: AkJolTheme.primary,
+                          ),
+                        ),
+                        SizedBox(
+                          width: 32,
+                          child: IconButton(
+                            onPressed: () {
+                              ref.read(cartProvider.notifier)
+                                  .updateQuantity(productId, inCart.quantity + 1);
+                            },
+                            icon: const Icon(Icons.add, size: 16),
+                            padding: EdgeInsets.zero,
+                            color: AkJolTheme.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             ),
           ),
