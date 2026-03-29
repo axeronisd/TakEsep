@@ -82,8 +82,6 @@ class _DeliveryOrdersScreenState extends State<DeliveryOrdersScreen>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Заказы на доставку'),
@@ -307,7 +305,6 @@ class _OrderCard extends StatelessWidget {
     final status = order['status'] ?? '';
     final customerName = order['customers']?['name'] ?? 'Клиент';
     final address = order['delivery_address'] ?? '';
-    final total = (order['total'] as num?)?.toDouble() ?? 0;
     final itemsTotal = (order['items_total'] as num?)?.toDouble() ?? 0;
     final transport = order['requested_transport'] ?? '';
     final items = List<Map<String, dynamic>>.from(

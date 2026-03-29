@@ -16,6 +16,9 @@ import '../screens/settings/settings_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/select_warehouse_screen.dart';
 import '../screens/help/help_screen.dart';
+import '../screens/delivery/delivery_orders_screen.dart';
+import '../screens/delivery/delivery_settings_screen.dart';
+import '../screens/delivery/courier_management_screen.dart';
 import 'app_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -137,6 +140,34 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             )),
           ),
 
+          // ─── Доставка AkJol ─────────────────────
+          GoRoute(
+            path: '/delivery-orders',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: DeliveryOrdersScreen()),
+          ),
+          GoRoute(
+            path: '/delivery-settings',
+            pageBuilder: (context, state) {
+              final authState = ref.read(authProvider);
+              return NoTransitionPage(
+                child: DeliverySettingsScreen(
+                  warehouseId: authState.selectedWarehouseId ?? '',
+                ),
+              );
+            },
+          ),
+          GoRoute(
+            path: '/couriers',
+            pageBuilder: (context, state) {
+              final authState = ref.read(authProvider);
+              return NoTransitionPage(
+                child: CourierManagementScreen(
+                  warehouseId: authState.selectedWarehouseId ?? '',
+                ),
+              );
+            },
+          ),
 
           // ─── Настройки ────────────────────────
           GoRoute(
@@ -170,6 +201,9 @@ String _firstPermittedRoute(AuthState authState) {
     'clients': '/clients',
     'employees': '/employees',
     'reports': '/reports',
+    'delivery_orders': '/delivery-orders',
+    'delivery_settings': '/delivery-settings',
+    'couriers': '/couriers',
     'settings': '/settings',
   };
   for (final perm in permissions) {

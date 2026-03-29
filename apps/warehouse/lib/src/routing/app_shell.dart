@@ -76,6 +76,23 @@ const _navSections = <_NavSection>[
         path: '/reports',
         permissionKey: 'reports'),
   ]),
+  _NavSection(label: 'Доставка AkJol', items: [
+    _NavItem(
+        icon: Icons.delivery_dining_rounded,
+        label: 'Заказы',
+        path: '/delivery-orders',
+        permissionKey: 'delivery_orders'),
+    _NavItem(
+        icon: Icons.people_alt_rounded,
+        label: 'Курьеры',
+        path: '/couriers',
+        permissionKey: 'couriers'),
+    _NavItem(
+        icon: Icons.tune_rounded,
+        label: 'Настройки доставки',
+        path: '/delivery-settings',
+        permissionKey: 'delivery_settings'),
+  ]),
 ];
 
 /// Filters navigation sections based on the current role's permissions.

@@ -97,7 +97,7 @@ class OrderService {
     }
 
     final startBank = (shift['start_bank'] as num).toDouble();
-    final amountToReturn = totalCollected - courierEarning;
+    final amountToReturn = totalCollected - courierEarning + startBank;
 
     // Update shift
     final updatedShift = await _supabase.from('courier_shifts').update({

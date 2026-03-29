@@ -35,6 +35,9 @@ class Role extends Equatable {
     'employees',
     'reports',
     'settings',
+    'delivery_orders',
+    'couriers',
+    'delivery_settings',
   ];
 
   /// Human-readable labels for permission keys.
@@ -51,6 +54,9 @@ class Role extends Equatable {
     'employees': 'Сотрудники',
     'reports': 'Отчёты',
     'settings': 'Настройки',
+    'delivery_orders': 'Заказы доставки',
+    'couriers': 'Курьеры',
+    'delivery_settings': 'Настройки доставки',
   };
 
   bool hasPermission(String key) => permissions.contains(key);
