@@ -11,6 +11,7 @@ import '../../data/powersync_db.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/employee_providers.dart';
 import '../../utils/export_helper.dart';
+import '../../utils/snackbar_helper.dart';
 
 // ═══════════════ ENTRY POINT ═══════════════
 
@@ -500,11 +501,7 @@ class _EmployeesTab extends ConsumerWidget {
                           onPressed: () {
                             Clipboard.setData(
                                 ClipboardData(text: keyCtrl.text));
-                            ScaffoldMessenger.of(ctx).showSnackBar(
-                              const SnackBar(
-                                  content: Text('Ключ скопирован'),
-                                  duration: Duration(seconds: 1)),
-                            );
+                            showInfoSnackBar(ctx, ref, 'Ключ скопирован', duration: const Duration(seconds: 1));
                           },
                           icon: const Icon(Icons.copy_rounded, size: 18),
                           tooltip: 'Копировать',
@@ -663,10 +660,7 @@ class _EmployeesTab extends ConsumerWidget {
                   final name = nameCtrl.text.trim();
                   final key = keyCtrl.text.trim();
                   if (name.isEmpty || key.isEmpty) {
-                    ScaffoldMessenger.of(ctx).showSnackBar(
-                      const SnackBar(
-                          content: Text('Укажите имя и ключ')),
-                    );
+                    showErrorSnackBar(ctx, 'Укажите имя и ключ');
                     return;
                   }
 
@@ -676,10 +670,7 @@ class _EmployeesTab extends ConsumerWidget {
                       .isPinCodeTaken(key,
                           excludeEmployeeId: employee?.id);
                   if (taken && ctx.mounted) {
-                    ScaffoldMessenger.of(ctx).showSnackBar(
-                      const SnackBar(
-                          content: Text('Этот ключ уже используется')),
-                    );
+                    showErrorSnackBar(ctx, 'Этот ключ уже используется');
                     return;
                   }
 
@@ -731,11 +722,11 @@ class _EmployeesTab extends ConsumerWidget {
 // Provider for warehouses in the dialog
 final _localWarehousesForDialogProvider =
     FutureProvider<List<Warehouse>>((ref) async {
-  final companyId = ref.watch(currentCompanyProvider)?.id;
-  if (companyId == null) return [];
+  final organizationId = ref.watch(currentCompanyProvider)?.id;
+  if (organizationId == null) return [];
   final rows = await powerSyncDb.getAll(
-    'SELECT * FROM warehouses WHERE company_id = ? AND is_active = 1 ORDER BY name',
-    [companyId],
+    'SELECT * FROM warehouses WHERE organization_id = ? ORDER BY name',
+    [organizationId],
   );
   return rows.map((r) => Warehouse.fromJson(r)).toList();
 });
@@ -1057,10 +1048,7 @@ class _RolesTab extends ConsumerWidget {
 
                   final pin = pinCtrl.text.trim();
                   if (pin.isEmpty) {
-                    ScaffoldMessenger.of(ctx).showSnackBar(
-                      const SnackBar(
-                          content: Text('Укажите PIN-код роли')),
-                    );
+                    showErrorSnackBar(ctx, 'Укажите PIN-код роли');
                     return;
                   }
 

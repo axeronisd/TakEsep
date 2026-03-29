@@ -6,7 +6,9 @@ import 'package:takesep_core/takesep_core.dart';
 import 'package:takesep_design_system/takesep_design_system.dart';
 import '../../../providers/inventory_providers.dart';
 import '../../../providers/inventory_repository_provider.dart';
+import '../../../widgets/cached_image_widget.dart';
 import '../../../data/supabase_storage_helper.dart';
+import '../../../utils/snackbar_helper.dart';
 
 /// Dialog for editing product details: name, price, barcode, description, image.
 /// Changes are scoped to this warehouse only.
@@ -152,13 +154,7 @@ class _EditProductSheetState extends State<_EditProductSheet> {
       // image_picker on Windows doesn't support camera natively and crashes
       if (Platform.isWindows && source == ImageSource.camera) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Камера не поддерживается на ПК (Windows)'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showErrorSnackBar(context, 'Камера не поддерживается на ПК (Windows)');
         return;
       }
 
@@ -174,13 +170,7 @@ class _EditProductSheetState extends State<_EditProductSheet> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Ошибка выбора фото: $e'),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      showErrorSnackBar(context, 'Ошибка выбора фото: $e');
     }
   }
 
@@ -195,13 +185,7 @@ class _EditProductSheetState extends State<_EditProductSheet> {
         finalImageUrl = await SupabaseStorageHelper.uploadImage(File(_imageUrl!));
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка загрузки фото: ${e.toString().replaceAll('Exception: Supabase upload error: ', '')}'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showErrorSnackBar(context, 'Ошибка загрузки фото: ${e.toString().replaceAll('Exception: Supabase upload error: ', '')}');
         setState(() => _saving = false);
         return;
       }
@@ -231,22 +215,10 @@ class _EditProductSheetState extends State<_EditProductSheet> {
     if (mounted) {
       setState(() => _saving = false);
       if (success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('«${updated.name}» обновлён'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showInfoSnackBar(context, widget.ref, '«${updated.name}» обновлён');
         Navigator.of(context).pop(true);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Ошибка сохранения'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showErrorSnackBar(context, 'Ошибка сохранения');
       }
     }
   }
@@ -256,14 +228,10 @@ class _EditProductSheetState extends State<_EditProductSheet> {
     Widget imageWidget;
 
     if (_imageUrl != null && _imageUrl!.isNotEmpty) {
-      if (_imageUrl!.startsWith('http://') ||
-          _imageUrl!.startsWith('https://')) {
-        imageWidget = Image.network(
-          _imageUrl!,
-          width: double.infinity,
-          height: 180,
+      if (_imageUrl!.startsWith('http')) {
+        imageWidget = CachedImageWidget(
+          imageUrl: _imageUrl!,
           fit: BoxFit.contain,
-          errorBuilder: (_, __, ___) => _buildPlaceholder(cs),
         );
       } else {
         imageWidget = Image.file(

@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takesep_design_system/takesep_design_system.dart';
 
+import '../../widgets/cached_image_widget.dart';
 import '../../providers/currency_provider.dart';
 import '../../providers/inventory_providers.dart';
 import '../../providers/transfer_providers.dart';
+import '../../utils/snackbar_helper.dart';
 import 'widgets/transfer_invoice_pane.dart';
 import 'widgets/transfer_inbox_tab.dart';
 import 'widgets/transfer_outbox_tab.dart';
@@ -372,17 +374,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen>
                                 .read(currentTransferProvider.notifier)
                                 .addProduct(p);
                             if (!added && mounted) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text(
-                                      '"${p.name}" — нет в наличии'),
-                                  backgroundColor: AppColors.error,
-                                  behavior: SnackBarBehavior.floating,
-                                  margin: const EdgeInsets.only(
-                                      bottom: 80, left: 16, right: 16),
-                                  duration: const Duration(seconds: 1),
-                                ),
-                              );
+                              showErrorSnackBar(context, '"${p.name}" — нет в наличии');
                             }
                           },
                         );
@@ -418,31 +410,17 @@ class _TransferScreenState extends ConsumerState<TransferScreen>
       ref.read(transferSearchQueryProvider.notifier).state = '';
       _searchFocusNode.requestFocus();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(added
-              ? '"${product.name}" добавлен в перемещение'
-              : '"${product.name}" — нет в наличии'),
-          backgroundColor: added ? AppColors.success : AppColors.error,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
-          duration: const Duration(seconds: 1),
-        ),
-      );
+      if (added) {
+        showInfoSnackBar(context, ref, '"${product.name}" добавлен в перемещение', duration: const Duration(seconds: 1));
+      } else {
+        showErrorSnackBar(context, '"${product.name}" — нет в наличии');
+      }
     } else {
       _searchController.clear();
       ref.read(transferSearchQueryProvider.notifier).state = '';
       _searchFocusNode.requestFocus();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Позиция с этим штрих-кодом не существует'),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.only(bottom: 80, left: 16, right: 16),
-          duration: Duration(seconds: 2),
-        ),
-      );
+      showErrorSnackBar(context, 'Позиция с этим штрих-кодом не существует');
     }
   }
 
@@ -496,13 +474,13 @@ class _ProductTile extends StatelessWidget {
                         borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(AppSpacing.radiusMd)),
                         child: product.imageUrl!.startsWith('http')
-                            ? Image.network(
-                                product.imageUrl!,
+                            ? CachedImageWidget(
+                                imageUrl: product.imageUrl!,
+                                width: double.infinity,
+                                height: double.infinity,
                                 fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Icon(
-                                    Icons.inventory_2_outlined,
-                                    size: 32,
-                                    color: cs.onSurface.withValues(alpha: 0.2)),
+                                borderRadius: const BorderRadius.vertical(
+                                    top: Radius.circular(AppSpacing.radiusMd)),
                               )
                             : Image.file(
                                 java_io.File(product.imageUrl!),

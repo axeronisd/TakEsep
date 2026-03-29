@@ -19,12 +19,14 @@ echo Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescriptio
 echo. >> build.iss
 echo [Files] >> build.iss
 echo Source: "build\windows\x64\runner\Release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs >> build.iss
+echo Source: "vc_redist.x64.exe"; DestDir: "{tmp}"; Flags: deleteafterinstall >> build.iss
 echo. >> build.iss
 echo [Icons] >> build.iss
 echo Name: "{group}\TakEsep"; Filename: "{app}\TakEsep.exe" >> build.iss
 echo Name: "{autodesktop}\TakEsep"; Filename: "{app}\TakEsep.exe"; Tasks: desktopicon >> build.iss
 echo. >> build.iss
 echo [Run] >> build.iss
+echo Filename: "{tmp}\vc_redist.x64.exe"; Parameters: "/install /quiet /norestart"; StatusMsg: "Installing Visual C++ Runtime..."; Flags: waituntilterminated >> build.iss
 echo Filename: "{app}\TakEsep.exe"; Description: "{cm:LaunchProgram,TakEsep}"; Flags: nowait postinstall skipifsilent >> build.iss
 
 "C:\Users\axero\AppData\Local\Programs\Inno Setup 6\ISCC.exe" build.iss

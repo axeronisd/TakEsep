@@ -145,3 +145,33 @@ String formatPriceShort(int amount, String currencySymbol) {
       RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]} ');
   return '$currencySymbol $formatted';
 }
+
+/// Convert an amount from KGS (base currency in DB) to the target currency.
+/// Returns the original amount if target is KGS.
+double convertFromKGS(double amountKGS, AppCurrency target, ExchangeRates rates) {
+  if (target == AppCurrency.kgs) return amountKGS;
+  final rate = rates.getRate(target.code);
+  if (rate <= 0) return amountKGS;
+  return amountKGS / rate;
+}
+
+/// Format price with automatic conversion from KGS base.
+/// Use when you need to display DB amounts in the selected currency.
+String formatPriceConverted(double amountKGS, AppCurrency currency, ExchangeRates? rates) {
+  if (currency == AppCurrency.kgs || rates == null) {
+    return formatPrice(amountKGS, currency.symbol);
+  }
+  final converted = convertFromKGS(amountKGS, currency, rates);
+  // Show 2 decimal places for foreign currencies
+  final formatted = converted.toStringAsFixed(2).replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]} ');
+  return '$formatted ${currency.symbol}';
+}
+
+/// A convenient provider that gives you a ready-to-use formatting function
+/// which automatically applies the current currency and exchange rates.
+final priceFormatterProvider = Provider<String Function(double amountKGS)>((ref) {
+  final currency = ref.watch(currencyProvider);
+  final ratesAsync = ref.watch(exchangeRatesProvider);
+  return (double amountKGS) => formatPriceConverted(amountKGS, currency, ratesAsync.value);
+});

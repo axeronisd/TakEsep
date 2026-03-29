@@ -9,7 +9,7 @@ class SuppliersScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final cur = ref.watch(currencyProvider).symbol;
+    final priceFmt = ref.watch(priceFormatterProvider);
     final isDesktop = MediaQuery.of(context).size.width >= 900;
     final suppliers = [
       _Supplier('Apple Kazakhstan', '+7 727 333 4455', 45, 8450000, 0, 4.8),
@@ -50,7 +50,7 @@ class SuppliersScreen extends ConsumerWidget {
                     Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(s.name, style: AppTypography.bodyLarge.copyWith(color: Theme.of(context).colorScheme.onSurface, fontWeight: FontWeight.w500)),
                       Text('${s.deliveries} поставок · ${s.phone}', style: AppTypography.bodySmall.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
-                      if (s.ourDebt > 0) Text('Наш долг: $cur ${_fmtNum(s.ourDebt)}', style: AppTypography.labelSmall.copyWith(color: AppColors.warning)),
+                      if (s.ourDebt > 0) Text('Наш долг: ${priceFmt(s.ourDebt.toDouble())}', style: AppTypography.labelSmall.copyWith(color: AppColors.warning)),
                     ])),
                     Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
                       Row(children: [
@@ -58,7 +58,7 @@ class SuppliersScreen extends ConsumerWidget {
                         const SizedBox(width: 2),
                         Text(s.rating.toStringAsFixed(1), style: AppTypography.labelMedium.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7))),
                       ]),
-                      Text('$cur ${_fmtNum(s.total)}', style: AppTypography.labelMedium.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
+                      Text(priceFmt(s.total.toDouble()), style: AppTypography.labelMedium.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
                     ]),
                   ]));
                 },
@@ -69,8 +69,6 @@ class SuppliersScreen extends ConsumerWidget {
       ),
     );
   }
-
-  static String _fmtNum(int n) => n.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]} ');
 }
 
 class _Supplier {

@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:takesep_design_system/takesep_design_system.dart';
+import 'snackbar_helper.dart';
 
 class ExportHelper {
   /// Converts a 2D list of strings into a CSV formatted string.
@@ -51,24 +51,11 @@ class ExportHelper {
       await file.writeAsString(csvString);
 
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Файл успешно сохранён:\n$outputFile'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 4),
-          ),
-        );
+        showInfoSnackBar(context, null, 'Файл успешно сохранён:\n$outputFile', duration: const Duration(seconds: 4));
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка при экспорте: $e'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showErrorSnackBar(context, 'Ошибка при экспорте: $e');
       }
     }
   }

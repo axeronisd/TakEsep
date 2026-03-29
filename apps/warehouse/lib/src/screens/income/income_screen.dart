@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takesep_design_system/takesep_design_system.dart';
 import '../../providers/currency_provider.dart';
+import '../../utils/snackbar_helper.dart';
 
 /// Income (Приход) screen — receiving goods from suppliers.
 class IncomeScreen extends ConsumerStatefulWidget {
@@ -50,9 +51,7 @@ class _IncomeScreenState extends ConsumerState<IncomeScreen> {
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Новый приход — используйте страницу «Приход» в меню'), behavior: SnackBarBehavior.floating, duration: Duration(seconds: 2)),
-          );
+          showInfoSnackBar(context, ref, 'Новый приход — используйте страницу «Приход» в меню', duration: const Duration(seconds: 2));
         },
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.add, color: Colors.white),
@@ -107,7 +106,14 @@ class _IncomeScreenState extends ConsumerState<IncomeScreen> {
                       const SizedBox(height: AppSpacing.sm),
                   itemBuilder: (context, index) {
                     final doc = _mockDocuments[index];
-                    return _IncomeDocCard(doc: doc, currencySymbol: ref.watch(currencyProvider).symbol);
+                    return Consumer(
+                      builder: (context, ref, _) {
+                        return _IncomeDocCard(
+                          doc: doc, 
+                          priceFmt: ref.watch(priceFormatterProvider),
+                        );
+                      }
+                    );
                   },
                 ),
               ),
@@ -121,17 +127,15 @@ class _IncomeScreenState extends ConsumerState<IncomeScreen> {
 
 class _IncomeDocCard extends StatelessWidget {
   final _IncomeDoc doc;
-  final String currencySymbol;
-  const _IncomeDocCard({required this.doc, required this.currencySymbol});
+  final String Function(double) priceFmt;
+  const _IncomeDocCard({required this.doc, required this.priceFmt});
 
   @override
   Widget build(BuildContext context) {
     final isPending = doc.status == 'pending';
     return TECard(
       onTap: () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Накладная ${doc.id} — детали скоро'), behavior: SnackBarBehavior.floating, duration: const Duration(seconds: 1)),
-        );
+        showInfoSnackBar(context, null, 'Накладная ${doc.id} — детали скоро', duration: const Duration(seconds: 1));
       },
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Row(
@@ -183,7 +187,7 @@ class _IncomeDocCard extends StatelessWidget {
               ],
             ),
           ),
-          Text('$currencySymbol ${_fmtNum(doc.total)}',
+          Text(priceFmt(doc.total.toDouble()),
               style: AppTypography.labelLarge.copyWith(
                 color: Theme.of(context).colorScheme.onSurface,
               )),
@@ -191,9 +195,6 @@ class _IncomeDocCard extends StatelessWidget {
       ),
     );
   }
-
-  String _fmtNum(int n) => n.toString().replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]} ');
 }
 
 class _StatChip extends StatelessWidget {

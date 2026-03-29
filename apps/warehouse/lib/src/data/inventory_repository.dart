@@ -1,6 +1,7 @@
 import 'package:powersync/powersync.dart';
 import 'package:takesep_core/takesep_core.dart';
 import 'powersync_db.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class InventoryRepository {
   InventoryRepository();
@@ -21,7 +22,24 @@ class InventoryRepository {
       query += ' ORDER BY name';
 
       final results = await _db.getAll(query, params);
-      return results.map((row) => Product.fromJson(row)).toList();
+      if (results.isNotEmpty) {
+        return results.map((row) => Product.fromJson(row)).toList();
+      }
+
+      // Fallback to Supabase if local DB is empty (sync not yet completed)
+      var sbQuery = Supabase.instance.client
+          .from('products')
+          .select()
+          .eq('company_id', companyId);
+      
+      if (warehouseId != null) {
+        sbQuery = sbQuery.eq('warehouse_id', warehouseId);
+      }
+      
+      final sbResults = await sbQuery.order('name');
+      return (sbResults as List)
+          .map((row) => Product.fromJson(row as Map<String, dynamic>))
+          .toList();
     } catch (e) {
       print('InventoryRepository getProducts error: $e');
       return [];
@@ -46,7 +64,7 @@ class InventoryRepository {
   Future<List<Warehouse>> getWarehouses(String companyId) async {
     try {
       final results = await _db.getAll(
-        'SELECT * FROM warehouses WHERE company_id = ? ORDER BY name',
+        'SELECT * FROM warehouses WHERE organization_id = ? ORDER BY name',
         [companyId],
       );
       return results.map((row) => Warehouse.fromJson(row)).toList();

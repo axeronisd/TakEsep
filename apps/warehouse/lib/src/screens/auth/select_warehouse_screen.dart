@@ -7,32 +7,36 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 
 import '../../data/powersync_db.dart';
 import '../../providers/auth_providers.dart';
+import '../../utils/snackbar_helper.dart';
 import 'employee_management_dialog.dart';
 
 // ═══════════════ PROVIDERS ═══════════════
 
-/// Fetches warehouse groups from PowerSync local DB.
-final _warehouseGroupsProvider =
-    FutureProvider<List<WarehouseGroup>>((ref) async {
+final _warehouseGroupsProvider = StreamProvider<List<WarehouseGroup>>((ref) async* {
   final companyId = ref.watch(currentCompanyProvider)?.id;
-  if (companyId == null) return [];
-  final rows = await powerSyncDb.getAll(
+  if (companyId == null) {
+    yield [];
+    return;
+  }
+  
+  yield* powerSyncDb.watch(
     'SELECT * FROM warehouse_groups WHERE company_id = ? ORDER BY name',
-    [companyId],
-  );
-  return rows.map((r) => WarehouseGroup.fromJson(r)).toList();
+    parameters: [companyId],
+  ).map((rows) => rows.map((r) => WarehouseGroup.fromJson(r)).toList());
 });
 
-/// Fetches warehouses from local PowerSync DB, filtered by employee access.
-final _localWarehousesProvider = FutureProvider<List<Warehouse>>((ref) async {
+final _localWarehousesProvider = StreamProvider<List<Warehouse>>((ref) async* {
   final companyId = ref.watch(currentCompanyProvider)?.id;
-  if (companyId == null) return [];
+  if (companyId == null) {
+    yield [];
+    return;
+  }
 
   final employee = ref.watch(authProvider).currentEmployee;
   final allowed = employee?.allowedWarehouses;
 
   String sql =
-      'SELECT * FROM warehouses WHERE company_id = ? AND is_active = 1';
+      'SELECT * FROM warehouses WHERE organization_id = ?';
   final params = <dynamic>[companyId];
 
   // If employee has restricted warehouse access, filter by allowed IDs
@@ -43,8 +47,9 @@ final _localWarehousesProvider = FutureProvider<List<Warehouse>>((ref) async {
   }
   sql += ' ORDER BY name';
 
-  final rows = await powerSyncDb.getAll(sql, params);
-  return rows.map((r) => Warehouse.fromJson(r)).toList();
+  yield* powerSyncDb.watch(sql, parameters: params).map(
+    (rows) => rows.map((r) => Warehouse.fromJson(r)).toList()
+  );
 });
 
 // ═══════════════ MAIN SCREEN ═══════════════
@@ -587,21 +592,12 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
                     ref.invalidate(_warehouseGroupsProvider);
                     // Show success
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Группа "$name" создана'),
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                        ),
-                      );
+                      showInfoSnackBar(context, ref, 'Группа "$name" создана');
                     }
                   }
                 } catch (e) {
                   if (ctx.mounted) {
-                    ScaffoldMessenger.of(ctx).showSnackBar(
-                      SnackBar(content: Text('Ошибка: $e')),
-                    );
+                    showErrorSnackBar(ctx, 'Ошибка: $e');
                   }
                 }
               },
@@ -866,24 +862,14 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
                     ref.invalidate(_warehouseGroupsProvider);
 
                     if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text('Группа "$name" создана'),
-                          behavior: SnackBarBehavior.floating,
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                          duration: const Duration(seconds: 2),
-                        ),
-                      );
+                      showInfoSnackBar(context, ref, 'Группа "$name" создана', duration: const Duration(seconds: 2));
                       // Re-open warehouse dialog
                       _showCreateWarehouseDialog(context, ref);
                     }
                   }
                 } catch (e) {
                   if (ctx.mounted) {
-                    ScaffoldMessenger.of(ctx).showSnackBar(
-                      SnackBar(content: Text('Ошибка: $e')),
-                    );
+                    showErrorSnackBar(ctx, 'Ошибка: $e');
                   }
                 }
               },
@@ -939,13 +925,18 @@ class _WarehouseList extends ConsumerWidget {
             warehouses: items ?? [],
           ));
         }
-        // Remaining ungrouped
+        // Remaining ungrouped or orphans
         final ungrouped = grouped[null] ?? [];
-        if (ungrouped.isNotEmpty || sections.isEmpty) {
+        grouped.remove(null); // remove null to get orphans
+        
+        final orphans = grouped.values.expand((element) => element).toList();
+        final allUngroupedAndOrphans = [...ungrouped, ...orphans];
+
+        if (allUngroupedAndOrphans.isNotEmpty || sections.isEmpty) {
           sections.add(_GroupSection(
             groupId: null,
             name: sections.isNotEmpty ? 'Без группы' : null,
-            warehouses: ungrouped,
+            warehouses: allUngroupedAndOrphans,
           ));
         }
 
@@ -960,10 +951,23 @@ class _WarehouseList extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             for (final section in sections) ...[
-              if (section.name != null) ...[
+              if (section.name != null && section.groupId != null) ...[
                 _GroupHeader(
                   name: section.name!,
+                  groupId: section.groupId!,
                   warehouseCount: section.warehouses.length,
+                ),
+              ] else if (section.name != null) ...[
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4, top: 14),
+                  child: Text(
+                    section.name!.toUpperCase(),
+                    style: AppTypography.labelSmall.copyWith(
+                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.45),
+                      letterSpacing: 1.2,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                 ),
               ],
               if (section.warehouses.isEmpty && section.groupId != null)
@@ -1033,16 +1037,15 @@ class _WarehouseList extends ConsumerWidget {
   }
 }
 
-// ═══════════════ GROUP HEADER ═══════════════
-
-class _GroupHeader extends StatelessWidget {
+class _GroupHeader extends ConsumerWidget {
   final String name;
+  final String groupId;
   final int warehouseCount;
 
-  const _GroupHeader({required this.name, required this.warehouseCount});
+  const _GroupHeader({required this.name, required this.groupId, required this.warehouseCount});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
 
     return Padding(
@@ -1062,15 +1065,16 @@ class _GroupHeader extends StatelessWidget {
                     const Icon(Icons.folder_rounded, color: AppColors.primary, size: 14),
               ),
               const SizedBox(width: 8),
-              Text(
-                name.toUpperCase(),
-                style: AppTypography.labelSmall.copyWith(
-                  color: cs.onSurface.withValues(alpha: 0.45),
-                  letterSpacing: 1.2,
-                  fontWeight: FontWeight.w700,
+              Expanded(
+                child: Text(
+                  name.toUpperCase(),
+                  style: AppTypography.labelSmall.copyWith(
+                    color: cs.onSurface.withValues(alpha: 0.45),
+                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
-              const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                 decoration: BoxDecoration(
@@ -1086,6 +1090,33 @@ class _GroupHeader extends StatelessWidget {
                   ),
                 ),
               ),
+              const SizedBox(width: 4),
+              PopupMenuButton<String>(
+                icon: Icon(Icons.more_vert_rounded, size: 18,
+                    color: cs.onSurface.withValues(alpha: 0.35)),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                style: IconButton.styleFrom(
+                  minimumSize: const Size(28, 28),
+                  padding: const EdgeInsets.all(4),
+                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                onSelected: (action) {
+                  if (action == 'rename') {
+                    _showRenameGroupDialog(context, ref, groupId, name);
+                  }
+                },
+                itemBuilder: (_) => [
+                  const PopupMenuItem(
+                    value: 'rename',
+                    child: Row(children: [
+                      Icon(Icons.edit_rounded, size: 18),
+                      SizedBox(width: 10),
+                      Text('Переименовать'),
+                    ]),
+                  ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 6),
@@ -1094,21 +1125,87 @@ class _GroupHeader extends StatelessWidget {
       ),
     );
   }
+
+  void _showRenameGroupDialog(BuildContext context, WidgetRef ref, String groupId, String currentName) {
+    final controller = TextEditingController(text: currentName);
+    final cs = Theme.of(context).colorScheme;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.edit_rounded, color: AppColors.primary, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Text('Переименовать группу',
+              style: AppTypography.headlineSmall.copyWith(fontWeight: FontWeight.w600)),
+        ]),
+        content: SizedBox(
+          width: 360,
+          child: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: InputDecoration(
+              labelText: 'Новое название',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Отмена', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.5))),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final newName = controller.text.trim();
+              if (newName.isEmpty || newName == currentName) {
+                Navigator.pop(ctx);
+                return;
+              }
+              try {
+                final repo = ref.read(authRepositoryProvider);
+                await repo.renameWarehouseGroup(groupId, newName);
+                if (ctx.mounted) Navigator.pop(ctx);
+                ref.invalidate(_warehouseGroupsProvider);
+                if (context.mounted) {
+                  showInfoSnackBar(context, ref, 'Группа переименована в "$newName"');
+                }
+              } catch (e) {
+                if (ctx.mounted) showErrorSnackBar(ctx, 'Ошибка: $e');
+              }
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Сохранить'),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ═══════════════ WAREHOUSE CARD ═══════════════
 
-class _WarehouseCard extends StatefulWidget {
+class _WarehouseCard extends ConsumerStatefulWidget {
   final Warehouse warehouse;
   final VoidCallback onTap;
 
   const _WarehouseCard({required this.warehouse, required this.onTap});
 
   @override
-  State<_WarehouseCard> createState() => _WarehouseCardState();
+  ConsumerState<_WarehouseCard> createState() => _WarehouseCardState();
 }
 
-class _WarehouseCardState extends State<_WarehouseCard> {
+class _WarehouseCardState extends ConsumerState<_WarehouseCard> {
   bool _isHovered = false;
 
   @override
@@ -1192,6 +1289,59 @@ class _WarehouseCardState extends State<_WarehouseCard> {
                     ],
                   ),
                 ),
+                // ⋮ Menu
+                PopupMenuButton<String>(
+                  icon: Icon(Icons.more_vert_rounded, size: 18,
+                      color: cs.onSurface.withValues(alpha: 0.35)),
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  style: IconButton.styleFrom(
+                    minimumSize: const Size(28, 28),
+                    padding: const EdgeInsets.all(4),
+                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  onSelected: (action) {
+                    switch (action) {
+                      case 'rename':
+                        _showRenameDialog(context);
+                        break;
+                      case 'move_group':
+                        _showMoveToGroupDialog(context);
+                        break;
+                      case 'remove_group':
+                        _removeFromGroup(context);
+                        break;
+                    }
+                  },
+                  itemBuilder: (_) => [
+                    const PopupMenuItem(
+                      value: 'rename',
+                      child: Row(children: [
+                        Icon(Icons.edit_rounded, size: 18),
+                        SizedBox(width: 10),
+                        Text('Переименовать'),
+                      ]),
+                    ),
+                    const PopupMenuItem(
+                      value: 'move_group',
+                      child: Row(children: [
+                        Icon(Icons.drive_file_move_rounded, size: 18),
+                        SizedBox(width: 10),
+                        Text('Переместить в группу'),
+                      ]),
+                    ),
+                    if (widget.warehouse.groupId != null && widget.warehouse.groupId!.isNotEmpty)
+                      const PopupMenuItem(
+                        value: 'remove_group',
+                        child: Row(children: [
+                          Icon(Icons.folder_off_rounded, size: 18),
+                          SizedBox(width: 10),
+                          Text('Убрать из группы'),
+                        ]),
+                      ),
+                  ],
+                ),
+                const SizedBox(width: 4),
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.all(6),
@@ -1215,6 +1365,181 @@ class _WarehouseCardState extends State<_WarehouseCard> {
         ),
       ),
     );
+  }
+
+  void _showRenameDialog(BuildContext context) {
+    final controller = TextEditingController(text: widget.warehouse.name);
+    final cs = Theme.of(context).colorScheme;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.edit_rounded, color: AppColors.primary, size: 20),
+          ),
+          const SizedBox(width: 12),
+          Text('Переименовать склад',
+              style: AppTypography.headlineSmall.copyWith(fontWeight: FontWeight.w600)),
+        ]),
+        content: SizedBox(
+          width: 360,
+          child: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: InputDecoration(
+              labelText: 'Новое название',
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Отмена', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.5))),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final newName = controller.text.trim();
+              if (newName.isEmpty || newName == widget.warehouse.name) {
+                Navigator.pop(ctx);
+                return;
+              }
+              try {
+                final repo = ref.read(authRepositoryProvider);
+                await repo.renameWarehouse(widget.warehouse.id, newName);
+                if (ctx.mounted) Navigator.pop(ctx);
+                ref.invalidate(_localWarehousesProvider);
+                if (context.mounted) {
+                  showInfoSnackBar(context, ref, 'Склад переименован в "$newName"');
+                }
+              } catch (e) {
+                if (ctx.mounted) showErrorSnackBar(ctx, 'Ошибка: $e');
+              }
+            },
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            child: const Text('Сохранить'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMoveToGroupDialog(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final groupsAsync = ref.read(_warehouseGroupsProvider);
+    final groups = groupsAsync.valueOrNull ?? [];
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        String? selectedGroupId = widget.warehouse.groupId;
+        return StatefulBuilder(
+          builder: (ctx, setDialogState) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.info.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(Icons.drive_file_move_rounded, color: AppColors.info, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text('Переместить в группу',
+                    style: AppTypography.headlineSmall.copyWith(fontWeight: FontWeight.w600)),
+              ),
+            ]),
+            content: SizedBox(
+              width: 360,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text('Склад: ${widget.warehouse.name}',
+                      style: AppTypography.bodyMedium.copyWith(
+                          color: cs.onSurface.withValues(alpha: 0.6))),
+                  const SizedBox(height: 16),
+                  if (groups.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Text('Нет доступных групп. Создайте группу.',
+                          style: TextStyle(color: cs.onSurface.withValues(alpha: 0.4))),
+                    )
+                  else
+                    ...groups.map((g) => RadioListTile<String?>(
+                      title: Text(g.name),
+                      value: g.id,
+                      groupValue: selectedGroupId,
+                      onChanged: (val) => setDialogState(() => selectedGroupId = val),
+                      activeColor: AppColors.primary,
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                    )),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: Text('Отмена', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.5))),
+              ),
+              FilledButton(
+                onPressed: groups.isEmpty ? null : () async {
+                  if (selectedGroupId == widget.warehouse.groupId) {
+                    Navigator.pop(ctx);
+                    return;
+                  }
+                  try {
+                    final repo = ref.read(authRepositoryProvider);
+                    final companyId = ref.read(authProvider).currentCompany?.id;
+                    if (companyId == null) return;
+                    await repo.updateWarehouseGroup(widget.warehouse.id, selectedGroupId, companyId);
+                    if (ctx.mounted) Navigator.pop(ctx);
+                    ref.invalidate(_localWarehousesProvider);
+                    ref.invalidate(_warehouseGroupsProvider);
+                    final groupName = groups.firstWhere((g) => g.id == selectedGroupId).name;
+                    if (context.mounted) {
+                      showInfoSnackBar(context, ref, 'Склад перемещён в "$groupName"');
+                    }
+                  } catch (e) {
+                    if (ctx.mounted) showErrorSnackBar(ctx, 'Ошибка: $e');
+                  }
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                child: const Text('Переместить'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _removeFromGroup(BuildContext context) async {
+    try {
+      final repo = ref.read(authRepositoryProvider);
+      await repo.removeWarehouseFromGroup(widget.warehouse.id);
+      ref.invalidate(_localWarehousesProvider);
+      ref.invalidate(_warehouseGroupsProvider);
+      if (context.mounted) {
+        showInfoSnackBar(context, ref, 'Склад "${widget.warehouse.name}" убран из группы');
+      }
+    } catch (e) {
+      if (context.mounted) showErrorSnackBar(context, 'Ошибка: $e');
+    }
   }
 }
 

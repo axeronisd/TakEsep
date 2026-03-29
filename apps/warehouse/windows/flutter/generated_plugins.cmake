@@ -7,6 +7,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   file_selector_windows
   local_auth_windows
   powersync_flutter_libs
+  printing
   sqlite3_flutter_libs
   url_launcher_windows
 )

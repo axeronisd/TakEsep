@@ -12,8 +12,12 @@ class SupabaseStorageHelper {
       final fileName = '${const Uuid().v4()}$ext';
       final storage = Supabase.instance.client.storage.from('images');
 
-      // Upload file to the bucket
-      await storage.upload(fileName, file);
+      // Upload file to the bucket with 1 year cache
+      await storage.upload(
+        fileName, 
+        file,
+        fileOptions: const FileOptions(cacheControl: '31536000', upsert: false),
+      );
 
       // Return public URL
       return storage.getPublicUrl(fileName);

@@ -196,6 +196,14 @@ final currentArrivalProvider =
   final companyId = ref.watch(currentCompanyProvider)?.id ?? '';
   final employeeId = ref.watch(authProvider).currentEmployee?.id;
   final warehouseId = ref.watch(selectedWarehouseIdProvider) ?? '';
+  // Clear arrival auxiliary state when warehouse changes
+  ref.listen<String?>(selectedWarehouseIdProvider, (prev, next) {
+    if (prev != next) {
+      ref.read(arrivalSupplierProvider.notifier).state = '';
+      ref.read(arrivalCommentProvider.notifier).state = '';
+      ref.read(arrivalPhotosProvider.notifier).state = [];
+    }
+  });
   return CurrentArrivalNotifier(repo, companyId, employeeId, warehouseId);
 });
 

@@ -106,6 +106,15 @@ class CurrentTransferNotifier extends StateNotifier<List<TransferItemDraft>> {
 final currentTransferProvider =
     StateNotifierProvider<CurrentTransferNotifier, List<TransferItemDraft>>(
         (ref) {
+  // Clear transfer draft when warehouse changes
+  ref.listen<String?>(selectedWarehouseIdProvider, (prev, next) {
+    if (prev != next) {
+      ref.notifier.clear();
+      ref.read(transferCommentProvider.notifier).state = '';
+      ref.read(transferPhotosProvider.notifier).state = [];
+      ref.read(transferDestinationProvider.notifier).state = null;
+    }
+  });
   return CurrentTransferNotifier();
 });
 
@@ -240,7 +249,7 @@ final transferDestinationsProvider = FutureProvider<List<Warehouse>>((ref) async
 
   // Get all sibling warehouses in the same group
   final rows = await powerSyncDb.getAll(
-    'SELECT * FROM warehouses WHERE group_id = ? AND id != ? AND is_active = 1 AND company_id = ? ORDER BY name',
+    'SELECT * FROM warehouses WHERE group_id = ? AND id != ? AND organization_id = ? ORDER BY name',
     [groupId, warehouseId, companyId],
   );
 

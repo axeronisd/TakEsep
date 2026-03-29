@@ -4,7 +4,7 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 import 'package:takesep_core/takesep_core.dart';
 import '../../providers/currency_provider.dart';
 import '../../providers/service_providers.dart';
-import 'dart:io' as java_io;
+import '../../widgets/cached_image_widget.dart';
 import '../../data/mock_data.dart';
 import 'widgets/edit_service_dialog.dart';
 
@@ -84,7 +84,7 @@ class ServicesScreen extends ConsumerWidget {
   }
 }
 
-class _ServiceCard extends StatelessWidget {
+class _ServiceCard extends ConsumerWidget {
   final Service service;
   final String currencySymbol;
   final VoidCallback onTap;
@@ -96,8 +96,9 @@ class _ServiceCard extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
+    final priceFmt = ref.watch(priceFormatterProvider);
 
     return Container(
       decoration: BoxDecoration(
@@ -132,9 +133,10 @@ class _ServiceCard extends StatelessWidget {
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: service.imageUrl != null && service.imageUrl!.isNotEmpty
-                      ? (service.imageUrl!.startsWith('http')
-                          ? Image.network(service.imageUrl!, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _fallbackIcon())
-                          : Image.file(java_io.File(service.imageUrl!), fit: BoxFit.cover, errorBuilder: (_, __, ___) => _fallbackIcon()))
+                      ? CachedImageWidget(
+                          imageUrl: service.imageUrl!,
+                          fit: BoxFit.cover,
+                        )
                       : _fallbackIcon(),
                 ),
                 const SizedBox(width: AppSpacing.md),
@@ -209,7 +211,7 @@ class _ServiceCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
-                      '$currencySymbol ${_fmtNum(service.price.toInt())}',
+                      priceFmt(service.price),
                       style: AppTypography.headlineSmall.copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w700,
@@ -233,7 +235,4 @@ class _ServiceCard extends StatelessWidget {
   }
 
   Widget _fallbackIcon() => const Icon(Icons.design_services_rounded, color: AppColors.secondary, size: 28);
-  
-  String _fmtNum(int n) => n.toString().replaceAllMapped(
-      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (m) => '${m[1]} ');
 }

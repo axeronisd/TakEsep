@@ -6,6 +6,7 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 import '../../../providers/currency_provider.dart';
 import '../../../providers/inventory_providers.dart';
 import '../../../providers/transfer_providers.dart';
+import '../../../utils/snackbar_helper.dart';
 
 /// Tab showing outgoing transfers sent from this warehouse.
 class TransferOutboxTab extends ConsumerWidget {
@@ -100,14 +101,7 @@ class TransferOutboxTab extends ConsumerWidget {
                 ref.invalidate(pendingTransferCountProvider);
                 ref.invalidate(transfersListProvider);
                 ref.invalidate(inventoryProvider);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Перемещение отменено, товары возвращены'),
-                    backgroundColor: AppColors.warning,
-                    behavior: SnackBarBehavior.floating,
-                    margin: EdgeInsets.only(bottom: 80, left: 16, right: 16),
-                  ),
-                );
+                showInfoSnackBar(context, ref, 'Перемещение отменено, товары возвращены', backgroundColor: AppColors.warning);
               }
             },
           ),

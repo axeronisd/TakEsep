@@ -9,8 +9,10 @@ import 'package:uuid/uuid.dart';
 import '../../data/powersync_db.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/currency_provider.dart';
+import '../../widgets/cached_image_widget.dart';
 import '../../providers/inventory_providers.dart';
 import '../../providers/dashboard_providers.dart';
+import '../../utils/snackbar_helper.dart';
 
 /// Reasons for writing off products.
 enum WriteOffReason {
@@ -105,16 +107,7 @@ class _WriteOffScreenState extends ConsumerState<WriteOffScreen> {
     // Validate: every item must have a comment OR at least one photo
     final invalid = _items.where((i) => !i.isValid).toList();
     if (invalid.isNotEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Укажите комментарий или фото для: ${invalid.map((i) => i.product.name).join(', ')}',
-          ),
-          backgroundColor: AppColors.warning,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 3),
-        ),
-      );
+      showErrorSnackBar(context, 'Укажите комментарий или фото для: ${invalid.map((i) => i.product.name).join(', ')}');
       return;
     }
 
@@ -196,13 +189,7 @@ class _WriteOffScreenState extends ConsumerState<WriteOffScreen> {
         final isMobile = MediaQuery.of(context).size.width < 600;
         if (isMobile) Navigator.of(context).pop();
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Списано ${_items.length} позиций'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showInfoSnackBar(context, ref, 'Списано ${_items.length} позиций');
       }
       setState(() => _items.clear());
     }
@@ -561,12 +548,13 @@ class _WriteOffScreenState extends ConsumerState<WriteOffScreen> {
               child: item.product.imageUrl != null &&
                       item.product.imageUrl!.isNotEmpty
                   ? (item.product.imageUrl!.startsWith('http')
-                      ? Image.network(item.product.imageUrl!,
+                      ? CachedImageWidget(
+                          imageUrl: item.product.imageUrl!,
+                          width: 40,
+                          height: 40,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Icon(
-                              Icons.inventory_2_outlined,
-                              size: 18,
-                              color: cs.onSurface.withValues(alpha: 0.3)))
+                          borderRadius: BorderRadius.circular(6),
+                        )
                       : Image.file(java_io.File(item.product.imageUrl!),
                           fit: BoxFit.cover,
                           errorBuilder: (_, __, ___) => Icon(
@@ -737,8 +725,8 @@ class _WriteOffScreenState extends ConsumerState<WriteOffScreen> {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(6),
-                          child: Image.asset(
-                            item.photoPaths[pi],
+                          child: Image.file(
+                            java_io.File(item.photoPaths[pi]),
                             width: 48,
                             height: 48,
                             fit: BoxFit.cover,
@@ -838,15 +826,14 @@ class _ProductTile extends StatelessWidget {
                               borderRadius: const BorderRadius.vertical(
                                   top: Radius.circular(AppSpacing.radiusMd)),
                               child: product.imageUrl!.startsWith('http')
-                                  ? Image.network(product.imageUrl!,
-                                      fit: BoxFit.cover,
+                                  ? CachedImageWidget(
+                                      imageUrl: product.imageUrl!,
                                       width: double.infinity,
                                       height: double.infinity,
-                                      errorBuilder: (_, __, ___) => Icon(
-                                          Icons.inventory_2_outlined,
-                                          color: cs.onSurface
-                                              .withValues(alpha: 0.2),
-                                          size: 32))
+                                      fit: BoxFit.cover,
+                                      borderRadius: BorderRadius.circular(
+                                          AppSpacing.radiusMd),
+                                    )
                                   : Image.file(java_io.File(product.imageUrl!),
                                       fit: BoxFit.cover,
                                       width: double.infinity,

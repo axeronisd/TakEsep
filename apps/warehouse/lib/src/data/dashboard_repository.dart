@@ -1001,4 +1001,71 @@ class DashboardRepository {
       return [];
     }
   }
+
+  /// Get goods vs services breakdown for the analytics card
+  Future<Map<String, dynamic>> getGoodsServicesBreakdown(
+      String companyId, DateTime startDate, DateTime endDate,
+      {String? warehouseId}) async {
+    try {
+      final whFilter = warehouseId != null ? ' AND s.warehouse_id = ?' : '';
+      final whParam = warehouseId != null ? [warehouseId] : <String>[];
+
+      // Products (item_type = 'product' or NULL) — include cost for gross profit
+      final goodsResult = await _db.getAll(
+        '''SELECT si.product_name, SUM(si.quantity) as qty,
+                  SUM(si.quantity * si.selling_price) as total,
+                  SUM(si.quantity * COALESCE(si.cost_price, 0)) as total_cost,
+                  MAX(s.created_at) as last_sold_at
+           FROM sale_items si
+           INNER JOIN sales s ON si.sale_id = s.id
+           WHERE s.company_id = ? AND s.status = 'completed'
+             AND s.created_at >= ? AND s.created_at <= ?
+             AND (si.item_type = 'product' OR si.item_type IS NULL)$whFilter
+           GROUP BY si.product_name
+           ORDER BY total DESC''',
+        [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParam],
+      );
+
+      // Services (item_type = 'service') — include executor name and date
+      final servicesResult = await _db.getAll(
+        '''SELECT si.product_name, SUM(si.quantity) as qty,
+                  SUM(si.quantity * si.selling_price) as total,
+                  si.executor_name,
+                  MAX(s.created_at) as last_sold_at
+           FROM sale_items si
+           INNER JOIN sales s ON si.sale_id = s.id
+           WHERE s.company_id = ? AND s.status = 'completed'
+             AND s.created_at >= ? AND s.created_at <= ?
+             AND si.item_type = 'service'$whFilter
+           GROUP BY si.product_name, si.executor_name
+           ORDER BY total DESC''',
+        [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParam],
+      );
+
+      final goodsTotal = goodsResult.fold<double>(
+          0.0, (sum, row) => sum + ((row['total'] as num?)?.toDouble() ?? 0.0));
+      final goodsCost = goodsResult.fold<double>(
+          0.0, (sum, row) => sum + ((row['total_cost'] as num?)?.toDouble() ?? 0.0));
+      final servicesTotal = servicesResult.fold<double>(
+          0.0, (sum, row) => sum + ((row['total'] as num?)?.toDouble() ?? 0.0));
+
+      // Import GoodsServicesBreakdown from dashboard_providers
+      return {
+        'goodsTotal': goodsTotal,
+        'goodsCost': goodsCost,
+        'goodsProfit': goodsTotal - goodsCost,
+        'servicesTotal': servicesTotal,
+        'goodsList': goodsResult,
+        'servicesList': servicesResult,
+      };
+    } catch (e) {
+      print('DashboardRepository getGoodsServicesBreakdown error: $e');
+      return {
+        'goodsTotal': 0.0,
+        'servicesTotal': 0.0,
+        'goodsList': <Map<String, dynamic>>[],
+        'servicesList': <Map<String, dynamic>>[],
+      };
+    }
+  }
 }

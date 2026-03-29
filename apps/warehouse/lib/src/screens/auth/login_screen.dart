@@ -5,6 +5,7 @@ import 'package:local_auth/local_auth.dart';
 import 'package:takesep_design_system/takesep_design_system.dart';
 
 import '../../providers/auth_providers.dart';
+import '../../utils/snackbar_helper.dart';
 
 /// Login Screen with two modes: Owner (license key) and Employee (login + pin)
 class LoginScreen extends ConsumerStatefulWidget {
@@ -160,9 +161,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Биометрия недоступна')),
-        );
+        showErrorSnackBar(context, 'Биометрия недоступна');
       }
     }
   }

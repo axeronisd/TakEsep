@@ -5,8 +5,9 @@ import '../../providers/dashboard_providers.dart';
 import '../../providers/date_filter_provider.dart';
 import '../../providers/currency_provider.dart';
 import '../../providers/employee_providers.dart';
-import '../../data/mock_data.dart';
+
 import '../../utils/export_helper.dart';
+import '../../utils/snackbar_helper.dart';
 
 /// Reports (Отчёты) screen — full operation history with detail expansion.
 class ReportsScreen extends ConsumerStatefulWidget {
@@ -77,9 +78,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     }).toList();
 
     if (filtered.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Нет данных для экспорта')),
-      );
+      showErrorSnackBar(context, 'Нет данных для экспорта');
       return;
     }
 
@@ -155,7 +154,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isDesktop = MediaQuery.of(context).size.width >= 900;
-    final cur = ref.watch(currencyProvider).symbol;
+    final fmt = ref.watch(priceFormatterProvider);
     final opsAsync = ref.watch(recentOpsProvider);
     final preset = ref.watch(datePresetProvider);
     final summaryAsync = ref.watch(operationsSummaryProvider);
@@ -222,7 +221,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                         icon: Icons.shopping_cart_rounded,
                         label: 'Продажи',
                         value: '${summary['salesCount']}',
-                        subtitle: formatMoney(summary['salesTotal'] as double? ?? 0, cur),
+                        subtitle: fmt(summary['salesTotal'] as double? ?? 0),
                         color: const Color(0xFF6C5CE7),
                         cs: cs,
                       ),
@@ -230,7 +229,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                         icon: Icons.download_rounded,
                         label: 'Приходы',
                         value: '${summary['arrivalsCount']}',
-                        subtitle: formatMoney(summary['arrivalsTotal'] as double? ?? 0, cur),
+                        subtitle: fmt(summary['arrivalsTotal'] as double? ?? 0),
                         color: const Color(0xFF00B894),
                         cs: cs,
                       ),
@@ -254,7 +253,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                           icon: Icons.delete_sweep_rounded,
                           label: 'Списания',
                           value: '${summary['writeOffsCount']}',
-                          subtitle: formatMoney(summary['writeOffsTotal'] as double? ?? 0, cur),
+                          subtitle: fmt(summary['writeOffsTotal'] as double? ?? 0),
                           color: const Color(0xFFD63031),
                           cs: cs,
                         ),
@@ -263,7 +262,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                           icon: Icons.people_rounded,
                           label: 'Расх. сотр.',
                           value: '${summary['expensesCount']}',
-                          subtitle: formatMoney(summary['expensesTotal'] as double? ?? 0, cur),
+                          subtitle: fmt(summary['expensesTotal'] as double? ?? 0),
                           color: const Color(0xFF6C5CE7),
                           cs: cs,
                         ),
@@ -418,7 +417,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                     if (_search.isNotEmpty) {
                       final title = (op['title'] as String).toLowerCase();
                       final employee = (op['employeeName'] as String).toLowerCase();
-                      final total = formatMoney(op['total'] as double, cur);
+                      final total = fmt(op['total'] as double);
                       if (!title.contains(_search) &&
                           !employee.contains(_search) &&
                           !total.contains(_search)) return false;
@@ -535,7 +534,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                                 fontSize: 11)),
                                         if (isSale && op['receivedAmount'] != null && (op['receivedAmount'] as double) < (op['total'] as double))
                                           Text(
-                                            'Долг: ${formatMoney((op['total'] as double) - (op['receivedAmount'] as double), cur)}',
+                                            'Долг: ${fmt((op['total'] as double) - (op['receivedAmount'] as double))}',
                                             style: const TextStyle(color: AppColors.error, fontSize: 11, fontWeight: FontWeight.w600),
                                           ),
                                       ])),
@@ -545,8 +544,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                       children: [
                                     if (opType != 'audit')
                                       Text(
-                                          formatMoney(
-                                              op['total'] as double, cur),
+                                          fmt(
+                                              op['total'] as double),
                                           style: TextStyle(
                                               color: (op['status'] == 'deleted') ? AppColors.error : accentColor,
                                               fontSize: 14,
@@ -584,7 +583,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                     _Line('Дата', _formatDateTimeFull(dateTime), cs),
 
                                     if (opType == 'expense') ...[
-                                      _Line('Сумма', formatMoney(op['total'] as double, cur), cs,
+                                      _Line('Сумма', fmt(op['total'] as double), cs,
                                           valueColor: op['status'] == 'deleted' ? AppColors.error : null),
                                       if (op['createdBy'] != null)
                                         _Line('Добавил(а)', op['createdBy'] as String, cs),
@@ -598,14 +597,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                         _Line('Клиент', op['clientName'] as String, cs),
                                       _Line('Оплата', _payLabel(op['paymentMethod'] as String), cs),
                                       if ((op['discountAmount'] as double) > 0)
-                                        _Line('Скидка', formatMoney(op['discountAmount'] as double, cur), cs),
+                                        _Line('Скидка', fmt(op['discountAmount'] as double), cs),
                                       if (op['receivedAmount'] != null && (op['receivedAmount'] as double) < (op['total'] as double)) ...[
-                                        _Line('Оплачено', formatMoney(op['receivedAmount'] as double, cur), cs),
-                                        _Line('Долг', formatMoney((op['total'] as double) - (op['receivedAmount'] as double), cur), cs, valueColor: AppColors.error),
+                                        _Line('Оплачено', fmt(op['receivedAmount'] as double), cs),
+                                        _Line('Долг', fmt((op['total'] as double) - (op['receivedAmount'] as double)), cs, valueColor: AppColors.error),
                                       ],
                                       if (_detailData!['net_profit'] != null)
                                         _Line('Чистая прибыль',
-                                            formatMoney((_detailData!['net_profit'] as num).toDouble(), cur), cs),
+                                            fmt((_detailData!['net_profit'] as num).toDouble()), cs),
                                     ],
                                     if (opType == 'income' && op['supplier'] != null && (op['supplier'] as String).isNotEmpty)
                                       _Line('Поставщик', op['supplier'] as String, cs),
@@ -630,11 +629,11 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                       _Line('Недостача', '${_detailData!['shortage_count']}', cs, valueColor: AppColors.error),
                                       if ((_detailData!['total_shortage_value'] as num?)?.toDouble() != null &&
                                           (_detailData!['total_shortage_value'] as num).toDouble() > 0)
-                                        _Line('Потери', formatMoney((_detailData!['total_shortage_value'] as num).toDouble(), cur), cs, valueColor: AppColors.error),
+                                        _Line('Потери', fmt((_detailData!['total_shortage_value'] as num).toDouble()), cs, valueColor: AppColors.error),
                                     ],
                                     if (opType == 'write_off') ...[
                                       _Line('Позиций', '${op['itemsCount']}', cs),
-                                      _Line('Убыток', formatMoney(op['total'] as double, cur), cs, valueColor: AppColors.error),
+                                      _Line('Убыток', fmt(op['total'] as double), cs, valueColor: AppColors.error),
                                     ],
                                     if (op['notes'] != null && (op['notes'] as String).isNotEmpty) ...[
                                       const SizedBox(height: 4),
@@ -661,9 +660,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                       if (opType == 'audit')
                                         _buildAuditItemsTable(cs, _detailData!)
                                       else if (opType == 'write_off')
-                                        _buildWriteOffItemsTable(cs, _detailData!, cur)
+                                        _buildWriteOffItemsTable(cs, _detailData!, fmt)
                                       else if (isTransfer)
-                                        _buildTransferItemsTable(cs, _detailData!, cur)
+                                        _buildTransferItemsTable(cs, _detailData!, fmt)
                                       else
                                       Container(
                                         decoration: BoxDecoration(
@@ -725,7 +724,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                           for (final item
                                               in (_detailData!['items']
                                                   as List))
-                                            _buildItemRow(item, isSale, cs, cur),
+                                            _buildItemRow(item, isSale, cs, fmt),
                                           // Total row
                                           Container(
                                             padding: const EdgeInsets.symmetric(
@@ -746,8 +745,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                                                           fontWeight:
                                                               FontWeight.w700))),
                                               Text(
-                                                  formatMoney(
-                                                      op['total'] as double, cur),
+                                                  fmt(
+                                                      op['total'] as double),
                                                   style: TextStyle(
                                                       color: accentColor,
                                                       fontSize: 13,
@@ -797,7 +796,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   }
 
   Widget _buildItemRow(
-      Map<String, dynamic> item, bool isSale, ColorScheme cs, String cur) {
+      Map<String, dynamic> item, bool isSale, ColorScheme cs, String Function(double) fmt) {
     final name = (item['product_name'] as String?) ?? 'Без названия';
     final qty = (item['quantity'] as num?)?.toInt() ?? 0;
     final price = isSale
@@ -824,14 +823,14 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                 style: TextStyle(color: cs.onSurface, fontSize: 12))),
         SizedBox(
             width: 70,
-            child: Text(formatMoney(price, cur),
+            child: Text(fmt(price),
                 textAlign: TextAlign.right,
                 style: TextStyle(
                     color: cs.onSurface.withValues(alpha: 0.6),
                     fontSize: 11))),
         SizedBox(
             width: 80,
-            child: Text(formatMoney(total, cur),
+            child: Text(fmt(total),
                 textAlign: TextAlign.right,
                 style: TextStyle(
                     color: cs.onSurface,
@@ -842,7 +841,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
   }
 
   // ═══ Transfer Items Table ═══
-  Widget _buildTransferItemsTable(ColorScheme cs, Map<String, dynamic> detail, String cur) {
+  Widget _buildTransferItemsTable(ColorScheme cs, Map<String, dynamic> detail, String Function(double) fmt) {
     final items = detail['items'] as List;
     if (items.isEmpty) {
       return Center(
@@ -933,7 +932,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
               SizedBox(
                   width: 70,
                   child: Text(
-                      formatMoney((item['cost_price'] as num?)?.toDouble() ?? 0, cur),
+                      fmt((item['cost_price'] as num?)?.toDouble() ?? 0),
                       textAlign: TextAlign.right,
                       style: TextStyle(
                           color: cs.onSurface.withValues(alpha: 0.6),
@@ -1055,7 +1054,7 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
     );
   }
 
-  Widget _buildWriteOffItemsTable(ColorScheme cs, Map<String, dynamic> detail, String cur) {
+  Widget _buildWriteOffItemsTable(ColorScheme cs, Map<String, dynamic> detail, String Function(double) fmt) {
     final items = detail['items'] as List;
     String reasonLabel(String? reason) => switch (reason) {
       'damage' => 'Брак',
@@ -1148,9 +1147,9 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   SizedBox(
                       width: 70,
                       child: Text(
-                          formatMoney(
+                          fmt(
                               ((item['cost_price'] as num?)?.toDouble() ?? 0) *
-                                  ((item['quantity'] as num?)?.toInt() ?? 0), cur),
+                                  ((item['quantity'] as num?)?.toInt() ?? 0)),
                           textAlign: TextAlign.right,
                           style: TextStyle(
                               color: AppColors.error,
@@ -1184,8 +1183,8 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                         fontSize: 12,
                         fontWeight: FontWeight.w700))),
             Text(
-                formatMoney(
-                    (detail['total_cost'] as num?)?.toDouble() ?? 0, cur),
+                fmt(
+                    (detail['total_cost'] as num?)?.toDouble() ?? 0),
                 style: TextStyle(
                     color: AppColors.error,
                     fontSize: 13,

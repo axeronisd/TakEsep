@@ -14,6 +14,7 @@ class ReceiptConfig {
   bool showPaymentMethod;
   int paperWidth; // 58 or 80 mm
   String footerText;
+  int printCopies;
 
   ReceiptConfig({
     this.showCompanyName = true,
@@ -24,6 +25,7 @@ class ReceiptConfig {
     this.showPaymentMethod = true,
     this.paperWidth = 80,
     this.footerText = 'Спасибо за покупку!',
+    this.printCopies = 1,
   });
 
   Map<String, dynamic> toJson() => {
@@ -35,6 +37,7 @@ class ReceiptConfig {
         'showPaymentMethod': showPaymentMethod,
         'paperWidth': paperWidth,
         'footerText': footerText,
+        'printCopies': printCopies,
       };
 
   factory ReceiptConfig.fromJson(Map<String, dynamic> json) {
@@ -47,6 +50,7 @@ class ReceiptConfig {
       showPaymentMethod: json['showPaymentMethod'] ?? true,
       paperWidth: json['paperWidth'] ?? 80,
       footerText: json['footerText'] ?? 'Спасибо за покупку!',
+      printCopies: json['printCopies'] ?? 1,
     );
   }
 
@@ -59,6 +63,7 @@ class ReceiptConfig {
     bool? showPaymentMethod,
     int? paperWidth,
     String? footerText,
+    int? printCopies,
   }) {
     return ReceiptConfig(
       showCompanyName: showCompanyName ?? this.showCompanyName,
@@ -69,6 +74,7 @@ class ReceiptConfig {
       showPaymentMethod: showPaymentMethod ?? this.showPaymentMethod,
       paperWidth: paperWidth ?? this.paperWidth,
       footerText: footerText ?? this.footerText,
+      printCopies: printCopies ?? this.printCopies,
     );
   }
 }

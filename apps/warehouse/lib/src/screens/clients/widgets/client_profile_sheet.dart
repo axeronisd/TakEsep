@@ -4,6 +4,7 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 import 'package:takesep_core/takesep_core.dart';
 import 'package:intl/intl.dart';
 import '../../../providers/client_providers.dart';
+import '../../../utils/snackbar_helper.dart';
 import 'edit_client_sheet.dart';
 
 class ClientProfileSheet extends ConsumerStatefulWidget {
@@ -150,7 +151,7 @@ class _ClientInfoTab extends ConsumerWidget {
                 await repo.payDebt(clientId: client.id, amount: val);
                 ref.invalidate(clientListProvider);
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Долг успешно уменьшен')));
+                showInfoSnackBar(context, ref, 'Долг успешно уменьшен');
               }
             },
             child: const Text('Внести'),

@@ -145,17 +145,34 @@ class ArrivalRepository {
     }
   }
 
-  /// Check if barcode is unique within the company (across all warehouses)
-  Future<bool> isBarcodeUnique(String barcode, String companyId) async {
+  /// Check if barcode is unique within the specific warehouse
+  Future<bool> isBarcodeUnique(String barcode, String companyId, {String? warehouseId}) async {
     try {
+      final whFilter = warehouseId != null ? ' AND warehouse_id = ?' : '';
+      final whParam = warehouseId != null ? [warehouseId] : <String>[];
       final result = await _db.get(
-        'SELECT COUNT(*) as cnt FROM products WHERE barcode = ? AND company_id = ?',
-        [barcode, companyId],
+        'SELECT COUNT(*) as cnt FROM products WHERE barcode = ? AND company_id = ?$whFilter',
+        [barcode, companyId, ...whParam],
       );
       return (result['cnt'] as int) == 0;
     } catch (e) {
       print('ArrivalRepository isBarcodeUnique error: $e');
       return true; // Allow creation if check fails
+    }
+  }
+
+  /// Find an existing product by barcode in ANY warehouse of the company.
+  /// Used to copy product data when creating on a new warehouse.
+  Future<Product?> findProductByBarcode(String barcode, String companyId) async {
+    try {
+      final result = await _db.getOptional(
+        'SELECT * FROM products WHERE barcode = ? AND company_id = ? LIMIT 1',
+        [barcode, companyId],
+      );
+      if (result == null) return null;
+      return Product.fromJson(result);
+    } catch (e) {
+      return null;
     }
   }
 

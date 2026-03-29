@@ -1,4 +1,3 @@
-import 'dart:io' as java_io;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takesep_design_system/takesep_design_system.dart';
@@ -8,6 +7,8 @@ import '../../providers/inventory_providers.dart';
 import '../../providers/currency_provider.dart';
 import '../../providers/service_providers.dart';
 import '../../providers/employee_providers.dart';
+import '../../widgets/cached_image_widget.dart';
+import '../../utils/snackbar_helper.dart';
 import 'widgets/sales_cart_pane.dart';
 
 /// POS Sales screen — cash register interface with cart and discounts.
@@ -55,17 +56,11 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
       ref.read(salesSearchQueryProvider.notifier).state = '';
       _searchFocusNode.requestFocus();
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(added
-              ? '"${product.name}" добавлен в чек'
-              : '"${product.name}" — нет в наличии'),
-          backgroundColor: added ? AppColors.success : AppColors.error,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
-          duration: const Duration(seconds: 1),
-        ),
-      );
+      if (added) {
+        showInfoSnackBar(context, ref, '"${product.name}" добавлен в чек', margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16), duration: const Duration(seconds: 1));
+      } else {
+        showErrorSnackBar(context, '"${product.name}" — нет в наличии', margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16), duration: const Duration(seconds: 1));
+      }
       return;
     }
 
@@ -74,15 +69,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
     ref.read(salesSearchQueryProvider.notifier).state = '';
     _searchFocusNode.requestFocus();
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Позиция с этим штрих-кодом не существует'),
-        backgroundColor: AppColors.error,
-        behavior: SnackBarBehavior.floating,
-        margin: EdgeInsets.only(bottom: 80, left: 16, right: 16),
-        duration: Duration(seconds: 2),
-      ),
-    );
+    showErrorSnackBar(context, 'Позиция с этим штрих-кодом не существует', margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16), duration: const Duration(seconds: 2));
   }
 
   @override
@@ -428,15 +415,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                           onTap: () {
                             final added = ref.read(cartProvider.notifier).addProduct(p);
                             if (!added) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(
-                                  content: Text('"${p.name}" — нет в наличии'),
-                                  backgroundColor: AppColors.error,
-                                  behavior: SnackBarBehavior.floating,
-                                  margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
-                                  duration: const Duration(seconds: 1),
-                                ),
-                              );
+                              showErrorSnackBar(context, '"${p.name}" — нет в наличии', margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16), duration: const Duration(seconds: 1));
                             }
                           },
                         );
@@ -503,13 +482,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
     if (employees.isEmpty) {
       // Add without executor if none exist
       ref.read(cartProvider.notifier).addService(service, null, null);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('"${service.name}" добавлена в чек'),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      showInfoSnackBar(context, ref, '"${service.name}" добавлена в чек', margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16));
       return;
     }
 
@@ -554,14 +527,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
     ref.read(cartProvider.notifier).addService(service, executor?.id, executor?.name);
     
     if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Услуга "${service.name}" добавлена'),
-          backgroundColor: AppColors.success,
-          behavior: SnackBarBehavior.floating,
-          duration: const Duration(seconds: 1),
-        ),
-      );
+      showInfoSnackBar(context, ref, 'Услуга "${service.name}" добавлена', margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16), duration: const Duration(seconds: 1));
     }
   }
 
@@ -635,28 +601,12 @@ class _ProductTile extends StatelessWidget {
                       top: Radius.circular(AppSpacing.radiusMd)),
                 ),
                 child: product.imageUrl != null && product.imageUrl!.isNotEmpty
-                    ? ClipRRect(
+                    ? CachedImageWidget(
+                        imageUrl: product.imageUrl,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
                         borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(AppSpacing.radiusMd)),
-                        child: product.imageUrl!.startsWith('http')
-                            ? Image.network(
-                                product.imageUrl!,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                errorBuilder: (_, __, ___) => Icon(
-                                    Icons.inventory_2_outlined,
-                                    color: cs.onSurface.withValues(alpha: 0.2),
-                                    size: 32),
-                              )
-                            : Image.file(
-                                java_io.File(product.imageUrl!),
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                errorBuilder: (_, __, ___) => Icon(
-                                    Icons.inventory_2_outlined,
-                                    color: cs.onSurface.withValues(alpha: 0.2),
-                                    size: 32),
-                              ),
                       )
                     : Icon(Icons.inventory_2_outlined,
                         color: cs.onSurface.withValues(alpha: 0.2), size: 32),
@@ -748,22 +698,12 @@ class _ServiceTile extends StatelessWidget {
                       top: Radius.circular(AppSpacing.radiusMd)),
                 ),
                 child: service.imageUrl != null && service.imageUrl!.isNotEmpty
-                    ? ClipRRect(
+                    ? CachedImageWidget(
+                        imageUrl: service.imageUrl,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
                         borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(AppSpacing.radiusMd)),
-                        child: service.imageUrl!.startsWith('http')
-                            ? Image.network(
-                                service.imageUrl!,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                errorBuilder: (_, __, ___) => const Icon(Icons.design_services_rounded, color: AppColors.secondary, size: 32),
-                              )
-                            : Image.file(
-                                java_io.File(service.imageUrl!),
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                errorBuilder: (_, __, ___) => const Icon(Icons.design_services_rounded, color: AppColors.secondary, size: 32),
-                              ),
                       )
                     : const Icon(Icons.design_services_rounded, color: AppColors.secondary, size: 32),
               ),

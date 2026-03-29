@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:takesep_design_system/takesep_design_system.dart';
 import '../providers/inventory_providers.dart';
 import '../providers/sales_providers.dart';
 import '../providers/arrival_providers.dart';
 import '../screens/arrival/widgets/quick_create_product_dialog.dart';
+import '../utils/snackbar_helper.dart';
 
 /// Global barcode scanner listener.
 /// Wraps the app shell and intercepts rapid keyboard input
@@ -114,25 +114,11 @@ class _GlobalBarcodeScannerState extends ConsumerState<GlobalBarcodeScanner> {
       // Navigate to product — set search query to highlight it
       ref.read(inventorySearchQueryProvider.notifier).state = barcode;
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Найден: "${product.name}"'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 2),
-          ),
-        );
+        showInfoSnackBar(context, ref, 'Найден: "${product.name}"');
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Товар с этим штрихкодом не найден'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            duration: Duration(seconds: 2),
-          ),
-        );
+        showErrorSnackBar(context, 'Товар с этим штрихкодом не найден');
       }
     }
   }
@@ -146,25 +132,11 @@ class _GlobalBarcodeScannerState extends ConsumerState<GlobalBarcodeScanner> {
     if (product != null) {
       ref.read(cartProvider.notifier).addProduct(product);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('"${product.name}" добавлен в чек'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 1),
-          ),
-        );
+        showInfoSnackBar(context, ref, '"${product.name}" добавлен в чек', duration: const Duration(seconds: 1));
       }
     } else {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Позиция с этим штрих-кодом не существует'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            duration: Duration(seconds: 2),
-          ),
-        );
+        showErrorSnackBar(context, 'Позиция с этим штрих-кодом не существует');
       }
     }
   }
@@ -178,14 +150,7 @@ class _GlobalBarcodeScannerState extends ConsumerState<GlobalBarcodeScanner> {
     if (product != null) {
       ref.read(currentArrivalProvider.notifier).addItem(product);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('"${product.name}" добавлен в накладную'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            duration: const Duration(seconds: 1),
-          ),
-        );
+        showInfoSnackBar(context, ref, '"${product.name}" добавлен в накладную', duration: const Duration(seconds: 1));
       }
     } else {
       // Offer to create new product

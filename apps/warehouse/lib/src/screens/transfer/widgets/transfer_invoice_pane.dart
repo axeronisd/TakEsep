@@ -4,6 +4,7 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 
 import '../../../providers/currency_provider.dart';
 import '../../../providers/transfer_providers.dart';
+import '../../../utils/snackbar_helper.dart';
 
 /// Invoice pane for building a transfer (right side on desktop, bottom sheet on mobile).
 class TransferInvoicePane extends ConsumerWidget {
@@ -386,14 +387,7 @@ class TransferInvoicePane extends ConsumerWidget {
                                 if (Navigator.of(context).canPop()) {
                                   Navigator.of(context).pop();
                                 }
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Перемещение отправлено!'),
-                                    backgroundColor: AppColors.success,
-                                    behavior: SnackBarBehavior.floating,
-                                    margin: EdgeInsets.only(bottom: 80, left: 16, right: 16),
-                                  ),
-                                );
+                                showInfoSnackBar(context, ref, 'Перемещение отправлено!');
                               }
                             },
                       icon: const Icon(Icons.send_rounded, size: 20),

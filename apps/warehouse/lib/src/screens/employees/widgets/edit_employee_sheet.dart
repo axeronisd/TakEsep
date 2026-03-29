@@ -8,6 +8,7 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 
 import '../../../providers/auth_providers.dart';
 import '../../../providers/employee_providers.dart';
+import '../../../utils/snackbar_helper.dart';
 
 /// BottomSheet for creating or editing an Employee.
 class EditEmployeeSheet extends ConsumerStatefulWidget {
@@ -198,9 +199,7 @@ class _EditEmployeeSheetState extends ConsumerState<EditEmployeeSheet> {
                       IconButton(
                         onPressed: () {
                           Clipboard.setData(ClipboardData(text: _pinController.text));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Пароль скопирован'), duration: Duration(seconds: 1)),
-                          );
+                          showInfoSnackBar(context, ref, 'Пароль скопирован', duration: const Duration(seconds: 1));
                         },
                         icon: const Icon(Icons.copy_rounded, size: 18),
                         tooltip: 'Копировать',
@@ -441,9 +440,7 @@ class _EditEmployeeSheetState extends ConsumerState<EditEmployeeSheet> {
     final name = _nameController.text.trim();
     final pinCode = _pinController.text.trim();
     if (name.isEmpty || pinCode.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Заполните имя и пин-код')),
-      );
+      showErrorSnackBar(context, 'Заполните имя и пин-код');
       return;
     }
 
@@ -458,9 +455,7 @@ class _EditEmployeeSheetState extends ConsumerState<EditEmployeeSheet> {
     );
     if (isTaken) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Этот пин-код уже используется другим сотрудником')),
-        );
+        showErrorSnackBar(context, 'Этот пин-код уже используется другим сотрудником');
         setState(() => _isSaving = false);
       }
       return;

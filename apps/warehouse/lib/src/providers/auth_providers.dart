@@ -437,7 +437,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     if (companyId == null) return;
 
     // Query local PowerSync DB so newly created warehouses appear immediately
-    String query = 'SELECT * FROM warehouses WHERE company_id = ? AND is_active = 1';
+    String query = 'SELECT * FROM warehouses WHERE organization_id = ?';
     final params = <dynamic>[companyId];
 
     final allowed = state.currentEmployee?.allowedWarehouses;

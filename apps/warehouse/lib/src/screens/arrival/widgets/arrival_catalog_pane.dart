@@ -6,6 +6,7 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 import '../../../providers/arrival_providers.dart';
 import '../../../providers/currency_provider.dart';
 import '../../../providers/sales_providers.dart' show SearchType;
+import '../../../widgets/cached_image_widget.dart';
 import 'quick_create_product_dialog.dart';
 
 class ArrivalCatalogPane extends ConsumerStatefulWidget {
@@ -394,11 +395,10 @@ class _ArrivalProductTile extends StatelessWidget {
                         borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(AppSpacing.radiusMd)),
                         child: product.imageUrl!.startsWith('http')
-                            ? Image.network(product.imageUrl!,
-                                fit: BoxFit.cover, width: double.infinity,
-                                errorBuilder: (_, __, ___) => Icon(
-                                    Icons.inventory_2_outlined,
-                                    color: cs.onSurface.withValues(alpha: 0.2), size: 32))
+                            ? CachedImageWidget(
+                                imageUrl: product.imageUrl!,
+                                fit: BoxFit.cover,
+                              )
                             : Image.file(java_io.File(product.imageUrl!),
                                 fit: BoxFit.cover, width: double.infinity,
                                 errorBuilder: (_, __, ___) => Icon(

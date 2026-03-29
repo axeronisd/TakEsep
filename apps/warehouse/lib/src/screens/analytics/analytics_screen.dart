@@ -7,7 +7,8 @@ import 'package:takesep_core/takesep_core.dart';
 import '../../providers/dashboard_providers.dart';
 import '../../providers/date_filter_provider.dart';
 import '../../providers/currency_provider.dart';
-import '../../data/mock_data.dart';
+import '../../providers/owner_settings_provider.dart';
+
 
 /// Analytics screen — deep analysis with beautiful charts and detailed metrics.
 class AnalyticsScreen extends ConsumerWidget {
@@ -16,6 +17,7 @@ class AnalyticsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cur = ref.watch(currencyProvider).symbol;
+    final fmt = ref.watch(priceFormatterProvider);
     final isDesktop = MediaQuery.of(context).size.width >= 900;
     final cs = Theme.of(context).colorScheme;
     final range = ref.watch(dateRangeProvider);
@@ -60,6 +62,14 @@ class AnalyticsScreen extends ConsumerWidget {
 
               // ─── Expenses Breakdown ───
               _ExpensesBreakdown(cur: cur),
+              const SizedBox(height: AppSpacing.xl),
+
+              // ─── Goods Card (expandable) ───
+              _GoodsCard(cur: cur),
+              const SizedBox(height: AppSpacing.lg),
+
+              // ─── Services Card (expandable) ───
+              _ServicesCard(cur: cur),
               const SizedBox(height: AppSpacing.xl),
 
               // ─── Top Products + Top Clients ───
@@ -113,6 +123,7 @@ class _KpiSection extends ConsumerWidget {
     final cs = Theme.of(context).colorScheme;
     final kpisAsync = ref.watch(dashboardKpisProvider);
     final isDesktop = MediaQuery.of(context).size.width >= 900;
+    final fmt = ref.watch(priceFormatterProvider);
 
     return kpisAsync.when(
       data: (kpis) {
@@ -139,7 +150,7 @@ class _KpiSection extends ConsumerWidget {
           _KpiCard(
             icon: Icons.account_balance_wallet_rounded,
             label: 'Общая выручка',
-            value: formatMoney(revenue, cur),
+            value: fmt(revenue),
             change: null,
             color: AppColors.primary,
             cs: cs,
@@ -147,7 +158,7 @@ class _KpiSection extends ConsumerWidget {
           _KpiCard(
             icon: isLoss ? Icons.trending_down_rounded : Icons.trending_up_rounded,
             label: isLoss ? 'Убыток' : 'Чистая прибыль',
-            value: formatMoney(profit.abs(), cur),
+            value: fmt(profit.abs()),
             change: null,
             color: isLoss ? AppColors.error : AppColors.success,
             cs: cs,
@@ -167,7 +178,7 @@ class _KpiSection extends ConsumerWidget {
           _KpiCard(
             icon: Icons.receipt_long_rounded,
             label: 'Средний чек',
-            value: formatMoney(avgCheck, cur),
+            value: fmt(avgCheck),
             change: '$salesCount продаж',
             color: AppColors.info,
             cs: cs,
@@ -175,7 +186,7 @@ class _KpiSection extends ConsumerWidget {
           _KpiCard(
             icon: Icons.shopping_bag_rounded,
             label: 'Прибыль / продажа',
-            value: formatMoney(avgProfit, cur),
+            value: fmt(avgProfit),
             change: 'Средняя с единицы',
             color: const Color(0xFF6C5CE7),
             cs: cs,
@@ -183,7 +194,7 @@ class _KpiSection extends ConsumerWidget {
           _KpiCard(
             icon: Icons.account_balance_rounded,
             label: 'Расходы',
-            value: formatMoney(expenses, cur),
+            value: fmt(expenses),
             change: null,
             color: AppColors.warning,
             cs: cs,
@@ -297,6 +308,7 @@ class _RevenueChart extends ConsumerWidget {
     final cs = Theme.of(context).colorScheme;
     final dataAsync = ref.watch(revenueChartProvider);
     final totalAsync = ref.watch(periodTotalProvider);
+    final fmt = ref.watch(priceFormatterProvider);
 
     return TECard(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -306,7 +318,7 @@ class _RevenueChart extends ConsumerWidget {
               child: Text('Выручка',
                   style: AppTypography.headlineSmall
                       .copyWith(color: cs.onSurface))),
-          Text(formatMoney(totalAsync.valueOrNull ?? 0.0, cur),
+          Text(fmt(totalAsync.valueOrNull ?? 0.0),
               style: TextStyle(
                   color: cs.primary,
                   fontSize: 16,
@@ -356,8 +368,8 @@ class _RevenueChart extends ConsumerWidget {
                             children: [
                               TextSpan(
                                 text: isRevenue
-                                    ? 'Выр: ${formatMoney(point.revenue, cur)}'
-                                    : 'Приб: ${formatMoney(point.profit, cur)}',
+                                    ? 'Выр: ${fmt(point.revenue)}'
+                                    : 'Приб: ${fmt(point.profit)}',
                                 style: TextStyle(
                                     color: isRevenue ? AppColors.primary : AppColors.success,
                                     fontWeight: FontWeight.w700,
@@ -435,14 +447,16 @@ class _RevenueChart extends ConsumerWidget {
                           show: data.length <= 24,
                           getDotPainter: (spot, _, __, ___) {
                             final idx = spot.x.toInt();
-                            if (idx == 0 || data[idx].revenue == data[idx - 1].revenue) {
-                              return FlDotCirclePainter(radius: 0, color: Colors.transparent, strokeWidth: 0, strokeColor: Colors.transparent);
+                            // Show dot when: single data point, first point, or changed value
+                            if (data.length == 1 || idx == data.length - 1 ||
+                                (idx > 0 && data[idx].revenue != data[idx - 1].revenue)) {
+                              return FlDotCirclePainter(
+                                  radius: 3,
+                                  color: cs.primary,
+                                  strokeWidth: 2,
+                                  strokeColor: cs.surface);
                             }
-                            return FlDotCirclePainter(
-                                radius: 3,
-                                color: cs.primary,
-                                strokeWidth: 2,
-                                strokeColor: cs.surface);
+                            return FlDotCirclePainter(radius: 0, color: Colors.transparent, strokeWidth: 0, strokeColor: Colors.transparent);
                           }),
                       belowBarData: BarAreaData(
                           show: true,
@@ -503,6 +517,7 @@ class _ExpensesBreakdown extends ConsumerWidget {
     final cs = Theme.of(context).colorScheme;
     final kpisAsync = ref.watch(dashboardKpisProvider);
     final summaryAsync = ref.watch(operationsSummaryProvider);
+    final fmt = ref.watch(priceFormatterProvider);
 
     return TECard(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -515,8 +530,9 @@ class _ExpensesBreakdown extends ConsumerWidget {
             // Extract expense components from KPIs raw data
             return summaryAsync.when(
               data: (summary) {
-                final arrivals = (summary['arrivalsTotal'] as double?) ?? 0;
-                final writeOffs = (summary['writeOffsTotal'] as double?) ?? 0;
+                final arrivalAsExpense = ref.watch(arrivalAsExpenseProvider);
+                final arrivals = arrivalAsExpense ? ((summary['arrivalsTotal'] as num?)?.toDouble() ?? 0) : 0.0;
+                final writeOffs = (summary['writeOffsTotal'] as num?)?.toDouble() ?? 0;
                 final totalExpenses = arrivals + writeOffs;
 
                 if (totalExpenses <= 0) {
@@ -578,7 +594,7 @@ class _ExpensesBreakdown extends ConsumerWidget {
                                 style: TextStyle(color: cs.onSurface.withValues(alpha: 0.4), fontSize: 11)),
                           ]),
                         ),
-                        Text(formatMoney(item.amount, cur),
+                        Text(fmt(item.amount),
                             style: TextStyle(
                                 color: item.color,
                                 fontSize: 14,
@@ -590,17 +606,23 @@ class _ExpensesBreakdown extends ConsumerWidget {
                   Row(children: [
                     Expanded(child: Text('Итого расходов',
                         style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w600))),
-                    Text(formatMoney(totalExpenses, cur),
+                    Text(fmt(totalExpenses),
                         style: TextStyle(color: cs.onSurface, fontSize: 15, fontWeight: FontWeight.w700)),
                   ]),
                 ]);
               },
               loading: () => const Center(child: CircularProgressIndicator()),
-              error: (_, __) => const SizedBox.shrink(),
+              error: (e, _) => Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text('Ошибка: $e', style: TextStyle(color: cs.error, fontSize: 12)),
+              ),
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (_, __) => const SizedBox.shrink(),
+          error: (e, _) => Padding(
+            padding: const EdgeInsets.all(16),
+            child: Text('Ошибка KPI: $e', style: TextStyle(color: cs.error, fontSize: 12)),
+          ),
         ),
       ]),
     );
@@ -615,6 +637,362 @@ class _ExpenseItem {
   _ExpenseItem(this.label, this.amount, this.color, this.icon);
 }
 
+// ═══ Goods Card (expandable) ═══
+class _GoodsCard extends ConsumerStatefulWidget {
+  final String cur;
+  const _GoodsCard({required this.cur});
+
+  @override
+  ConsumerState<_GoodsCard> createState() => _GoodsCardState();
+}
+
+class _GoodsCardState extends ConsumerState<_GoodsCard> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final dataAsync = ref.watch(goodsServicesProvider);
+    final fmt = ref.watch(priceFormatterProvider);
+
+    return TECard(
+      padding: EdgeInsets.zero,
+      child: dataAsync.when(
+        data: (data) {
+          final profit = data.goodsProfit;
+          final total = data.goodsTotal;
+          final items = data.goodsList;
+
+          return Column(
+            children: [
+              // ─── Header (tappable to expand) ───
+              InkWell(
+                onTap: items.isNotEmpty ? () => setState(() => _expanded = !_expanded) : null,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Row(children: [
+                    Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF00B894), Color(0xFF55EFC4)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Товары', style: AppTypography.headlineSmall.copyWith(
+                            color: cs.onSurface, fontWeight: FontWeight.w700)),
+                          const SizedBox(height: 2),
+                          Text('Валовая прибыль', style: TextStyle(
+                            color: cs.onSurface.withValues(alpha: 0.5), fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(fmt(profit), style: TextStyle(
+                          color: profit >= 0 ? AppColors.success : AppColors.error,
+                          fontSize: 18, fontWeight: FontWeight.w700)),
+                        Text('Выручка: ${fmt(total)}', style: TextStyle(
+                          color: cs.onSurface.withValues(alpha: 0.4), fontSize: 11)),
+                      ],
+                    ),
+                    if (items.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      AnimatedRotation(
+                        turns: _expanded ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Icon(Icons.expand_more_rounded, color: cs.onSurface.withValues(alpha: 0.3)),
+                      ),
+                    ],
+                  ]),
+                ),
+              ),
+              // ─── Expanded items list ───
+              AnimatedCrossFade(
+                firstChild: const SizedBox.shrink(),
+                secondChild: items.isEmpty
+                    ? const SizedBox.shrink()
+                    : Container(
+                        decoration: BoxDecoration(
+                          border: Border(top: BorderSide(color: cs.outline.withValues(alpha: 0.15))),
+                        ),
+                        child: Column(
+                          children: [
+                            for (int i = 0; i < items.length; i++)
+                              _GoodsItemTile(item: items[i], fmt: fmt, cs: cs, index: i),
+                          ],
+                        ),
+                      ),
+                crossFadeState: _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                duration: const Duration(milliseconds: 250),
+              ),
+            ],
+          );
+        },
+        loading: () => const Padding(
+          padding: EdgeInsets.all(AppSpacing.xl),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+        error: (e, _) => Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Text('Ошибка загрузки товаров: $e',
+              style: const TextStyle(color: Colors.red, fontSize: 12)),
+        ),
+      ),
+    );
+  }
+}
+
+class _GoodsItemTile extends StatelessWidget {
+  final Map<String, dynamic> item;
+  final String Function(double) fmt;
+  final ColorScheme cs;
+  final int index;
+
+  const _GoodsItemTile({required this.item, required this.fmt, required this.cs, required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    final name = item['product_name'] as String? ?? '—';
+    final qty = (item['qty'] as num?)?.toInt() ?? 0;
+    final total = (item['total'] as num?)?.toDouble() ?? 0;
+    final cost = (item['total_cost'] as num?)?.toDouble() ?? 0;
+    final profit = total - cost;
+    final lastSold = item['last_sold_at'] as String?;
+    String dateStr = '';
+    if (lastSold != null) {
+      final dt = DateTime.tryParse(lastSold);
+      if (dt != null) {
+        dateStr = '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 10),
+      decoration: BoxDecoration(
+        border: index > 0 ? Border(top: BorderSide(color: cs.outline.withValues(alpha: 0.08))) : null,
+      ),
+      child: Row(children: [
+        Container(
+          width: 24, height: 24,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: index < 3 ? const Color(0xFF00B894).withValues(alpha: 0.15) : cs.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text('${index + 1}', style: TextStyle(
+            fontSize: 11, fontWeight: FontWeight.w600,
+            color: index < 3 ? const Color(0xFF00B894) : cs.onSurface.withValues(alpha: 0.5))),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(name, style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w500),
+                overflow: TextOverflow.ellipsis),
+            Text('$qty шт · $dateStr', style: TextStyle(
+                color: cs.onSurface.withValues(alpha: 0.4), fontSize: 11)),
+          ]),
+        ),
+        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Text(fmt(profit), style: TextStyle(
+            color: profit >= 0 ? AppColors.success : AppColors.error,
+            fontSize: 13, fontWeight: FontWeight.w600)),
+          Text(fmt(total), style: TextStyle(
+            color: cs.onSurface.withValues(alpha: 0.3), fontSize: 10)),
+        ]),
+      ]),
+    );
+  }
+}
+
+// ═══ Services Card (expandable) ═══
+class _ServicesCard extends ConsumerStatefulWidget {
+  final String cur;
+  const _ServicesCard({required this.cur});
+
+  @override
+  ConsumerState<_ServicesCard> createState() => _ServicesCardState();
+}
+
+class _ServicesCardState extends ConsumerState<_ServicesCard> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final dataAsync = ref.watch(goodsServicesProvider);
+    final fmt = ref.watch(priceFormatterProvider);
+
+    return TECard(
+      padding: EdgeInsets.zero,
+      child: dataAsync.when(
+        data: (data) {
+          final total = data.servicesTotal;
+          final items = data.servicesList;
+
+          return Column(
+            children: [
+              // ─── Header ───
+              InkWell(
+                onTap: items.isNotEmpty ? () => setState(() => _expanded = !_expanded) : null,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Row(children: [
+                    Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.design_services_rounded, color: Colors.white, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Услуги', style: AppTypography.headlineSmall.copyWith(
+                            color: cs.onSurface, fontWeight: FontWeight.w700)),
+                          const SizedBox(height: 2),
+                          Text('Доход от оказанных услуг', style: TextStyle(
+                            color: cs.onSurface.withValues(alpha: 0.5), fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                    Text(fmt(total), style: TextStyle(
+                      color: const Color(0xFF6C5CE7),
+                      fontSize: 18, fontWeight: FontWeight.w700)),
+                    if (items.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      AnimatedRotation(
+                        turns: _expanded ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Icon(Icons.expand_more_rounded, color: cs.onSurface.withValues(alpha: 0.3)),
+                      ),
+                    ],
+                  ]),
+                ),
+              ),
+              // ─── Expanded items ───
+              AnimatedCrossFade(
+                firstChild: const SizedBox.shrink(),
+                secondChild: items.isEmpty
+                    ? const SizedBox.shrink()
+                    : Container(
+                        decoration: BoxDecoration(
+                          border: Border(top: BorderSide(color: cs.outline.withValues(alpha: 0.15))),
+                        ),
+                        child: Column(
+                          children: [
+                            for (int i = 0; i < items.length; i++)
+                              _ServiceItemTile(item: items[i], fmt: fmt, cs: cs, index: i),
+                          ],
+                        ),
+                      ),
+                crossFadeState: _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                duration: const Duration(milliseconds: 250),
+              ),
+            ],
+          );
+        },
+        loading: () => const Padding(
+          padding: EdgeInsets.all(AppSpacing.xl),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+        error: (e, _) => Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Text('Ошибка загрузки услуг: $e',
+              style: const TextStyle(color: Colors.red, fontSize: 12)),
+        ),
+      ),
+    );
+  }
+}
+
+class _ServiceItemTile extends StatelessWidget {
+  final Map<String, dynamic> item;
+  final String Function(double) fmt;
+  final ColorScheme cs;
+  final int index;
+
+  const _ServiceItemTile({required this.item, required this.fmt, required this.cs, required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    final name = item['product_name'] as String? ?? '—';
+    final qty = (item['qty'] as num?)?.toInt() ?? 0;
+    final total = (item['total'] as num?)?.toDouble() ?? 0;
+    final executor = item['executor_name'] as String?;
+    final lastSold = item['last_sold_at'] as String?;
+    String dateStr = '';
+    if (lastSold != null) {
+      final dt = DateTime.tryParse(lastSold);
+      if (dt != null) {
+        dateStr = '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}';
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 10),
+      decoration: BoxDecoration(
+        border: index > 0 ? Border(top: BorderSide(color: cs.outline.withValues(alpha: 0.08))) : null,
+      ),
+      child: Row(children: [
+        Container(
+          width: 24, height: 24,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: index < 3 ? const Color(0xFF6C5CE7).withValues(alpha: 0.15) : cs.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text('${index + 1}', style: TextStyle(
+            fontSize: 11, fontWeight: FontWeight.w600,
+            color: index < 3 ? const Color(0xFF6C5CE7) : cs.onSurface.withValues(alpha: 0.5))),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(name, style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w500),
+                overflow: TextOverflow.ellipsis),
+            Row(children: [
+              Text('$qty шт', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.4), fontSize: 11)),
+              if (executor != null && executor.isNotEmpty) ...[
+                const SizedBox(width: 6),
+                Icon(Icons.person_rounded, size: 11, color: cs.onSurface.withValues(alpha: 0.3)),
+                const SizedBox(width: 2),
+                Flexible(
+                  child: Text(executor, style: TextStyle(
+                    color: const Color(0xFF6C5CE7).withValues(alpha: 0.7), fontSize: 11),
+                    overflow: TextOverflow.ellipsis),
+                ),
+              ],
+              if (dateStr.isNotEmpty) ...[
+                const SizedBox(width: 6),
+                Text('· $dateStr', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.3), fontSize: 11)),
+              ],
+            ]),
+          ]),
+        ),
+        Text(fmt(total), style: TextStyle(
+          color: const Color(0xFF6C5CE7),
+          fontSize: 13, fontWeight: FontWeight.w600)),
+      ]),
+    );
+  }
+}
+
 // ═══ Top Clients ═══
 class _TopClientsAnalytics extends ConsumerWidget {
   final String cur;
@@ -624,6 +1002,7 @@ class _TopClientsAnalytics extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final topAsync = ref.watch(topClientsProvider);
+    final fmt = ref.watch(priceFormatterProvider);
 
     return TECard(
         padding: const EdgeInsets.all(AppSpacing.lg),
@@ -692,7 +1071,7 @@ class _TopClientsAnalytics extends ConsumerWidget {
                                 ],
                               )),
                           Text(
-                              formatMoney(clients[i].totalSpent, cur),
+                              fmt(clients[i].totalSpent),
                               style: AppTypography.labelMedium.copyWith(
                                   color: AppColors.info,
                                   fontWeight: FontWeight.w600)),
@@ -1065,8 +1444,8 @@ class _TopProductsAnalytics extends ConsumerWidget {
                                           .withValues(alpha: 0.5))),
                               const SizedBox(width: AppSpacing.sm),
                               Text(
-                                  formatMoney(
-                                      products[i].totalRevenue, cur),
+                                  ref.watch(priceFormatterProvider)(
+                                      products[i].totalRevenue),
                                   style: AppTypography.labelMedium.copyWith(
                                       color: AppColors.primary,
                                       fontWeight: FontWeight.w600)),
@@ -1256,8 +1635,8 @@ class _TopExecutorsAnalytics extends ConsumerWidget {
                                       .withValues(alpha: 0.5))),
                           const SizedBox(width: AppSpacing.sm),
                           Text(
-                              formatMoney(
-                                  executors[i].totalRevenue, cur),
+                              ref.watch(priceFormatterProvider)(
+                                  executors[i].totalRevenue),
                               style: AppTypography.labelMedium.copyWith(
                                   color: AppColors.secondary,
                                   fontWeight: FontWeight.w600)),

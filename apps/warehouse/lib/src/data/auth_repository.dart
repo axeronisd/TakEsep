@@ -232,7 +232,7 @@ class AuthRepository {
     try {
       // Try local PowerSync first
       String sql =
-          'SELECT * FROM warehouses WHERE company_id = ? AND is_active = 1';
+          'SELECT * FROM warehouses WHERE organization_id = ?';
       final params = <dynamic>[companyId];
 
       if (allowedIds != null && allowedIds.isNotEmpty) {
@@ -242,19 +242,22 @@ class AuthRepository {
       }
       sql += ' ORDER BY name';
 
-      final localRows = await powerSyncDb.getAll(sql, params);
-      if (localRows.isNotEmpty) {
-        return localRows
-            .map((w) => Warehouse.fromJson(w))
-            .toList();
+      try {
+        final localRows = await powerSyncDb.getAll(sql, params);
+        if (localRows.isNotEmpty) {
+          return localRows
+              .map((w) => Warehouse.fromJson(w))
+              .toList();
+        }
+      } catch (dbError) {
+        print('PowerSync local DB error: $dbError');
       }
 
       // Fallback to Supabase
       var query = _supabase
           .from('warehouses')
           .select()
-          .eq('company_id', companyId)
-          .eq('is_active', true);
+          .eq('organization_id', companyId);
 
       if (allowedIds != null && allowedIds.isNotEmpty) {
         query = query.inFilter('id', allowedIds);
@@ -300,11 +303,21 @@ class AuthRepository {
       final now = DateTime.now().toIso8601String();
 
       await powerSyncDb.execute(
-        '''INSERT INTO warehouses (id, company_id, name, address, group_id,
+        '''INSERT INTO warehouses (id, organization_id, name, address, group_id,
            is_active, created_at, updated_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
         [id, companyId, name, address, groupId, 1, now, now],
       );
+
+      // If warehouse belongs to a group, copy products from sibling warehouses
+      if (groupId != null && groupId.isNotEmpty) {
+        await _copyProductsFromSiblings(
+          newWarehouseId: id,
+          companyId: companyId,
+          groupId: groupId,
+          now: now,
+        );
+      }
 
       return Warehouse(
         id: id,
@@ -318,6 +331,84 @@ class AuthRepository {
     } catch (e) {
       print('Error creating warehouse: $e');
       return null;
+    }
+  }
+
+  /// Copy all products from sibling warehouses (with qty=0) to the new warehouse.
+  Future<void> _copyProductsFromSiblings({
+    required String newWarehouseId,
+    required String companyId,
+    required String groupId,
+    required String now,
+  }) async {
+    try {
+      // Get ALL sibling warehouses from the same group
+      final siblings = await powerSyncDb.getAll(
+        'SELECT id FROM warehouses WHERE group_id = ? AND id != ? AND is_active = 1',
+        [groupId, newWarehouseId],
+      );
+
+      if (siblings.isEmpty) return;
+
+      // Collect all products from all siblings, deduplicate by barcode
+      final siblingIds = siblings.map((s) => s['id'] as String).toList();
+      final placeholders = siblingIds.map((_) => '?').join(',');
+      
+      final products = await powerSyncDb.getAll(
+        '''SELECT *, ROW_NUMBER() OVER (PARTITION BY COALESCE(barcode, name) ORDER BY created_at) as rn
+           FROM products 
+           WHERE warehouse_id IN ($placeholders) AND company_id = ?''',
+        [...siblingIds, companyId],
+      );
+
+      if (products.isEmpty) return;
+
+      // Deduplicate: keep only the first occurrence of each barcode/name combo
+      final seen = <String>{};
+      int copied = 0;
+
+      for (final p in products) {
+        final key = (p['barcode'] as String?)?.isNotEmpty == true 
+            ? p['barcode'] as String 
+            : p['name'] as String;
+        if (seen.contains(key)) continue;
+        seen.add(key);
+
+        final newProductId = _uuid.v4();
+        await powerSyncDb.execute(
+          '''INSERT INTO products (
+            id, company_id, warehouse_id, category_id, name, sku, barcode, description,
+            cost_price, selling_price, quantity, unit, min_stock, max_stock,
+            stock_zone, image_url, is_public, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          [
+            newProductId,
+            companyId,
+            newWarehouseId,
+            p['category_id'],
+            p['name'],
+            p['sku'],
+            p['barcode'],
+            p['description'],
+            p['cost_price'] ?? 0.0,
+            p['selling_price'] ?? 0.0,
+            0, // qty = 0 for new warehouse
+            p['unit'],
+            p['min_stock'] ?? 0,
+            p['max_stock'] ?? 0,
+            p['stock_zone'] ?? 'normal',
+            p['image_url'],
+            p['is_public'] ?? 1,
+            now,
+            now,
+          ],
+        );
+        copied++;
+      }
+
+      print('Copied $copied unique products to new warehouse $newWarehouseId');
+    } catch (e) {
+      print('Error copying products to new warehouse (non-fatal): $e');
     }
   }
 
@@ -345,5 +436,48 @@ class AuthRepository {
       print('Error creating warehouse group: $e');
       return null;
     }
+  }
+
+  /// Renames a warehouse.
+  Future<void> renameWarehouse(String warehouseId, String newName) async {
+    final now = DateTime.now().toIso8601String();
+    await powerSyncDb.execute(
+      'UPDATE warehouses SET name = ?, updated_at = ? WHERE id = ?',
+      [newName, now, warehouseId],
+    );
+  }
+
+  /// Renames a warehouse group.
+  Future<void> renameWarehouseGroup(String groupId, String newName) async {
+    await powerSyncDb.execute(
+      'UPDATE warehouse_groups SET name = ? WHERE id = ?',
+      [newName, groupId],
+    );
+  }
+
+  /// Moves a warehouse into a group (or changes its group).
+  Future<void> updateWarehouseGroup(String warehouseId, String? groupId, String companyId) async {
+    final now = DateTime.now().toIso8601String();
+    await powerSyncDb.execute(
+      'UPDATE warehouses SET group_id = ?, updated_at = ? WHERE id = ?',
+      [groupId, now, warehouseId],
+    );
+    if (groupId != null && groupId.isNotEmpty) {
+      await _copyProductsFromSiblings(
+        newWarehouseId: warehouseId,
+        companyId: companyId,
+        groupId: groupId,
+        now: now,
+      );
+    }
+  }
+
+  /// Removes a warehouse from its group.
+  Future<void> removeWarehouseFromGroup(String warehouseId) async {
+    final now = DateTime.now().toIso8601String();
+    await powerSyncDb.execute(
+      'UPDATE warehouses SET group_id = NULL, updated_at = ? WHERE id = ?',
+      [now, warehouseId],
+    );
   }
 }

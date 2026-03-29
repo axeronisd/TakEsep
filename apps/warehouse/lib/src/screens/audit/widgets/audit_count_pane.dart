@@ -9,6 +9,8 @@ import '../../../providers/audit_providers.dart';
 import '../../../providers/currency_provider.dart';
 import '../../../providers/dashboard_providers.dart';
 import '../../../providers/inventory_providers.dart';
+import '../../../utils/snackbar_helper.dart';
+import '../../../widgets/cached_image_widget.dart';
 
 /// The main counting screen shown when an audit is active.
 class AuditCountPane extends ConsumerStatefulWidget {
@@ -34,14 +36,7 @@ class _AuditCountPaneState extends ConsumerState<AuditCountPane> {
     if (value.isEmpty) return;
     ref.read(currentAuditProvider.notifier).scanBarcode(value).then((err) {
       if (err != null && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(err),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
-          ),
-        );
+        showErrorSnackBar(context, err);
       }
     });
     _searchController.clear();
@@ -389,16 +384,11 @@ class _AuditCountPaneState extends ConsumerState<AuditCountPane> {
           ref.invalidate(recentOpsProvider);
         }
         ref.invalidate(auditsListProvider);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(ok
-                ? 'Ревизия завершена. Остатки обновлены.'
-                : 'Ошибка при завершении ревизии'),
-            backgroundColor: ok ? AppColors.success : AppColors.error,
-            behavior: SnackBarBehavior.floating,
-            margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
-          ),
-        );
+        if (ok) {
+          showInfoSnackBar(context, ref, 'Ревизия завершена. Остатки обновлены.');
+        } else {
+          showErrorSnackBar(context, 'Ошибка при завершении ревизии');
+        }
       }
     }
   }
@@ -514,12 +504,11 @@ class _AuditItemCardState extends ConsumerState<_AuditItemCard> {
             borderRadius: BorderRadius.circular(8),
             child: hasImage
                 ? (item.productImageUrl!.startsWith('http')
-                    ? Image.network(
-                        item.productImageUrl!,
+                    ? CachedImageWidget(
+                        imageUrl: item.productImageUrl!,
                         width: 48,
                         height: 48,
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _placeholder(cs),
                       )
                     : Image.file(
                         java_io.File(item.productImageUrl!),

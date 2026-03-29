@@ -7,6 +7,7 @@ import '../data/mock_data.dart';
 import 'auth_providers.dart';
 import 'date_filter_provider.dart';
 import 'inventory_providers.dart';
+import 'owner_settings_provider.dart';
 
 // --- Dashboard Repository Provider ---
 final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) {
@@ -80,18 +81,23 @@ final dashboardKpisProvider =
 
   final salesCount = kpiData['salesCount'] as int;
   final avgCheck = kpiData['avgCheck'] as double;
-  final netProfit = kpiData['netProfit'] as double;
   final totalIncome = kpiData['totalIncome'] as double;
   final totalRevenue = kpiData['totalRevenue'] as double;
   final auditLosses = (kpiData['auditLosses'] as num?)?.toDouble() ?? 0.0;
   final transferCosts = (kpiData['transferCosts'] as num?)?.toDouble() ?? 0.0;
   final writeOffCosts = (kpiData['writeOffCosts'] as num?)?.toDouble() ?? 0.0;
   final employeeExpenses = (kpiData['employeeExpenses'] as num?)?.toDouble() ?? 0.0;
-  final totalExpenses = totalIncome + auditLosses + transferCosts + writeOffCosts + employeeExpenses;
+  final arrivalAsExpense = ref.watch(arrivalAsExpenseProvider);
+  final totalExpenses = (arrivalAsExpense ? totalIncome : 0.0) + auditLosses + transferCosts + writeOffCosts + employeeExpenses;
+
+  // Recalculate net profit: the repository always deducts arrivals,
+  // but if arrivalAsExpense is OFF we must add them back.
+  final repoNetProfit = kpiData['netProfit'] as double;
+  final netProfit = arrivalAsExpense ? repoNetProfit : repoNetProfit + totalIncome;
 
   final prevSalesCount = prevKpiData['salesCount'] as int;
   final prevAvgCheck = prevKpiData['avgCheck'] as double;
-  final prevNetProfit = prevKpiData['netProfit'] as double;
+  final prevRepoNetProfit = prevKpiData['netProfit'] as double;
   final prevTotalIncome = prevKpiData['totalIncome'] as double;
   final prevTotalRevenue = prevKpiData['totalRevenue'] as double?
       ?? 0.0;
@@ -99,7 +105,8 @@ final dashboardKpisProvider =
   final prevTransferCosts = (prevKpiData['transferCosts'] as num?)?.toDouble() ?? 0.0;
   final prevWriteOffCosts = (prevKpiData['writeOffCosts'] as num?)?.toDouble() ?? 0.0;
   final prevEmployeeExpenses = (prevKpiData['employeeExpenses'] as num?)?.toDouble() ?? 0.0;
-  final prevTotalExpenses = prevTotalIncome + prevAuditLosses + prevTransferCosts + prevWriteOffCosts + prevEmployeeExpenses;
+  final prevTotalExpenses = (arrivalAsExpense ? prevTotalIncome : 0.0) + prevAuditLosses + prevTransferCosts + prevWriteOffCosts + prevEmployeeExpenses;
+  final prevNetProfit = arrivalAsExpense ? prevRepoNetProfit : prevRepoNetProfit + prevTotalIncome;
 
   double pct(double cur, double prev) {
     if (prev == 0) {
@@ -361,4 +368,62 @@ final kpiBreakdownProvider = FutureProvider<KpiBreakdown>((ref) async {
     saleAmounts: saleAmounts,
     auditShortages: auditShortages,
   );
+});
+
+/// ─── Goods vs Services breakdown (for analytics card) ────────
+class GoodsServicesBreakdown {
+  final double goodsTotal;
+  final double goodsProfit;
+  final double servicesTotal;
+  final List<Map<String, dynamic>> goodsList;
+  final List<Map<String, dynamic>> servicesList;
+
+  const GoodsServicesBreakdown({
+    this.goodsTotal = 0,
+    this.goodsProfit = 0,
+    this.servicesTotal = 0,
+    this.goodsList = const [],
+    this.servicesList = const [],
+  });
+}
+
+final goodsServicesProvider = FutureProvider<GoodsServicesBreakdown>((ref) async {
+  try {
+    final companyId = ref.watch(currentCompanyProvider)?.id;
+    if (companyId == null) return const GoodsServicesBreakdown();
+
+    final warehouseId = ref.watch(selectedWarehouseIdProvider);
+    final range = ref.watch(dateRangeProvider);
+    final repo = ref.read(dashboardRepositoryProvider);
+
+    final data = await repo.getGoodsServicesBreakdown(
+      companyId,
+      range.start,
+      range.end.add(const Duration(days: 1)),
+      warehouseId: warehouseId,
+    );
+
+    // PowerSync returns Row objects, not plain Maps — must convert
+    final rawGoods = data['goodsList'];
+    final rawServices = data['servicesList'];
+
+    final goodsList = rawGoods is List
+        ? rawGoods.map((e) => Map<String, dynamic>.from(e as Map)).toList()
+        : <Map<String, dynamic>>[];
+
+    final servicesList = rawServices is List
+        ? rawServices.map((e) => Map<String, dynamic>.from(e as Map)).toList()
+        : <Map<String, dynamic>>[];
+
+    return GoodsServicesBreakdown(
+      goodsTotal: (data['goodsTotal'] as num?)?.toDouble() ?? 0,
+      goodsProfit: (data['goodsProfit'] as num?)?.toDouble() ?? 0,
+      servicesTotal: (data['servicesTotal'] as num?)?.toDouble() ?? 0,
+      goodsList: goodsList,
+      servicesList: servicesList,
+    );
+  } catch (e) {
+    print('goodsServicesProvider error: $e');
+    return const GoodsServicesBreakdown();
+  }
 });

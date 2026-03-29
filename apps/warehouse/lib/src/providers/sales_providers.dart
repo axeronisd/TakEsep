@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takesep_core/takesep_core.dart';
 import 'inventory_providers.dart';
+import 'auth_providers.dart';
 import '../data/sales_repository.dart';
 
 final salesRepositoryProvider = Provider<SalesRepository>((ref) {
@@ -243,6 +244,17 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
 }
 
 final cartProvider = StateNotifierProvider<CartNotifier, List<CartItem>>((ref) {
+  // Listen to warehouse changes — clear cart when warehouse switches
+  ref.listen<String?>(selectedWarehouseIdProvider, (prev, next) {
+    if (prev != next) {
+      ref.notifier.clear();
+      ref.read(globalDiscountProvider.notifier).state = null;
+      ref.read(orderCommentProvider.notifier).state = '';
+      ref.read(orderPhotosProvider.notifier).state = [];
+      ref.read(paymentMethodProvider.notifier).state = 'cash';
+      ref.read(cashReceivedProvider.notifier).state = null;
+    }
+  });
   return CartNotifier();
 });
 

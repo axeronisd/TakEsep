@@ -7,7 +7,11 @@ import '../../providers/currency_provider.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/employee_providers.dart';
 import '../../providers/receipt_provider.dart';
+import '../../providers/printer_provider.dart';
+import '../../providers/notification_settings_provider.dart';
+import '../../providers/owner_settings_provider.dart';
 import '../../data/powersync_db.dart';
+import '../../utils/snackbar_helper.dart';
 import 'widgets/edit_role_sheet.dart';
 import 'widgets/payment_methods_sheet.dart';
 
@@ -49,8 +53,8 @@ class SettingsScreen extends ConsumerWidget {
             action: 'security'),
       ]),
       _SettingsSection('Продажи', [
-        _SettingsItem('Шаблоны чеков', Icons.receipt_rounded,
-            'Настройка и предпросмотр чека',
+        _SettingsItem('Чековый принтер', Icons.receipt_long_rounded,
+            'Выбор принтера и настройка чека',
             action: 'receipt'),
         _SettingsItem('Ценовые правила', Icons.price_change_rounded,
             'Наценки, оптовые цены, акции',
@@ -66,8 +70,9 @@ class SettingsScreen extends ConsumerWidget {
             '${currentCurrency.displayName} (${currentCurrency.code})',
             isCurrency: true),
         _SettingsItem(
-            'Уведомления', Icons.notifications_rounded, 'Push, email, SMS',
-            comingSoon: true),
+            'Уведомления', Icons.notifications_rounded, 
+            ref.watch(showNotificationsProvider) ? 'Включены' : 'Отключены',
+            isToggle: true, action: 'notifications'),
         _SettingsItem(
             'Интеграции', Icons.extension_rounded, '1С, Элсом, WhatsApp',
             comingSoon: true),
@@ -79,6 +84,20 @@ class SettingsScreen extends ConsumerWidget {
             comingSoon: true),
       ]),
     ];
+
+    // Add owner-only calculator section
+    final isOwner = ref.watch(authProvider).currentEmployee?.id.startsWith('owner-') ?? false;
+    if (isOwner) {
+      final arrivalAsExpense = ref.watch(arrivalAsExpenseProvider);
+      sections.add(_SettingsSection('Калькулятор', [
+        _SettingsItem(
+            'Приход как расход',
+            Icons.calculate_rounded,
+            arrivalAsExpense ? 'Приход считается расходом' : 'Приход не считается расходом',
+            isToggle: true,
+            action: 'arrival_expense'),
+      ]));
+    }
 
     return Scaffold(
       body: SafeArea(
@@ -148,36 +167,20 @@ class SettingsScreen extends ConsumerWidget {
                               color: cs.onSurface.withValues(alpha: 0.5))),
                       trailing: section.items[i].isToggle
                           ? Switch(
-                              value: isDark,
-                              onChanged: (_) => ref
-                                  .read(themeModeProvider.notifier)
-                                  .toggleTheme(),
+                              value: _getToggleValue(ref, section.items[i].action),
+                              onChanged: (_) => _handleToggle(ref, section.items[i].action),
                             )
                           : Icon(Icons.chevron_right_rounded,
                               color: cs.onSurface.withValues(alpha: 0.3)),
                       onTap: section.items[i].isToggle
-                          ? () => ref
-                              .read(themeModeProvider.notifier)
-                              .toggleTheme()
+                          ? () => _handleToggle(ref, section.items[i].action)
                           : section.items[i].isCurrency
                               ? () => _showCurrencyPicker(context, ref)
                               : section.items[i].action != null
                                   ? () => _openSubScreen(
                                       context, ref, section.items[i].action!)
                                   : section.items[i].comingSoon
-                                      ? () {
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                  '«${section.items[i].title}» — в разработке'),
-                                              behavior:
-                                                  SnackBarBehavior.floating,
-                                              duration:
-                                                  const Duration(seconds: 1),
-                                            ),
-                                          );
-                                        }
+                                      ? () => showInfoSnackBar(context, ref, '«${section.items[i].title}» — в разработке', duration: const Duration(seconds: 1))
                                       : null,
                     ),
                     if (i < section.items.length - 1)
@@ -217,10 +220,37 @@ class SettingsScreen extends ConsumerWidget {
         _showSecurity(context, ref);
         break;
       case 'receipt':
-        _showReceiptSettings(context, ref);
+        _showReceiptAndPrinterSettings(context, ref);
         break;
       case 'payment_methods':
         _showPaymentMethods(context, ref);
+        break;
+    }
+  }
+
+  /// Get toggle value based on the action type.
+  bool _getToggleValue(WidgetRef ref, String? action) {
+    switch (action) {
+      case 'notifications':
+        return ref.watch(showNotificationsProvider);
+      case 'arrival_expense':
+        return ref.watch(arrivalAsExpenseProvider);
+      default:
+        return ref.watch(themeModeProvider) == ThemeMode.dark;
+    }
+  }
+
+  /// Handle toggle based on the action type.
+  void _handleToggle(WidgetRef ref, String? action) {
+    switch (action) {
+      case 'notifications':
+        ref.read(showNotificationsProvider.notifier).toggle();
+        break;
+      case 'arrival_expense':
+        ref.read(arrivalAsExpenseProvider.notifier).toggle();
+        break;
+      default:
+        ref.read(themeModeProvider.notifier).toggleTheme();
         break;
     }
   }
@@ -871,9 +901,9 @@ class SettingsScreen extends ConsumerWidget {
     );
   }
 
-  // ═══════════════ RECEIPT TEMPLATE ═══════════════
+  // ═══════════════ RECEIPT & PRINTER SETTINGS ═══════════════
 
-  void _showReceiptSettings(BuildContext context, WidgetRef ref) {
+  void _showReceiptAndPrinterSettings(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
 
     showModalBottomSheet(
@@ -882,7 +912,7 @@ class SettingsScreen extends ConsumerWidget {
       backgroundColor: cs.surface,
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (_) => _ReceiptSettingsSheet(),
+      builder: (_) => _ReceiptAndPrinterSettingsSheet(),
     );
   }
 
@@ -1035,16 +1065,16 @@ class SettingsScreen extends ConsumerWidget {
   }
 }
 
-// ═══════════════ RECEIPT SETTINGS SHEET ═══════════════
+// ═══════════════ RECEIPT & PRINTER SETTINGS SHEET ═══════════════
 
-class _ReceiptSettingsSheet extends ConsumerStatefulWidget {
+class _ReceiptAndPrinterSettingsSheet extends ConsumerStatefulWidget {
   @override
-  ConsumerState<_ReceiptSettingsSheet> createState() =>
-      _ReceiptSettingsSheetState();
+  ConsumerState<_ReceiptAndPrinterSettingsSheet> createState() =>
+      _ReceiptAndPrinterSettingsSheetState();
 }
 
-class _ReceiptSettingsSheetState
-    extends ConsumerState<_ReceiptSettingsSheet> {
+class _ReceiptAndPrinterSettingsSheetState
+    extends ConsumerState<_ReceiptAndPrinterSettingsSheet> {
   late ReceiptConfig _config;
   late TextEditingController _footerController;
 
@@ -1060,6 +1090,7 @@ class _ReceiptSettingsSheetState
       showPaymentMethod: ref.read(receiptConfigProvider).showPaymentMethod,
       paperWidth: ref.read(receiptConfigProvider).paperWidth,
       footerText: ref.read(receiptConfigProvider).footerText,
+      printCopies: ref.read(receiptConfigProvider).printCopies,
     );
     _footerController = TextEditingController(text: _config.footerText);
   }
@@ -1074,13 +1105,13 @@ class _ReceiptSettingsSheetState
     _config.footerText = _footerController.text;
     ref.read(receiptConfigProvider.notifier).updateConfig(_config);
     Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Шаблон чека сохранён'),
-        backgroundColor: AppColors.success,
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+    showInfoSnackBar(context, ref, 'Настройки принтера и чека сохранены');
+  }
+
+  void _testPrint() async {
+    final svc = ref.read(printerServiceProvider);
+    final printerName = ref.read(defaultPrinterNameProvider);
+    await svc.printTestPage(_config, printerName: printerName);
   }
 
   @override
@@ -1088,6 +1119,9 @@ class _ReceiptSettingsSheetState
     final cs = Theme.of(context).colorScheme;
     final auth = ref.read(authProvider);
     final cur = ref.read(currencyProvider).symbol;
+
+    final printersAsync = ref.watch(availablePrintersProvider);
+    final defaultName = ref.watch(defaultPrinterNameProvider);
 
     return DraggableScrollableSheet(
       expand: false,
@@ -1112,14 +1146,110 @@ class _ReceiptSettingsSheetState
               ),
             ),
 
-            Text('Шаблон чека',
+            Text('Настройка чеков',
                 style: AppTypography.headlineMedium
                     .copyWith(color: cs.onSurface)),
             const SizedBox(height: AppSpacing.xs),
-            Text('Настройте, что отображать на чеке при продаже',
+            Text('Настройте принтер и содержимое чеков',
                 style: AppTypography.bodySmall.copyWith(
                     color: cs.onSurface.withValues(alpha: 0.5))),
             const SizedBox(height: AppSpacing.xl),
+
+            // Printer Selection
+            Row(
+              children: [
+                Expanded(
+                  child: Text('ЧЕКОВЫЙ ПРИНТЕР',
+                      style: AppTypography.labelSmall.copyWith(
+                          color: cs.onSurface.withValues(alpha: 0.4),
+                          letterSpacing: 1.2)),
+                ),
+                TextButton.icon(
+                  onPressed: () => ref.invalidate(availablePrintersProvider),
+                  icon: const Icon(Icons.refresh_rounded, size: 16),
+                  label: const Text('Обновить'),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+
+            Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: cs.outline.withValues(alpha: 0.3)),
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+              ),
+              child: printersAsync.when(
+                data: (printers) {
+                  if (printers.isEmpty) {
+                    return Padding(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.warning_amber_rounded, color: cs.error, size: 20),
+                              const SizedBox(width: AppSpacing.sm),
+                              const Expanded(child: Text('Автоматический поиск не дал результатов.', style: TextStyle(fontWeight: FontWeight.w500))),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          Text('Введите точное системное имя принтера (например: Microsoft Print to PDF, Xprinter XP-58):', style: TextStyle(fontSize: 12, color: cs.onSurface.withValues(alpha: 0.6))),
+                          const SizedBox(height: AppSpacing.sm),
+                          TextFormField(
+                            initialValue: defaultName ?? '',
+                            decoration: InputDecoration(
+                              hintText: 'Имя принтера',
+                              isDense: true,
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
+                            ),
+                            onChanged: (val) {
+                              ref.read(defaultPrinterNameProvider.notifier).setDefaultPrinter(val.trim().isEmpty ? null : val.trim());
+                            },
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  return Column(
+                    children: printers.map((p) {
+                      final isDefault = p.name == defaultName;
+                      return RadioListTile<String>(
+                        value: p.name,
+                        groupValue: defaultName,
+                        onChanged: (val) {
+                          ref.read(defaultPrinterNameProvider.notifier).setDefaultPrinter(val);
+                        },
+                        title: Text(p.name, style: TextStyle(fontWeight: isDefault ? FontWeight.w600 : FontWeight.w400)),
+                        subtitle: Text(p.url.isNotEmpty ? p.url : 'Локальный', style: const TextStyle(fontSize: 12)),
+                        secondary: Icon(Icons.print_rounded, color: isDefault ? AppColors.primary : cs.onSurface.withValues(alpha: 0.5)),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                      );
+                    }).toList(),
+                  );
+                },
+                loading: () => const Padding(
+                  padding: EdgeInsets.all(16.0),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
+                error: (e, _) => ListTile(
+                  title: const Text('Ошибка загрузки принтеров'),
+                  subtitle: Text(e.toString(), style: TextStyle(color: cs.error)),
+                ),
+              ),
+            ),
+            
+            const SizedBox(height: AppSpacing.md),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _testPrint,
+                icon: const Icon(Icons.print_rounded),
+                label: const Text('Тестовая печать на принтер'),
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.xxl),
 
             // Toggles
             Text('ПОЛЯ ЧЕКА',
@@ -1164,6 +1294,66 @@ class _ReceiptSettingsSheetState
                   }
                   return Colors.transparent;
                 }),
+              ),
+            ),
+
+            const SizedBox(height: AppSpacing.xl),
+
+            // Print copies
+            Text('КОЛИЧЕСТВО КОПИЙ ЧЕКА',
+                style: AppTypography.labelSmall.copyWith(
+                    color: cs.onSurface.withValues(alpha: 0.4),
+                    letterSpacing: 1.2)),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                IconButton.filledTonal(
+                  onPressed: _config.printCopies > 1
+                      ? () => setState(() => _config.printCopies--)
+                      : null,
+                  icon: const Icon(Icons.remove_rounded),
+                ),
+                Expanded(
+                  child: Text(
+                    '${_config.printCopies}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                ),
+                IconButton.filledTonal(
+                  onPressed: _config.printCopies < 10
+                      ? () => setState(() => _config.printCopies++)
+                      : null,
+                  icon: const Icon(Icons.add_rounded),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: AppSpacing.xl),
+
+            // Auto-Cut Note
+            Text('АВТООТРЕЗЧИК',
+                style: AppTypography.labelSmall.copyWith(
+                    color: cs.onSurface.withValues(alpha: 0.4),
+                    letterSpacing: 1.2)),
+            const SizedBox(height: AppSpacing.xs),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: cs.secondaryContainer.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.cut_rounded, color: cs.primary),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      'Включите "Auto cut (Report / End of Document)" в Панели управления Windows -> Свойства вашего принтера -> Настройки устройства.',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                ],
               ),
             ),
 

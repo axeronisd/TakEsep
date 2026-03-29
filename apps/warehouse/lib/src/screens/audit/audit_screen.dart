@@ -5,6 +5,7 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 
 import '../../providers/audit_providers.dart';
 import '../../providers/auth_providers.dart';
+import '../../utils/snackbar_helper.dart';
 import 'widgets/audit_count_pane.dart';
 
 /// Audit (Ревизия) screen — simplified: start new or continue draft.
@@ -153,14 +154,7 @@ class AuditScreen extends ConsumerWidget {
       } else if (auth.selectedWarehouseId == null) {
         msg += ': склад не выбран';
       }
-      ScaffoldMessenger.of(ctx).showSnackBar(
-        SnackBar(
-          content: Text(msg),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-          margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
-        ),
-      );
+      showErrorSnackBar(ctx, msg);
     }
   }
 }

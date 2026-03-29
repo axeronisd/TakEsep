@@ -69,7 +69,7 @@ class AdminRepository {
       final warehouses = await _supabase
           .from('warehouses')
           .select()
-          .eq('company_id', companyId);
+          .eq('organization_id', companyId);
 
       final products = await _supabase
           .from('products')

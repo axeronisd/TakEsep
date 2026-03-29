@@ -4,7 +4,7 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 import 'package:takesep_core/takesep_core.dart';
 import '../../providers/currency_provider.dart';
 import '../../providers/client_providers.dart';
-import '../../data/mock_data.dart';
+
 import 'widgets/edit_client_sheet.dart';
 import 'widgets/client_profile_sheet.dart';
 
@@ -21,7 +21,7 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cur = ref.watch(currencyProvider).symbol;
+    final fmt = ref.watch(priceFormatterProvider);
     final isDesktop = MediaQuery.of(context).size.width >= 900;
     final cs = Theme.of(context).colorScheme;
     final clientsAsync = ref.watch(clientListProvider);
@@ -122,13 +122,13 @@ class _ClientsScreenState extends ConsumerState<ClientsScreen> {
                                 Text('${c.purchasesCount} покупок', style: AppTypography.bodySmall.copyWith(color: cs.onSurface.withValues(alpha: 0.5))),
                                 if (c.debt > 0) ...[
                                   const SizedBox(width: AppSpacing.md),
-                                  Text('Долг: ${formatMoney(c.debt, cur)}', style: AppTypography.labelSmall.copyWith(color: AppColors.error)),
+                                  Text('Долг: ${fmt(c.debt)}', style: AppTypography.labelSmall.copyWith(color: AppColors.error)),
                                 ],
                               ]),
                             ],
                           )),
                           if (c.totalSpent > 0)
-                            Text(formatMoney(c.totalSpent, cur), style: AppTypography.labelLarge.copyWith(color: cs.onSurface.withValues(alpha: 0.7))),
+                            Text(fmt(c.totalSpent), style: AppTypography.labelLarge.copyWith(color: cs.onSurface.withValues(alpha: 0.7))),
                         ]),
                       );
                     },

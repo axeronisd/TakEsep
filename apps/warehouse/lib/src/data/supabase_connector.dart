@@ -42,14 +42,15 @@ class SupabasePowerSyncConnector extends PowerSyncBackendConnector {
         switch (op.op) {
           case UpdateType.put:
             // INSERT or UPDATE (upsert)
-            final data = Map<String, dynamic>.from(op.opData!);
+            final data = _sanitizeData(op.table, op.opData!);
             data['id'] = op.id;
             await table.upsert(data);
             break;
 
           case UpdateType.patch:
             // UPDATE only changed fields
-            await table.update(op.opData!).eq('id', op.id);
+            final data = _sanitizeData(op.table, op.opData!);
+            await table.update(data).eq('id', op.id);
             break;
 
           case UpdateType.delete:
@@ -64,6 +65,23 @@ class SupabasePowerSyncConnector extends PowerSyncBackendConnector {
       // Don't call transaction.complete() — it will retry later
       rethrow;
     }
+  }
+
+  /// Helper to convert SQLite integer booleans back to strict postgrest booleans
+  Map<String, dynamic> _sanitizeData(String tableName, Map<String, dynamic> source) {
+    final data = Map<String, dynamic>.from(source);
+    data.forEach((key, value) {
+      if ((key.startsWith('is_') || key == 'salary_auto_deduct') && (value == 1 || value == 0)) {
+        data[key] = value == 1;
+      }
+    });
+    
+    // Strip schema-drift columns that exist locally but not in Supabase
+    if (tableName == 'warehouses') data.remove('is_active');
+    if (tableName == 'categories') data.remove('sort_order');
+    if (tableName == 'products') data.remove('unit');
+    
+    return data;
   }
 
   /// PowerSync Cloud instance URL.

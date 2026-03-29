@@ -17,7 +17,7 @@ class StorageRepository {
       await _supabase.storage.from(bucketName).upload(
             fileName,
             file,
-            fileOptions: const FileOptions(cacheControl: '3600', upsert: false),
+            fileOptions: const FileOptions(cacheControl: '31536000', upsert: false),
           );
 
       // Get the public URL

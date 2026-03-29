@@ -5,6 +5,7 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 
 import '../../providers/arrival_providers.dart';
 import '../../providers/currency_provider.dart';
+import '../../utils/snackbar_helper.dart';
 import 'widgets/arrival_catalog_pane.dart';
 import 'widgets/arrival_invoice_pane.dart';
 
@@ -29,14 +30,7 @@ class _ArrivalScreenState extends ConsumerState<ArrivalScreen> {
               final success =
                   await ref.read(currentArrivalProvider.notifier).saveArrival(ref);
               if (success && context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Приход успешно сохранен! (F2)'),
-                    backgroundColor: AppColors.success,
-                    behavior: SnackBarBehavior.floating,
-                    margin: EdgeInsets.only(bottom: 80, left: 16, right: 16),
-                  ),
-                );
+                showInfoSnackBar(context, ref, 'Приход успешно сохранен! (F2)');
               }
             }
           },

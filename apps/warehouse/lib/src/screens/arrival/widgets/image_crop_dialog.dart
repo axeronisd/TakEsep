@@ -5,6 +5,7 @@ import 'package:crop_your_image/crop_your_image.dart';
 import 'package:takesep_design_system/takesep_design_system.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
+import '../../../utils/snackbar_helper.dart';
 
 /// Shows a crop dialog and returns the cropped [File], or null if cancelled.
 Future<File?> showImageCropDialog(BuildContext context, File imageFile) {
@@ -53,12 +54,7 @@ class _ImageCropDialogState extends State<_ImageCropDialog> {
     } catch (e) {
       if (mounted) {
         setState(() => _isCropping = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка обрезки: $e'),
-            backgroundColor: AppColors.error,
-          ),
-        );
+        showErrorSnackBar(context, 'Ошибка обрезки: $e');
       }
     }
   }

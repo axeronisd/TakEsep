@@ -8,6 +8,7 @@ import '../../providers/dashboard_providers.dart';
 import '../../providers/date_filter_provider.dart';
 import '../../providers/currency_provider.dart';
 import '../../data/mock_data.dart';
+import '../../providers/owner_settings_provider.dart';
 import '../onboarding/dashboard_onboarding_overlay.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -36,6 +37,23 @@ class DashboardScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.xl),
               _KpiRow(isDesktop: isDesktop),
               const SizedBox(height: AppSpacing.xl),
+
+              // ─── Goods & Services Cards ───
+              if (isDesktop) ...[
+                Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: _DashGoodsCard()),
+                      const SizedBox(width: AppSpacing.lg),
+                      Expanded(child: _DashServicesCard()),
+                    ]),
+              ] else ...[
+                _DashGoodsCard(),
+                const SizedBox(height: AppSpacing.lg),
+                _DashServicesCard(),
+              ],
+              const SizedBox(height: AppSpacing.xl),
+
               if (isDesktop) ...[
                 const Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -518,7 +536,7 @@ class _KpiCardState extends ConsumerState<_KpiCard> {
     final changePct = kpi.changePercent;
     final isInfinite = changePct.isInfinite;
     final isPositive = changePct > 0;
-    final cur = ref.watch(currencyProvider).symbol;
+    final fmt = ref.watch(priceFormatterProvider);
 
     final isExpenseKpi = kpi.label.contains('Расход') ||
         kpi.label.contains('Убыток') ||
@@ -586,7 +604,7 @@ class _KpiCardState extends ConsumerState<_KpiCard> {
                 ),
               ]),
               const SizedBox(height: 8),
-              Text(kpi.formattedValue,
+              Text(kpi.isCurrency ? fmt(kpi.value) : kpi.value.toInt().toString(),
                   style: TextStyle(
                       color: cs.onSurface,
                       fontSize: 18,
@@ -597,7 +615,7 @@ class _KpiCardState extends ConsumerState<_KpiCard> {
               AnimatedCrossFade(
                 firstChild: const SizedBox.shrink(),
                 secondChild: _expanded
-                    ? _buildDetail(cs, changeColor, changeText, cur)
+                    ? _buildDetail(cs, changeColor, changeText, fmt)
                     : const SizedBox.shrink(),
                 crossFadeState: _expanded
                     ? CrossFadeState.showSecond
@@ -609,7 +627,7 @@ class _KpiCardState extends ConsumerState<_KpiCard> {
     );
   }
 
-  Widget _buildDetail(ColorScheme cs, Color changeColor, String changeText, String cur) {
+  Widget _buildDetail(ColorScheme cs, Color changeColor, String changeText, String Function(double) fmt) {
     final breakdownAsync = ref.watch(kpiBreakdownProvider);
     final kpi = widget.kpi;
 
@@ -634,7 +652,7 @@ class _KpiCardState extends ConsumerState<_KpiCard> {
           const SizedBox(height: 8),
           // Real data
           breakdownAsync.when(
-            data: (bd) => _buildBreakdownContent(cs, bd, cur),
+            data: (bd) => _buildBreakdownContent(cs, bd, fmt),
             loading: () => const Padding(
               padding: EdgeInsets.symmetric(vertical: 8),
               child: Center(
@@ -653,28 +671,28 @@ class _KpiCardState extends ConsumerState<_KpiCard> {
     );
   }
 
-  Widget _buildBreakdownContent(ColorScheme cs, KpiBreakdown bd, String cur) {
+  Widget _buildBreakdownContent(ColorScheme cs, KpiBreakdown bd, String Function(double) fmt) {
     final kpi = widget.kpi;
 
     // ── Расходы ──
     if (kpi.label.contains('Расход')) {
-      return _buildExpensesBreakdown(cs, bd, cur);
+      return _buildExpensesBreakdown(cs, bd, fmt);
     }
     // ── Прибыль / Убыток ──
     if (kpi.label.contains('прибыль') || kpi.label.contains('Убыток')) {
-      return _buildProfitBreakdown(cs, bd, cur);
+      return _buildProfitBreakdown(cs, bd, fmt);
     }
     // ── Продаж ──
     if (kpi.label.contains('Продаж')) {
-      return _buildSalesBreakdown(cs, bd, cur);
+      return _buildSalesBreakdown(cs, bd, fmt);
     }
     // ── Средний чек ──
     if (kpi.label.contains('Средний чек')) {
-      return _buildAvgCheckBreakdown(cs, bd, cur);
+      return _buildAvgCheckBreakdown(cs, bd, fmt);
     }
     // ── Потери (ревизия) ──
     if (kpi.label.contains('Потери')) {
-      return _buildAuditBreakdown(cs, bd, cur);
+      return _buildAuditBreakdown(cs, bd, fmt);
     }
 
     return Text('Показатель за выбранный период',
@@ -683,7 +701,7 @@ class _KpiCardState extends ConsumerState<_KpiCard> {
   }
 
   // ═══ EXPENSES BREAKDOWN ═══
-  Widget _buildExpensesBreakdown(ColorScheme cs, KpiBreakdown bd, String cur) {
+  Widget _buildExpensesBreakdown(ColorScheme cs, KpiBreakdown bd, String Function(double) fmt) {
     final items = <({String label, double amount, Color color, IconData icon})>[
       if (bd.totalIncome > 0)
         (label: 'Закупки', amount: bd.totalIncome, color: const Color(0xFF00B894), icon: Icons.download_rounded),
@@ -740,7 +758,7 @@ class _KpiCardState extends ConsumerState<_KpiCard> {
                         color: cs.onSurface, fontSize: 11),
                     overflow: TextOverflow.ellipsis),
               ),
-              Text(formatMoney(item.amount, cur),
+              Text(fmt(item.amount),
                   style: TextStyle(
                       color: item.color,
                       fontSize: 11,
@@ -752,7 +770,7 @@ class _KpiCardState extends ConsumerState<_KpiCard> {
   }
 
   // ═══ PROFIT BREAKDOWN — top products by profit ═══
-  Widget _buildProfitBreakdown(ColorScheme cs, KpiBreakdown bd, String cur) {
+  Widget _buildProfitBreakdown(ColorScheme cs, KpiBreakdown bd, String Function(double) fmt) {
     final products = bd.topProducts;
     if (products.isEmpty) {
       return Text('Нет данных о товарах',
@@ -812,7 +830,7 @@ class _KpiCardState extends ConsumerState<_KpiCard> {
                         fontWeight: FontWeight.w600)),
               ),
               const SizedBox(width: 6),
-              Text(formatMoney(top[i].totalProfit, cur),
+              Text(fmt(top[i].totalProfit),
                   style: TextStyle(
                       color: AppColors.success,
                       fontSize: 11,
@@ -824,7 +842,7 @@ class _KpiCardState extends ConsumerState<_KpiCard> {
   }
 
   // ═══ SALES BREAKDOWN — top products by quantity ═══
-  Widget _buildSalesBreakdown(ColorScheme cs, KpiBreakdown bd, String cur) {
+  Widget _buildSalesBreakdown(ColorScheme cs, KpiBreakdown bd, String Function(double) fmt) {
     final products = bd.topProducts;
     if (products.isEmpty) {
       return Text('Нет продаж за период',
@@ -878,7 +896,7 @@ class _KpiCardState extends ConsumerState<_KpiCard> {
   }
 
   // ═══ AVG CHECK BREAKDOWN ═══
-  Widget _buildAvgCheckBreakdown(ColorScheme cs, KpiBreakdown bd, String cur) {
+  Widget _buildAvgCheckBreakdown(ColorScheme cs, KpiBreakdown bd, String Function(double) fmt) {
     final amounts = bd.saleAmounts;
     if (amounts.isEmpty) {
       return Text('Нет продаж за период',
@@ -902,7 +920,7 @@ class _KpiCardState extends ConsumerState<_KpiCard> {
                 height: 1.5),
             children: [
               TextSpan(
-                  text: formatMoney(bd.totalRevenue, cur),
+                  text: fmt(bd.totalRevenue),
                   style: TextStyle(
                       color: cs.onSurface,
                       fontWeight: FontWeight.w600)),
@@ -912,16 +930,16 @@ class _KpiCardState extends ConsumerState<_KpiCard> {
                   style: TextStyle(
                       color: cs.onSurface,
                       fontWeight: FontWeight.w600)),
-              TextSpan(text: ' = ${formatMoney(avg, cur)}'),
+              TextSpan(text: ' = ${fmt(avg)}'),
             ],
           ),
         ),
         const SizedBox(height: 6),
         // Min/max
-        _statRow(cs, 'Макс. чек', formatMoney(maxCheck, cur), AppColors.success),
-        _statRow(cs, 'Мин. чек', formatMoney(minCheck, cur), AppColors.warning),
+        _statRow(cs, 'Макс. чек', fmt(maxCheck), AppColors.success),
+        _statRow(cs, 'Мин. чек', fmt(minCheck), AppColors.warning),
         if (amounts.length >= 3) ...[
-          _statRow(cs, 'Медиана', formatMoney(amounts[amounts.length ~/ 2], cur),
+          _statRow(cs, 'Медиана', fmt(amounts[amounts.length ~/ 2]),
               AppColors.info),
         ],
       ],
@@ -951,7 +969,7 @@ class _KpiCardState extends ConsumerState<_KpiCard> {
   }
 
   // ═══ AUDIT LOSSES BREAKDOWN ═══
-  Widget _buildAuditBreakdown(ColorScheme cs, KpiBreakdown bd, String cur) {
+  Widget _buildAuditBreakdown(ColorScheme cs, KpiBreakdown bd, String Function(double) fmt) {
     final shortages = bd.auditShortages;
     if (shortages.isEmpty) {
       return Text('Нет данных о потерях',
@@ -990,7 +1008,7 @@ class _KpiCardState extends ConsumerState<_KpiCard> {
                       fontSize: 10)),
               const SizedBox(width: 6),
               Text(
-                  '-${formatMoney(((item['loss'] as num?)?.toDouble() ?? 0), cur)}',
+                  '-${fmt(((item['loss'] as num?)?.toDouble() ?? 0))}',
                   style: TextStyle(
                       color: AppColors.error,
                       fontSize: 11,
@@ -1021,7 +1039,7 @@ class _RevenueChart extends ConsumerWidget {
               child: Text('\u0412\u044b\u0440\u0443\u0447\u043a\u0430',
                   style: AppTypography.headlineSmall
                       .copyWith(color: cs.onSurface))),
-          Text(formatMoney(totalAsync.valueOrNull ?? 0.0, ref.watch(currencyProvider).symbol),
+          Text(ref.watch(priceFormatterProvider)(totalAsync.valueOrNull ?? 0.0),
               style: TextStyle(
                   color: cs.primary,
                   fontSize: 16,
@@ -1054,7 +1072,7 @@ class _RevenueChart extends ConsumerWidget {
                                 fontSize: 12),
                             children: [
                               TextSpan(
-                                text: formatMoney(point.revenue, ref.watch(currencyProvider).symbol),
+                                text: ref.watch(priceFormatterProvider)(point.revenue),
                                 style: const TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.w700,
@@ -1263,13 +1281,13 @@ class _TopProductsCardState extends ConsumerState<_TopProductsCard> {
                                     children: [
                                       _Info(
                                           '\u0412\u044b\u0440\u0443\u0447\u043a\u0430',
-                                          formatMoney(
-                                              visible[i].totalRevenue, ref.watch(currencyProvider).symbol),
+                                          ref.watch(priceFormatterProvider)(
+                                              visible[i].totalRevenue),
                                           cs),
                                       _Info(
                                           '\u041f\u0440\u0438\u0431\u044b\u043b\u044c',
-                                          formatMoney(
-                                              visible[i].totalProfit, ref.watch(currencyProvider).symbol),
+                                          ref.watch(priceFormatterProvider)(
+                                              visible[i].totalProfit),
                                           cs),
                                       _Info(
                                           'Маржа',
@@ -1331,7 +1349,7 @@ class _OpsCardState extends ConsumerState<_OpsCard> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final cur = ref.watch(currencyProvider).symbol;
+    final fmt = ref.watch(priceFormatterProvider);
     final opsAsync = ref.watch(recentOpsProvider);
 
     return TECard(
@@ -1415,8 +1433,8 @@ class _OpsCardState extends ConsumerState<_OpsCard> {
                                 ])),
                             if (visible[i]['type'] != 'audit')
                               Text(
-                                formatMoney(
-                                    visible[i]['total'] as double, cur),
+                                fmt(
+                                    visible[i]['total'] as double),
                                 style: TextStyle(
                                     color: visible[i]['type'] == 'sale'
                                         ? const Color(0xFF6C5CE7)
@@ -1461,11 +1479,10 @@ class _OpsCardState extends ConsumerState<_OpsCard> {
                                                 0)
                                           _Info(
                                               'Скидка',
-                                              formatMoney(
+                                              fmt(
                                                   visible[i]
                                                           ['discountAmount']
-                                                      as double,
-                                                  cur),
+                                                      as double),
                                               cs),
                                       ],
                                       if (visible[i]['type'] == 'income' &&
@@ -1857,7 +1874,7 @@ class _TopClientsCardState extends ConsumerState<_TopClientsCard> {
                                   style: TextStyle(
                                       color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w600),
                                   overflow: TextOverflow.ellipsis)),
-                          Text(formatMoney(visible[i].totalSpent, ref.watch(currencyProvider).symbol),
+                          Text(ref.watch(priceFormatterProvider)(visible[i].totalSpent),
                               style: TextStyle(
                                   color: cs.primary,
                                   fontSize: 13,
@@ -1947,4 +1964,345 @@ class _Badge extends StatelessWidget {
             style: TextStyle(
                 color: color, fontSize: 11, fontWeight: FontWeight.w700)),
       );
+}
+
+// ═══ GOODS CARD (expandable) ══════════════════════════════
+
+class _DashGoodsCard extends ConsumerStatefulWidget {
+  const _DashGoodsCard();
+
+  @override
+  ConsumerState<_DashGoodsCard> createState() => _DashGoodsCardState();
+}
+
+class _DashGoodsCardState extends ConsumerState<_DashGoodsCard> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final dataAsync = ref.watch(goodsServicesProvider);
+    final fmt = ref.watch(priceFormatterProvider);
+
+    return TECard(
+      padding: EdgeInsets.zero,
+      child: dataAsync.when(
+        data: (data) {
+          final profit = data.goodsProfit;
+          final total = data.goodsTotal;
+          final items = data.goodsList;
+
+          return Column(
+            children: [
+              // Header
+              InkWell(
+                onTap: items.isNotEmpty ? () => setState(() => _expanded = !_expanded) : null,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Row(children: [
+                    Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF00B894), Color(0xFF55EFC4)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.shopping_bag_rounded, color: Colors.white, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Товары', style: AppTypography.headlineSmall.copyWith(
+                            color: cs.onSurface, fontWeight: FontWeight.w700)),
+                          const SizedBox(height: 2),
+                          Text('Выручка от товаров', style: TextStyle(
+                            color: cs.onSurface.withValues(alpha: 0.5), fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text(fmt(total), style: const TextStyle(
+                          color: Color(0xFF00B894),
+                          fontSize: 18, fontWeight: FontWeight.w700)),
+                        Text('Прибыль: ${fmt(profit)}', style: TextStyle(
+                          color: profit >= 0
+                              ? AppColors.success.withValues(alpha: 0.7)
+                              : AppColors.error.withValues(alpha: 0.7),
+                          fontSize: 11)),
+                      ],
+                    ),
+                    if (items.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      AnimatedRotation(
+                        turns: _expanded ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Icon(Icons.expand_more_rounded, color: cs.onSurface.withValues(alpha: 0.3)),
+                      ),
+                    ],
+                  ]),
+                ),
+              ),
+              // Expanded items
+              AnimatedCrossFade(
+                firstChild: const SizedBox.shrink(),
+                secondChild: items.isEmpty
+                    ? const SizedBox.shrink()
+                    : Container(
+                        decoration: BoxDecoration(
+                          border: Border(top: BorderSide(color: cs.outline.withValues(alpha: 0.15))),
+                        ),
+                        child: Column(
+                          children: [
+                            for (int i = 0; i < items.length; i++)
+                              _goodsItemTile(items[i], fmt, cs, i),
+                          ],
+                        ),
+                      ),
+                crossFadeState: _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                duration: const Duration(milliseconds: 250),
+              ),
+            ],
+          );
+        },
+        loading: () => const Padding(
+          padding: EdgeInsets.all(AppSpacing.xl),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+        error: (e, _) => Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Text('Ошибка загрузки товаров: $e',
+              style: const TextStyle(color: Colors.red, fontSize: 12)),
+        ),
+      ),
+    );
+  }
+
+  Widget _goodsItemTile(Map<String, dynamic> item, String Function(double) fmt, ColorScheme cs, int index) {
+    final name = item['product_name'] as String? ?? '—';
+    final qty = (item['qty'] as num?)?.toInt() ?? 0;
+    final total = (item['total'] as num?)?.toDouble() ?? 0;
+    final cost = (item['total_cost'] as num?)?.toDouble() ?? 0;
+    final lastSold = item['last_sold_at'] as String?;
+    String dateStr = '';
+    if (lastSold != null) {
+      final dt = DateTime.tryParse(lastSold);
+      if (dt != null) {
+        dateStr = '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 10),
+      decoration: BoxDecoration(
+        border: index > 0 ? Border(top: BorderSide(color: cs.outline.withValues(alpha: 0.08))) : null,
+      ),
+      child: Row(children: [
+        Container(
+          width: 24, height: 24,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: index < 3 ? const Color(0xFF00B894).withValues(alpha: 0.15) : cs.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text('${index + 1}', style: TextStyle(
+            fontSize: 11, fontWeight: FontWeight.w600,
+            color: index < 3 ? const Color(0xFF00B894) : cs.onSurface.withValues(alpha: 0.5))),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(name, style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w500),
+                overflow: TextOverflow.ellipsis),
+            Row(children: [
+              Text('$qty шт', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.4), fontSize: 11)),
+              if (dateStr.isNotEmpty) ...[
+                const SizedBox(width: 6),
+                Text('· $dateStr', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.3), fontSize: 11)),
+              ],
+            ]),
+          ]),
+        ),
+        Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+          Text(fmt(total), style: TextStyle(
+            color: const Color(0xFF00B894), fontSize: 13, fontWeight: FontWeight.w600)),
+          Text('Себест: ${fmt(cost)}', style: TextStyle(
+            color: cs.onSurface.withValues(alpha: 0.3), fontSize: 10)),
+        ]),
+      ]),
+    );
+  }
+}
+
+// ═══ SERVICES CARD (expandable) ══════════════════════════════
+
+class _DashServicesCard extends ConsumerStatefulWidget {
+  const _DashServicesCard();
+
+  @override
+  ConsumerState<_DashServicesCard> createState() => _DashServicesCardState();
+}
+
+class _DashServicesCardState extends ConsumerState<_DashServicesCard> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final dataAsync = ref.watch(goodsServicesProvider);
+    final fmt = ref.watch(priceFormatterProvider);
+
+    return TECard(
+      padding: EdgeInsets.zero,
+      child: dataAsync.when(
+        data: (data) {
+          final total = data.servicesTotal;
+          final items = data.servicesList;
+
+          return Column(
+            children: [
+              // Header
+              InkWell(
+                onTap: items.isNotEmpty ? () => setState(() => _expanded = !_expanded) : null,
+                borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Row(children: [
+                    Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.design_services_rounded, color: Colors.white, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Услуги', style: AppTypography.headlineSmall.copyWith(
+                            color: cs.onSurface, fontWeight: FontWeight.w700)),
+                          const SizedBox(height: 2),
+                          Text('Доход от оказанных услуг', style: TextStyle(
+                            color: cs.onSurface.withValues(alpha: 0.5), fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                    Text(fmt(total), style: const TextStyle(
+                      color: Color(0xFF6C5CE7),
+                      fontSize: 18, fontWeight: FontWeight.w700)),
+                    if (items.isNotEmpty) ...[
+                      const SizedBox(width: 8),
+                      AnimatedRotation(
+                        turns: _expanded ? 0.5 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Icon(Icons.expand_more_rounded, color: cs.onSurface.withValues(alpha: 0.3)),
+                      ),
+                    ],
+                  ]),
+                ),
+              ),
+              // Expanded items 
+              AnimatedCrossFade(
+                firstChild: const SizedBox.shrink(),
+                secondChild: items.isEmpty
+                    ? const SizedBox.shrink()
+                    : Container(
+                        decoration: BoxDecoration(
+                          border: Border(top: BorderSide(color: cs.outline.withValues(alpha: 0.15))),
+                        ),
+                        child: Column(
+                          children: [
+                            for (int i = 0; i < items.length; i++)
+                              _serviceItemTile(items[i], fmt, cs, i),
+                          ],
+                        ),
+                      ),
+                crossFadeState: _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                duration: const Duration(milliseconds: 250),
+              ),
+            ],
+          );
+        },
+        loading: () => const Padding(
+          padding: EdgeInsets.all(AppSpacing.xl),
+          child: Center(child: CircularProgressIndicator()),
+        ),
+        error: (e, _) => Padding(
+          padding: const EdgeInsets.all(AppSpacing.xl),
+          child: Text('Ошибка загрузки услуг: $e',
+              style: const TextStyle(color: Colors.red, fontSize: 12)),
+        ),
+      ),
+    );
+  }
+
+  Widget _serviceItemTile(Map<String, dynamic> item, String Function(double) fmt, ColorScheme cs, int index) {
+    final name = item['product_name'] as String? ?? '—';
+    final qty = (item['qty'] as num?)?.toInt() ?? 0;
+    final total = (item['total'] as num?)?.toDouble() ?? 0;
+    final executor = item['executor_name'] as String?;
+    final lastSold = item['last_sold_at'] as String?;
+    String dateStr = '';
+    if (lastSold != null) {
+      final dt = DateTime.tryParse(lastSold);
+      if (dt != null) {
+        dateStr = '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}';
+      }
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: 10),
+      decoration: BoxDecoration(
+        border: index > 0 ? Border(top: BorderSide(color: cs.outline.withValues(alpha: 0.08))) : null,
+      ),
+      child: Row(children: [
+        Container(
+          width: 24, height: 24,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: index < 3 ? const Color(0xFF6C5CE7).withValues(alpha: 0.15) : cs.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text('${index + 1}', style: TextStyle(
+            fontSize: 11, fontWeight: FontWeight.w600,
+            color: index < 3 ? const Color(0xFF6C5CE7) : cs.onSurface.withValues(alpha: 0.5))),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(name, style: TextStyle(color: cs.onSurface, fontSize: 13, fontWeight: FontWeight.w500),
+                overflow: TextOverflow.ellipsis),
+            Row(children: [
+              Text('$qty шт', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.4), fontSize: 11)),
+              if (executor != null && executor.isNotEmpty) ...[
+                const SizedBox(width: 6),
+                Icon(Icons.person_rounded, size: 11, color: cs.onSurface.withValues(alpha: 0.3)),
+                const SizedBox(width: 2),
+                Flexible(
+                  child: Text(executor, style: TextStyle(
+                    color: const Color(0xFF6C5CE7).withValues(alpha: 0.7), fontSize: 11),
+                    overflow: TextOverflow.ellipsis),
+                ),
+              ],
+              if (dateStr.isNotEmpty) ...[
+                const SizedBox(width: 6),
+                Text('· $dateStr', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.3), fontSize: 11)),
+              ],
+            ]),
+          ]),
+        ),
+        Text(fmt(total), style: const TextStyle(
+          color: Color(0xFF6C5CE7), fontSize: 13, fontWeight: FontWeight.w600)),
+      ]),
+    );
+  }
 }

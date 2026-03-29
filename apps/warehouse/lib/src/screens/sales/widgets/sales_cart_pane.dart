@@ -11,6 +11,10 @@ import '../../../providers/inventory_providers.dart';
 import '../../../providers/client_providers.dart';
 import '../../../data/sales_repository.dart';
 import '../../../providers/receipt_provider.dart';
+import '../../../providers/printer_provider.dart';
+import '../../../services/printer_service.dart';
+import '../../../utils/snackbar_helper.dart';
+import '../../../widgets/cached_image_widget.dart';
 
 /// Sales cart pane — a ConsumerWidget so it rebuilds correctly
 /// both inline (desktop) and inside modal bottom sheets (mobile).
@@ -71,9 +75,7 @@ class SalesCartPane extends ConsumerWidget {
                       .onSurface
                       .withValues(alpha: 0.5),
                   onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Сохранение черновиков — скоро'), behavior: SnackBarBehavior.floating, duration: Duration(seconds: 1)),
-                    );
+                    showInfoSnackBar(context, ref, 'Сохранение черновиков — скоро', duration: const Duration(seconds: 1));
                   },
                 ),
                 IconButton(
@@ -547,7 +549,7 @@ class SalesCartPane extends ConsumerWidget {
       final client = ref.read(selectedClientProvider);
       final receivedAmount = ref.read(cashReceivedProvider);
 
-      await ref.read(salesRepositoryProvider).createSale(
+      final newSaleId = await ref.read(salesRepositoryProvider).createSale(
             companyId: companyId,
             employeeId: employeeId,
             warehouseId: ref.read(selectedWarehouseIdProvider) ?? '',
@@ -586,16 +588,11 @@ class SalesCartPane extends ConsumerWidget {
           Navigator.of(context).pop();
         }
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Покупка успешно завершена!'),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showInfoSnackBar(context, ref, 'Покупка успешно завершена!');
 
         // Show receipt print dialog
         final pmName = activeMethods.firstWhere((m) => m.id == paymentMethod, orElse: () => PaymentMethod(id: 'cash', companyId: '', name: 'Наличные', isActive: true)).name;
+        final receiptNum = newSaleId.hashCode.abs().toString().padLeft(5, '0');
         _showReceiptDialog(
           context,
           ref,
@@ -603,17 +600,12 @@ class SalesCartPane extends ConsumerWidget {
           totalAmount: summary.finalTotal,
           discountAmount: summary.itemsDiscountTotal + summary.globalDiscountAmount,
           paymentMethod: pmName,
+          receiptNumber: receiptNum,
         );
       }
     } catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка: $e'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showErrorSnackBar(context, 'Ошибка: $e');
       }
     }
   }
@@ -625,6 +617,7 @@ class SalesCartPane extends ConsumerWidget {
     required double totalAmount,
     required double discountAmount,
     required String paymentMethod,
+    required String receiptNumber,
   }) {
     final config = ref.read(receiptConfigProvider);
     final auth = ref.read(authProvider);
@@ -675,12 +668,12 @@ class SalesCartPane extends ConsumerWidget {
                             fontWeight: FontWeight.bold, fontSize: 14),
                         textAlign: TextAlign.center),
                   if (config.showAddress)
-                    Text('г. Бишкек',
+                    Text(auth.availableWarehouses.where((w) => w.id == ref.read(selectedWarehouseIdProvider)).firstOrNull?.address ?? 'г. Бишкек',
                         style: receiptText.copyWith(fontSize: 10),
                         textAlign: TextAlign.center),
                   divider,
                   if (config.showReceiptNumber)
-                    Text('Чек №: ${now.millisecondsSinceEpoch % 100000}',
+                    Text('Чек №: $receiptNumber',
                         style: receiptText),
                   if (config.showDateTime)
                     Text('$dateStr  $timeStr', style: receiptText),
@@ -750,15 +743,41 @@ class SalesCartPane extends ConsumerWidget {
               child: const Text('Закрыть'),
             ),
             FilledButton.icon(
-              onPressed: () {
+              onPressed: () async {
                 Navigator.pop(ctx);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Чек отправлен на печать'),
-                    backgroundColor: AppColors.success,
-                    behavior: SnackBarBehavior.floating,
-                  ),
+                final printerService = ref.read(printerServiceProvider);
+                final warehouseId = ref.read(selectedWarehouseIdProvider);
+                final activeW = auth.availableWarehouses.where((w) => w.id == warehouseId).firstOrNull;
+                final addressStr = (activeW?.address?.isNotEmpty == true) ? activeW!.address! : 'г. Бишкек';
+                final cashierName = auth.currentEmployee?.name ?? 'Владелец';
+
+                final receiptData = ReceiptData(
+                  companyName: auth.currentCompany?.title ?? 'TakEsep',
+                  address: config.showAddress ? addressStr : null,
+                  cashierName: cashierName,
+                  receiptNumber: receiptNumber,
+                  dateTime: now,
+                  items: receiptItems.map((item) => ReceiptLineItem(
+                    name: item.productName,
+                    quantity: item.quantity,
+                    price: item.sellingPrice,
+                    total: item.sellingPrice * item.quantity,
+                  )).toList(),
+                  totalAmount: totalAmount,
+                  discountAmount: discountAmount,
+                  paymentMethod: paymentMethod,
+                  footerText: config.footerText,
+                  currencySymbol: cur,
                 );
+                final printerName = ref.read(defaultPrinterNameProvider);
+                final success = await printerService.printReceipt(receiptData, config, printerName: printerName);
+                if (context.mounted) {
+                  if (success) {
+                    showInfoSnackBar(context, ref, 'Чек отправлен на печать');
+                  } else {
+                    showErrorSnackBar(context, 'Ошибка печати');
+                  }
+                }
               },
               icon: const Icon(Icons.print_rounded),
               label: const Text('Печать'),
@@ -781,8 +800,8 @@ class SalesCartPane extends ConsumerWidget {
             const SizedBox(height: 16),
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
-              child: Image.network(
-                method.qrImageUrl!,
+              child: CachedImageWidget(
+                imageUrl: method.qrImageUrl!,
                 width: 250,
                 height: 250,
                 fit: BoxFit.contain,

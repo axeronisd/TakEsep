@@ -7,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../../../data/powersync_db.dart';
 import '../../../providers/auth_providers.dart';
 import '../../../providers/employee_providers.dart';
+import '../../../utils/snackbar_helper.dart';
 
 /// BottomSheet for creating or editing a Role.
 class EditRoleSheet extends ConsumerStatefulWidget {
@@ -289,11 +290,11 @@ class _EditRoleSheetState extends ConsumerState<EditRoleSheet> {
   Future<void> _saveRole() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Укажите название роли')));
+      showErrorSnackBar(context, 'Укажите название роли');
       return;
     }
     if (_selectedPermissions.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Выберите хотя бы одно право доступа')));
+      showErrorSnackBar(context, 'Выберите хотя бы одно право доступа');
       return;
     }
 
@@ -322,7 +323,7 @@ class _EditRoleSheetState extends ConsumerState<EditRoleSheet> {
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка сохранения: $e')));
+        showErrorSnackBar(context, 'Ошибка сохранения: $e');
         setState(() => _isSaving = false);
       }
     }
@@ -355,7 +356,7 @@ class _EditRoleSheetState extends ConsumerState<EditRoleSheet> {
       if (mounted) Navigator.pop(context);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка удаления: $e')));
+        showErrorSnackBar(context, 'Ошибка удаления: $e');
         setState(() => _isSaving = false);
       }
     }

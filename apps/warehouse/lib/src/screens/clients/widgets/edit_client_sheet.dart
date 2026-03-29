@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takesep_design_system/takesep_design_system.dart';
 import 'package:takesep_core/takesep_core.dart';
 import '../../../providers/client_providers.dart';
+import '../../../utils/snackbar_helper.dart';
 
 class EditClientSheet extends ConsumerStatefulWidget {
   final Client? client;
@@ -42,7 +43,7 @@ class _EditClientSheetState extends ConsumerState<EditClientSheet> {
   Future<void> _save() async {
     final name = _nameC.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Введите имя клиента')));
+      showErrorSnackBar(context, 'Введите имя клиента');
       return;
     }
 
@@ -78,16 +79,9 @@ class _EditClientSheetState extends ConsumerState<EditClientSheet> {
       setState(() => _isLoading = false);
       if (success) {
         Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(widget.client == null ? 'Клиент добавлен' : 'Клиент сохранен'),
-          behavior: SnackBarBehavior.floating,
-        ));
+        showInfoSnackBar(context, ref, widget.client == null ? 'Клиент добавлен' : 'Клиент сохранен');
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Ошибка при сохранении'),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ));
+        showErrorSnackBar(context, 'Ошибка при сохранении');
       }
     }
   }

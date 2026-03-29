@@ -47,7 +47,7 @@ const schema = Schema([
     Column.text('updated_at'),
   ]),
   Table('warehouses', [
-    Column.text('company_id'),
+    Column.text('organization_id'),
     Column.text('group_id'),
     Column.text('name'),
     Column.text('address'),

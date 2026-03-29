@@ -6,6 +6,8 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 import '../../../providers/payment_methods_provider.dart';
 import '../../../providers/auth_providers.dart';
 import '../../../data/supabase_storage_helper.dart';
+import '../../../utils/snackbar_helper.dart';
+import '../../../widgets/cached_image_widget.dart';
 
 class EditPaymentMethodSheet extends ConsumerStatefulWidget {
   final PaymentMethod? method;
@@ -47,18 +49,14 @@ class _EditPaymentMethodSheetState extends ConsumerState<EditPaymentMethodSheet>
         setState(() => _localImageFile = File(picked.path));
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка выбора фото: $e')),
-      );
+      showErrorSnackBar(context, 'Ошибка выбора фото: $e');
     }
   }
 
   Future<void> _save() async {
     final name = _nameController.text.trim();
     if (name.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Введите название способа оплаты')),
-      );
+      showErrorSnackBar(context, 'Введите название способа оплаты');
       return;
     }
 
@@ -84,9 +82,7 @@ class _EditPaymentMethodSheetState extends ConsumerState<EditPaymentMethodSheet>
 
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка сохранения: $e')),
-      );
+      showErrorSnackBar(context, 'Ошибка сохранения: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -218,9 +214,10 @@ class _EditPaymentMethodSheetState extends ConsumerState<EditPaymentMethodSheet>
                       child: Image.file(_localImageFile!, fit: BoxFit.contain),
                     )
                   : (_qrImageUrl != null && _qrImageUrl!.isNotEmpty)
-                      ? ClipRRect(
+                      ? CachedImageWidget(
+                          imageUrl: _qrImageUrl, 
+                          fit: BoxFit.contain,
                           borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                          child: Image.network(_qrImageUrl!, fit: BoxFit.contain),
                         )
                       : Column(
                           mainAxisAlignment: MainAxisAlignment.center,

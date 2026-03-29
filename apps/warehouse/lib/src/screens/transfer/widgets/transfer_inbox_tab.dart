@@ -7,6 +7,7 @@ import '../../../providers/auth_providers.dart';
 import '../../../providers/currency_provider.dart';
 import '../../../providers/inventory_providers.dart';
 import '../../../providers/transfer_providers.dart';
+import '../../../utils/snackbar_helper.dart';
 
 /// Tab showing incoming transfers awaiting acceptance/rejection.
 class TransferInboxTab extends ConsumerStatefulWidget {
@@ -286,15 +287,7 @@ class _TransferInboxTabState extends ConsumerState<TransferInboxTab> {
                     ref.invalidate(pendingTransferCountProvider);
                     ref.invalidate(transfersListProvider);
                     ref.invalidate(inventoryProvider);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Перемещение принято!'),
-                        backgroundColor: AppColors.success,
-                        behavior: SnackBarBehavior.floating,
-                        margin:
-                            EdgeInsets.only(bottom: 80, left: 16, right: 16),
-                      ),
-                    );
+                    showInfoSnackBar(context, ref, 'Перемещение принято!');
                   }
                 },
               ),
@@ -365,14 +358,7 @@ class _TransferInboxTabState extends ConsumerState<TransferInboxTab> {
                 ref.invalidate(pendingTransferCountProvider);
                 ref.invalidate(transfersListProvider);
                 ref.invalidate(inventoryProvider);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Перемещение отклонено'),
-                    backgroundColor: AppColors.warning,
-                    behavior: SnackBarBehavior.floating,
-                    margin: EdgeInsets.only(bottom: 80, left: 16, right: 16),
-                  ),
-                );
+                showInfoSnackBar(context, ref, 'Перемещение отклонено', backgroundColor: AppColors.warning);
               }
             },
           ),

@@ -46,7 +46,7 @@ class CurrentAuditNotifier extends StateNotifier<Audit?> {
       if (warehouseId == null && companyId != null) {
         try {
           final rows = await powerSyncDb.getAll(
-            'SELECT id, name FROM warehouses WHERE company_id = ? LIMIT 1',
+            'SELECT id, name FROM warehouses WHERE organization_id = ? LIMIT 1',
             [companyId],
           );
           if (rows.isNotEmpty) {

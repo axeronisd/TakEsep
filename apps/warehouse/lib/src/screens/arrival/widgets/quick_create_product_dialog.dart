@@ -14,6 +14,7 @@ import '../../../providers/inventory_providers.dart';
 import '../../../providers/storage_providers.dart';
 import '../../../data/inventory_repository.dart';
 import 'package:takesep_core/takesep_core.dart';
+import '../../../utils/snackbar_helper.dart';
 import 'image_crop_dialog.dart';
 
 // ═══════════════════════════════════════════════════
@@ -152,11 +153,12 @@ class _QuickCreateProductDialogState
       return;
     }
     final companyId = ref.read(authProvider).currentCompany?.id;
+    final warehouseId = ref.read(selectedWarehouseIdProvider);
     if (companyId == null) return;
     setState(() => _checkingBarcode = true);
     final isUnique = await ref
         .read(arrivalRepositoryProvider)
-        .isBarcodeUnique(barcode, companyId);
+        .isBarcodeUnique(barcode, companyId, warehouseId: warehouseId);
     if (mounted) {
       setState(() {
         _barcodeIsUnique = isUnique;
@@ -176,7 +178,7 @@ class _QuickCreateProductDialogState
       barcode = generateEAN13();
       isUnique = await ref
           .read(arrivalRepositoryProvider)
-          .isBarcodeUnique(barcode, companyId);
+          .isBarcodeUnique(barcode, companyId, warehouseId: ref.read(selectedWarehouseIdProvider));
       attempts++;
     } while (!isUnique && attempts < 10);
     if (mounted) {
@@ -218,12 +220,7 @@ class _QuickCreateProductDialogState
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Камера недоступна на этом устройстве. Используйте Галерею.'),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showErrorSnackBar(context, 'Камера недоступна на этом устройстве. Используйте Галерею.');
       }
     }
   }
@@ -364,9 +361,7 @@ class _QuickCreateProductDialogState
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: AppColors.error),
-    );
+    showErrorSnackBar(context, msg);
   }
 
   // ═══════════════════════════════════════════════════

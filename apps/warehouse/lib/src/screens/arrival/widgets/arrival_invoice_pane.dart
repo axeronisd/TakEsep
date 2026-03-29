@@ -7,6 +7,7 @@ import 'package:takesep_core/takesep_core.dart';
 import 'package:takesep_design_system/takesep_design_system.dart';
 import '../../../providers/arrival_providers.dart';
 import '../../../providers/currency_provider.dart';
+import '../../../utils/snackbar_helper.dart';
 
 class ArrivalInvoicePane extends ConsumerWidget {
   const ArrivalInvoicePane({super.key});
@@ -295,14 +296,7 @@ class ArrivalInvoicePane extends ConsumerWidget {
                           ref.read(arrivalPhotosProvider.notifier).state = [];
                           ref.read(scannerFocusRequestProvider.notifier).state =
                               DateTime.now();
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Приход успешно сохранен!'),
-                              backgroundColor: AppColors.success,
-                              behavior: SnackBarBehavior.floating,
-                              margin: EdgeInsets.only(bottom: 80, left: 16, right: 16),
-                            ),
-                          );
+                          showInfoSnackBar(context, ref, 'Приход успешно сохранен!');
                         }
                       },
                       icon: const Icon(Icons.check_circle_rounded, size: 20),

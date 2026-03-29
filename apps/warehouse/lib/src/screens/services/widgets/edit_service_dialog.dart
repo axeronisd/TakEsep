@@ -6,6 +6,8 @@ import 'package:takesep_core/takesep_core.dart';
 import 'package:takesep_design_system/takesep_design_system.dart';
 import '../../../providers/service_providers.dart';
 import '../../../data/supabase_storage_helper.dart';
+import '../../../utils/snackbar_helper.dart';
+import '../../../widgets/cached_image_widget.dart';
 
 /// Dialog for creating or editing service details.
 Future<bool?> showEditServiceDialog(
@@ -75,13 +77,7 @@ class _EditServiceSheetState extends State<_EditServiceSheet> {
     try {
       if (Platform.isWindows && source == ImageSource.camera) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Камера не поддерживается на ПК (Windows)'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showErrorSnackBar(context, 'Камера не поддерживается на ПК (Windows)');
         return;
       }
 
@@ -100,13 +96,7 @@ class _EditServiceSheetState extends State<_EditServiceSheet> {
       }
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Ошибка выбора фото: $e'),
-          backgroundColor: AppColors.error,
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
+      showErrorSnackBar(context, 'Ошибка выбора фото: $e');
     }
   }
 
@@ -123,13 +113,7 @@ class _EditServiceSheetState extends State<_EditServiceSheet> {
         finalImageUrl = await SupabaseStorageHelper.uploadImage(File(_imageUrl!));
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка загрузки фото: ${e.toString().replaceAll('Exception: Supabase upload error: ', '')}'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showErrorSnackBar(context, 'Ошибка загрузки фото: ${e.toString().replaceAll('Exception: Supabase upload error: ', '')}');
         setState(() => _saving = false);
         return;
       }
@@ -170,13 +154,7 @@ class _EditServiceSheetState extends State<_EditServiceSheet> {
       if (success) {
         Navigator.of(context).pop(true);
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Ошибка сохранения'),
-            backgroundColor: AppColors.error,
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
+        showErrorSnackBar(context, 'Ошибка сохранения');
       }
     }
   }
@@ -196,10 +174,9 @@ class _EditServiceSheetState extends State<_EditServiceSheet> {
         ),
       );
     } else if (_imageUrl!.startsWith('http')) {
-      imageWidget = Image.network(
-        _imageUrl!,
+      imageWidget = CachedImageWidget(
+        imageUrl: _imageUrl!,
         fit: BoxFit.contain,
-        errorBuilder: (_, __, ___) => const Center(child: Icon(Icons.broken_image)),
       );
     } else {
       imageWidget = Image.file(
