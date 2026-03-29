@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TakEsep — Скачать</title>
+  <meta name="description" content="TakEsep — система управления складом. Скачать для Windows и Android.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary: #6C5CE7;
+      --primary-light: #A29BFE;
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --surface-hover: #1a1a24;
+      --text: #e8e8ed;
+      --text-muted: #8888a0;
+      --border: rgba(255,255,255,0.06);
+      --glow: rgba(108, 92, 231, 0.15);
+    }
+
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Background effects ── */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .bg-glow {
+      position: fixed;
+      width: 600px;
+      height: 600px;
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--glow), transparent 70%);
+      top: -200px;
+      left: 50%;
+      transform: translateX(-50%);
+      pointer-events: none;
+      z-index: 0;
+      animation: pulse 6s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.6; transform: translateX(-50%) scale(1); }
+      50% { opacity: 1; transform: translateX(-50%) scale(1.1); }
+    }
+
+    /* ── Layout ── */
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      padding: 80px 0 40px;
+    }
+
+    .logo {
+      width: 80px;
+      height: 80px;
+      border-radius: 20px;
+      margin: 0 auto 24px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      font-weight: 900;
+      color: white;
+      box-shadow: 0 8px 32px rgba(108, 92, 231, 0.3);
+    }
+
+    h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, #fff, var(--primary-light));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.1;
+    }
+
+    .subtitle {
+      margin-top: 12px;
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      font-weight: 400;
+    }
+
+    .version-badge {
+      display: inline-block;
+      margin-top: 16px;
+      padding: 6px 16px;
+      border-radius: 20px;
+      background: rgba(108, 92, 231, 0.12);
+      color: var(--primary-light);
+      font-size: 0.85rem;
+      font-weight: 600;
+      border: 1px solid rgba(108, 92, 231, 0.2);
+    }
+
+    /* ── Download Cards ── */
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 48px;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 32px 28px;
+      text-align: center;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(108,92,231,0.05), transparent);
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .card:hover {
+      border-color: rgba(108, 92, 231, 0.3);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(108, 92, 231, 0.12);
+    }
+
+    .card:hover::before { opacity: 1; }
+
+    .card-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+    }
+
+    .card-icon.windows {
+      background: linear-gradient(135deg, #0078D4, #00BCF2);
+    }
+
+    .card-icon.android {
+      background: linear-gradient(135deg, #3DDC84, #00A956);
+    }
+
+    .card h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .card p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .download-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      color: white;
+      transition: all 0.3s ease;
+      position: relative;
+      z-index: 1;
+    }
+
+    .download-btn.windows {
+      background: linear-gradient(135deg, #0078D4, #00BCF2);
+    }
+
+    .download-btn.android {
+      background: linear-gradient(135deg, #3DDC84, #00A956);
+    }
+
+    .download-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+
+    .download-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    .file-size {
+      display: block;
+      margin-top: 12px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      position: relative;
+      z-index: 1;
+    }
+
+    /* ── Features ── */
+    .features {
+      margin-top: 64px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+
+    .feature {
+      padding: 20px;
+      border-radius: 12px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+
+    .feature-icon {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .feature h4 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .feature p {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 64px 0 32px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    footer a {
+      color: var(--primary-light);
+      text-decoration: none;
+    }
+
+    footer a:hover { text-decoration: underline; }
+
+    /* ── Android install hint ── */
+    .hint {
+      margin-top: 48px;
+      padding: 20px 24px;
+      background: rgba(108, 92, 231, 0.06);
+      border: 1px solid rgba(108, 92, 231, 0.15);
+      border-radius: 12px;
+      text-align: left;
+    }
+
+    .hint h4 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: var(--primary-light);
+    }
+
+    .hint ol {
+      padding-left: 20px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.8;
+    }
+
+    @media (max-width: 600px) {
+      header { padding: 48px 0 24px; }
+      .cards { grid-template-columns: 1fr; }
+      .features { grid-template-columns: 1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="bg-glow"></div>
+
+  <div class="container">
+    <header>
+      <div class="logo">T</div>
+      <h1>TakEsep</h1>
+      <p class="subtitle">Система управления складом</p>
+      <span class="version-badge">v1.0.1</span>
+    </header>
+
+    <section class="cards">
+      <!-- Windows -->
+      <div class="card">
+        <div class="card-icon windows">
+          <svg viewBox="0 0 24 24" fill="white" width="28" height="28">
+            <path d="M3 12V6.75l6-1.32v6.48L3 12zm6.09.09l-.01 6.54-6.08-1.36V12.1l6.09-.01zM10 5.31L20 3.5V12h-10V5.31zM20 12.5V21l-10-1.5V12.5h10z"/>
+          </svg>
+        </div>
+        <h3>Windows</h3>
+        <p>Windows 10/11, 64-bit<br>Автоматическая установка</p>
+        <a href="https://github.com/axeronisd/TakEsep/releases/download/v1.0.1/TakEsep_x86_64_1.0.1_Installer.exe"
+           class="download-btn windows">
+          <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>
+          Скачать .exe
+        </a>
+        <span class="file-size">~66 МБ</span>
+      </div>
+
+      <!-- Android -->
+      <div class="card">
+        <div class="card-icon android">
+          <svg viewBox="0 0 24 24" fill="white" width="28" height="28">
+            <path d="M6 18c0 .55.45 1 1 1h1v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h2v3.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V19h1c.55 0 1-.45 1-1V8H6v10zM3.5 8C2.67 8 2 8.67 2 9.5v7c0 .83.67 1.5 1.5 1.5S5 17.33 5 16.5v-7C5 8.67 4.33 8 3.5 8zm17 0c-.83 0-1.5.67-1.5 1.5v7c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5v-7c0-.83-.67-1.5-1.5-1.5zm-4.97-5.84l1.3-1.3c.2-.2.2-.51 0-.71-.2-.2-.51-.2-.71 0l-1.48 1.48C13.85 1.23 12.95 1 12 1c-.96 0-1.86.23-2.66.63L7.85.15c-.2-.2-.51-.2-.71 0-.2.2-.2.51 0 .71l1.31 1.31C6.97 3.26 6 5.01 6 7h12c0-1.99-.97-3.75-2.47-4.84zM10 5H9V4h1v1zm5 0h-1V4h1v1z"/>
+          </svg>
+        </div>
+        <h3>Android</h3>
+        <p>Android 6.0+<br>Установка из APK</p>
+        <a href="https://github.com/axeronisd/TakEsep/releases/download/v1.0.1/app-release.apk"
+           class="download-btn android">
+          <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>
+          Скачать .apk
+        </a>
+        <span class="file-size">~93 МБ</span>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="features">
+      <div class="feature">
+        <div class="feature-icon">📦</div>
+        <h4>Склад</h4>
+        <p>Приход, списание, перемещение товаров</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">💰</div>
+        <h4>Продажи</h4>
+        <p>Касса, чеки, скидки, сканер штрих-кодов</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">📊</div>
+        <h4>Аналитика</h4>
+        <p>Выручка, прибыль, отчёты по товарам</p>
+      </div>
+      <div class="feature">
+        <div class="feature-icon">🔄</div>
+        <h4>Офлайн</h4>
+        <p>Работает без интернета, синхронизация автоматически</p>
+      </div>
+    </section>
+
+    <!-- Install hint for Android -->
+    <div class="hint">
+      <h4>📱 Установка на Android</h4>
+      <ol>
+        <li>Скачайте файл <strong>app-release.apk</strong></li>
+        <li>Откройте скачанный файл</li>
+        <li>Разрешите установку из неизвестных источников (если попросит)</li>
+        <li>Нажмите <strong>Установить</strong></li>
+      </ol>
+    </div>
+
+    <footer>
+      <p>© 2026 TakEsep. Все права защищены.</p>
+      <p style="margin-top: 8px;">
+        <a href="https://github.com/axeronisd/TakEsep/releases">Все версии</a>
+      </p>
+    </footer>
+  </div>
+</body>
+</html>
