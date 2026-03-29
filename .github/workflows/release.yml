@@ -1,0 +1,163 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # Triggered on version tags like v1.0.2
+
+permissions:
+  contents: write
+
+jobs:
+  # ═══════════════════════════════════════════════
+  # Build Windows Installer
+  # ═══════════════════════════════════════════════
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Get dependencies
+        run: |
+          cd apps/warehouse
+          flutter pub get
+
+      - name: Build Windows
+        run: |
+          cd apps/warehouse
+          flutter build windows --release
+
+      - name: Install Inno Setup
+        run: |
+          choco install innosetup -y
+
+      - name: Generate Inno Script
+        run: |
+          cd apps/warehouse
+          dart run inno_bundle:build --no-build
+        continue-on-error: true
+
+      - name: Build Installer
+        run: |
+          cd apps/warehouse
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "build\windows\x64\installer\Release\inno-script.iss"
+
+      - name: Upload Windows Installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: apps/warehouse/build/windows/x64/installer/Release/*.exe
+
+  # ═══════════════════════════════════════════════
+  # Build Android APK
+  # ═══════════════════════════════════════════════
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Get dependencies
+        run: |
+          cd apps/warehouse
+          flutter pub get
+
+      - name: Build APK
+        run: |
+          cd apps/warehouse
+          flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: apps/warehouse/build/app/outputs/flutter-apk/app-release.apk
+
+  # ═══════════════════════════════════════════════
+  # Create GitHub Release + Update Supabase
+  # ═══════════════════════════════════════════════
+  release:
+    needs: [build-windows, build-android]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download Windows artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-installer
+          path: ./artifacts/windows
+
+      - name: Download Android artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: android-apk
+          path: ./artifacts/android
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          # Extract build number: everything after '+'
+          BUILD=$(grep 'version:' apps/warehouse/pubspec.yaml | head -1 | sed 's/.*+//')
+          echo "build_number=$BUILD" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "TakEsep v${{ steps.version.outputs.version }}"
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          files: |
+            ./artifacts/windows/*.exe
+            ./artifacts/android/app-release.apk
+
+      - name: Update Supabase app_versions
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          BUILD="${{ steps.version.outputs.build_number }}"
+          TAG="${{ github.ref_name }}"
+          REPO="${{ github.repository }}"
+
+          WIN_URL="https://github.com/${REPO}/releases/download/${TAG}/TakEsep-x86_64-${VERSION}-Installer.exe"
+          APK_URL="https://github.com/${REPO}/releases/download/${TAG}/app-release.apk"
+
+          # Insert Windows version
+          curl -s -X POST "${SUPABASE_URL}/rest/v1/app_versions" \
+            -H "apikey: ${SUPABASE_SERVICE_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_KEY}" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=minimal" \
+            -d "{\"platform\":\"windows\",\"version\":\"${VERSION}\",\"build_number\":${BUILD},\"download_url\":\"${WIN_URL}\",\"release_notes\":\"Обновление v${VERSION}\"}"
+
+          # Insert Android version
+          curl -s -X POST "${SUPABASE_URL}/rest/v1/app_versions" \
+            -H "apikey: ${SUPABASE_SERVICE_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_KEY}" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=minimal" \
+            -d "{\"platform\":\"android\",\"version\":\"${VERSION}\",\"build_number\":${BUILD},\"download_url\":\"${APK_URL}\",\"release_notes\":\"Обновление v${VERSION}\"}"
+
+          echo "✅ Supabase updated with v${VERSION} (build ${BUILD})"

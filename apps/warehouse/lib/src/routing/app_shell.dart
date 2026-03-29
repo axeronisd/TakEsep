@@ -6,6 +6,7 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 import '../providers/auth_providers.dart';
 import '../widgets/global_barcode_scanner.dart';
 import '../utils/barcode_scanner_fix.dart';
+import '../services/update_service.dart';
 
 // ─── Navigation Data ────────────────────────────────────────
 // Each item has a permissionKey that maps to Role.permissions
@@ -102,12 +103,20 @@ class AppShell extends ConsumerStatefulWidget {
 
 class _AppShellState extends ConsumerState<AppShell> {
   bool _sidebarCollapsed = false;
+  bool _updateChecked = false;
 
   String _currentPath(BuildContext context) =>
       GoRouterState.of(context).uri.toString();
 
   @override
   Widget build(BuildContext context) {
+    // Check for updates once after the shell is built
+    if (!_updateChecked) {
+      _updateChecked = true;
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) UpdateService.checkForUpdate(context);
+      });
+    }
     final w = MediaQuery.of(context).size.width;
     final path = _currentPath(context);
     final authState = ref.watch(authProvider);
