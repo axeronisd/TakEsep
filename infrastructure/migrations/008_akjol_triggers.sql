@@ -3,6 +3,10 @@
 -- Run AFTER 006_akjol_delivery.sql
 -- =============================================
 
+-- Allow order_number to be NULL so trigger can auto-fill it
+ALTER TABLE delivery_orders ALTER COLUMN order_number DROP NOT NULL;
+ALTER TABLE delivery_orders ALTER COLUMN order_number SET DEFAULT NULL;
+
 -- ─── Auto-generate order number ──────────────
 CREATE OR REPLACE FUNCTION generate_order_number()
 RETURNS TRIGGER AS $$
@@ -52,7 +56,6 @@ BEGIN
   END CASE;
   
   NEW.delivery_fee := base_fee;
-  NEW.is_night_tariff := is_night;
   NEW.courier_earning := ROUND(base_fee * 0.85);  -- 85% for courier
   NEW.platform_earning := base_fee - ROUND(base_fee * 0.85);  -- 15% for platform
   NEW.total := COALESCE(NEW.items_total, 0) + base_fee;
@@ -143,14 +146,15 @@ CREATE TRIGGER trg_courier_stats
   FOR EACH ROW
   EXECUTE FUNCTION update_courier_stats();
 
--- ─── Auto-set pickup address from warehouse ──
+-- ─── Auto-set pickup address from delivery settings ──
 CREATE OR REPLACE FUNCTION set_pickup_address()
 RETURNS TRIGGER AS $$
 BEGIN
   IF NEW.pickup_address IS NULL THEN
-    SELECT address INTO NEW.pickup_address
-    FROM warehouses
-    WHERE id = NEW.warehouse_id;
+    SELECT ds.address INTO NEW.pickup_address
+    FROM delivery_settings ds
+    WHERE ds.warehouse_id = NEW.warehouse_id
+    LIMIT 1;
   END IF;
   
   RETURN NEW;
