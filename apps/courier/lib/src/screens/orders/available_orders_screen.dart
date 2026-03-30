@@ -152,7 +152,7 @@ class _AvailableOrdersScreenState extends State<AvailableOrdersScreen> {
                 Switch(
                   value: _isOnline,
                   onChanged: _toggleOnline,
-                  activeColor: AkJolTheme.success,
+                  activeTrackColor: AkJolTheme.success,
                 ),
               ],
             ),

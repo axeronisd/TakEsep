@@ -275,7 +275,7 @@ class _ShiftScreenState extends State<ShiftScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                '${hours}ч ${minutes.toString().padLeft(2, '0')}мин '
+                '$hoursч ${minutes.toString().padLeft(2, '0')}мин '
                 '${seconds.toString().padLeft(2, '0')}сек',
                 style: const TextStyle(
                     color: Colors.white,

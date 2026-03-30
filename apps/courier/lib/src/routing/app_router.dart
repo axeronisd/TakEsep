@@ -23,18 +23,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: '/login',
-        builder: (_, __) => const CourierLoginScreen(),
+        builder: (_, _) => const CourierLoginScreen(),
       ),
       ShellRoute(
         builder: (_, state, child) => _CourierShell(child: child),
         routes: [
           GoRoute(
             path: '/',
-            builder: (_, __) => const AvailableOrdersScreen(),
+            builder: (_, _) => const AvailableOrdersScreen(),
           ),
           GoRoute(
             path: '/shift',
-            builder: (_, __) => const ShiftScreen(),
+            builder: (_, _) => const ShiftScreen(),
           ),
           GoRoute(
             path: '/delivery/:id',
@@ -44,7 +44,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: '/profile',
-            builder: (_, __) => const CourierProfileScreen(),
+            builder: (_, _) => const CourierProfileScreen(),
           ),
         ],
       ),

@@ -13,7 +13,7 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final _supabase = Supabase.instance.client;
   final _nameController = TextEditingController();
-  Map<String, dynamic>? _customer;
+
   List<Map<String, dynamic>> _orders = [];
   bool _loading = true;
 
@@ -42,7 +42,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           .limit(20);
 
       setState(() {
-        _customer = customer;
         _nameController.text = customer?['name'] ?? '';
         _orders = List<Map<String, dynamic>>.from(orders);
         _loading = false;
