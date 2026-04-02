@@ -34,6 +34,8 @@ class AuthState {
   final List<Warehouse> availableWarehouses;
   final bool isLoading;
   final String? error;
+  final bool isDeactivated;
+  final String? deactivationMessage;
 
   const AuthState({
     this.currentCompany,
@@ -43,6 +45,8 @@ class AuthState {
     this.availableWarehouses = const [],
     this.isLoading = false,
     this.error,
+    this.isDeactivated = false,
+    this.deactivationMessage,
   });
 
   bool get isCompanyAuthenticated => currentCompany != null;
@@ -80,6 +84,9 @@ class AuthState {
     bool? isLoading,
     String? error,
     bool clearError = false,
+    bool? isDeactivated,
+    String? deactivationMessage,
+    bool clearDeactivation = false,
   }) {
     return AuthState(
       currentCompany:
@@ -94,6 +101,8 @@ class AuthState {
           availableWarehouses ?? this.availableWarehouses,
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
+      isDeactivated: clearDeactivation ? false : (isDeactivated ?? this.isDeactivated),
+      deactivationMessage: clearDeactivation ? null : (deactivationMessage ?? this.deactivationMessage),
     );
   }
 }
@@ -473,9 +482,44 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = const AuthState();
   }
 
+  /// Alias for logoutCompany (used by DeactivatedScreen)
+  Future<void> logout() => logoutCompany();
+
   /// Clears current error message.
   void clearError() {
     state = state.copyWith(clearError: true);
+  }
+
+  /// Проверка статуса лицензии (вызывается периодически + из DeactivatedScreen)
+  Future<void> recheckLicense() async {
+    final key = _prefs.getString(_kLicenseKeyPref);
+    if (key == null || key.isEmpty) return;
+
+    try {
+      final supabase = Supabase.instance.client;
+      final result = await supabase.rpc('check_license_status', params: {
+        'p_license_key': key,
+      });
+
+      if (result != null && result is Map) {
+        final isActive = result['is_active'] as bool? ?? false;
+        final message = result['deactivation_message'] as String?;
+
+        if (!isActive) {
+          state = state.copyWith(
+            isDeactivated: true,
+            deactivationMessage: message ?? 'Ваш аккаунт деактивирован',
+          );
+        } else {
+          // Реактивирован!
+          state = state.copyWith(
+            clearDeactivation: true,
+          );
+        }
+      }
+    } catch (e) {
+      print('License check failed (offline?): $e');
+    }
   }
 
   // ─── Biometric credential helpers ────────────────────────

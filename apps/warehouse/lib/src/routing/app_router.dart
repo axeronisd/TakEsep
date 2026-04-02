@@ -15,6 +15,7 @@ import '../screens/reports/reports_screen.dart';
 import '../screens/settings/settings_screen.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/select_warehouse_screen.dart';
+import '../screens/auth/deactivated_screen.dart';
 import '../screens/help/help_screen.dart';
 import '../screens/delivery/delivery_orders_screen.dart';
 import '../screens/delivery/delivery_settings_screen.dart';
@@ -30,9 +31,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final isLoggingIn = state.matchedLocation == '/login';
       final isSelectingWh = state.matchedLocation == '/select-warehouse';
+      final isDeactivated = state.matchedLocation == '/deactivated';
+
+      // Deactivated → force deactivated screen
+      if (authState.isDeactivated && !isDeactivated) {
+        return '/deactivated';
+      }
+      // Was on deactivated but now reactivated
+      if (!authState.isDeactivated && isDeactivated) {
+        return '/login';
+      }
 
       // Not authenticated at all → login
-      if (!authState.isFullyAuthenticated && !isLoggingIn) {
+      if (!authState.isFullyAuthenticated && !isLoggingIn && !isDeactivated) {
         return '/login';
       }
 
@@ -67,6 +78,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/select-warehouse',
         builder: (context, state) => const SelectWarehouseScreen(),
+      ),
+      GoRoute(
+        path: '/deactivated',
+        builder: (context, state) => const DeactivatedScreen(),
       ),
 
       // Main app shell
