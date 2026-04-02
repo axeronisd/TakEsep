@@ -102,6 +102,11 @@ const _navSections = <_NavSection>[
         label: 'Каталог AkJol',
         path: '/akjol-catalog',
         permissionKey: 'delivery_settings'),
+    _NavItem(
+        icon: Icons.map_rounded,
+        label: 'Зоны доставки',
+        path: '/delivery-zones',
+        permissionKey: 'delivery_settings'),
   ]),
 ];
 
