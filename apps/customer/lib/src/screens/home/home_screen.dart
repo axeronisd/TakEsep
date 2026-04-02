@@ -93,19 +93,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2, color: AkJolTheme.primary),
                     )
                   else
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          location.cityName ?? 'Определяем...',
-                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                        ),
-                        if (location.error != null)
+                    Flexible(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            location.error!,
-                            style: const TextStyle(fontSize: 10, color: Colors.red),
+                            location.displayName,
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                      ],
+                          if (location.subtitle.isNotEmpty)
+                            Text(
+                              location.accuracy > 0
+                                  ? '${location.subtitle} • ±${location.accuracy.toStringAsFixed(0)}м'
+                                  : location.subtitle,
+                              style: TextStyle(fontSize: 10, color: AkJolTheme.textSecondary),
+                            ),
+                          if (location.error != null)
+                            Text(
+                              location.error!,
+                              style: const TextStyle(fontSize: 10, color: Colors.red),
+                            ),
+                        ],
+                      ),
                     ),
                   const SizedBox(width: 4),
                   const Icon(Icons.keyboard_arrow_down, size: 18, color: AkJolTheme.textSecondary),
