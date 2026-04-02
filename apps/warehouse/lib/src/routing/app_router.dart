@@ -21,6 +21,7 @@ import '../screens/delivery/delivery_orders_screen.dart';
 import '../screens/delivery/delivery_settings_screen.dart';
 import '../screens/delivery/courier_management_screen.dart';
 import '../screens/delivery/delivery_analytics_screen.dart';
+import '../screens/delivery/akjol_catalog_screen.dart';
 import 'app_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -189,6 +190,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: '/delivery-analytics',
             pageBuilder: (context, state) =>
                 const NoTransitionPage(child: DeliveryAnalyticsScreen()),
+          ),
+          GoRoute(
+            path: '/akjol-catalog',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: AkjolCatalogScreen()),
           ),
 
           // ─── Настройки ────────────────────────
