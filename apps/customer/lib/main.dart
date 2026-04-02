@@ -27,6 +27,8 @@ class AkJolCustomerApp extends ConsumerWidget {
       title: 'AkJol',
       debugShowCheckedModeBanner: false,
       theme: AkJolTheme.lightTheme,
+      darkTheme: AkJolTheme.darkTheme,
+      themeMode: ThemeMode.system, // Следует за темой устройства
       routerConfig: router,
     );
   }
