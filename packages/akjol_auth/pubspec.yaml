@@ -1,0 +1,12 @@
+name: akjol_auth
+description: "AkJol unified auth — один аккаунт для всей экосистемы"
+publish_to: 'none'
+version: 1.0.0
+
+environment:
+  sdk: ^3.11.1
+
+dependencies:
+  flutter:
+    sdk: flutter
+  supabase_flutter: ^2.8.4

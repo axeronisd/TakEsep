@@ -10,6 +10,10 @@ dependencies:
   flutter:
     sdk: flutter
   
+  # AkJol единый аккаунт
+  akjol_auth:
+    path: ../../packages/akjol_auth
+  
   # Supabase
   supabase_flutter: ^2.8.4
   
