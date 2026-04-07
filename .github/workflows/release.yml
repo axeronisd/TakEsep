@@ -3,14 +3,14 @@ name: Build & Release
 on:
   push:
     tags:
-      - 'v*'  # Triggered on version tags like v1.0.2
+      - 'v*'  # Triggered on version tags like v2.0
 
 permissions:
   contents: write
 
 jobs:
   # ═══════════════════════════════════════════════
-  # Build Windows Installer
+  # Build Windows Installer (TakEsep Warehouse)
   # ═══════════════════════════════════════════════
   build-windows:
     runs-on: windows-latest
@@ -36,25 +36,24 @@ jobs:
         run: |
           choco install innosetup -y
 
-      - name: Generate Inno Script
+      - name: Download VC++ Redistributable
         run: |
           cd apps/warehouse
-          dart run inno_bundle:build --no-build
-        continue-on-error: true
+          Invoke-WebRequest -Uri "https://aka.ms/vs/17/release/vc_redist.x64.exe" -OutFile "vc_redist.x64.exe"
 
-      - name: Build Installer
+      - name: Build Installer with build.iss
         run: |
           cd apps/warehouse
-          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "build\windows\x64\installer\Release\inno-script.iss"
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "build.iss"
 
       - name: Upload Windows Installer
         uses: actions/upload-artifact@v4
         with:
           name: windows-installer
-          path: apps/warehouse/build/windows/x64/installer/Release/*.exe
+          path: apps/warehouse/build/windows/x64/runner/Release/TakEsep_Setup.exe
 
   # ═══════════════════════════════════════════════
-  # Build Android APK
+  # Build All Android APKs
   # ═══════════════════════════════════════════════
   build-android:
     runs-on: ubuntu-latest
@@ -72,24 +71,50 @@ jobs:
         with:
           channel: stable
 
-      - name: Get dependencies
+      # TakEsep Warehouse APK
+      - name: Build TakEsep APK
         run: |
           cd apps/warehouse
           flutter pub get
-
-      - name: Build APK
-        run: |
-          cd apps/warehouse
           flutter build apk --release
 
-      - name: Upload APK
+      - name: Rename TakEsep APK
+        run: |
+          cp apps/warehouse/build/app/outputs/flutter-apk/app-release.apk TakEsep.apk
+
+      # AkJol Courier APK
+      - name: Build Courier APK
+        run: |
+          cd apps/courier
+          flutter pub get
+          flutter build apk --release
+
+      - name: Rename Courier APK
+        run: |
+          cp apps/courier/build/app/outputs/flutter-apk/app-release.apk AkJol_Courier.apk
+
+      # AkJol Customer APK
+      - name: Build Customer APK
+        run: |
+          cd apps/customer
+          flutter pub get
+          flutter build apk --release
+
+      - name: Rename Customer APK
+        run: |
+          cp apps/customer/build/app/outputs/flutter-apk/app-release.apk AkJol_Customer.apk
+
+      - name: Upload APKs
         uses: actions/upload-artifact@v4
         with:
-          name: android-apk
-          path: apps/warehouse/build/app/outputs/flutter-apk/app-release.apk
+          name: android-apks
+          path: |
+            TakEsep.apk
+            AkJol_Courier.apk
+            AkJol_Customer.apk
 
   # ═══════════════════════════════════════════════
-  # Create GitHub Release + Update Supabase
+  # Create GitHub Release
   # ═══════════════════════════════════════════════
   release:
     needs: [build-windows, build-android]
@@ -103,10 +128,10 @@ jobs:
           name: windows-installer
           path: ./artifacts/windows
 
-      - name: Download Android artifact
+      - name: Download Android artifacts
         uses: actions/download-artifact@v4
         with:
-          name: android-apk
+          name: android-apks
           path: ./artifacts/android
 
       - name: Extract version from tag
@@ -114,22 +139,37 @@ jobs:
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          # Extract build number: everything after '+'
           BUILD=$(grep 'version:' apps/warehouse/pubspec.yaml | head -1 | sed 's/.*+//')
           echo "build_number=$BUILD" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
-        id: create_release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.ref_name }}
           name: "TakEsep v${{ steps.version.outputs.version }}"
           draft: false
           prerelease: false
-          generate_release_notes: true
+          body: |
+            ## TakEsep Экосистема v${{ steps.version.outputs.version }}
+
+            ### 📦 Приложения
+            - **TakEsep** — управление складом и продажами (Windows + Android)
+            - **AkJol Клиент** — приложение для покупателей (Android)
+            - **AkJol Курьер** — приложение для курьеров (Android)
+            - **Веб-админка** — [axeronisd.github.io/TakEsep/admin.html](https://axeronisd.github.io/TakEsep/admin.html)
+
+            ### 📥 Скачать
+            | Приложение | Платформа | Файл |
+            |---|---|---|
+            | TakEsep | Windows | `TakEsep_Setup.exe` |
+            | TakEsep | Android | `TakEsep.apk` |
+            | AkJol Клиент | Android | `AkJol_Customer.apk` |
+            | AkJol Курьер | Android | `AkJol_Courier.apk` |
           files: |
-            ./artifacts/windows/*.exe
-            ./artifacts/android/app-release.apk
+            ./artifacts/windows/TakEsep_Setup.exe
+            ./artifacts/android/TakEsep.apk
+            ./artifacts/android/AkJol_Courier.apk
+            ./artifacts/android/AkJol_Customer.apk
 
       - name: Update Supabase app_versions
         env:
@@ -141,8 +181,8 @@ jobs:
           TAG="${{ github.ref_name }}"
           REPO="${{ github.repository }}"
 
-          WIN_URL="https://github.com/${REPO}/releases/download/${TAG}/TakEsep-x86_64-${VERSION}-Installer.exe"
-          APK_URL="https://github.com/${REPO}/releases/download/${TAG}/app-release.apk"
+          WIN_URL="https://github.com/${REPO}/releases/download/${TAG}/TakEsep_Setup.exe"
+          APK_URL="https://github.com/${REPO}/releases/download/${TAG}/TakEsep.apk"
 
           # Insert Windows version
           curl -s -X POST "${SUPABASE_URL}/rest/v1/app_versions" \
