@@ -87,7 +87,7 @@ if ($?) {
 # ═══════════════════════════════════════
 Write-Host "`n🌐 5/5 Сборка TakEsep Admin (Web)..." -ForegroundColor Yellow
 Set-Location "$ProjectRoot\apps\admin"
-flutter build web --release
+flutter build web --release --base-href "/TakEsep/app/"
 if ($?) {
     $DocsApp = "$ProjectRoot\docs\app"
     if (Test-Path $DocsApp) { Remove-Item $DocsApp -Recurse -Force }
