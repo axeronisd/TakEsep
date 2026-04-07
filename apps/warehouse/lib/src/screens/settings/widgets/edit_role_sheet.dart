@@ -5,6 +5,7 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../../data/powersync_db.dart';
+import '../../../data/supabase_sync.dart';
 import '../../../providers/auth_providers.dart';
 import '../../../providers/employee_providers.dart';
 import '../../../utils/snackbar_helper.dart';
@@ -312,11 +313,21 @@ class _EditRoleSheetState extends ConsumerState<EditRoleSheet> {
           'UPDATE roles SET name = ?, pin_code = ?, permissions = ? WHERE id = ? AND company_id = ?',
           [name, pinCode, permissionsString, widget.role!.id, companyId],
         );
+        await SupabaseSync.update('roles', widget.role!.id, {
+          'name': name, 'pin_code': pinCode, 'permissions': permissionsString,
+        });
       } else {
+        final newId = const Uuid().v4();
+        final now = DateTime.now().toIso8601String();
         await powerSyncDb.execute(
           'INSERT INTO roles (id, company_id, name, permissions, pin_code, is_system, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [const Uuid().v4(), companyId, name, permissionsString, pinCode, 0, DateTime.now().toIso8601String()],
+          [newId, companyId, name, permissionsString, pinCode, 0, now],
         );
+        await SupabaseSync.upsert('roles', {
+          'id': newId, 'company_id': companyId, 'name': name,
+          'permissions': permissionsString, 'pin_code': pinCode,
+          'is_system': false, 'created_at': now,
+        });
       }
       
       ref.invalidate(rolesListProvider);
@@ -352,6 +363,7 @@ class _EditRoleSheetState extends ConsumerState<EditRoleSheet> {
     setState(() => _isSaving = true);
     try {
       await powerSyncDb.execute('DELETE FROM roles WHERE id = ?', [widget.role!.id]);
+      await SupabaseSync.delete('roles', widget.role!.id);
       ref.invalidate(rolesListProvider);
       if (mounted) Navigator.pop(context);
     } catch (e) {

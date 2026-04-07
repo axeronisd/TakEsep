@@ -2,9 +2,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'user_profile.dart';
 
 /// AkJol Auth Service — единая авторизация для экосистемы
-/// 
-/// Один номер телефона (+996) = один аккаунт для всех сервисов.
-/// По аналогии с Яндекс ID.
+///
+/// Регистрация: номер + username + пароль
+/// Вход: username/номер + пароль + опционально биометрия
 class AkJolAuthService {
   final SupabaseClient _client;
 
@@ -13,46 +13,217 @@ class AkJolAuthService {
 
   // ─── Текущий пользователь ───────────────────
 
-  /// Текущий auth user
   User? get currentUser => _client.auth.currentUser;
-
-  /// Авторизован ли
   bool get isLoggedIn => currentUser != null;
-
-  /// Поток авторизации
   Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
 
-  // ─── OTP Авторизация ────────────────────────
+  // ─── Регистрация ────────────────────────────
 
-  /// Отправить SMS код на +996...
-  /// 
-  /// [phone] — номер без кода страны (например "700123456")
-  Future<void> sendOtp(String phone) async {
-    final cleanPhone = phone.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+  /// Регистрация нового пользователя
+  ///
+  /// [phone] — номер без кода страны ("700123456")
+  /// [username] — уникальный юзернейм
+  /// [password] — пароль (мин. 6 символов)
+  /// [name] — отображаемое имя
+  Future<UserProfile> signUp({
+    required String phone,
+    required String username,
+    required String password,
+    String? name,
+  }) async {
+    final cleanPhone = _cleanPhone(phone);
+    final cleanUsername = username.trim().toLowerCase();
+
+    // Валидация
     if (cleanPhone.length < 9) {
-      throw AkJolAuthException('Введите корректный номер телефона');
+      throw const AkJolAuthException('Введите корректный номер телефона');
+    }
+    if (cleanUsername.length < 3) {
+      throw const AkJolAuthException('Username минимум 3 символа');
+    }
+    if (!RegExp(r'^[a-zA-Z0-9._]+$').hasMatch(cleanUsername)) {
+      throw const AkJolAuthException('Username: только буквы, цифры, точка и _');
+    }
+    if (password.length < 6) {
+      throw const AkJolAuthException('Пароль минимум 6 символов');
+    }
+
+    // Проверить уникальность username
+    try {
+      final existing = await _client
+          .from('user_profiles')
+          .select('id')
+          .eq('username', cleanUsername)
+          .maybeSingle();
+
+      if (existing != null) {
+        throw const AkJolAuthException('Этот username уже занят');
+      }
+    } catch (e) {
+      if (e is AkJolAuthException) rethrow;
+      // Таблица может не существовать при первом запуске — пропускаем
     }
 
     try {
-      await _client.auth.signInWithOtp(
+      final response = await _client.auth.signUp(
         phone: '+996$cleanPhone',
+        password: password,
+        data: {
+          'username': cleanUsername,
+          'name': name ?? '',
+        },
       );
+
+      if (response.user == null) {
+        throw const AkJolAuthException('Ошибка регистрации');
+      }
+      
+      if (response.session == null) {
+        throw const AkJolAuthException(
+            'Аккаунт создан, но Supabase требует подтверждения телефона по SMS. '
+            'Пожалуйста, отключите "Confirm phone" в настройках Supabase (Authentication -> Providers -> Phone).');
+      }
+
+      // Обновить профиль с username
+      try {
+        await _client.from('user_profiles').upsert({
+          'id': response.user!.id,
+          'phone': '+996$cleanPhone',
+          'username': cleanUsername,
+          'name': name ?? '',
+          'is_customer': true,
+        }, onConflict: 'id');
+      } catch (_) {
+        // Триггер handle_new_user обработает
+      }
+
+      return await getOrCreateProfile(response.user!);
+    } on AuthException catch (e) {
+      throw AkJolAuthException(_parseAuthError(e.message));
+    } on AkJolAuthException {
+      rethrow;
+    } catch (e) {
+      throw const AkJolAuthException('Ошибка регистрации. Попробуйте позже.');
+    }
+  }
+
+  // ─── Вход по паролю ─────────────────────────
+
+  /// Вход по номеру телефона и паролю
+  Future<UserProfile> signInWithPhone({
+    required String phone,
+    required String password,
+  }) async {
+    final cleanPhone = _cleanPhone(phone);
+    if (cleanPhone.length < 9) {
+      throw const AkJolAuthException('Введите корректный номер телефона');
+    }
+
+    try {
+      final response = await _client.auth.signInWithPassword(
+        phone: '+996$cleanPhone',
+        password: password,
+      );
+
+      if (response.user == null) {
+        throw const AkJolAuthException('Неверный номер или пароль');
+      }
+
+      return await getOrCreateProfile(response.user!);
+    } on AuthException catch (e) {
+      throw AkJolAuthException(_parseAuthError(e.message));
+    } on AkJolAuthException {
+      rethrow;
+    } catch (e) {
+      throw const AkJolAuthException('Ошибка входа. Попробуйте позже.');
+    }
+  }
+
+  /// Вход по username и паролю
+  Future<UserProfile> signInWithUsername({
+    required String username,
+    required String password,
+  }) async {
+    final cleanUsername = username.trim().toLowerCase();
+
+    // Найти номер телефона по username
+    try {
+      final result = await _client
+          .from('user_profiles')
+          .select('phone')
+          .eq('username', cleanUsername)
+          .maybeSingle();
+
+      if (result == null) {
+        throw const AkJolAuthException('Пользователь не найден');
+      }
+
+      final phone = result['phone'] as String;
+      if (phone.isEmpty) {
+        throw const AkJolAuthException('Номер телефона не привязан');
+      }
+
+      // Вход по номеру
+      final response = await _client.auth.signInWithPassword(
+        phone: phone,
+        password: password,
+      );
+
+      if (response.user == null) {
+        throw const AkJolAuthException('Неверный пароль');
+      }
+
+      return await getOrCreateProfile(response.user!);
+    } on AuthException catch (e) {
+      throw AkJolAuthException(_parseAuthError(e.message));
+    } on AkJolAuthException {
+      rethrow;
+    } catch (e) {
+      throw const AkJolAuthException('Ошибка входа. Попробуйте позже.');
+    }
+  }
+
+  /// Умный вход — по номеру или username
+  Future<UserProfile> signIn({
+    required String login,
+    required String password,
+  }) async {
+    final trimmed = login.trim();
+
+    // Если начинается с цифры или + → это номер
+    if (trimmed.startsWith('+') || RegExp(r'^\d').hasMatch(trimmed)) {
+      final phone = trimmed.replaceAll(RegExp(r'[^\d]'), '');
+      // Убрать 996 в начале если есть
+      final cleanPhone = phone.startsWith('996') ? phone.substring(3) : phone;
+      return signInWithPhone(phone: cleanPhone, password: password);
+    }
+
+    // Иначе — username. Убираем @ если пользователь ввел его.
+    final cleanUsername = trimmed.startsWith('@') ? trimmed.substring(1) : trimmed;
+    return signInWithUsername(username: cleanUsername, password: password);
+  }
+
+  // ─── OTP (для подтверждения телефона) ────────
+
+  /// Отправить SMS код (для верификации при регистрации)
+  Future<void> sendOtp(String phone) async {
+    final cleanPhone = _cleanPhone(phone);
+    if (cleanPhone.length < 9) {
+      throw const AkJolAuthException('Введите корректный номер телефона');
+    }
+
+    try {
+      await _client.auth.signInWithOtp(phone: '+996$cleanPhone');
     } on AuthException catch (e) {
       throw AkJolAuthException(_parseAuthError(e.message));
     } catch (e) {
-      throw AkJolAuthException('Ошибка отправки SMS. Попробуйте позже.');
+      throw const AkJolAuthException('Ошибка отправки SMS.');
     }
   }
 
   /// Подтвердить SMS код
-  /// 
-  /// [phone] — номер без кода страны
-  /// [code] — 6-значный OTP код
-  /// 
-  /// Возвращает [UserProfile] при успешной авторизации
   Future<UserProfile> verifyOtp(String phone, String code) async {
-    final cleanPhone = phone.replaceAll(RegExp(r'[\s\-\(\)]'), '');
-
+    final cleanPhone = _cleanPhone(phone);
     try {
       final response = await _client.auth.verifyOTP(
         phone: '+996$cleanPhone',
@@ -61,24 +232,21 @@ class AkJolAuthService {
       );
 
       if (response.user == null) {
-        throw AkJolAuthException('Неверный код');
+        throw const AkJolAuthException('Неверный код');
       }
 
-      // Получить или создать профиль
-      final profile = await getOrCreateProfile(response.user!);
-      return profile;
+      return await getOrCreateProfile(response.user!);
     } on AuthException catch (e) {
       throw AkJolAuthException(_parseAuthError(e.message));
     } on AkJolAuthException {
       rethrow;
     } catch (e) {
-      throw AkJolAuthException('Ошибка верификации. Попробуйте позже.');
+      throw const AkJolAuthException('Ошибка верификации.');
     }
   }
 
   // ─── Профиль ────────────────────────────────
 
-  /// Получить профиль текущего пользователя
   Future<UserProfile?> getCurrentProfile() async {
     final user = currentUser;
     if (user == null) return null;
@@ -97,25 +265,21 @@ class AkJolAuthService {
     }
   }
 
-  /// Получить или создать профиль при первом входе
   Future<UserProfile> getOrCreateProfile(User user) async {
     try {
-      // Попробуем получить существующий
       final existing = await _client
           .from('user_profiles')
           .select()
           .eq('id', user.id)
           .maybeSingle();
 
-      if (existing != null) {
-        return UserProfile.fromJson(existing);
-      }
+      if (existing != null) return UserProfile.fromJson(existing);
 
-      // Создать новый (на случай если триггер не сработал)
       final newProfile = {
         'id': user.id,
         'phone': user.phone ?? '',
-        'name': '',
+        'name': user.userMetadata?['name'] ?? '',
+        'username': user.userMetadata?['username'],
         'is_customer': true,
       };
 
@@ -127,7 +291,6 @@ class AkJolAuthService {
 
       return UserProfile.fromJson(created);
     } catch (_) {
-      // Fallback — вернуть минимальный профиль
       return UserProfile(
         id: user.id,
         phone: user.phone ?? '',
@@ -137,9 +300,9 @@ class AkJolAuthService {
     }
   }
 
-  /// Обновить профиль
   Future<UserProfile?> updateProfile({
     String? name,
+    String? username,
     String? avatarUrl,
     String? bio,
     String? city,
@@ -156,6 +319,7 @@ class AkJolAuthService {
           .from('user_profiles')
           .update({
             if (name != null) 'name': name,
+            if (username != null) 'username': username.toLowerCase(),
             if (avatarUrl != null) 'avatar_url': avatarUrl,
             if (bio != null) 'bio': bio,
             if (city != null) 'city': city,
@@ -175,7 +339,6 @@ class AkJolAuthService {
     }
   }
 
-  /// Активировать роль курьера
   Future<void> enableCourierRole() async {
     final user = currentUser;
     if (user == null) return;
@@ -185,7 +348,6 @@ class AkJolAuthService {
     }).eq('id', user.id);
   }
 
-  /// Активировать роль водителя такси
   Future<void> enableDriverRole() async {
     final user = currentUser;
     if (user == null) return;
@@ -197,28 +359,38 @@ class AkJolAuthService {
 
   // ─── Выход ──────────────────────────────────
 
-  /// Выход из аккаунта (на всех устройствах)
   Future<void> signOut() async {
     await _client.auth.signOut();
   }
 
   // ─── Helpers ────────────────────────────────
 
+  String _cleanPhone(String phone) {
+    return phone.replaceAll(RegExp(r'[\s\-\(\)\+]'), '');
+  }
+
   String _parseAuthError(String msg) {
-    if (msg.contains('Invalid login credentials') ||
-        msg.contains('Token has expired or is invalid')) {
+    if (msg.contains('Invalid login credentials')) {
+      return 'Неверный логин или пароль';
+    }
+    if (msg.contains('User already registered') || msg.contains('already registered')) {
+      return 'Этот номер телефона уже зарегистрирован';
+    }
+    if (msg.contains('Token has expired or is invalid')) {
       return 'Неверный или просроченный код';
     }
-    if (msg.contains('Phone number') || msg.contains('phone')) {
-      return 'Некорректный номер телефона';
+    if (msg.contains('Password should be')) {
+      return 'Пароль должен быть минимум 6 символов';
     }
     if (msg.contains('rate limit') || msg.contains('too many')) {
       return 'Слишком много попыток. Подождите минуту.';
     }
     if (msg.contains('not enabled') || msg.contains('provider')) {
-      return 'SMS авторизация не настроена';
+      return 'Способ входа не настроен';
     }
-    return 'Ошибка авторизации';
+    // Если неизвестная ошибка, вернуть её так, как передана Supabase
+    // Это поможет понять проблемы (например Database error)
+    return 'Ошибка: $msg';
   }
 }
 

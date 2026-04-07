@@ -3,14 +3,13 @@ import 'package:path_provider/path_provider.dart';
 import 'package:powersync/powersync.dart';
 
 import 'powersync_schema.dart';
-import 'supabase_connector.dart';
 
 /// Global PowerSync database instance.
-/// Initialized once at app startup.
+/// Used ONLY as a local SQLite database (no cloud sync).
 late final PowerSyncDatabase powerSyncDb;
 
-/// Initialize the PowerSync database and start syncing.
-/// Call this in main() after Supabase.initialize().
+/// Initialize the PowerSync database as local-only SQLite.
+/// No cloud sync — all writes go directly to Supabase.
 Future<void> initPowerSync() async {
   final dir = await getApplicationSupportDirectory();
   final dbPath = join(dir.path, 'takesep.db');
@@ -20,17 +19,15 @@ Future<void> initPowerSync() async {
     path: dbPath,
   );
 
-  // Open the local database
+  // Open the local database only — no cloud sync
   await powerSyncDb.initialize();
-
-  // Connect to PowerSync cloud for bi-directional sync
-  final connector = SupabasePowerSyncConnector(powerSyncDb);
-  await powerSyncDb.connect(connector: connector);
+  
+  // NOTE: We intentionally do NOT call powerSyncDb.connect()
+  // PowerSync Cloud is no longer used. All writes go directly to Supabase.
+  print('[TakEsep] Local SQLite initialized (no cloud sync)');
 }
 
-/// Disconnect and close the PowerSync database.
-/// Call on app shutdown if needed.
+/// Close the PowerSync database.
 Future<void> closePowerSync() async {
-  await powerSyncDb.disconnect();
   await powerSyncDb.close();
 }

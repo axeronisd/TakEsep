@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../theme/akjol_theme.dart';
 import '../../providers/location_provider.dart';
+import '../../providers/marketplace_provider.dart';
+import '../../providers/orders_provider.dart';
+import 'home_widgets.dart';
+import 'marketplace_widgets.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -13,523 +16,553 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
-  final _supabase = Supabase.instance.client;
-  List<Map<String, dynamic>> _nearbyStores = [];
-  List<Map<String, dynamic>> _allStores = [];
-  bool _loading = true;
-  String _searchQuery = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _loadAllStores();
-  }
-
-  Future<void> _loadAllStores() async {
-    try {
-      final data = await _supabase
-          .from('delivery_settings')
-          .select('*, warehouses(name)')
-          .eq('is_active', true);
-
-      setState(() {
-        _allStores = List<Map<String, dynamic>>.from(data);
-        _loading = false;
-      });
-    } catch (e) {
-      setState(() => _loading = false);
-    }
-  }
-
-  /// Фильтрует магазины по зонам доставки и местоположению
-  Future<List<Map<String, dynamic>>> _findNearbyStores(double lat, double lng) async {
-    try {
-      final result = await _supabase.rpc('find_businesses_near', params: {
-        'p_lat': lat,
-        'p_lng': lng,
-      });
-
-      if (result is List) {
-        return List<Map<String, dynamic>>.from(
-          result.map((r) => r is Map ? Map<String, dynamic>.from(r) : <String, dynamic>{}),
-        );
-      }
-    } catch (e) {
-      debugPrint('⚠️ find_businesses_near error: $e');
-    }
-    return [];
-  }
-
   @override
   Widget build(BuildContext context) {
     final location = ref.watch(locationProvider);
-
-    // Когда локация определена — грузим ближайшие магазины
-    if (location.hasLocation && _nearbyStores.isEmpty && !_loading) {
-      _findNearbyStores(location.lat!, location.lng!).then((stores) {
-        if (mounted) setState(() => _nearbyStores = stores);
-      });
-    }
+    final categoriesAsync = ref.watch(storeCategoriesProvider);
+    final storesAsync = ref.watch(nearbyStoresProvider);
+    final selectedCategory = ref.watch(selectedStoreCategoryProvider);
+    final filteredStores = ref.watch(filteredStoresProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? const Color(0xFF0D1117) : const Color(0xFFFAFBFC);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
-      body: CustomScrollView(
-        slivers: [
-          // ─── AppBar с локацией ─────────────────
-          SliverAppBar(
-            floating: true,
-            backgroundColor: Colors.white,
-            surfaceTintColor: Colors.transparent,
-            title: GestureDetector(
-              onTap: () => _showCityPicker(context),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.location_on, color: AkJolTheme.primary, size: 20),
-                  const SizedBox(width: 6),
-                  if (location.loading)
-                    const SizedBox(
-                      width: 14, height: 14,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: AkJolTheme.primary),
-                    )
-                  else
-                    Flexible(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            location.displayName,
-                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          if (location.subtitle.isNotEmpty)
-                            Text(
-                              location.accuracy > 0
-                                  ? '${location.subtitle} • ±${location.accuracy.toStringAsFixed(0)}м'
-                                  : location.subtitle,
-                              style: TextStyle(fontSize: 10, color: AkJolTheme.textSecondary),
-                            ),
-                          if (location.error != null)
-                            Text(
-                              location.error!,
-                              style: const TextStyle(fontSize: 10, color: Colors.red),
-                            ),
-                        ],
+      backgroundColor: bg,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(nearbyStoresProvider);
+            ref.invalidate(storeCategoriesProvider);
+          },
+          color: AkJolTheme.primary,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            slivers: [
+              // ── 1. Header ──
+              SliverToBoxAdapter(
+                child: AkJolHeader(
+                  address: location.displayName,
+                  loading: location.loading,
+                  onAddressTap: () => _showCityPicker(context),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+              // ── 1.5 Active order banner ──
+              SliverToBoxAdapter(
+                child: _ActiveOrderBanner(
+                  onTap: (orderId) => context.go('/order/$orderId'),
+                ),
+              ),
+
+              // ── 2. Hero Cards ──
+              SliverToBoxAdapter(
+                child: HeroServiceCards(
+                  onCategoryTap: (cat) => _onCategoryTap(context, cat),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 20)),
+
+              // ── 3. Quick Actions ──
+              SliverToBoxAdapter(
+                child: QuickActionsRow(
+                  onTap: (id) => _onCategoryTap(context, id),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 20)),
+
+              // ── 4. Куда едем? ──
+              SliverToBoxAdapter(
+                child: DestinationBar(
+                  onTap: () => _showComingSoon(context, '🚕 Такси скоро!'),
+                ),
+              ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 28)),
+
+              // ── 5. Store Categories Row ─── NEW! ──
+              SliverToBoxAdapter(
+                child: categoriesAsync.when(
+                  data: (categories) => StoreCategoriesRow(
+                    categories: categories,
+                    selectedId: selectedCategory,
+                    onTap: (id) {
+                      final current =
+                          ref.read(selectedStoreCategoryProvider);
+                      ref
+                          .read(selectedStoreCategoryProvider.notifier)
+                          .state = current == id ? null : id;
+                    },
+                  ),
+                  loading: () => const SizedBox(
+                    height: 90,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: AkJolTheme.primary,
+                        strokeWidth: 2,
                       ),
                     ),
-                  const SizedBox(width: 4),
-                  const Icon(Icons.keyboard_arrow_down, size: 18, color: AkJolTheme.textSecondary),
-                ],
+                  ),
+                  error: (_, _) => const SizedBox.shrink(),
+                ),
               ),
-            ),
-            actions: [
-              IconButton(
-                icon: const Icon(Icons.my_location_rounded, size: 20),
-                tooltip: 'Определить снова',
-                onPressed: () => ref.read(locationProvider.notifier).determinePosition(),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+
+              // ── 6. Store Feed Header ──
+              SliverToBoxAdapter(
+                child: SectionHeader(
+                  title: selectedCategory != null
+                      ? 'Результаты'
+                      : 'Рядом с вами',
+                  action: storesAsync.when(
+                    data: (stores) =>
+                        '${filteredStores.length} ${_pluralStore(filteredStores.length)}',
+                    loading: () => null,
+                    error: (_, _) => null,
+                  ),
+                ),
               ),
-              IconButton(
-                icon: const Icon(Icons.search),
-                onPressed: () => _showSearch(context),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 12)),
+
+              // ── 7. Store Feed — vertical cards ─── NEW! ──
+              storesAsync.when(
+                data: (stores) {
+                  if (filteredStores.isEmpty) {
+                    return SliverToBoxAdapter(
+                      child: _EmptyStoresPlaceholder(
+                        hasCategory: selectedCategory != null,
+                        onClear: () => ref
+                            .read(selectedStoreCategoryProvider.notifier)
+                            .state = null,
+                      ),
+                    );
+                  }
+
+                  return SliverPadding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    sliver: SliverList.separated(
+                      itemCount: filteredStores.length,
+                      separatorBuilder: (_, _) =>
+                          const SizedBox(height: 16),
+                      itemBuilder: (_, idx) {
+                        final store = filteredStores[idx];
+                        return MarketplaceStoreCard(
+                          store: store,
+                          onTap: () =>
+                              context.go('/store/${store.warehouseId}'),
+                        );
+                      },
+                    ),
+                  );
+                },
+                loading: () => SliverToBoxAdapter(
+                  child: _StoresLoadingShimmer(),
+                ),
+                error: (e, _) => SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Center(
+                      child: Text(
+                        'Не удалось загрузить магазины',
+                        style: TextStyle(
+                          color: isDark
+                              ? const Color(0xFF8B949E)
+                              : const Color(0xFF9CA3AF),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
+
+              const SliverToBoxAdapter(child: SizedBox(height: 40)),
             ],
           ),
-
-          // ─── Поиск по магазинам ────────────────
-          if (_searchQuery.isNotEmpty)
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                child: Row(
-                  children: [
-                    Text('Поиск: "$_searchQuery"',
-                        style: const TextStyle(fontWeight: FontWeight.w500)),
-                    const Spacer(),
-                    TextButton(
-                      onPressed: () => setState(() => _searchQuery = ''),
-                      child: const Text('Очистить'),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-          // ─── Ближайшие магазины ────────────────
-          if (_nearbyStores.isNotEmpty && _searchQuery.isEmpty) ...[
-            SliverToBoxAdapter(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-                child: Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: AkJolTheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.near_me, size: 14, color: AkJolTheme.primary),
-                          SizedBox(width: 4),
-                          Text('Доставка доступна',
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: AkJolTheme.primary)),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text('${_nearbyStores.length} магазинов',
-                        style: TextStyle(fontSize: 13, color: AkJolTheme.textTertiary)),
-                  ],
-                ),
-              ),
-            ),
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (_, idx) {
-                  final zone = _nearbyStores[idx];
-                  // Найдём соответствующий магазин из allStores
-                  final warehouseId = zone['warehouse_id'];
-                  final store = _allStores.cast<Map<String, dynamic>?>().firstWhere(
-                    (s) => s?['warehouse_id'] == warehouseId,
-                    orElse: () => null,
-                  );
-                  return _StoreCard(
-                    store: store,
-                    zone: zone,
-                    canOrder: true,
-                    onTap: () => context.go('/store/$warehouseId'),
-                  );
-                },
-                childCount: _nearbyStores.length,
-              ),
-            ),
-          ],
-
-          // ─── Все магазины / результаты поиска ──
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 8),
-              child: Text(
-                _searchQuery.isNotEmpty ? 'Результаты' : 'Все магазины',
-                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
-              ),
-            ),
-          ),
-
-          if (_loading)
-            const SliverFillRemaining(
-              child: Center(child: CircularProgressIndicator()),
-            )
-          else
-            SliverList(
-              delegate: SliverChildBuilderDelegate(
-                (_, idx) {
-                  final filtered = _getFilteredStores();
-                  if (idx >= filtered.length) return null;
-                  final store = filtered[idx];
-                  final warehouseId = store['warehouse_id'];
-                  // Проверяем есть ли этот магазин в зоне доставки
-                  final zone = _nearbyStores.cast<Map<String, dynamic>?>().firstWhere(
-                    (z) => z?['warehouse_id'] == warehouseId,
-                    orElse: () => null,
-                  );
-                  final canOrder = zone != null;
-
-                  return _StoreCard(
-                    store: store,
-                    zone: zone,
-                    canOrder: canOrder,
-                    onTap: () => context.go('/store/$warehouseId'),
-                  );
-                },
-                childCount: _getFilteredStores().length,
-              ),
-            ),
-
-          // Пустое состояние
-          if (!_loading && _allStores.isEmpty)
-            SliverFillRemaining(child: _buildEmptyState()),
-
-          const SliverPadding(padding: EdgeInsets.only(bottom: 100)),
-        ],
-      ),
-    );
-  }
-
-  List<Map<String, dynamic>> _getFilteredStores() {
-    if (_searchQuery.isEmpty) return _allStores;
-    final q = _searchQuery.toLowerCase();
-    return _allStores.where((s) {
-      final name = (s['warehouses']?['name'] ?? '').toString().toLowerCase();
-      final desc = (s['description'] ?? '').toString().toLowerCase();
-      return name.contains(q) || desc.contains(q);
-    }).toList();
-  }
-
-  void _showSearch(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (ctx) {
-        final ctrl = TextEditingController(text: _searchQuery);
-        return AlertDialog(
-          title: const Text('Поиск магазинов'),
-          content: TextField(
-            controller: ctrl,
-            autofocus: true,
-            decoration: const InputDecoration(
-              hintText: 'Название магазина...',
-              prefixIcon: Icon(Icons.search),
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Отмена'),
-            ),
-            FilledButton(
-              onPressed: () {
-                setState(() => _searchQuery = ctrl.text.trim());
-                Navigator.pop(ctx);
-              },
-              child: const Text('Искать'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  void _showCityPicker(BuildContext context) {
-    const cities = [
-      {'name': 'Бишкек',       'lat': 42.8746, 'lng': 74.5698},
-      {'name': 'Ош',           'lat': 40.5333, 'lng': 72.8000},
-      {'name': 'Джалал-Абад',  'lat': 40.9333, 'lng': 73.0000},
-      {'name': 'Каракол',      'lat': 42.4903, 'lng': 78.3936},
-      {'name': 'Токмок',       'lat': 42.7667, 'lng': 75.3000},
-      {'name': 'Балыкчы',      'lat': 42.4600, 'lng': 76.1900},
-      {'name': 'Нарын',        'lat': 41.4300, 'lng': 76.0000},
-      {'name': 'Талас',        'lat': 42.5200, 'lng': 72.2400},
-      {'name': 'Баткен',       'lat': 40.0600, 'lng': 70.8200},
-    ];
-
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Выберите город',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
-            const SizedBox(height: 4),
-            Text('Покажем магазины с доставкой в вашем городе',
-                style: TextStyle(fontSize: 13, color: AkJolTheme.textSecondary)),
-            const SizedBox(height: 16),
-
-            // Кнопка геолокации
-            ListTile(
-              leading: Container(
-                width: 40, height: 40,
-                decoration: BoxDecoration(
-                  color: AkJolTheme.primary.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.my_location, color: AkJolTheme.primary, size: 20),
-              ),
-              title: const Text('Определить автоматически',
-                  style: TextStyle(fontWeight: FontWeight.w600)),
-              subtitle: const Text('По GPS'),
-              onTap: () {
-                Navigator.pop(ctx);
-                ref.read(locationProvider.notifier).determinePosition();
-                setState(() => _nearbyStores = []);
-              },
-            ),
-            const Divider(),
-
-            // Города
-            ...cities.map((city) => ListTile(
-                  leading: const Icon(Icons.location_city, color: AkJolTheme.textSecondary),
-                  title: Text(city['name'] as String),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    ref.read(locationProvider.notifier).setCity(
-                      city['name'] as String,
-                      city['lat'] as double,
-                      city['lng'] as double,
-                    );
-                    setState(() => _nearbyStores = []);
-                  },
-                )),
-          ],
         ),
       ),
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
+  String _pluralStore(int count) {
+    if (count % 10 == 1 && count % 100 != 11) return 'магазин';
+    if ([2, 3, 4].contains(count % 10) &&
+        ![12, 13, 14].contains(count % 100)) {
+      return 'магазина';
+    }
+    return 'магазинов';
+  }
+
+  void _onCategoryTap(BuildContext context, String category) {
+    switch (category) {
+      case 'delivery' || 'stores' || 'food':
+        context.go('/catalog');
+      case 'services':
+        context.go('/services');
+      case 'taxi':
+        _showComingSoon(context, '🚕 Такси скоро!');
+      default:
+        _showComingSoon(context, '🚀 Скоро!');
+    }
+  }
+
+  void _showComingSoon(BuildContext context, String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(msg),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10)),
+      ),
+    );
+  }
+
+  void _showCityPicker(BuildContext context) {
+    const cities = [
+      {'name': 'Бишкек', 'lat': 42.8746, 'lng': 74.5698},
+      {'name': 'Ош', 'lat': 40.5333, 'lng': 72.8000},
+      {'name': 'Джалал-Абад', 'lat': 40.9333, 'lng': 73.0000},
+      {'name': 'Каракол', 'lat': 42.4903, 'lng': 78.3936},
+      {'name': 'Токмок', 'lat': 42.7667, 'lng': 75.3000},
+      {'name': 'Балыкчы', 'lat': 42.4600, 'lng': 76.1900},
+      {'name': 'Нарын', 'lat': 41.4300, 'lng': 76.0000},
+      {'name': 'Талас', 'lat': 42.5200, 'lng': 72.2400},
+      {'name': 'Баткен', 'lat': 40.0600, 'lng': 70.8200},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.85,
+        expand: false,
+        builder: (_, scrollCtrl) => Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text('Выберите город',
+                  style: TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 4),
+              Text('Покажем сервисы в вашем городе',
+                  style: TextStyle(
+                      fontSize: 13, color: AkJolTheme.textSecondary)),
+              const SizedBox(height: 12),
+              Expanded(
+                child: ListView(
+                  controller: scrollCtrl,
+                  children: [
+                    ListTile(
+                      leading: Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          color:
+                              AkJolTheme.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.my_location,
+                            color: AkJolTheme.primary, size: 20),
+                      ),
+                      title: const Text('Автоматически',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      subtitle: const Text('По GPS'),
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        ref
+                            .read(locationProvider.notifier)
+                            .determinePosition();
+                        ref.invalidate(nearbyStoresProvider);
+                      },
+                    ),
+                    const Divider(),
+                    ...cities.map((city) => ListTile(
+                          leading: const Icon(Icons.location_city,
+                              color: AkJolTheme.textSecondary),
+                          title: Text(city['name'] as String),
+                          onTap: () {
+                            Navigator.pop(ctx);
+                            ref.read(locationProvider.notifier).setCity(
+                                  city['name'] as String,
+                                  city['lat'] as double,
+                                  city['lng'] as double,
+                                );
+                            ref.invalidate(nearbyStoresProvider);
+                          },
+                        )),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Empty state ─────────────────────────────────────────────
+
+class _EmptyStoresPlaceholder extends StatelessWidget {
+  final bool hasCategory;
+  final VoidCallback? onClear;
+
+  const _EmptyStoresPlaceholder({
+    this.hasCategory = false,
+    this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 32),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.storefront_outlined,
-              size: 64, color: AkJolTheme.textTertiary),
+          Container(
+            width: 80,
+            height: 80,
+            decoration: BoxDecoration(
+              color: AkJolTheme.primary.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              hasCategory
+                  ? Icons.filter_list_off_rounded
+                  : Icons.storefront_outlined,
+              size: 36,
+              color: AkJolTheme.primary.withValues(alpha: 0.5),
+            ),
+          ),
           const SizedBox(height: 16),
-          Text('Нет магазинов',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w600,
-                  color: AkJolTheme.textSecondary)),
-          const SizedBox(height: 8),
-          Text('Пока нет магазинов в AkJol',
-              style: TextStyle(color: AkJolTheme.textTertiary)),
+          Text(
+            hasCategory
+                ? 'Нет магазинов в этой категории'
+                : 'Магазинов рядом не найдено',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white : const Color(0xFF374151),
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            hasCategory
+                ? 'Попробуйте другую категорию'
+                : 'Попробуйте изменить местоположение',
+            style: TextStyle(
+              fontSize: 13,
+              color: isDark
+                  ? const Color(0xFF8B949E)
+                  : const Color(0xFF9CA3AF),
+            ),
+          ),
+          if (hasCategory) ...[
+            const SizedBox(height: 16),
+            TextButton.icon(
+              onPressed: onClear,
+              icon: const Icon(Icons.clear, size: 16),
+              label: const Text('Сбросить фильтр'),
+              style: TextButton.styleFrom(
+                foregroundColor: AkJolTheme.primary,
+              ),
+            ),
+          ],
         ],
       ),
     );
   }
 }
 
-/// Карточка магазина
-class _StoreCard extends StatelessWidget {
-  final Map<String, dynamic>? store;
-  final Map<String, dynamic>? zone;
-  final bool canOrder;
-  final VoidCallback onTap;
+// ─── Loading shimmer ─────────────────────────────────────────
 
-  const _StoreCard({
-    required this.store,
-    this.zone,
-    required this.canOrder,
-    required this.onTap,
-  });
-
+class _StoresLoadingShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final name = store?['warehouses']?['name'] ?? 'Магазин';
-    final desc = store?['description'] ?? '';
-    final zoneName = zone?['zone_name'] ?? '';
-    final distance = zone?['distance_km'] ?? 0;
-    final fee = (zone?['delivery_fee'] as num?)?.toDouble() ?? 0;
-    final freeFrom = (zone?['free_delivery_from'] as num?)?.toDouble() ?? 0;
-    final minutes = zone?['estimated_minutes'] as int? ?? 0;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF161B22) : Colors.white;
+    final shimmer = isDark ? const Color(0xFF21262D) : const Color(0xFFF3F4F6);
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 5),
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(
-          color: canOrder
-              ? AkJolTheme.primary.withValues(alpha: 0.15)
-              : Colors.grey.withValues(alpha: 0.1),
-        ),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              // Иконка магазина
-              Container(
-                width: 52, height: 52,
-                decoration: BoxDecoration(
-                  color: canOrder
-                      ? AkJolTheme.primary.withValues(alpha: 0.08)
-                      : Colors.grey.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(14),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        children: List.generate(
+          3,
+          (i) => Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            height: 220,
+            decoration: BoxDecoration(
+              color: cardBg,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  height: 130,
+                  decoration: BoxDecoration(
+                    color: shimmer,
+                    borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(20)),
+                  ),
                 ),
-                child: Icon(
-                  Icons.storefront_rounded,
-                  color: canOrder ? AkJolTheme.primary : Colors.grey,
-                  size: 26,
-                ),
-              ),
-              const SizedBox(width: 12),
-
-              // Информация
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(name,
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                    if (desc.toString().isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(desc.toString(),
-                          style: TextStyle(fontSize: 12, color: AkJolTheme.textSecondary),
-                          maxLines: 1, overflow: TextOverflow.ellipsis),
-                    ],
-                    const SizedBox(height: 6),
-                    if (canOrder)
-                      Row(
-                        children: [
-                          if (distance > 0) _badge('📍 ${distance} км', AkJolTheme.primary),
-                          if (minutes > 0) ...[
-                            const SizedBox(width: 6),
-                            _badge('⏱ ${_formatTime(minutes)}', Colors.orange),
-                          ],
-                          if (fee > 0) ...[
-                            const SizedBox(width: 6),
-                            _badge(
-                              freeFrom > 0
-                                  ? '🚚 ${fee.toInt()} сом (бесп. от ${freeFrom.toInt()})'
-                                  : '🚚 ${fee.toInt()} сом',
-                              Colors.green,
-                            ),
-                          ],
-                        ],
-                      )
-                    else
+                Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        width: 160,
+                        height: 14,
                         decoration: BoxDecoration(
-                          color: Colors.orange.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: const Text(
-                          '🔍 Каталог доступен • Доставка не в вашем районе',
-                          style: TextStyle(fontSize: 10, color: Colors.orange, fontWeight: FontWeight.w500),
+                          color: shimmer,
+                          borderRadius: BorderRadius.circular(4),
                         ),
                       ),
-                  ],
+                      const SizedBox(height: 8),
+                      Container(
+                        width: 100,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: shimmer,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-
-              Icon(Icons.chevron_right,
-                  color: canOrder ? AkJolTheme.textSecondary : Colors.grey.withValues(alpha: 0.3)),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
+}
 
-  Widget _badge(String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(4),
+// ═══════════════════════════════════════════════════════════════
+//  ACTIVE ORDER BANNER — Shows on home when order is in progress
+// ═══════════════════════════════════════════════════════════════
+
+class _ActiveOrderBanner extends ConsumerWidget {
+  final void Function(String orderId) onTap;
+
+  const _ActiveOrderBanner({required this.onTap});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final activeOrders = ref.watch(activeOrdersProvider);
+
+    if (activeOrders.isEmpty) return const SizedBox.shrink();
+
+    final order = activeOrders.first;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: GestureDetector(
+        onTap: () => onTap(order.id),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: isDark
+                  ? [
+                      AkJolTheme.primary.withValues(alpha: 0.15),
+                      AkJolTheme.primary.withValues(alpha: 0.05),
+                    ]
+                  : [
+                      AkJolTheme.primary.withValues(alpha: 0.08),
+                      AkJolTheme.primary.withValues(alpha: 0.02),
+                    ],
+            ),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: AkJolTheme.primary.withValues(alpha: 0.25),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AkJolTheme.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  order.statusEmoji,
+                  style: const TextStyle(fontSize: 20),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      order.warehouseName ?? order.orderNumber,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: isDark
+                            ? Colors.white
+                            : const Color(0xFF111827),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      order.statusLabel,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: AkJolTheme.primary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: AkJolTheme.primary.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 16,
+                  color: AkJolTheme.primary,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
-      child: Text(text,
-          style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w500)),
     );
-  }
-
-  String _formatTime(int minutes) {
-    if (minutes >= 1440) return '${(minutes / 1440).round()} д';
-    if (minutes >= 60) return '${minutes ~/ 60}ч${minutes % 60 > 0 ? " ${minutes % 60}м" : ""}';
-    return '${minutes}м';
   }
 }

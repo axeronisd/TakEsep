@@ -4,8 +4,10 @@ import 'package:takesep_core/takesep_core.dart';
 import 'package:takesep_design_system/takesep_design_system.dart';
 
 import '../../data/powersync_db.dart';
+import '../../data/supabase_sync.dart';
 import '../../providers/auth_providers.dart';
 import '../../utils/snackbar_helper.dart';
+import 'widgets/akjol_product_editor.dart';
 
 /// Экран управления каталогом AkJol
 /// Владелец TakEsep выбирает товары доступные для заказа через AkJol доставку
@@ -73,6 +75,9 @@ class _AkjolCatalogScreenState extends ConsumerState<AkjolCatalogScreen> {
       'UPDATE products SET is_public = ?, updated_at = ? WHERE id = ?',
       [newValue ? 1 : 0, now, product.id],
     );
+    await SupabaseSync.update('products', product.id, {
+      'is_public': newValue, 'updated_at': now,
+    });
 
     setState(() {
       final idx = _allProducts.indexWhere((p) => p.id == product.id);
@@ -136,6 +141,9 @@ class _AkjolCatalogScreenState extends ConsumerState<AkjolCatalogScreen> {
         'UPDATE products SET b2c_price = ?, updated_at = ? WHERE id = ?',
         [result, now, product.id],
       );
+      await SupabaseSync.update('products', product.id, {
+        'b2c_price': result, 'updated_at': now,
+      });
 
       setState(() {
         final idx = _allProducts.indexWhere((p) => p.id == product.id);
@@ -367,7 +375,15 @@ class _AkjolCatalogScreenState extends ConsumerState<AkjolCatalogScreen> {
     final akjolPrice = product.b2cPrice ?? product.price;
     final isActive = product.isPublic;
 
-    return Container(
+    return GestureDetector(
+      onTap: () async {
+        final updated = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(builder: (_) => AkjolProductEditorDialog(product: product)),
+        );
+        if (updated == true) _loadProducts();
+      },
+      child: Container(
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: cs.surface,
@@ -454,6 +470,7 @@ class _AkjolCatalogScreenState extends ConsumerState<AkjolCatalogScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 }

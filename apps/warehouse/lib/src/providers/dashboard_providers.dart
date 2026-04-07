@@ -82,7 +82,6 @@ final dashboardKpisProvider =
   final salesCount = kpiData['salesCount'] as int;
   final avgCheck = kpiData['avgCheck'] as double;
   final totalIncome = kpiData['totalIncome'] as double;
-  final totalRevenue = kpiData['totalRevenue'] as double;
   final auditLosses = (kpiData['auditLosses'] as num?)?.toDouble() ?? 0.0;
   final transferCosts = (kpiData['transferCosts'] as num?)?.toDouble() ?? 0.0;
   final writeOffCosts = (kpiData['writeOffCosts'] as num?)?.toDouble() ?? 0.0;
@@ -99,8 +98,6 @@ final dashboardKpisProvider =
   final prevAvgCheck = prevKpiData['avgCheck'] as double;
   final prevRepoNetProfit = prevKpiData['netProfit'] as double;
   final prevTotalIncome = prevKpiData['totalIncome'] as double;
-  final prevTotalRevenue = prevKpiData['totalRevenue'] as double?
-      ?? 0.0;
   final prevAuditLosses = (prevKpiData['auditLosses'] as num?)?.toDouble() ?? 0.0;
   final prevTransferCosts = (prevKpiData['transferCosts'] as num?)?.toDouble() ?? 0.0;
   final prevWriteOffCosts = (prevKpiData['writeOffCosts'] as num?)?.toDouble() ?? 0.0;
@@ -423,7 +420,7 @@ final goodsServicesProvider = FutureProvider<GoodsServicesBreakdown>((ref) async
       servicesList: servicesList,
     );
   } catch (e) {
-    print('goodsServicesProvider error: $e');
+    debugPrint('goodsServicesProvider error: $e');
     return const GoodsServicesBreakdown();
   }
 });

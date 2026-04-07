@@ -8,6 +8,7 @@ import Foundation
 import app_links
 import file_picker
 import file_selector_macos
+import geolocator_apple
 import local_auth_darwin
 import mobile_scanner
 import powersync_flutter_libs
@@ -21,6 +22,7 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   AppLinksMacosPlugin.register(with: registry.registrar(forPlugin: "AppLinksMacosPlugin"))
   FilePickerPlugin.register(with: registry.registrar(forPlugin: "FilePickerPlugin"))
   FileSelectorPlugin.register(with: registry.registrar(forPlugin: "FileSelectorPlugin"))
+  GeolocatorPlugin.register(with: registry.registrar(forPlugin: "GeolocatorPlugin"))
   LocalAuthPlugin.register(with: registry.registrar(forPlugin: "LocalAuthPlugin"))
   MobileScannerPlugin.register(with: registry.registrar(forPlugin: "MobileScannerPlugin"))
   PowersyncFlutterLibsPlugin.register(with: registry.registrar(forPlugin: "PowersyncFlutterLibsPlugin"))

@@ -8,6 +8,7 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 import '../../data/powersync_db.dart';
 import '../../providers/auth_providers.dart';
 import '../../utils/snackbar_helper.dart';
+import '../../widgets/map_location_picker.dart';
 import 'employee_management_dialog.dart';
 
 // ═══════════════ PROVIDERS ═══════════════
@@ -619,8 +620,11 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
   void _showCreateWarehouseDialog(BuildContext context, WidgetRef ref) {
     final nameController = TextEditingController();
     final addressController = TextEditingController();
-    final cs = Theme.of(context).colorScheme;
+    final floorController = TextEditingController();
     String? selectedGroupId;
+    double? selectedLat;
+    double? selectedLng;
+    bool locationSelected = false;
 
     showDialog(
       context: context,
@@ -628,161 +632,303 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
         return StatefulBuilder(
           builder: (ctx, setDialogState) {
             final groupsAsync = ref.watch(_warehouseGroupsProvider);
+            final cs = Theme.of(ctx).colorScheme;
+            final screenW = MediaQuery.of(ctx).size.width;
+            final isMobile = screenW < 700;
 
-            return AlertDialog(
+            // ── Form fields column ──
+            Widget formFields = Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextField(
+                  controller: nameController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    labelText: 'Название склада *',
+                    hintText: 'Например: Склад №1',
+                    prefixIcon: const Icon(Icons.store_rounded, size: 18),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // Group selector
+                groupsAsync.when(
+                  data: (groups) {
+                    return DropdownButtonFormField<String?>(
+                      value: selectedGroupId,
+                      decoration: InputDecoration(
+                        labelText: 'Группа',
+                        prefixIcon: const Icon(Icons.folder_rounded, size: 18),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      items: [
+                        const DropdownMenuItem<String?>(
+                          value: null,
+                          child: Text('Без группы'),
+                        ),
+                        ...groups.map((g) => DropdownMenuItem<String?>(
+                              value: g.id,
+                              child: Text(g.name),
+                            )),
+                        DropdownMenuItem<String?>(
+                          value: '__create_new__',
+                          child: Row(children: [
+                            Icon(Icons.add_circle_outline_rounded,
+                                size: 18, color: AppColors.primary),
+                            const SizedBox(width: 8),
+                            Text('Создать группу',
+                                style: TextStyle(
+                                    color: AppColors.primary,
+                                    fontWeight: FontWeight.w600)),
+                          ]),
+                        ),
+                      ],
+                      onChanged: (val) {
+                        if (val == '__create_new__') {
+                          Navigator.pop(ctx);
+                          _showCreateGroupThenReopenWarehouse(context, ref,
+                              prefillName: nameController.text.trim(),
+                              prefillAddress: addressController.text.trim());
+                        } else {
+                          setDialogState(() => selectedGroupId = val);
+                        }
+                      },
+                    );
+                  },
+                  loading: () => const LinearProgressIndicator(),
+                  error: (_, __) => const SizedBox.shrink(),
+                ),
+                const SizedBox(height: AppSpacing.md),
+
+                // Editable address field
+                TextField(
+                  controller: addressController,
+                  decoration: InputDecoration(
+                    labelText: locationSelected ? 'Адрес *' : 'Адрес (укажите на карте)',
+                    hintText: 'Адрес будет заполнен с карты, можно редактировать',
+                    prefixIcon: const Icon(Icons.location_on_rounded, size: 18),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    helperText: locationSelected
+                        ? 'Можете дописать: рынок, проход, ориентир'
+                        : null,
+                    helperStyle: AppTypography.bodySmall.copyWith(
+                      color: AppColors.primary.withValues(alpha: 0.6),
+                      fontSize: 10,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+
+                // Floor info
+                TextField(
+                  controller: floorController,
+                  decoration: InputDecoration(
+                    labelText: 'Этаж / Помещение (опционально)',
+                    hintText: '2 этаж, офис 205',
+                    prefixIcon: const Icon(Icons.apartment_rounded, size: 18),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+
+                // Location status
+                if (locationSelected) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Row(children: [
+                      Icon(Icons.check_circle_rounded,
+                          size: 14, color: AppColors.primary),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'GPS: ${selectedLat?.toStringAsFixed(5)}, ${selectedLng?.toStringAsFixed(5)}',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppColors.primary,
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ]),
+                  ),
+                ],
+              ],
+            );
+
+            // ── Map widget ──
+            Widget mapWidget = MapLocationPicker(
+              initialLatitude: selectedLat,
+              initialLongitude: selectedLng,
+              initialAddress: addressController.text,
+              onLocationChanged: (result) {
+                setDialogState(() {
+                  selectedLat = result.latitude;
+                  selectedLng = result.longitude;
+                  locationSelected = true;
+                  if (result.address != null && result.address!.isNotEmpty) {
+                    addressController.text = result.address!;
+                  }
+                });
+              },
+            );
+
+            // ── Build dialog ──
+            return Dialog(
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20)),
-              title: Row(children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.store_rounded,
-                      color: AppColors.primary, size: 20),
+              insetPadding: EdgeInsets.symmetric(
+                horizontal: isMobile ? 16 : 40,
+                vertical: isMobile ? 24 : 32,
+              ),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  maxWidth: isMobile ? 500 : 900,
+                  maxHeight: MediaQuery.of(ctx).size.height * 0.9,
                 ),
-                const SizedBox(width: 12),
-                Text('Новый склад',
-                    style: AppTypography.headlineSmall
-                        .copyWith(fontWeight: FontWeight.w600)),
-              ]),
-              content: SizedBox(
-                width: 400,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextField(
-                      controller: nameController,
-                      autofocus: true,
-                      decoration: InputDecoration(
-                        labelText: 'Название склада *',
-                        hintText: 'Например: Склад №1',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                    // ── Title bar ──
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 20, 16, 0),
+                      child: Row(children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.store_rounded,
+                              color: AppColors.primary, size: 20),
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    TextField(
-                      controller: addressController,
-                      decoration: InputDecoration(
-                        labelText: 'Адрес (необязательно)',
-                        hintText: 'ул. Примерная, 1',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text('Новый склад',
+                              style: AppTypography.headlineSmall
+                                  .copyWith(fontWeight: FontWeight.w600)),
                         ),
-                      ),
+                        IconButton(
+                          icon: Icon(Icons.close_rounded,
+                              color: cs.onSurface.withValues(alpha: 0.4)),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ]),
                     ),
-                    const SizedBox(height: AppSpacing.md),
+                    const SizedBox(height: 16),
 
-                    // Group selector with inline "+ Создать группу"
-                    groupsAsync.when(
-                      data: (groups) {
-                        return Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            DropdownButtonFormField<String?>(
-                              value: selectedGroupId,
-                              decoration: InputDecoration(
-                                labelText: 'Группа',
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                    // ── Content ──
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 24),
+                        child: isMobile
+                            // ── Mobile: Vertical stack ──
+                            ? Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  formFields,
+                                  const SizedBox(height: 16),
+                                  mapWidget,
+                                ],
+                              )
+                            // ── Desktop: Side by side ──
+                            : IntrinsicHeight(
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    // Left: Form
+                                    SizedBox(
+                                      width: 320,
+                                      child: formFields,
+                                    ),
+                                    const SizedBox(width: 20),
+                                    // Right: Map
+                                    Expanded(child: mapWidget),
+                                  ],
                                 ),
                               ),
-                              items: [
-                                const DropdownMenuItem<String?>(
-                                  value: null,
-                                  child: Text('Без группы'),
-                                ),
-                                ...groups
-                                    .map((g) => DropdownMenuItem<String?>(
-                                          value: g.id,
-                                          child: Text(g.name),
-                                        )),
-                                // Special "+ create" item
-                                DropdownMenuItem<String?>(
-                                  value: '__create_new__',
-                                  child: Row(children: [
-                                    Icon(Icons.add_circle_outline_rounded,
-                                        size: 18,
-                                        color: AppColors.primary),
-                                    const SizedBox(width: 8),
-                                    Text('Создать группу',
-                                        style: TextStyle(
-                                            color: AppColors.primary,
-                                            fontWeight: FontWeight.w600)),
-                                  ]),
-                                ),
-                              ],
-                              onChanged: (val) {
-                                if (val == '__create_new__') {
-                                  // Close this dialog, open group creation, then reopen
-                                  Navigator.pop(ctx);
-                                  _showCreateGroupThenReopenWarehouse(
-                                      context, ref,
-                                      prefillName:
-                                          nameController.text.trim(),
-                                      prefillAddress:
-                                          addressController.text.trim());
-                                } else {
-                                  setDialogState(
-                                      () => selectedGroupId = val);
-                                }
-                              },
+                      ),
+                    ),
+
+                    // ── Actions ──
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx),
+                            child: Text('Отмена',
+                                style: TextStyle(
+                                    color: cs.onSurface.withValues(alpha: 0.5))),
+                          ),
+                          const SizedBox(width: 12),
+                          FilledButton.icon(
+                            onPressed: locationSelected
+                                ? () async {
+                                    final name = nameController.text.trim();
+                                    if (name.isEmpty) return;
+
+                                    final companyId =
+                                        ref.read(authProvider).currentCompany?.id;
+                                    if (companyId == null) return;
+
+                                    final repo = ref.read(authRepositoryProvider);
+                                    final warehouse = await repo.createWarehouse(
+                                      companyId: companyId,
+                                      name: name,
+                                      address: addressController.text.trim().isEmpty
+                                          ? null
+                                          : addressController.text.trim(),
+                                      groupId: selectedGroupId,
+                                      latitude: selectedLat,
+                                      longitude: selectedLng,
+                                      floorInfo: floorController.text.trim().isEmpty
+                                          ? null
+                                          : floorController.text.trim(),
+                                    );
+
+                                    if (warehouse != null && ctx.mounted) {
+                                      Navigator.pop(ctx);
+                                      ref.invalidate(_warehouseGroupsProvider);
+                                      ref.invalidate(_localWarehousesProvider);
+                                      await ref
+                                          .read(authProvider.notifier)
+                                          .refreshWarehouses();
+                                    }
+                                  }
+                                : null,
+                            icon: const Icon(Icons.add_rounded, size: 18),
+                            label: const Text('Создать'),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              disabledBackgroundColor:
+                                  cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10)),
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 24, vertical: 14),
                             ),
-                          ],
-                        );
-                      },
-                      loading: () => const LinearProgressIndicator(),
-                      error: (_, __) => const SizedBox.shrink(),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: Text('Отмена',
-                      style: TextStyle(
-                          color: cs.onSurface.withValues(alpha: 0.5))),
-                ),
-                FilledButton(
-                  onPressed: () async {
-                    final name = nameController.text.trim();
-                    if (name.isEmpty) return;
-
-                    final companyId =
-                        ref.read(authProvider).currentCompany?.id;
-                    if (companyId == null) return;
-
-                    final repo = ref.read(authRepositoryProvider);
-                    final warehouse = await repo.createWarehouse(
-                      companyId: companyId,
-                      name: name,
-                      address: addressController.text.trim().isEmpty
-                          ? null
-                          : addressController.text.trim(),
-                      groupId: selectedGroupId,
-                    );
-
-                    if (warehouse != null && ctx.mounted) {
-                      Navigator.pop(ctx);
-                      ref.invalidate(_warehouseGroupsProvider);
-                      ref.invalidate(_localWarehousesProvider);
-                      await ref
-                          .read(authProvider.notifier)
-                          .refreshWarehouses();
-                    }
-                  },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                  ),
-                  child: const Text('Создать'),
-                ),
-              ],
             );
           },
         );

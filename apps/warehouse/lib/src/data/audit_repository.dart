@@ -3,6 +3,7 @@ import 'package:takesep_core/takesep_core.dart';
 import 'package:uuid/uuid.dart';
 
 import 'powersync_db.dart';
+import 'supabase_sync.dart';
 
 /// Repository for audit (inventory count) operations.
 class AuditRepository {
@@ -88,6 +89,16 @@ class AuditRepository {
         costPrice: costPrice,
       ));
     }
+
+    // Sync audit to Supabase
+    await SupabaseSync.upsert('audits', {
+      'id': auditId, 'company_id': companyId, 'warehouse_id': warehouseId,
+      'warehouse_name': warehouseName, 'employee_id': employeeId,
+      'employee_name': employeeName, 'type': type.name,
+      'status': AuditStatus.inProgress.name, 'category_id': categoryId,
+      'category_name': categoryName, 'started_at': now.toIso8601String(),
+      'created_at': now.toIso8601String(), 'updated_at': now.toIso8601String(),
+    });
 
     return Audit(
       id: auditId,
@@ -182,6 +193,11 @@ class AuditRepository {
         [AuditStatus.completed.name, now, now, auditId],
       );
 
+      // Sync status
+      await SupabaseSync.update('audits', auditId, {
+        'status': AuditStatus.completed.name, 'completed_at': now, 'updated_at': now,
+      });
+
       return true;
     } catch (e) {
       print('completeAudit error: $e');
@@ -199,10 +215,14 @@ class AuditRepository {
 
   /// Cancel an audit (no corrections applied).
   Future<void> cancelAudit(String auditId) async {
+    final now = DateTime.now().toIso8601String();
     await _db.execute(
       'UPDATE audits SET status = ?, updated_at = ? WHERE id = ?',
-      [AuditStatus.cancelled.name, DateTime.now().toIso8601String(), auditId],
+      [AuditStatus.cancelled.name, now, auditId],
     );
+    await SupabaseSync.update('audits', auditId, {
+      'status': AuditStatus.cancelled.name, 'updated_at': now,
+    });
   }
 
   /// Resume an audit from draft → inProgress.

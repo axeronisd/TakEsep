@@ -1,0 +1,9 @@
+{
+    "name": "TakEsep Admin",
+    "short_name": "Admin",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#0f0f23",
+    "theme_color": "#6C5CE7",
+    "description": "TakEsep ecosystem management panel"
+}

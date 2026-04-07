@@ -2,6 +2,7 @@ import 'package:takesep_core/takesep_core.dart';
 import 'package:uuid/uuid.dart';
 
 import 'powersync_db.dart';
+import 'supabase_sync.dart';
 
 /// Repository for Employee CRUD operations via PowerSync.
 class EmployeeRepository {
@@ -58,6 +59,16 @@ class EmployeeRepository {
         salaryType.name, salaryAmount, salaryAutoDeduct ? 1 : 0, now, now,
       ],
     );
+
+    await SupabaseSync.upsert('employees', {
+      'id': id, 'company_id': companyId, 'name': name, 'pin_code': pinCode,
+      'role_id': roleId, 'allowed_warehouses': allowedWarehouses?.join(','),
+      'is_active': true, 'phone': phone, 'inn': inn,
+      'passport_number': passportNumber, 'passport_issued_by': passportIssuedBy,
+      'passport_issued_date': passportIssuedDate, 'salary_type': salaryType.name,
+      'salary_amount': salaryAmount, 'salary_auto_deduct': salaryAutoDeduct,
+      'created_at': now, 'updated_at': now,
+    });
 
     return Employee(
       id: id,
@@ -200,6 +211,26 @@ class EmployeeRepository {
       'UPDATE employees SET ${sets.join(', ')} WHERE id = ?',
       params,
     );
+
+    // Sync to Supabase
+    final sbData = <String, dynamic>{};
+    if (name != null) sbData['name'] = name;
+    if (pinCode != null) sbData['pin_code'] = pinCode;
+    if (clearRoleId) sbData['role_id'] = null;
+    else if (roleId != null) sbData['role_id'] = roleId;
+    if (clearAllowedWarehouses) sbData['allowed_warehouses'] = null;
+    else if (allowedWarehouses != null) sbData['allowed_warehouses'] = allowedWarehouses.join(',');
+    if (isActive != null) sbData['is_active'] = isActive;
+    if (clearPhone) sbData['phone'] = null; else if (phone != null) sbData['phone'] = phone;
+    if (clearInn) sbData['inn'] = null; else if (inn != null) sbData['inn'] = inn;
+    if (clearPassportNumber) sbData['passport_number'] = null; else if (passportNumber != null) sbData['passport_number'] = passportNumber;
+    if (clearPassportIssuedBy) sbData['passport_issued_by'] = null; else if (passportIssuedBy != null) sbData['passport_issued_by'] = passportIssuedBy;
+    if (clearPassportIssuedDate) sbData['passport_issued_date'] = null; else if (passportIssuedDate != null) sbData['passport_issued_date'] = passportIssuedDate;
+    if (salaryType != null) sbData['salary_type'] = salaryType.name;
+    if (salaryAmount != null) sbData['salary_amount'] = salaryAmount;
+    if (salaryAutoDeduct != null) sbData['salary_auto_deduct'] = salaryAutoDeduct;
+    sbData['updated_at'] = DateTime.now().toIso8601String();
+    await SupabaseSync.update('employees', employeeId, sbData);
   }
 
   /// Deactivate (soft-delete) an employee.
@@ -213,6 +244,7 @@ class EmployeeRepository {
       'DELETE FROM employees WHERE id = ?',
       [employeeId],
     );
+    await SupabaseSync.delete('employees', employeeId);
   }
 
   /// Check if a PIN code is already used by another employee in the company.
@@ -290,6 +322,13 @@ class EmployeeRepository {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
       [id, companyId, warehouseId, employeeId, employeeName, amount, comment, createdBy, 'active', now],
     );
+
+    await SupabaseSync.upsert('employee_expenses', {
+      'id': id, 'company_id': companyId, 'warehouse_id': warehouseId,
+      'employee_id': employeeId, 'employee_name': employeeName,
+      'amount': amount, 'comment': comment, 'created_by': createdBy,
+      'status': 'active', 'created_at': now,
+    });
   }
 
   /// Get expenses for a specific employee.
@@ -339,5 +378,8 @@ class EmployeeRepository {
       "UPDATE employee_expenses SET status = 'deleted', deleted_by = ?, deleted_at = ? WHERE id = ?",
       [deletedBy, now, expenseId],
     );
+    await SupabaseSync.update('employee_expenses', expenseId, {
+      'status': 'deleted', 'deleted_by': deletedBy, 'deleted_at': now,
+    });
   }
 }

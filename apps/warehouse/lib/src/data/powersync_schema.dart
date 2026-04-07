@@ -51,6 +51,9 @@ const schema = Schema([
     Column.text('group_id'),
     Column.text('name'),
     Column.text('address'),
+    Column.real('latitude'),
+    Column.real('longitude'),
+    Column.text('floor_info'),
     Column.integer('is_active'),
     Column.text('created_at'),
     Column.text('updated_at'),
@@ -60,6 +63,7 @@ const schema = Schema([
     Column.text('name'),
     Column.text('parent_id'),
     Column.integer('sort_order'),
+    Column.text('image_url'),
     Column.text('created_at'),
   ]),
   Table('products', [
@@ -82,8 +86,16 @@ const schema = Schema([
     Column.text('last_sold_at'),
     Column.text('image_url'),
     Column.integer('is_public'),
+    Column.text('b2c_description'),
+    Column.real('b2c_price'),
     Column.text('created_at'),
     Column.text('updated_at'),
+  ]),
+  Table('product_images', [
+    Column.text('product_id'),
+    Column.text('image_url'),
+    Column.integer('sort_order'),
+    Column.text('created_at'),
   ]),
   Table('sales', [
     Column.text('company_id'),
@@ -262,5 +274,50 @@ const schema = Schema([
     Column.text('qr_image_url'),
     Column.text('created_at'),
     Column.text('updated_at'),
+  ]),
+  // ─── Storefront: Store Categories (global AkJol catalog) ───
+  Table('store_categories', [
+    Column.text('name'),
+    Column.text('name_kg'),
+    Column.text('icon'),
+    Column.text('color'),
+    Column.integer('sort_order'),
+    Column.integer('is_active'),
+    Column.text('created_at'),
+  ]),
+  // ─── Storefront: Warehouse ↔ Store Category (many-to-many) ─
+  Table('warehouse_store_categories', [
+    Column.text('warehouse_id'),
+    Column.text('store_category_id'),
+    Column.text('created_at'),
+  ]),
+  // ─── Product Modifier Groups ───────────────────────────────
+  Table('product_modifier_groups', [
+    Column.text('product_id'),
+    Column.text('name'),
+    Column.text('type'),
+    Column.integer('min_selections'),
+    Column.integer('max_selections'),
+    Column.integer('sort_order'),
+    Column.text('created_at'),
+  ]),
+  // ─── Product Modifiers (options within a group) ────────────
+  Table('product_modifiers', [
+    Column.text('group_id'),
+    Column.text('name'),
+    Column.real('price_delta'),
+    Column.integer('is_default'),
+    Column.integer('is_available'),
+    Column.integer('sort_order'),
+    Column.text('created_at'),
+  ]),
+  // ─── Delivery Order Item Modifiers (selected by customer) ──
+  Table('delivery_order_item_modifiers', [
+    Column.text('order_item_id'),
+    Column.text('modifier_id'),
+    Column.text('modifier_name'),
+    Column.text('group_name'),
+    Column.real('price_delta'),
+    Column.text('created_at'),
   ]),
 ]);

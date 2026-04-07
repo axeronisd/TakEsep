@@ -23,6 +23,7 @@ class AkJolTheme {
   static const Color _darkSurface = Color(0xFF161B22);
   static const Color _darkSurfaceVariant = Color(0xFF21262D);
   static const Color _darkTextPrimary = Color(0xFFF0F6FC);
+  // ignore: unused_field
   static const Color _darkTextSecondary = Color(0xFF8B949E);
   static const Color _darkTextTertiary = Color(0xFF484F58);
   static const Color _darkBorder = Color(0xFF30363D);

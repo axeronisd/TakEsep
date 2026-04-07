@@ -1,23 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:akjol_auth/akjol_auth.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../theme/akjol_theme.dart';
+import '../../services/courier_auth_service.dart';
+import '../../providers/courier_providers.dart';
 
 /// Курьерский вход — единый аккаунт AkJol
 /// Проверяет что номер зарегистрирован как курьер
-class CourierLoginScreen extends StatefulWidget {
+class CourierLoginScreen extends ConsumerStatefulWidget {
   const CourierLoginScreen({super.key});
 
   @override
-  State<CourierLoginScreen> createState() => _CourierLoginScreenState();
+  ConsumerState<CourierLoginScreen> createState() => _CourierLoginScreenState();
 }
 
-class _CourierLoginScreenState extends State<CourierLoginScreen>
+class _CourierLoginScreenState extends ConsumerState<CourierLoginScreen>
     with SingleTickerProviderStateMixin {
   final _auth = AkJolAuthService();
-  final _supabase = Supabase.instance.client;
+  final _courierAuth = CourierAuthService();
   final _phoneController = TextEditingController();
   final _codeController = TextEditingController();
   bool _codeSent = false;
@@ -292,20 +294,19 @@ class _CourierLoginScreenState extends State<CourierLoginScreen>
     setState(() { _loading = true; _error = null; });
 
     try {
-      // Проверяем что номер зарегистрирован как курьер
-      final courier = await _supabase
-          .from('couriers')
-          .select('id')
-          .eq('phone', '+996$phone')
-          .maybeSingle();
+      // RPC-based identification: courier + warehouse binding in one call
+      final profile = await _courierAuth.lookupCourier('+996$phone');
 
-      if (courier == null) {
+      if (profile == null) {
         setState(() {
           _loading = false;
           _error = 'Этот номер не зарегистрирован как курьер.\nПопросите бизнес добавить вас.';
         });
         return;
       }
+
+      // Store profile for later use after OTP
+      ref.read(courierProfileProvider.notifier).state = profile;
 
       await _auth.sendOtp(phone);
       setState(() { _loading = false; _codeSent = true; });
@@ -323,13 +324,15 @@ class _CourierLoginScreenState extends State<CourierLoginScreen>
     setState(() { _loading = true; _error = null; });
 
     try {
-      final profile = await _auth.verifyOtp(phone, _codeController.text);
+      final authProfile = await _auth.verifyOtp(phone, _codeController.text);
 
-      // Активировать роль курьера + привязать к courier record
+      // Bind Supabase user_id to courier record
+      final courierProfile = ref.read(courierProfileProvider);
+      if (courierProfile != null) {
+        await _courierAuth.bindUserId(courierProfile.id, authProfile.id);
+      }
+
       await _auth.enableCourierRole();
-      await _supabase.from('couriers').update({
-        'user_id': profile.id,
-      }).eq('phone', '+996$phone');
 
       if (mounted) context.go('/');
     } on AkJolAuthException catch (e) {

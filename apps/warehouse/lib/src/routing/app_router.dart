@@ -238,6 +238,9 @@ String _firstPermittedRoute(AuthState authState) {
     'delivery_orders': '/delivery-orders',
     'delivery_settings': '/delivery-settings',
     'couriers': '/couriers',
+    'delivery_analytics': '/delivery-analytics',
+    'akjol_catalog': '/akjol-catalog',
+    'delivery_zones': '/delivery-zones',
     'settings': '/settings',
   };
   for (final perm in permissions) {

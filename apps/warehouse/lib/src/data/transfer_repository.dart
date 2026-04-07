@@ -2,6 +2,7 @@ import 'package:powersync/powersync.dart';
 import 'package:takesep_core/takesep_core.dart';
 import 'package:uuid/uuid.dart';
 import 'powersync_db.dart';
+import 'supabase_sync.dart';
 
 class TransferRepository {
   TransferRepository();
@@ -196,6 +197,17 @@ class TransferRepository {
         );
       }
 
+      // Sync to Supabase
+      await SupabaseSync.upsert('transfers', {
+        'id': transferId, 'company_id': transfer.companyId,
+        'from_warehouse_id': transfer.fromWarehouseId, 'to_warehouse_id': transfer.toWarehouseId,
+        'from_warehouse_name': transfer.fromWarehouseName, 'to_warehouse_name': transfer.toWarehouseName,
+        'sender_employee_id': transfer.senderEmployeeId, 'sender_employee_name': transfer.senderEmployeeName,
+        'status': 'pending', 'total_amount': costTotal,
+        'sender_notes': transfer.senderNotes, 'sender_photos': transfer.senderPhotos.join(','),
+        'pricing_mode': transfer.pricingMode, 'created_at': now, 'updated_at': now,
+      });
+
       return transfer.copyWith(
         id: transferId,
         status: TransferStatus.pending,
@@ -293,6 +305,14 @@ class TransferRepository {
         ],
       );
 
+      // Sync transfer status to Supabase
+      await SupabaseSync.update('transfers', transferId, {
+        'status': newStatus, 'receiver_employee_id': receiverEmployeeId,
+        'receiver_employee_name': receiverEmployeeName,
+        'receiver_notes': receiverNotes, 'receiver_photos': receiverPhotos.join(','),
+        'updated_at': now,
+      });
+
       return true;
     } catch (e) {
       print('TransferRepository acceptTransfer error: $e');
@@ -343,6 +363,14 @@ class TransferRepository {
         ],
       );
 
+      // Sync to Supabase
+      await SupabaseSync.update('transfers', transferId, {
+        'status': TransferStatus.rejected.name,
+        'receiver_employee_id': receiverEmployeeId,
+        'receiver_employee_name': receiverEmployeeName,
+        'receiver_notes': reason, 'updated_at': now,
+      });
+
       return true;
     } catch (e) {
       print('TransferRepository rejectTransfer error: $e');
@@ -373,6 +401,10 @@ class TransferRepository {
         'UPDATE transfers SET status = ?, updated_at = ? WHERE id = ?',
         [TransferStatus.cancelled.name, now, transferId],
       );
+
+      await SupabaseSync.update('transfers', transferId, {
+        'status': TransferStatus.cancelled.name, 'updated_at': now,
+      });
 
       return true;
     } catch (e) {

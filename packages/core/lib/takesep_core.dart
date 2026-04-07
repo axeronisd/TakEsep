@@ -20,4 +20,6 @@ export 'src/models/audit.dart';
 export 'src/models/audit_item.dart';
 export 'src/models/service.dart';
 export 'src/models/client.dart';
+export 'src/models/product_modifier.dart';
+export 'src/models/store_category.dart';
 export 'src/constants.dart';

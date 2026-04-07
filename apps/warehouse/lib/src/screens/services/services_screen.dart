@@ -5,7 +5,6 @@ import 'package:takesep_core/takesep_core.dart';
 import '../../providers/currency_provider.dart';
 import '../../providers/service_providers.dart';
 import '../../widgets/cached_image_widget.dart';
-import '../../data/mock_data.dart';
 import 'widgets/edit_service_dialog.dart';
 
 /// Services screen — catalog of services from DB.

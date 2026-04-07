@@ -8,6 +8,7 @@ class Category extends Equatable {
   final String? iconName;
   final String? parentId;
   final int? sortOrder;
+  final String? imageUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -19,6 +20,7 @@ class Category extends Equatable {
     this.iconName,
     this.parentId,
     this.sortOrder,
+    this.imageUrl,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -31,6 +33,7 @@ class Category extends Equatable {
     String? iconName,
     String? parentId,
     int? sortOrder,
+    String? imageUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -42,6 +45,7 @@ class Category extends Equatable {
       iconName: iconName ?? this.iconName,
       parentId: parentId ?? this.parentId,
       sortOrder: sortOrder ?? this.sortOrder,
+      imageUrl: imageUrl ?? this.imageUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -56,6 +60,7 @@ class Category extends Equatable {
         iconName,
         parentId,
         sortOrder,
+        imageUrl,
         createdAt,
         updatedAt,
       ];
@@ -69,6 +74,7 @@ class Category extends Equatable {
       iconName: json['icon_name'] as String?,
       parentId: json['parent_id'] as String?,
       sortOrder: json['sort_order'] as int?,
+      imageUrl: json['image_url'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: json['updated_at'] != null
           ? DateTime.parse(json['updated_at'] as String)
@@ -85,6 +91,7 @@ class Category extends Equatable {
       if (iconName != null) 'icon_name': iconName,
       if (parentId != null) 'parent_id': parentId,
       if (sortOrder != null) 'sort_order': sortOrder,
+      if (imageUrl != null) 'image_url': imageUrl,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };

@@ -38,3 +38,8 @@ docker-compose.override.yml
 
 # Logs
 *.log
+
+# Landing page & web admin (GitHub Pages)
+!docs/
+!docs/**
+docs/*.apk

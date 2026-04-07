@@ -8,7 +8,6 @@ import '../../providers/dashboard_providers.dart';
 import '../../providers/date_filter_provider.dart';
 import '../../providers/currency_provider.dart';
 import '../../data/mock_data.dart';
-import '../../providers/owner_settings_provider.dart';
 import '../onboarding/dashboard_onboarding_overlay.dart';
 
 class DashboardScreen extends ConsumerWidget {
@@ -629,7 +628,6 @@ class _KpiCardState extends ConsumerState<_KpiCard> {
 
   Widget _buildDetail(ColorScheme cs, Color changeColor, String changeText, String Function(double) fmt) {
     final breakdownAsync = ref.watch(kpiBreakdownProvider);
-    final kpi = widget.kpi;
 
     return Padding(
       padding: const EdgeInsets.only(top: 8),

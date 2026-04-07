@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
 import '../data/powersync_db.dart';
+import '../data/supabase_sync.dart';
 import 'auth_providers.dart';
 
 class PaymentMethod {
@@ -51,19 +53,27 @@ class PaymentMethodsNotifier extends StateNotifier<AsyncValue<List<PaymentMethod
     required bool isActive,
     String? qrImageUrl,
   }) async {
+    final now = DateTime.now().toIso8601String();
     if (id == null) {
-      // Insert
+      final newId = const Uuid().v4();
       await powerSyncDb.execute(
         '''INSERT INTO payment_methods (id, company_id, name, is_active, qr_image_url, created_at, updated_at) 
-           VALUES (uuid(), ?, ?, ?, ?, datetime('now'), datetime('now'))''',
-        [companyId, name, isActive ? 1 : 0, qrImageUrl],
+           VALUES (?, ?, ?, ?, ?, ?, ?)''',
+        [newId, companyId, name, isActive ? 1 : 0, qrImageUrl, now, now],
       );
+      await SupabaseSync.upsert('payment_methods', {
+        'id': newId, 'company_id': companyId, 'name': name,
+        'is_active': isActive, 'qr_image_url': qrImageUrl,
+        'created_at': now, 'updated_at': now,
+      });
     } else {
-      // Update
       await powerSyncDb.execute(
-        '''UPDATE payment_methods SET name = ?, is_active = ?, qr_image_url = ?, updated_at = datetime('now') WHERE id = ?''',
-        [name, isActive ? 1 : 0, qrImageUrl, id],
+        '''UPDATE payment_methods SET name = ?, is_active = ?, qr_image_url = ?, updated_at = ? WHERE id = ?''',
+        [name, isActive ? 1 : 0, qrImageUrl, now, id],
       );
+      await SupabaseSync.update('payment_methods', id, {
+        'name': name, 'is_active': isActive, 'qr_image_url': qrImageUrl, 'updated_at': now,
+      });
     }
     loadMethods(companyId);
   }
@@ -73,9 +83,7 @@ class PaymentMethodsNotifier extends StateNotifier<AsyncValue<List<PaymentMethod
       'UPDATE payment_methods SET is_active = ?, updated_at = datetime("now") WHERE id = ?',
       [active ? 1 : 0, id],
     );
-    // Reload directly reading the current company from state relies on an external param, 
-    // but the proper way here is just invalidating the provider or re-fetching.
-    // Instead of refetching the whole DB, we can just edit the state optimally.
+    await SupabaseSync.update('payment_methods', id, {'is_active': active});
     if (state.hasValue) {
       state = AsyncValue.data(
         state.value!.map((m) => m.id == id ? PaymentMethod(
@@ -88,6 +96,7 @@ class PaymentMethodsNotifier extends StateNotifier<AsyncValue<List<PaymentMethod
 
   Future<void> deleteMethod(String id) async {
     await powerSyncDb.execute('DELETE FROM payment_methods WHERE id = ?', [id]);
+    await SupabaseSync.delete('payment_methods', id);
     if (state.hasValue) {
       state = AsyncValue.data(state.value!.where((m) => m.id != id).toList());
     }

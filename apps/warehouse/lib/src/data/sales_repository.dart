@@ -1,6 +1,7 @@
 import 'package:powersync/powersync.dart';
 import 'package:uuid/uuid.dart';
 import 'powersync_db.dart';
+import 'supabase_sync.dart';
 
 class SalesRepository {
   SalesRepository();
@@ -105,6 +106,29 @@ class SalesRepository {
         [finalTotal, addedDebt, now, clientId],
       );
     }
+
+    // ── Sync to Supabase ──
+    await SupabaseSync.upsert('sales', {
+      'id': saleId, 'company_id': companyId, 'employee_id': employeeId,
+      'warehouse_id': warehouseId, 'total_amount': totalAmount,
+      'discount_amount': discountAmount, 'payment_method': paymentMethod,
+      'status': 'completed', 'notes': notes, 'client_id': clientId,
+      'client_name': clientName, 'received_amount': actualReceived,
+      'created_at': now, 'updated_at': now,
+    });
+
+    final saleItemsForSupabase = <Map<String, dynamic>>[];
+    for (final item in items) {
+      saleItemsForSupabase.add({
+        'id': const Uuid().v4(), 'sale_id': saleId,
+        'product_id': item.productId, 'product_name': item.productName,
+        'quantity': item.quantity, 'selling_price': item.sellingPrice,
+        'cost_price': item.costPrice, 'discount_amount': item.discountAmount,
+        'item_type': item.itemType, 'executor_id': item.executorId,
+        'executor_name': item.executorName, 'created_at': now,
+      });
+    }
+    await SupabaseSync.upsertAll('sale_items', saleItemsForSupabase);
 
     return saleId;
   }

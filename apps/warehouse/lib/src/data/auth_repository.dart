@@ -3,6 +3,7 @@ import 'package:takesep_core/takesep_core.dart';
 import 'package:uuid/uuid.dart';
 
 import 'powersync_db.dart';
+import 'supabase_sync.dart';
 
 class AuthRepository {
   final SupabaseClient _supabase;
@@ -291,23 +292,40 @@ class AuthRepository {
     }
   }
 
-  /// Creates a new warehouse via PowerSync (local-first, syncs to Supabase).
+  /// Creates a new warehouse (local SQLite + direct Supabase).
   Future<Warehouse?> createWarehouse({
     required String companyId,
     required String name,
     String? address,
     String? groupId,
+    double? latitude,
+    double? longitude,
+    String? floorInfo,
   }) async {
     try {
       final id = _uuid.v4();
       final now = DateTime.now().toIso8601String();
 
+      // Write to local SQLite
       await powerSyncDb.execute(
-        '''INSERT INTO warehouses (id, organization_id, name, address, group_id,
+        '''INSERT INTO warehouses (id, organization_id, name, address, latitude, longitude, floor_info, group_id,
            is_active, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
-        [id, companyId, name, address, groupId, 1, now, now],
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+        [id, companyId, name, address, latitude, longitude, floorInfo, groupId, 1, now, now],
       );
+
+      // Write directly to Supabase
+      await SupabaseSync.upsert('warehouses', {
+        'id': id,
+        'organization_id': companyId,
+        'name': name,
+        'address': address,
+        'latitude': latitude,
+        'longitude': longitude,
+        'floor_info': floorInfo,
+        'group_id': groupId,
+        'created_at': now,
+      });
 
       // If warehouse belongs to a group, copy products from sibling warehouses
       if (groupId != null && groupId.isNotEmpty) {
@@ -324,6 +342,9 @@ class AuthRepository {
         companyId: companyId,
         name: name,
         address: address,
+        latitude: latitude,
+        longitude: longitude,
+        floorInfo: floorInfo,
         groupId: groupId,
         isActive: true,
         createdAt: DateTime.now(),
@@ -412,7 +433,7 @@ class AuthRepository {
     }
   }
 
-  /// Creates a new warehouse group via PowerSync (local-first).
+  /// Creates a new warehouse group (local + Supabase).
   Future<WarehouseGroup?> createWarehouseGroup({
     required String companyId,
     required String name,
@@ -425,6 +446,10 @@ class AuthRepository {
         'INSERT INTO warehouse_groups (id, company_id, name, created_at) VALUES (?, ?, ?, ?)',
         [id, companyId, name, now],
       );
+
+      await SupabaseSync.upsert('warehouse_groups', {
+        'id': id, 'company_id': companyId, 'name': name, 'created_at': now,
+      });
 
       return WarehouseGroup(
         id: id,
@@ -445,6 +470,7 @@ class AuthRepository {
       'UPDATE warehouses SET name = ?, updated_at = ? WHERE id = ?',
       [newName, now, warehouseId],
     );
+    await SupabaseSync.update('warehouses', warehouseId, {'name': newName});
   }
 
   /// Renames a warehouse group.
@@ -453,6 +479,7 @@ class AuthRepository {
       'UPDATE warehouse_groups SET name = ? WHERE id = ?',
       [newName, groupId],
     );
+    await SupabaseSync.update('warehouse_groups', groupId, {'name': newName});
   }
 
   /// Moves a warehouse into a group (or changes its group).
@@ -462,6 +489,7 @@ class AuthRepository {
       'UPDATE warehouses SET group_id = ?, updated_at = ? WHERE id = ?',
       [groupId, now, warehouseId],
     );
+    await SupabaseSync.update('warehouses', warehouseId, {'group_id': groupId});
     if (groupId != null && groupId.isNotEmpty) {
       await _copyProductsFromSiblings(
         newWarehouseId: warehouseId,
@@ -479,5 +507,6 @@ class AuthRepository {
       'UPDATE warehouses SET group_id = NULL, updated_at = ? WHERE id = ?',
       [now, warehouseId],
     );
+    await SupabaseSync.update('warehouses', warehouseId, {'group_id': null});
   }
 }

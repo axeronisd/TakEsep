@@ -1,6 +1,7 @@
 import 'package:powersync/powersync.dart';
 import 'package:takesep_core/takesep_core.dart';
 import 'powersync_db.dart';
+import 'supabase_sync.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class InventoryRepository {
@@ -89,6 +90,16 @@ class InventoryRepository {
           json['created_at'] ?? DateTime.now().toIso8601String(),
         ],
       );
+
+      // Sync to Supabase
+      await SupabaseSync.upsert('categories', {
+        'id': json['id'],
+        'company_id': json['company_id'],
+        'name': json['name'],
+        'parent_id': json['parent_id'],
+        'created_at': json['created_at'] ?? DateTime.now().toIso8601String(),
+      });
+
       return category;
     } catch (e) {
       print('InventoryRepository createCategory error: $e');
@@ -117,6 +128,18 @@ class InventoryRepository {
           product.id,
         ],
       );
+
+      // Sync to Supabase
+      await SupabaseSync.update('products', product.id, {
+        'name': product.name,
+        'selling_price': product.price,
+        'cost_price': product.costPrice,
+        'barcode': product.barcode,
+        'description': product.description,
+        'image_url': product.imageUrl,
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+
       return true;
     } catch (e) {
       print('InventoryRepository updateProduct error: $e');

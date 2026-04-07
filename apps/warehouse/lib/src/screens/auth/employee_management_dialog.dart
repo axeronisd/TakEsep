@@ -8,6 +8,7 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../data/powersync_db.dart';
+import '../../data/supabase_sync.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/employee_providers.dart';
 import '../../utils/export_helper.dart';
@@ -1028,6 +1029,7 @@ class _RolesTab extends ConsumerWidget {
                         'DELETE FROM roles WHERE id = ?',
                         [role.id],
                       );
+                      await SupabaseSync.delete('roles', role.id);
                       ref.invalidate(rolesListProvider);
                       if (ctx.mounted) Navigator.pop(ctx);
                     }
@@ -1067,6 +1069,11 @@ class _RolesTab extends ConsumerWidget {
                          VALUES (?, ?, ?, ?, ?, ?, ?)''',
                       [id, companyId, name, permsStr, pin, 0, now],
                     );
+                    await SupabaseSync.upsert('roles', {
+                      'id': id, 'company_id': companyId, 'name': name,
+                      'permissions': permsStr, 'pin_code': pin,
+                      'is_system': false, 'created_at': now,
+                    });
                   } else {
                     // UPDATE
                     await powerSyncDb.execute(
@@ -1074,6 +1081,10 @@ class _RolesTab extends ConsumerWidget {
                          WHERE id = ?''',
                       [name, permsStr, pin, role.isSystem ? 1 : 0, id],
                     );
+                    await SupabaseSync.update('roles', id, {
+                      'name': name, 'permissions': permsStr,
+                      'pin_code': pin, 'is_system': role.isSystem,
+                    });
                   }
 
                   ref.invalidate(rolesListProvider);
@@ -1105,6 +1116,13 @@ class _RolesTab extends ConsumerWidget {
         'employees' => Icons.badge_rounded,
         'reports' => Icons.assessment_rounded,
         'settings' => Icons.settings_rounded,
+        'write_offs' => Icons.delete_sweep_rounded,
+        'delivery_orders' => Icons.delivery_dining_rounded,
+        'couriers' => Icons.people_alt_rounded,
+        'delivery_settings' => Icons.tune_rounded,
+        'delivery_analytics' => Icons.insights_rounded,
+        'akjol_catalog' => Icons.storefront_rounded,
+        'delivery_zones' => Icons.map_rounded,
         _ => Icons.lock_rounded,
       };
 }

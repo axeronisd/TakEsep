@@ -61,7 +61,12 @@ class SupabasePowerSyncConnector extends PowerSyncBackendConnector {
 
       await transaction.complete();
     } catch (e) {
-      print('PowerSync uploadData error: $e');
+      print('⚠️ PowerSync uploadData error: $e');
+      // Log which operation failed
+      for (final op in transaction.crud) {
+        print('  → Table: ${op.table}, Op: ${op.op}, ID: ${op.id}');
+        print('  → Data keys: ${op.opData?.keys.toList()}');
+      }
       // Don't call transaction.complete() — it will retry later
       rethrow;
     }
@@ -77,7 +82,10 @@ class SupabasePowerSyncConnector extends PowerSyncBackendConnector {
     });
     
     // Strip schema-drift columns that exist locally but not in Supabase
-    if (tableName == 'warehouses') data.remove('is_active');
+    if (tableName == 'warehouses') {
+      data.remove('is_active');
+      data.remove('updated_at');
+    }
     if (tableName == 'categories') data.remove('sort_order');
     if (tableName == 'products') data.remove('unit');
     

@@ -2,6 +2,7 @@
 class UserProfile {
   final String id;
   final String phone;
+  final String? username;
   final String? name;
   final String? avatarUrl;
   final String? bio;
@@ -23,6 +24,7 @@ class UserProfile {
   const UserProfile({
     required this.id,
     required this.phone,
+    this.username,
     this.name,
     this.avatarUrl,
     this.bio,
@@ -46,6 +48,7 @@ class UserProfile {
     return UserProfile(
       id: json['id'] as String,
       phone: json['phone'] as String? ?? '',
+      username: json['username'] as String?,
       name: json['name'] as String?,
       avatarUrl: json['avatar_url'] as String?,
       bio: json['bio'] as String?,
@@ -69,6 +72,7 @@ class UserProfile {
   Map<String, dynamic> toJson() => {
         'id': id,
         'phone': phone,
+        'username': username,
         'name': name,
         'avatar_url': avatarUrl,
         'bio': bio,
@@ -84,7 +88,11 @@ class UserProfile {
       };
 
   /// Отображаемое имя
-  String get displayName => name?.isNotEmpty == true ? name! : phone;
+  String get displayName {
+    if (name?.isNotEmpty == true) return name!;
+    if (username?.isNotEmpty == true) return '@$username';
+    return phone;
+  }
 
   /// Инициалы для аватара
   String get initials {
@@ -107,6 +115,7 @@ class UserProfile {
   }
 
   UserProfile copyWith({
+    String? username,
     String? name,
     String? avatarUrl,
     String? bio,
@@ -123,6 +132,7 @@ class UserProfile {
     return UserProfile(
       id: id,
       phone: phone,
+      username: username ?? this.username,
       name: name ?? this.name,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       bio: bio ?? this.bio,

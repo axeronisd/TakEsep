@@ -1,6 +1,7 @@
 import 'package:takesep_core/takesep_core.dart';
 import 'package:uuid/uuid.dart';
 import 'powersync_db.dart';
+import 'supabase_sync.dart';
 
 /// Repository for Client CRUD operations via PowerSync.
 class ClientRepository {
@@ -32,6 +33,13 @@ class ClientRepository {
       [id, companyId, name, phone, email, type, 0.0, 0.0, 0, notes, 1, now, now],
     );
 
+    await SupabaseSync.upsert('clients', {
+      'id': id, 'company_id': companyId, 'name': name, 'phone': phone,
+      'email': email, 'type': type, 'total_spent': 0.0, 'debt': 0.0,
+      'purchases_count': 0, 'notes': notes, 'is_active': true,
+      'created_at': now, 'updated_at': now,
+    });
+
     return Client(
       id: id, companyId: companyId, name: name, phone: phone, email: email,
       type: type, notes: notes, createdAt: DateTime.now(), updatedAt: DateTime.now(),
@@ -61,10 +69,25 @@ class ClientRepository {
     await powerSyncDb.execute(
       'UPDATE clients SET ${sets.join(', ')} WHERE id = ?', params,
     );
+
+    // Build update map for Supabase
+    final sbData = <String, dynamic>{};
+    if (name != null) sbData['name'] = name;
+    if (phone != null) sbData['phone'] = phone;
+    if (email != null) sbData['email'] = email;
+    if (type != null) sbData['type'] = type;
+    if (notes != null) sbData['notes'] = notes;
+    if (isActive != null) sbData['is_active'] = isActive;
+    if (totalSpent != null) sbData['total_spent'] = totalSpent;
+    if (debt != null) sbData['debt'] = debt;
+    if (purchasesCount != null) sbData['purchases_count'] = purchasesCount;
+    sbData['updated_at'] = DateTime.now().toIso8601String();
+    await SupabaseSync.update('clients', clientId, sbData);
   }
 
   Future<void> deleteClient(String clientId) async {
     await powerSyncDb.execute('DELETE FROM clients WHERE id = ?', [clientId]);
+    await SupabaseSync.delete('clients', clientId);
   }
 
   /// Get sales history for a specific client

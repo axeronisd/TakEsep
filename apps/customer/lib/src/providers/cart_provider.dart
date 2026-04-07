@@ -1,29 +1,73 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+/// Выбранный модификатор в корзине
+class CartModifier {
+  final String modifierId;
+  final String groupName;
+  final String name;
+  final double priceDelta;
+
+  const CartModifier({
+    required this.modifierId,
+    required this.groupName,
+    required this.name,
+    this.priceDelta = 0,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'modifier_id': modifierId,
+        'group_name': groupName,
+        'modifier_name': name,
+        'price_delta': priceDelta,
+      };
+}
 
 /// Элемент корзины
 class CartItem {
   final String productId;
   final String name;
-  final double price;
+  final double basePrice;
   final String? imageUrl;
+  final List<CartModifier> modifiers;
   int quantity;
 
   CartItem({
     required this.productId,
     required this.name,
-    required this.price,
+    required this.basePrice,
     this.imageUrl,
+    this.modifiers = const [],
     this.quantity = 1,
   });
 
-  double get total => price * quantity;
+  /// Цена с учётом модификаторов
+  double get unitPrice =>
+      basePrice + modifiers.fold(0.0, (sum, m) => sum + m.priceDelta);
 
-  CartItem copyWith({int? quantity}) =>
+  double get total => unitPrice * quantity;
+
+  /// Уникальный ключ: productId + отсортированные modifier ids
+  /// Позволяет иметь одинаковый товар с разными модами как отдельные строки
+  String get cartKey {
+    if (modifiers.isEmpty) return productId;
+    final modIds = modifiers.map((m) => m.modifierId).toList()..sort();
+    return '$productId:${modIds.join(',')}';
+  }
+
+  /// Краткое описание модификаторов для UI
+  String get modifiersSummary {
+    if (modifiers.isEmpty) return '';
+    return modifiers.map((m) => m.name).join(', ');
+  }
+
+  CartItem copyWith({int? quantity, List<CartModifier>? modifiers}) =>
       CartItem(
         productId: productId,
         name: name,
-        price: price,
+        basePrice: basePrice,
         imageUrl: imageUrl,
+        modifiers: modifiers ?? this.modifiers,
         quantity: quantity ?? this.quantity,
       );
 }
@@ -57,13 +101,11 @@ class CartState {
 
   bool get isEmpty => items.isEmpty;
 
-  /// Рассчитать стоимость доставки
-  double deliveryFee({required bool isNight, required String transport}) {
-    if (transport == 'truck') {
-      return isNight ? 250 : 150;
-    }
-    return isNight ? 150 : 100;
-  }
+  /// Проверка: корзина принадлежит другому магазину?
+  bool isDifferentStore(String warehouseId) =>
+      this.warehouseId != null &&
+      this.warehouseId != warehouseId &&
+      items.isNotEmpty;
 
   CartState copyWith({
     String? warehouseId,
@@ -74,60 +116,53 @@ class CartState {
     double? deliveryLat,
     double? deliveryLng,
     String? customerNote,
-  }) => CartState(
-    warehouseId: warehouseId ?? this.warehouseId,
-    warehouseName: warehouseName ?? this.warehouseName,
-    items: items ?? this.items,
-    selectedTransport: selectedTransport ?? this.selectedTransport,
-    deliveryAddress: deliveryAddress ?? this.deliveryAddress,
-    deliveryLat: deliveryLat ?? this.deliveryLat,
-    deliveryLng: deliveryLng ?? this.deliveryLng,
-    customerNote: customerNote ?? this.customerNote,
-  );
+  }) =>
+      CartState(
+        warehouseId: warehouseId ?? this.warehouseId,
+        warehouseName: warehouseName ?? this.warehouseName,
+        items: items ?? this.items,
+        selectedTransport: selectedTransport ?? this.selectedTransport,
+        deliveryAddress: deliveryAddress ?? this.deliveryAddress,
+        deliveryLat: deliveryLat ?? this.deliveryLat,
+        deliveryLng: deliveryLng ?? this.deliveryLng,
+        customerNote: customerNote ?? this.customerNote,
+      );
 }
 
 /// Провайдер корзины
 class CartNotifier extends StateNotifier<CartState> {
   CartNotifier() : super(const CartState());
 
-  /// Добавить товар (если из другого магазина — очистить корзину)
-  void addItem({
+  /// Добавить товар (с модификаторами) — возвращает true если добавлен
+  bool addItem({
     required String warehouseId,
     required String warehouseName,
     required String productId,
     required String name,
     required double price,
     String? imageUrl,
+    List<CartModifier> modifiers = const [],
   }) {
-    // Если товар из другого магазина — очистить
-    if (state.warehouseId != null && state.warehouseId != warehouseId) {
-      state = CartState(
-        warehouseId: warehouseId,
-        warehouseName: warehouseName,
-        items: [
-          CartItem(
-            productId: productId,
-            name: name,
-            price: price,
-            imageUrl: imageUrl,
-          ),
-        ],
-      );
-      return;
+    // Если товар из другого магазина — НЕ добавляем (вызывающий код покажет диалог)
+    if (state.isDifferentStore(warehouseId)) {
+      return false;
     }
 
+    final newItem = CartItem(
+      productId: productId,
+      name: name,
+      basePrice: price,
+      imageUrl: imageUrl,
+      modifiers: modifiers,
+    );
+
     final items = [...state.items];
-    final idx = items.indexWhere((i) => i.productId == productId);
+    final idx = items.indexWhere((i) => i.cartKey == newItem.cartKey);
 
     if (idx >= 0) {
       items[idx] = items[idx].copyWith(quantity: items[idx].quantity + 1);
     } else {
-      items.add(CartItem(
-        productId: productId,
-        name: name,
-        price: price,
-        imageUrl: imageUrl,
-      ));
+      items.add(newItem);
     }
 
     state = state.copyWith(
@@ -135,23 +170,52 @@ class CartNotifier extends StateNotifier<CartState> {
       warehouseName: warehouseName,
       items: items,
     );
+    return true;
   }
 
-  /// Изменить количество
-  void updateQuantity(String productId, int quantity) {
+  /// Очистить и добавить (после подтверждения смены магазина)
+  void clearAndAddItem({
+    required String warehouseId,
+    required String warehouseName,
+    required String productId,
+    required String name,
+    required double price,
+    String? imageUrl,
+    List<CartModifier> modifiers = const [],
+  }) {
+    state = CartState(
+      warehouseId: warehouseId,
+      warehouseName: warehouseName,
+      items: [
+        CartItem(
+          productId: productId,
+          name: name,
+          basePrice: price,
+          imageUrl: imageUrl,
+          modifiers: modifiers,
+        ),
+      ],
+    );
+  }
+
+  /// Изменить количество по cartKey
+  void updateQuantity(String cartKey, int quantity) {
     if (quantity <= 0) {
-      removeItem(productId);
+      removeItem(cartKey);
       return;
     }
     final items = state.items
-        .map((i) => i.productId == productId ? i.copyWith(quantity: quantity) : i)
+        .map((i) => i.cartKey == cartKey
+            ? i.copyWith(quantity: quantity)
+            : i)
         .toList();
     state = state.copyWith(items: items);
   }
 
-  /// Удалить товар
-  void removeItem(String productId) {
-    final items = state.items.where((i) => i.productId != productId).toList();
+  /// Удалить товар по cartKey
+  void removeItem(String cartKey) {
+    final items =
+        state.items.where((i) => i.cartKey != cartKey).toList();
     if (items.isEmpty) {
       state = const CartState();
     } else {
@@ -187,3 +251,38 @@ class CartNotifier extends StateNotifier<CartState> {
 final cartProvider = StateNotifierProvider<CartNotifier, CartState>(
   (ref) => CartNotifier(),
 );
+
+// ── Helper: показать диалог смены магазина ────────────────────
+
+Future<bool> showStoreConflictDialog(
+  BuildContext context, {
+  required String currentStoreName,
+  required String newStoreName,
+}) async {
+  final result = await showDialog<bool>(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20)),
+      title: const Text('Очистить корзину?'),
+      content: Text(
+        'В вашей корзине товары из «$currentStoreName». '
+        'Добавить товар из «$newStoreName» можно только после очистки.',
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx, false),
+          child: const Text('Отмена'),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(ctx, true),
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(100, 40),
+          ),
+          child: const Text('Очистить'),
+        ),
+      ],
+    ),
+  );
+  return result ?? false;
+}

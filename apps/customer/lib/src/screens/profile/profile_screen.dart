@@ -224,16 +224,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
     switch (status) {
       case 'pending':
         return Colors.orange;
-      case 'accepted':
-      case 'courier_assigned':
+      case 'confirmed':
+      case 'assembling':
         return Colors.blue;
+      case 'ready':
+        return Colors.indigo;
+      case 'courier_assigned':
+        return Colors.purple;
       case 'picked_up':
         return Colors.teal;
       case 'delivered':
         return AkJolTheme.success;
-      case 'cancelled':
-        return AkJolTheme.error;
       default:
+        if (status?.startsWith('cancelled') == true) return AkJolTheme.error;
         return Colors.grey;
     }
   }
@@ -242,16 +245,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     switch (status) {
       case 'pending':
         return Icons.schedule;
-      case 'accepted':
+      case 'confirmed':
+        return Icons.check_circle_outline;
+      case 'assembling':
+        return Icons.inventory_2;
+      case 'ready':
+        return Icons.done;
       case 'courier_assigned':
         return Icons.delivery_dining;
       case 'picked_up':
         return Icons.local_shipping;
       case 'delivered':
         return Icons.check_circle;
-      case 'cancelled':
-        return Icons.cancel;
       default:
+        if (status?.startsWith('cancelled') == true) return Icons.cancel;
         return Icons.receipt;
     }
   }
@@ -260,16 +267,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
     switch (status) {
       case 'pending':
         return 'Ожидает';
-      case 'accepted':
+      case 'confirmed':
         return 'Принят';
+      case 'assembling':
+        return 'Собирается';
+      case 'ready':
+        return 'Готов';
       case 'courier_assigned':
-        return 'Курьер в пути';
+        return 'Курьер назначен';
       case 'picked_up':
-        return 'Доставляется';
+        return 'В пути';
       case 'delivered':
         return 'Доставлен';
-      case 'cancelled':
-        return 'Отменён';
+      case 'cancelled_by_customer':
+      case 'cancelled_by_customer_late':
+        return 'Отменён вами';
+      case 'cancelled_by_store':
+        return 'Отменён магазином';
+      case 'cancelled_by_courier':
+        return 'Курьер отменил';
+      case 'cancelled_no_courier':
+        return 'Нет курьеров';
       default:
         return status ?? '';
     }

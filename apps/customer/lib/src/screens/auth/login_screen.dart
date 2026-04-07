@@ -3,8 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:akjol_auth/akjol_auth.dart';
 
-/// Единый экран входа AkJol
-/// Один аккаунт для всех сервисов экосистемы
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -12,126 +10,122 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-enum _AuthMode { welcome, login, register, otp }
-
-class _LoginScreenState extends State<LoginScreen>
-    with SingleTickerProviderStateMixin {
+class _LoginScreenState extends State<LoginScreen> {
   final _auth = AkJolAuthService();
-  final _phoneController = TextEditingController();
-  final _codeController = TextEditingController();
-  final _nameController = TextEditingController();
-  _AuthMode _mode = _AuthMode.welcome;
-  bool _loading = false;
-  String? _error;
-  late AnimationController _animController;
-  late Animation<double> _fadeAnim;
+  bool _isRegister = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _animController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 600),
-    );
-    _fadeAnim = CurvedAnimation(
-      parent: _animController,
-      curve: Curves.easeOut,
-    );
-    _animController.forward();
-  }
+  // Login
+  final _loginCtrl = TextEditingController();
+  final _loginPassCtrl = TextEditingController();
+  bool _loginPassVisible = false;
+  
+  // Login Validation
+  String? _loginIdError;
+  String? _loginPassError;
+
+  // Register
+  final _regNameCtrl = TextEditingController();
+  final _regPhoneCtrl = TextEditingController();
+  final _regUsernameCtrl = TextEditingController();
+  final _regPassCtrl = TextEditingController();
+  final _regConfirmCtrl = TextEditingController();
+  bool _regPassVisible = false;
+  bool _regConfirmVisible = false;
+
+  // Register Validation
+  String? _regNameError;
+  String? _regPhoneError;
+  String? _regUsernameError;
+  String? _regPassError;
+  String? _regConfirmError;
+
+  bool _loading = false;
+  String? _error; // Глобальная ошибка (например от сервера)
+
+  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
 
   @override
   void dispose() {
-    _animController.dispose();
-    _phoneController.dispose();
-    _codeController.dispose();
-    _nameController.dispose();
+    _loginCtrl.dispose();
+    _loginPassCtrl.dispose();
+    _regNameCtrl.dispose();
+    _regPhoneCtrl.dispose();
+    _regUsernameCtrl.dispose();
+    _regPassCtrl.dispose();
+    _regConfirmCtrl.dispose();
     super.dispose();
   }
 
-  bool get _isDark => Theme.of(context).brightness == Brightness.dark;
-  ColorScheme get _colors => Theme.of(context).colorScheme;
+  void _clearErrors() {
+    setState(() {
+      _error = null;
+      _loginIdError = null;
+      _loginPassError = null;
+      _regNameError = null;
+      _regPhoneError = null;
+      _regUsernameError = null;
+      _regPassError = null;
+      _regConfirmError = null;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final bg = _isDark ? const Color(0xFF0D1117) : const Color(0xFFF7F8FA);
+    final cardBg = _isDark ? const Color(0xFF161B22) : Colors.white;
+    final textColor = _isDark ? Colors.white : const Color(0xFF111827);
+    final mutedColor = _isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280);
+    final fieldBg = _isDark ? const Color(0xFF0D1117) : const Color(0xFFF3F4F6);
+    final borderColor = _isDark ? const Color(0xFF30363D) : const Color(0xFFE5E7EB);
+
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: _isDark
-                ? [
-                    const Color(0xFF0A1F12),
-                    const Color(0xFF0D1117),
-                    const Color(0xFF0D1117),
-                  ]
-                : [
-                    const Color(0xFFE8FFF0),
-                    const Color(0xFFF8F9FA),
-                    Colors.white,
-                  ],
-          ),
-        ),
-        child: SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnim,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 28),
-              child: ConstrainedBox(
-                constraints: BoxConstraints(
-                  minHeight: MediaQuery.of(context).size.height -
-                      MediaQuery.of(context).padding.top -
-                      MediaQuery.of(context).padding.bottom,
+      backgroundColor: bg,
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              children: [
+                // ── Лого ──────────────────────
+                _logo(textColor, mutedColor),
+                const SizedBox(height: 32),
+
+                // ── Форма ─────────────────────
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+                  decoration: BoxDecoration(
+                    color: cardBg,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(color: borderColor),
+                    boxShadow: _isDark
+                        ? null
+                        : [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.03),
+                              blurRadius: 24,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                  ),
+                  child: AnimatedSize(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    child: _isRegister
+                        ? _registerForm(textColor, mutedColor, fieldBg, borderColor)
+                        : _loginForm(textColor, mutedColor, fieldBg, borderColor),
+                  ),
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const SizedBox(height: 40),
 
-                    // ─── Logo ─────────────────────
-                    _buildLogo(),
-                    const SizedBox(height: 32),
+                const SizedBox(height: 24),
 
-                    // ─── Error ────────────────────
-                    if (_error != null) _buildErrorBanner(),
-
-                    // ─── Auth Content ─────────────
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 350),
-                      switchInCurve: Curves.easeOut,
-                      switchOutCurve: Curves.easeIn,
-                      transitionBuilder: (child, anim) => FadeTransition(
-                        opacity: anim,
-                        child: SlideTransition(
-                          position: Tween(
-                            begin: const Offset(0, 0.05),
-                            end: Offset.zero,
-                          ).animate(anim),
-                          child: child,
-                        ),
-                      ),
-                      child: _buildContent(),
-                    ),
-
-                    const SizedBox(height: 40),
-
-                    // ─── Services ─────────────────
-                    _buildServicesBadges(),
-                    const SizedBox(height: 16),
-
-                    Text(
-                      'Продолжая, вы соглашаетесь с условиями использования',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: _colors.onSurface.withValues(alpha: 0.4),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 24),
-                  ],
+                // ── Футер ─────────────────────
+                Text(
+                  'Нажимая «${_isRegister ? 'Создать аккаунт' : 'Войти'}», вы принимаете\nусловия использования AkJol',
+                  style: TextStyle(fontSize: 11, color: mutedColor.withValues(alpha: 0.6), height: 1.5),
+                  textAlign: TextAlign.center,
                 ),
-              ),
+              ],
             ),
           ),
         ),
@@ -139,503 +133,596 @@ class _LoginScreenState extends State<LoginScreen>
     );
   }
 
-  // ─── Logo ──────────────────────────────────────
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  //  LOGO
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Widget _buildLogo() {
+  Widget _logo(Color textColor, Color mutedColor) {
     return Column(
       children: [
-        Hero(
-          tag: 'akjol_logo',
-          child: Container(
-            width: 100,
-            height: 100,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFF2ECC71).withValues(alpha: _isDark ? 0.3 : 0.15),
-                  blurRadius: 32,
-                  spreadRadius: 0,
+        Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF2ECC71).withValues(alpha: 0.2),
+                blurRadius: 24,
+                spreadRadius: -4,
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: Image.asset(
+              'assets/images/akjol_logo.png',
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF2ECC71), Color(0xFF27AE60)],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
                 ),
-              ],
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(28),
-              child: Image.asset(
-                'assets/images/akjol_logo.png',
-                width: 100,
-                height: 100,
-                errorBuilder: (_, __, ___) => Container(
-                  color: const Color(0xFF2ECC71),
-                  child: const Icon(Icons.location_on, color: Colors.white, size: 48),
-                ),
+                child: const Icon(Icons.location_on, color: Colors.white, size: 36),
               ),
             ),
+          ),
+        ),
+        const SizedBox(height: 14),
+        RichText(
+          text: TextSpan(
+            style: const TextStyle(
+              fontSize: 34,
+              letterSpacing: -1.2,
+              fontFamily: 'Inter',
+            ),
+            children: [
+              TextSpan(
+                text: 'Ak',
+                style: TextStyle(
+                  fontWeight: FontWeight.w900,
+                  color: textColor,
+                ),
+              ),
+              const TextSpan(
+                text: 'Jol',
+                style: TextStyle(
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF2ECC71),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  //  LOGIN FORM
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Widget _loginForm(Color text, Color muted, Color fieldBg, Color border) {
+    return Column(
+      key: const ValueKey('login_form'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Заголовок
+        Text('Добро пожаловать',
+            style: TextStyle(
+                fontSize: 26, fontWeight: FontWeight.w800, color: text, height: 1.2, letterSpacing: -0.5, fontFamily: 'Inter')),
+        const SizedBox(height: 6),
+        Text('Войдите в свой аккаунт AkJol',
+            style: TextStyle(fontSize: 14, color: muted, height: 1.4)),
+        const SizedBox(height: 28),
+
+        // Ошибка сервера
+        if (_error != null) ...[_errorWidget(), const SizedBox(height: 16)],
+
+        // Логин
+        _label('Телефон или username', muted),
+        const SizedBox(height: 6),
+        _inputField(
+          controller: _loginCtrl,
+          hint: '0700 123 456  или  akjol_user',
+          fieldBg: fieldBg,
+          border: border,
+          text: text,
+          muted: muted,
+          errorText: _loginIdError,
+          action: TextInputAction.next,
+        ),
+        const SizedBox(height: 18),
+
+        // Пароль
+        _label('Пароль', muted),
+        const SizedBox(height: 6),
+        _inputField(
+          controller: _loginPassCtrl,
+          hint: '••••••••',
+          fieldBg: fieldBg,
+          border: border,
+          text: text,
+          muted: muted,
+          obscure: !_loginPassVisible,
+          errorText: _loginPassError,
+          action: TextInputAction.done,
+          onSubmit: (_) => _handleLogin(),
+          suffixIcon: _eyeButton(
+            visible: _loginPassVisible,
+            muted: muted,
+            onTap: () => setState(() => _loginPassVisible = !_loginPassVisible),
+          ),
+        ),
+
+        // Забыл пароль
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton(
+            onPressed: () {},
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.only(top: 8),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: Text('Забыли пароль?',
+                style: TextStyle(fontSize: 13, color: muted, fontWeight: FontWeight.w500)),
           ),
         ),
         const SizedBox(height: 20),
-        Text(
-          'AkJol',
-          style: TextStyle(
-            fontSize: 34,
-            fontWeight: FontWeight.w900,
-            letterSpacing: -1.5,
-            color: _colors.onSurface,
-          ),
+
+        // Кнопка
+        _primaryButton('Войти', _handleLogin),
+        const SizedBox(height: 20),
+
+        // Переключатель
+        _switchRow(
+          'Ещё нет аккаунта?',
+          'Создать',
+          () => setState(() { _isRegister = true; _clearErrors(); }),
+          text,
+          muted,
         ),
+      ],
+    );
+  }
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  //  REGISTER FORM
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Widget _registerForm(Color text, Color muted, Color fieldBg, Color border) {
+    return Column(
+      key: const ValueKey('register_form'),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Создать аккаунт',
+            style: TextStyle(
+                fontSize: 26, fontWeight: FontWeight.w800, color: text, height: 1.2, letterSpacing: -0.5, fontFamily: 'Inter')),
         const SizedBox(height: 6),
-        Text(
-          _mode == _AuthMode.register
-              ? 'Создайте аккаунт — один для всего'
-              : 'Единый аккаунт для всех сервисов',
-          style: TextStyle(
-            fontSize: 15,
-            color: _colors.onSurface.withValues(alpha: 0.5),
-          ),
+        Text('Заполните данные для регистрации',
+            style: TextStyle(fontSize: 14, color: muted, height: 1.4)),
+        const SizedBox(height: 28),
+
+        if (_error != null) ...[_errorWidget(), const SizedBox(height: 16)],
+
+        // Имя
+        _label('Имя', muted),
+        const SizedBox(height: 6),
+        _inputField(
+          controller: _regNameCtrl,
+          hint: 'Как вас зовут',
+          fieldBg: fieldBg,
+          border: border,
+          text: text,
+          muted: muted,
+          errorText: _regNameError,
+          capitalization: TextCapitalization.words,
+          action: TextInputAction.next,
         ),
-      ],
-    );
-  }
-
-  // ─── Content Router ────────────────────────────
-
-  Widget _buildContent() {
-    switch (_mode) {
-      case _AuthMode.welcome:
-        return _buildWelcome();
-      case _AuthMode.login:
-        return _buildPhoneInput(isLogin: true);
-      case _AuthMode.register:
-        return _buildPhoneInput(isLogin: false);
-      case _AuthMode.otp:
-        return _buildCodeInput();
-    }
-  }
-
-  // ─── Welcome Screen ────────────────────────────
-
-  Widget _buildWelcome() {
-    return Column(
-      key: const ValueKey('welcome'),
-      children: [
-        // Войти
-        SizedBox(
-          width: double.infinity,
-          height: 54,
-          child: ElevatedButton.icon(
-            onPressed: () => setState(() {
-              _mode = _AuthMode.login;
-              _error = null;
-            }),
-            icon: const Icon(Icons.login_rounded, size: 20),
-            label: const Text('Войти'),
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              elevation: 0,
-            ),
-          ),
-        ),
-        const SizedBox(height: 12),
-
-        // Зарегистрироваться
-        SizedBox(
-          width: double.infinity,
-          height: 54,
-          child: OutlinedButton.icon(
-            onPressed: () => setState(() {
-              _mode = _AuthMode.register;
-              _error = null;
-            }),
-            icon: const Icon(Icons.person_add_alt_1_rounded, size: 20),
-            label: const Text('Зарегистрироваться'),
-            style: OutlinedButton.styleFrom(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              side: BorderSide(
-                color: _isDark
-                    ? const Color(0xFF2ECC71).withValues(alpha: 0.5)
-                    : const Color(0xFF2ECC71),
-                width: 1.5,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ─── Phone Input ───────────────────────────────
-
-  Widget _buildPhoneInput({required bool isLogin}) {
-    return Column(
-      key: ValueKey(isLogin ? 'login' : 'register'),
-      children: [
-        // Имя (только при регистрации)
-        if (!isLogin) ...[
-          Container(
-            decoration: BoxDecoration(
-              color: _colors.surfaceContainerHighest,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(
-                color: _isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE9ECEF),
-              ),
-            ),
-            child: TextField(
-              controller: _nameController,
-              textCapitalization: TextCapitalization.words,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: _colors.onSurface,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Ваше имя',
-                prefixIcon: Icon(Icons.person_outline,
-                    color: _colors.onSurface.withValues(alpha: 0.4)),
-                border: InputBorder.none,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-        ],
+        const SizedBox(height: 18),
 
         // Номер телефона
+        _label('Номер телефона', muted),
+        const SizedBox(height: 6),
+        _phoneInput(fieldBg, border, text, muted, _regPhoneError),
+        const SizedBox(height: 18),
+
+        // Username
+        _label('Username', muted),
+        const SizedBox(height: 6),
+        _inputField(
+          controller: _regUsernameCtrl,
+          hint: 'akjol_user',
+          prefix: Text('@  ',
+              style: TextStyle(
+                  fontSize: 15, fontWeight: FontWeight.w600, color: muted)),
+          fieldBg: fieldBg,
+          border: border,
+          text: text,
+          muted: muted,
+          errorText: _regUsernameError,
+          action: TextInputAction.next,
+          formatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9._]')),
+            LengthLimitingTextInputFormatter(20),
+          ],
+        ),
+        const SizedBox(height: 18),
+
+        // Пароль
+        _label('Пароль', muted),
+        const SizedBox(height: 6),
+        _inputField(
+          controller: _regPassCtrl,
+          hint: 'Минимум 6 символов',
+          fieldBg: fieldBg,
+          border: border,
+          text: text,
+          muted: muted,
+          errorText: _regPassError,
+          obscure: !_regPassVisible,
+          action: TextInputAction.next,
+          suffixIcon: _eyeButton(
+            visible: _regPassVisible,
+            muted: muted,
+            onTap: () => setState(() => _regPassVisible = !_regPassVisible),
+          ),
+        ),
+        const SizedBox(height: 18),
+
+        // Подтверждение пароля
+        _label('Подтвердите пароль', muted),
+        const SizedBox(height: 6),
+        _inputField(
+          controller: _regConfirmCtrl,
+          hint: 'Повторите пароль',
+          fieldBg: fieldBg,
+          border: border,
+          text: text,
+          muted: muted,
+          errorText: _regConfirmError,
+          obscure: !_regConfirmVisible,
+          action: TextInputAction.done,
+          onSubmit: (_) => _handleRegister(),
+          suffixIcon: _eyeButton(
+            visible: _regConfirmVisible,
+            muted: muted,
+            onTap: () => setState(() => _regConfirmVisible = !_regConfirmVisible),
+          ),
+        ),
+        const SizedBox(height: 24),
+
+        _primaryButton('Создать аккаунт', _handleRegister),
+        const SizedBox(height: 20),
+
+        _switchRow(
+          'Уже есть аккаунт?',
+          'Войти',
+          () => setState(() { _isRegister = false; _clearErrors(); }),
+          text,
+          muted,
+        ),
+      ],
+    );
+  }
+
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  //  UI COMPONENTS
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Widget _label(String text, Color muted) {
+    return Text(text,
+        style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: muted,
+            letterSpacing: 0.2));
+  }
+
+  Widget _inputField({
+    required TextEditingController controller,
+    required String hint,
+    required Color fieldBg,
+    required Color border,
+    required Color text,
+    required Color muted,
+    String? errorText,
+    bool obscure = false,
+    Widget? suffixIcon,
+    Widget? prefix,
+    TextInputAction? action,
+    TextCapitalization capitalization = TextCapitalization.none,
+    TextInputType? keyboard,
+    List<TextInputFormatter>? formatters,
+    void Function(String)? onSubmit,
+  }) {
+    final hasError = errorText != null;
+    final borderColor = hasError ? const Color(0xFFEF4444) : border;
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
         Container(
           decoration: BoxDecoration(
-            color: _colors.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: _isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE9ECEF),
+            color: fieldBg,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: borderColor, width: hasError ? 1.5 : 1),
+          ),
+          child: TextField(
+            controller: controller,
+            obscureText: obscure,
+            textCapitalization: capitalization,
+            textInputAction: action,
+            keyboardType: keyboard,
+            inputFormatters: formatters,
+            onSubmitted: onSubmit,
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w500,
+              color: text,
             ),
+            decoration: InputDecoration(
+              hintText: hint,
+              hintStyle: TextStyle(
+                color: muted.withValues(alpha: 0.4),
+                fontWeight: FontWeight.w400,
+                fontSize: 14,
+              ),
+              prefixIcon: prefix != null ? Padding(padding: const EdgeInsets.only(left: 16, right: 0), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [prefix])) : null,
+              suffixIcon: suffixIcon,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            ),
+          ),
+        ),
+        if (hasError)
+          Padding(
+            padding: const EdgeInsets.only(top: 6, left: 4),
+            child: Text(errorText, style: const TextStyle(color: Color(0xFFEF4444), fontSize: 12, fontWeight: FontWeight.w500)),
+          ),
+      ],
+    );
+  }
+
+  Widget _phoneInput(Color fieldBg, Color border, Color text, Color muted, String? errorText) {
+    final hasError = errorText != null;
+    final borderColor = hasError ? const Color(0xFFEF4444) : border;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: fieldBg,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: borderColor, width: hasError ? 1.5 : 1),
           ),
           child: Row(
             children: [
-              // Код страны
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-                decoration: BoxDecoration(
-                  border: Border(
-                    right: BorderSide(
-                      color: _isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE9ECEF),
-                    ),
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('🇰🇬', style: TextStyle(fontSize: 22)),
-                    const SizedBox(width: 6),
-                    Text(
-                      '+996',
-                      style: TextStyle(
-                        fontSize: 16,
+              Padding(
+                padding: const EdgeInsets.only(left: 16),
+                child: Text('🇰🇬  +996',
+                    style: TextStyle(
+                        fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: _colors.onSurface,
-                      ),
-                    ),
-                  ],
-                ),
+                        color: text.withValues(alpha: 0.7))),
               ),
-              // Поле номера
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
+                child: Container(width: 1, height: 20, color: border),
+              ),
               Expanded(
                 child: TextField(
-                  controller: _phoneController,
+                  controller: _regPhoneCtrl,
                   keyboardType: TextInputType.phone,
-                  autofocus: true,
+                  textInputAction: TextInputAction.next,
                   inputFormatters: [
                     FilteringTextInputFormatter.digitsOnly,
                     LengthLimitingTextInputFormatter(9),
                   ],
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: 15,
                     fontWeight: FontWeight.w500,
-                    letterSpacing: 1,
-                    color: _colors.onSurface,
+                    color: text,
+                    letterSpacing: 0.5,
                   ),
                   decoration: InputDecoration(
                     hintText: '700 123 456',
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                     hintStyle: TextStyle(
-                      color: _colors.onSurface.withValues(alpha: 0.3),
-                      fontWeight: FontWeight.w400,
-                    ),
+                        color: muted.withValues(alpha: 0.35),
+                        fontWeight: FontWeight.w400,
+                        fontSize: 14),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(vertical: 14),
                   ),
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 16),
-
-        // Кнопка
-        SizedBox(
-          width: double.infinity,
-          height: 54,
-          child: ElevatedButton(
-            onPressed: _loading ? null : _sendCode,
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              elevation: 0,
-            ),
-            child: _loading
-                ? const SizedBox(
-                    width: 22, height: 22,
-                    child: CircularProgressIndicator(
-                      color: Colors.white, strokeWidth: 2.5))
-                : Text(
-                    isLogin ? 'Получить SMS код' : 'Зарегистрироваться',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
+        if (hasError)
+          Padding(
+            padding: const EdgeInsets.only(top: 6, left: 4),
+            child: Text(errorText, style: const TextStyle(color: Color(0xFFEF4444), fontSize: 12, fontWeight: FontWeight.w500)),
           ),
-        ),
-        const SizedBox(height: 8),
-
-        // Назад
-        TextButton.icon(
-          onPressed: () => setState(() {
-            _mode = _AuthMode.welcome;
-            _error = null;
-            _phoneController.clear();
-            _nameController.clear();
-          }),
-          icon: const Icon(Icons.arrow_back_ios, size: 14),
-          label: Text(isLogin ? 'Назад' : 'Уже есть аккаунт? Войти'),
-        ),
       ],
     );
   }
 
-  // ─── OTP Code Input ────────────────────────────
+  Widget _eyeButton({
+    required bool visible,
+    required Color muted,
+    required VoidCallback onTap,
+  }) {
+    return IconButton(
+      icon: Icon(
+        visible ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+        size: 18,
+        color: muted.withValues(alpha: 0.5),
+      ),
+      onPressed: onTap,
+      splashRadius: 20,
+    );
+  }
 
-  Widget _buildCodeInput() {
-    return Column(
-      key: const ValueKey('otp'),
+  Widget _primaryButton(String label, VoidCallback onTap) {
+    return SizedBox(
+      width: double.infinity,
+      height: 50,
+      child: ElevatedButton(
+        onPressed: _loading ? null : onTap,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF2ECC71),
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: const Color(0xFF2ECC71).withValues(alpha: 0.6),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          elevation: 0,
+        ),
+        child: _loading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+            : Text(label,
+                style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.3)),
+      ),
+    );
+  }
+
+  Widget _switchRow(String text, String action, VoidCallback onTap, Color textColor, Color muted) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        // Баннер "код отправлен"
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFF2ECC71).withValues(alpha: _isDark ? 0.12 : 0.06),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: const Color(0xFF2ECC71).withValues(alpha: _isDark ? 0.2 : 0.1),
-            ),
-          ),
-          child: Row(
-            children: [
-              const Icon(Icons.sms_outlined, color: Color(0xFF2ECC71), size: 20),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  'Код отправлен на +996 ${_phoneController.text}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: _isDark ? const Color(0xFF2ECC71) : const Color(0xFF27AE60),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // Поле ввода кода
-        Container(
-          decoration: BoxDecoration(
-            color: _colors.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: _isDark ? Colors.white.withValues(alpha: 0.08) : const Color(0xFFE9ECEF),
-            ),
-          ),
-          child: TextField(
-            controller: _codeController,
-            keyboardType: TextInputType.number,
-            textAlign: TextAlign.center,
-            autofocus: true,
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 12,
-              color: _colors.onSurface,
-            ),
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(6),
-            ],
-            decoration: InputDecoration(
-              hintText: '• • • • • •',
-              border: InputBorder.none,
-              hintStyle: TextStyle(
-                color: _colors.onSurface.withValues(alpha: 0.2),
-                fontSize: 28,
-                letterSpacing: 12,
-              ),
-            ),
-            onChanged: (val) {
-              if (val.length == 6) _verifyCode();
-            },
-          ),
-        ),
-        const SizedBox(height: 16),
-
-        // Подтвердить
-        SizedBox(
-          width: double.infinity,
-          height: 54,
-          child: ElevatedButton(
-            onPressed: _loading ? null : _verifyCode,
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              elevation: 0,
-            ),
-            child: _loading
-                ? const SizedBox(
-                    width: 22, height: 22,
-                    child: CircularProgressIndicator(
-                      color: Colors.white, strokeWidth: 2.5))
-                : const Text(
-                    'Подтвердить',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                  ),
-          ),
-        ),
-        const SizedBox(height: 8),
-
-        // Назад
-        TextButton.icon(
-          onPressed: () => setState(() {
-            _mode = _AuthMode.login;
-            _codeController.clear();
-            _error = null;
-          }),
-          icon: const Icon(Icons.arrow_back_ios, size: 14),
-          label: const Text('Изменить номер'),
+        Text(text, style: TextStyle(fontSize: 13, color: muted)),
+        const SizedBox(width: 4),
+        GestureDetector(
+          onTap: onTap,
+          child: Text(action,
+              style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF2ECC71))),
         ),
       ],
     );
   }
 
-  // ─── Error Banner ──────────────────────────────
-
-  Widget _buildErrorBanner() {
+  Widget _errorWidget() {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: const Color(0xFFE74C3C).withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: const Color(0xFFE74C3C).withValues(alpha: 0.2)),
+        color: const Color(0xFFFEF2F2),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: const Color(0xFFFECACA)),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.error_outline, color: Color(0xFFE74C3C), size: 18),
+          const Padding(
+            padding: EdgeInsets.only(top: 2),
+            child: Icon(Icons.info_outline, color: Color(0xFFDC2626), size: 16),
+          ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(
-              _error!,
-              style: const TextStyle(color: Color(0xFFE74C3C), fontSize: 13),
-            ),
+            child: Text(_error!,
+                style: const TextStyle(
+                    color: Color(0xFFDC2626), fontSize: 13, fontWeight: FontWeight.w500, height: 1.4)),
           ),
           GestureDetector(
             onTap: () => setState(() => _error = null),
-            child: const Icon(Icons.close, color: Color(0xFFE74C3C), size: 16),
+            child: const Icon(Icons.close, color: Color(0xFFDC2626), size: 14),
           ),
         ],
       ),
     );
   }
 
-  // ─── Services Badges ───────────────────────────
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  //  AUTH LOGIC
+  // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-  Widget _buildServicesBadges() {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      alignment: WrapAlignment.center,
-      children: [
-        _serviceBadge(Icons.shopping_bag_outlined, 'Маркетплейс'),
-        _serviceBadge(Icons.delivery_dining_outlined, 'Доставка'),
-        _serviceBadge(Icons.local_taxi_outlined, 'Такси'),
-        _serviceBadge(Icons.chat_bubble_outline, 'Чаты'),
-      ],
-    );
-  }
+  Future<void> _handleLogin() async {
+    final login = _loginCtrl.text.trim();
+    final password = _loginPassCtrl.text;
 
-  Widget _serviceBadge(IconData icon, String label) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-      decoration: BoxDecoration(
-        color: _isDark
-            ? Colors.white.withValues(alpha: 0.06)
-            : const Color(0xFFF1F3F5),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: _isDark
-              ? Colors.white.withValues(alpha: 0.08)
-              : Colors.transparent,
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: _colors.onSurface.withValues(alpha: 0.5)),
-          const SizedBox(width: 5),
-          Text(label,
-              style: TextStyle(
-                fontSize: 12,
-                color: _colors.onSurface.withValues(alpha: 0.5),
-              )),
-        ],
-      ),
-    );
-  }
+    _clearErrors();
+    bool hasErr = false;
 
-  // ─── Auth Logic ────────────────────────────────
+    if (login.isEmpty) {
+      _loginIdError = 'Введите номер или username';
+      hasErr = true;
+    }
+    if (password.isEmpty) {
+      _loginPassError = 'Введите пароль';
+      hasErr = true;
+    }
 
-  Future<void> _sendCode() async {
-    final phone = _phoneController.text.trim();
-    if (phone.length < 9) {
-      setState(() => _error = 'Введите полный номер телефона');
+    if (hasErr) {
+      setState(() {});
       return;
     }
 
-    if (_mode == _AuthMode.register && _nameController.text.trim().isEmpty) {
-      setState(() => _error = 'Введите ваше имя');
-      return;
-    }
-
-    setState(() { _loading = true; _error = null; });
+    setState(() { _loading = true; });
 
     try {
-      await _auth.sendOtp(phone);
-      setState(() { _loading = false; _mode = _AuthMode.otp; });
+      await _auth.signIn(login: login, password: password);
+      if (mounted) context.go('/');
     } on AkJolAuthException catch (e) {
       setState(() { _loading = false; _error = e.message; });
     }
   }
 
-  Future<void> _verifyCode() async {
-    if (_codeController.text.length < 6) return;
+  Future<void> _handleRegister() async {
+    final name = _regNameCtrl.text.trim();
+    final phone = _regPhoneCtrl.text.trim();
+    final username = _regUsernameCtrl.text.trim();
+    final password = _regPassCtrl.text;
+    final confirm = _regConfirmCtrl.text;
 
-    setState(() { _loading = true; _error = null; });
+    _clearErrors();
+    bool hasErr = false;
+
+    if (name.isEmpty) {
+      _regNameError = 'Обязательное поле';
+      hasErr = true;
+    }
+    if (phone.length < 9) {
+      _regPhoneError = 'Неполный номер';
+      hasErr = true;
+    }
+    if (username.length < 3) {
+      _regUsernameError = 'Минимум 3 символа';
+      hasErr = true;
+    }
+    if (password.length < 6) {
+      _regPassError = 'Минимум 6 символов';
+      hasErr = true;
+    }
+    if (password != confirm) {
+      _regConfirmError = 'Пароли не совпадают';
+      hasErr = true;
+    }
+
+    if (hasErr) {
+      setState(() {});
+      return;
+    }
+
+    setState(() { _loading = true; });
 
     try {
-      await _auth.verifyOtp(_phoneController.text, _codeController.text);
-
-      // Если регистрация — сохраняем имя
-      if (_mode == _AuthMode.register || _nameController.text.isNotEmpty) {
-        final name = _nameController.text.trim();
-        if (name.isNotEmpty) {
-          try {
-            await _auth.updateProfile(name: name);
-          } catch (_) {
-            // Не критично
-          }
-        }
-      }
-
+      await _auth.signUp(
+        phone: phone,
+        username: username,
+        password: password,
+        name: name,
+      );
       if (mounted) context.go('/');
     } on AkJolAuthException catch (e) {
       setState(() { _loading = false; _error = e.message; });

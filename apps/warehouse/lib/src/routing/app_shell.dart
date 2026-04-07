@@ -94,19 +94,19 @@ const _navSections = <_NavSection>[
         permissionKey: 'delivery_settings'),
     _NavItem(
         icon: Icons.analytics_rounded,
-        label: 'Аналитика',
+        label: 'Аналитика доставки',
         path: '/delivery-analytics',
-        permissionKey: 'delivery_orders'),
+        permissionKey: 'delivery_analytics'),
     _NavItem(
         icon: Icons.storefront_rounded,
         label: 'Каталог AkJol',
         path: '/akjol-catalog',
-        permissionKey: 'delivery_settings'),
+        permissionKey: 'akjol_catalog'),
     _NavItem(
         icon: Icons.map_rounded,
         label: 'Зоны доставки',
         path: '/delivery-zones',
-        permissionKey: 'delivery_settings'),
+        permissionKey: 'delivery_zones'),
   ]),
 ];
 

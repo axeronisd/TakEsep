@@ -17,7 +17,6 @@ class AnalyticsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cur = ref.watch(currencyProvider).symbol;
-    final fmt = ref.watch(priceFormatterProvider);
     final isDesktop = MediaQuery.of(context).size.width >= 900;
     final cs = Theme.of(context).colorScheme;
     final range = ref.watch(dateRangeProvider);

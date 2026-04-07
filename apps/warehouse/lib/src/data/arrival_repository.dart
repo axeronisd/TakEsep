@@ -2,6 +2,7 @@ import 'package:powersync/powersync.dart';
 import 'package:takesep_core/takesep_core.dart';
 import 'package:uuid/uuid.dart';
 import 'powersync_db.dart';
+import 'supabase_sync.dart';
 
 class ArrivalRepository {
   ArrivalRepository();
@@ -104,6 +105,26 @@ class ArrivalRepository {
           [item.quantity, now, item.productId],
         );
       }
+
+      // Sync to Supabase
+      await SupabaseSync.upsert('arrivals', {
+        'id': arrivalId, 'company_id': arrival.companyId,
+        'employee_id': arrival.employeeId, 'warehouse_id': arrival.warehouseId,
+        'supplier': arrival.supplierName, 'status': arrival.status.name,
+        'total_amount': arrival.totalAmount, 'notes': arrival.notes,
+        'created_at': now, 'updated_at': now,
+      });
+      final arrivalItemsSync = <Map<String, dynamic>>[];
+      for (final item in arrival.items) {
+        arrivalItemsSync.add({
+          'id': item.id.isEmpty ? const Uuid().v4() : item.id,
+          'arrival_id': arrivalId, 'product_id': item.productId,
+          'product_name': item.productName, 'quantity': item.quantity,
+          'cost_price': item.costPrice, 'selling_price': item.sellingPrice,
+          'created_at': now,
+        });
+      }
+      await SupabaseSync.upsertAll('arrival_items', arrivalItemsSync);
 
       return arrival.copyWith(
         id: arrivalId,
@@ -226,6 +247,18 @@ class ArrivalRepository {
         now,
       ],
     );
+
+    // Sync product to Supabase
+    await SupabaseSync.upsert('products', {
+      'id': product.id, 'company_id': product.companyId,
+      'warehouse_id': product.warehouseId, 'category_id': product.categoryId,
+      'name': product.name, 'sku': product.sku, 'barcode': product.barcode,
+      'description': product.description, 'cost_price': product.costPrice ?? 0.0,
+      'selling_price': product.price, 'quantity': product.quantity,
+      'min_stock': product.minQuantity, 'max_stock': product.maxQuantity ?? 0,
+      'stock_zone': product.stockZone.name, 'image_url': product.imageUrl,
+      'is_public': product.isPublic, 'created_at': now, 'updated_at': now,
+    });
   }
 
   /// Find sibling warehouses in the same group and create product copies with qty=0.

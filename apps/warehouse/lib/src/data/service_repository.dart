@@ -1,6 +1,7 @@
 import 'package:takesep_core/takesep_core.dart';
 import 'package:uuid/uuid.dart';
 import 'powersync_db.dart';
+import 'supabase_sync.dart';
 
 /// Repository for Service CRUD operations via PowerSync.
 class ServiceRepository {
@@ -32,6 +33,12 @@ class ServiceRepository {
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
       [id, companyId, name, category, description, price, durationMinutes, 1, imageUrl, now, now],
     );
+
+    await SupabaseSync.upsert('services', {
+      'id': id, 'company_id': companyId, 'name': name, 'category': category,
+      'description': description, 'price': price, 'duration_minutes': durationMinutes,
+      'is_active': true, 'image_url': imageUrl, 'created_at': now, 'updated_at': now,
+    });
 
     return Service(
       id: id, companyId: companyId, name: name, category: category,
@@ -65,9 +72,22 @@ class ServiceRepository {
     await powerSyncDb.execute(
       'UPDATE services SET ${sets.join(', ')} WHERE id = ?', params,
     );
+
+    final sbData = <String, dynamic>{};
+    if (name != null) sbData['name'] = name;
+    if (category != null) sbData['category'] = category;
+    if (description != null) sbData['description'] = description;
+    if (price != null) sbData['price'] = price;
+    if (durationMinutes != null) sbData['duration_minutes'] = durationMinutes;
+    if (isActive != null) sbData['is_active'] = isActive;
+    if (clearImage) sbData['image_url'] = null;
+    else if (imageUrl != null) sbData['image_url'] = imageUrl;
+    sbData['updated_at'] = DateTime.now().toIso8601String();
+    await SupabaseSync.update('services', serviceId, sbData);
   }
 
   Future<void> deleteService(String serviceId) async {
     await powerSyncDb.execute('DELETE FROM services WHERE id = ?', [serviceId]);
+    await SupabaseSync.delete('services', serviceId);
   }
 }

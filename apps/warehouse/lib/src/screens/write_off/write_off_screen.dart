@@ -7,6 +7,7 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../data/powersync_db.dart';
+import '../../data/supabase_sync.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/currency_provider.dart';
 import '../../widgets/cached_image_widget.dart';
@@ -179,6 +180,26 @@ class _WriteOffScreenState extends ConsumerState<WriteOffScreen> {
           [item.quantity, item.product.id],
         );
       }
+
+      // Sync write-off to Supabase
+      await SupabaseSync.upsert('write_offs', {
+        'id': writeOffId, 'company_id': auth.currentCompany?.id ?? '',
+        'warehouse_id': auth.selectedWarehouseId ?? '',
+        'employee_id': auth.currentEmployee?.id ?? '',
+        'employee_name': auth.currentEmployee?.name ?? '',
+        'total_cost': _totalCost, 'items_count': _items.length,
+        'status': 'completed', 'created_at': now,
+      });
+      final woItemsSync = <Map<String, dynamic>>[];
+      for (final item in _items) {
+        woItemsSync.add({
+          'id': uuid.v4(), 'write_off_id': writeOffId,
+          'product_id': item.product.id, 'product_name': item.product.name,
+          'quantity': item.quantity, 'cost_price': item.product.costPrice ?? 0,
+          'reason': item.reason.name, 'comment': item.comment, 'created_at': now,
+        });
+      }
+      await SupabaseSync.upsertAll('write_off_items', woItemsSync);
 
       ref.invalidate(inventoryProvider);
       ref.invalidate(recentOpsProvider);
