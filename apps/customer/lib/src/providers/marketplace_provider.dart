@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -8,6 +9,25 @@ import 'location_provider.dart';
 // ═══════════════════════════════════════════════════════════════
 
 final _supabase = Supabase.instance.client;
+
+/// Haversine formula — distance between two lat/lng in km
+double _haversineKm(double lat1, double lng1, double lat2, double lng2) {
+  const R = 6371.0;
+  final dLat = (lat2 - lat1) * pi / 180;
+  final dLng = (lng2 - lng1) * pi / 180;
+  final a = sin(dLat / 2) * sin(dLat / 2) +
+      cos(lat1 * pi / 180) * cos(lat2 * pi / 180) *
+      sin(dLng / 2) * sin(dLng / 2);
+  return R * 2 * atan2(sqrt(a), sqrt(1 - a));
+}
+
+/// Estimate delivery time from distance
+int _estimateMinutes(double distKm) {
+  if (distKm <= 1) return 15;
+  if (distKm <= 3) return 25;
+  if (distKm <= 5) return 35;
+  return 45;
+}
 
 // ─── Store Categories (global catalog) ───────────────────────
 
@@ -99,8 +119,23 @@ class NearbyStore {
       freeDeliveryFrom > 0; // means free delivery available from some amount
 
   String get deliveryFeeDisplay {
-    if (deliveryFee <= 0) return 'Бесплатно';
-    return '${deliveryFee.toStringAsFixed(0)} сом';
+    final fee = calculatedDeliveryFee;
+    return '${fee.toStringAsFixed(0)} сом';
+  }
+
+  /// Calculate delivery fee based on distance + time of day
+  double get calculatedDeliveryFee {
+    final hour = DateTime.now().hour;
+    final isNight = hour >= 22 || hour < 6;
+    // Bicycle for <3km, scooter for >3km
+    double base = (distanceKm != null && distanceKm! > 3) ? 150 : 100;
+    if (isNight) base += 50;
+    return base;
+  }
+
+  String get deliveryTypeLabel {
+    if (distanceKm != null && distanceKm! > 3) return 'Муравей';
+    return 'Электровелосипед';
   }
 
   String get ratingDisplay =>
@@ -116,24 +151,136 @@ final nearbyStoresProvider =
   if (!location.hasLocation) return [];
 
   try {
-    // 1. Call RPC to get stores in range
-    final rpcResult = await _supabase.rpc('find_businesses_near', params: {
-      'p_lat': location.lat,
-      'p_lng': location.lng,
-    });
+    List<Map<String, dynamic>> zones = [];
+    
+    try {
+      // 1. Быстро ищем зоны (если настроено)
+      final rpcResult = await _supabase.rpc('find_businesses_near', params: {
+        'p_lat': location.lat,
+        'p_lng': location.lng,
+      });
 
-    final zones = (rpcResult as List?)
-            ?.map((e) => e as Map<String, dynamic>)
-            .toList() ??
-        [];
+      zones = (rpcResult as List?)
+              ?.map((e) => e as Map<String, dynamic>)
+              .toList() ??
+          [];
+    } catch (e) {
+      debugPrint('ℹ️ RPC find_businesses_near not ready, using fallback');
+    }
+
+    if (zones.isEmpty) {
+      // ФОЛЛБЕК: Загрузить все активные магазины и фильтровать по зонам
+      final settingsData = await _supabase
+          .from('delivery_settings')
+          .select('*, warehouses(name)')
+          .eq('is_active', true);
+
+      // Also load delivery_zones for per-zone filtering
+      final allZonesData = await _supabase
+          .from('delivery_zones')
+          .select()
+          .eq('is_active', true);
+
+      // Group zones by warehouse_id
+      final zonesMap = <String, List<Map<String, dynamic>>>{};
+      for (final z in allZonesData) {
+        final wId = z['warehouse_id'] as String;
+        zonesMap.putIfAbsent(wId, () => []);
+        zonesMap[wId]!.add(z);
+      }
+          
+      for (final s in settingsData) {
+        final wId = s['warehouse_id'] as String;
+        final storeLat = (s['latitude'] as num?)?.toDouble();
+        final storeLng = (s['longitude'] as num?)?.toDouble();
+        final mainRadius = (s['delivery_radius_km'] as num?)?.toDouble() ?? 5.0;
+        
+        // Check delivery_zones first (if the store has configured them)
+        final storeZones = zonesMap[wId] ?? [];
+        
+        if (storeZones.isNotEmpty) {
+          // Use delivery_zones for filtering
+          for (final zone in storeZones) {
+            final zoneType = zone['zone_type'] as String? ?? 'radius';
+            bool isInZone = false;
+            double dist = 0;
+            
+            switch (zoneType) {
+              case 'country':
+                // Country zone — available everywhere
+                isInZone = true;
+                dist = storeLat != null && storeLng != null
+                    ? _haversineKm(location.lat!, location.lng!, storeLat, storeLng)
+                    : 0;
+                break;
+              case 'city':
+                // City zone — 20km radius from city center
+                final centerLat = (zone['center_lat'] as num?)?.toDouble();
+                final centerLng = (zone['center_lng'] as num?)?.toDouble();
+                if (centerLat != null && centerLng != null) {
+                  dist = _haversineKm(location.lat!, location.lng!, centerLat, centerLng);
+                  isInZone = dist <= 20; // City coverage ~20km
+                }
+                break;
+              case 'radius':
+              default:
+                // Radius zone
+                final centerLat = (zone['center_lat'] as num?)?.toDouble();
+                final centerLng = (zone['center_lng'] as num?)?.toDouble();
+                final radiusKm = (zone['radius_km'] as num?)?.toDouble() ?? 5.0;
+                if (centerLat != null && centerLng != null) {
+                  dist = _haversineKm(location.lat!, location.lng!, centerLat, centerLng);
+                  isInZone = dist <= radiusKm;
+                }
+                break;
+            }
+            
+            if (isInZone) {
+              zones.add({
+                'warehouse_id': wId,
+                'company_id': s['company_id'] ?? zone['company_id'],
+                'distance_km': dist,
+                'estimated_minutes': (zone['estimated_minutes'] as num?)?.toInt() ?? _estimateMinutes(dist),
+                'delivery_fee': zone['delivery_fee'],
+                'free_delivery_from': zone['free_delivery_from'],
+                'min_order_amount': zone['min_order_amount'],
+                'zone_name': zone['name'] ?? 'Зона доставки',
+                'zone_type': zoneType,
+              });
+              break; // Use first matching zone
+            }
+          }
+        } else if (storeLat != null && storeLng != null) {
+          // Fallback to delivery_settings radius
+          final dist = _haversineKm(
+            location.lat!, location.lng!,
+            storeLat, storeLng,
+          );
+          
+          if (dist > mainRadius) continue;
+          
+          zones.add({
+            'warehouse_id': wId,
+            'company_id': s['company_id'],
+            'distance_km': dist,
+            'estimated_minutes': _estimateMinutes(dist),
+            'delivery_fee': s['delivery_fee'],
+            'free_delivery_from': s['free_delivery_from'],
+            'min_order_amount': s['min_order_amount'],
+            'zone_name': 'Основная зона',
+            'zone_type': 'radius',
+          });
+        }
+      }
+    }
 
     if (zones.isEmpty) return [];
 
-    // 2. Get unique warehouse IDs
+    // 2. Уникальные ID
     final warehouseIds =
         zones.map((z) => z['warehouse_id'] as String).toSet().toList();
 
-    // 3. Fetch delivery_settings with warehouse names
+    // 3. Данные о доставке
     final settingsData = await _supabase
         .from('delivery_settings')
         .select('*, warehouses(name)')
@@ -145,7 +292,7 @@ final nearbyStoresProvider =
       settingsMap[s['warehouse_id'] as String] = s;
     }
 
-    // 4. Fetch warehouse ↔ store_category links
+    // 4. Категории для магазинов (warehouse_store_categories)
     final catLinks = await _supabase
         .from('warehouse_store_categories')
         .select('warehouse_id, store_category_id')
@@ -158,7 +305,7 @@ final nearbyStoresProvider =
       catMap[wId]!.add(link['store_category_id'] as String);
     }
 
-    // 5. Build NearbyStore list (deduplicate by warehouse_id, pick closest zone)
+    // 5. Build NearbyStore
     final storeMap = <String, NearbyStore>{};
 
     for (final zone in zones) {
@@ -170,7 +317,6 @@ final nearbyStoresProvider =
       final newDistance =
           (zone['distance_km'] as num?)?.toDouble() ?? double.infinity;
 
-      // Keep the closer zone if duplicate
       if (existing != null &&
           (existing.distanceKm ?? double.infinity) <= newDistance) {
         continue;
@@ -204,7 +350,7 @@ final nearbyStoresProvider =
       );
     }
 
-    // 6. Sort by distance
+    // 6. Sort
     final stores = storeMap.values.toList()
       ..sort((a, b) => (a.distanceKm ?? 999)
           .compareTo(b.distanceKm ?? 999));

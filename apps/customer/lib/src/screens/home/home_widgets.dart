@@ -1,68 +1,281 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../theme/akjol_theme.dart';
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  HEADER — AkJol + Адрес
+//  HEADER — Premium AkJol Header
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 class AkJolHeader extends StatelessWidget {
   final String address;
   final bool loading;
+  final String? userName;
   final VoidCallback? onAddressTap;
+  final VoidCallback? onProfileTap;
 
   const AkJolHeader({
     super.key,
     required this.address,
     this.loading = false,
+    this.userName,
     this.onAddressTap,
+    this.onProfileTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final muted = isDark ? const Color(0xFF8B949E) : const Color(0xFF9CA3AF);
+    final muted = isDark ? const Color(0xFF6E7681) : const Color(0xFF9CA3AF);
+    final displayName = userName ?? 'Гость';
+    final initials = displayName.isNotEmpty ? displayName[0].toUpperCase() : '?';
+    final greeting = _getGreeting();
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-      child: Center(
-        child: Column(
-          children: [
-            // Название — Inter/система, трекинг, premium
-            RichText(
-              text: TextSpan(
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.w300,
-                  letterSpacing: 4,
-                  color: isDark ? Colors.white : const Color(0xFF111827),
-                ),
-                children: const [
-                  TextSpan(text: 'AK'),
-                  TextSpan(text: 'JOL', style: TextStyle(fontWeight: FontWeight.w700, color: AkJolTheme.primary)),
-                ],
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+        child: Container(
+          height: 80,
+          padding: const EdgeInsets.fromLTRB(20, 0, 16, 0),
+          decoration: BoxDecoration(
+            color: isDark
+                ? const Color(0xFF131920).withValues(alpha: 0.94)
+                : const Color(0xFFFDFDFD).withValues(alpha: 0.94),
+            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                blurRadius: 12,
+                offset: const Offset(0, 2),
               ),
-            ),
-            const SizedBox(height: 6),
-            // Адрес
-            GestureDetector(
-              onTap: onAddressTap,
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (loading)
-                    const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 1.5, color: AkJolTheme.primary))
-                  else
-                    Flexible(
-                      child: Text(
-                        address,
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w400, color: muted, letterSpacing: 0.2),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+            ],
+          ),
+          child: Row(
+            children: [
+              // ── Left: Logo + Greeting + Address ──
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    // AkJol logo • greeting
+                    Row(
+                      children: [
+                        Text(
+                          'AK',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w300,
+                            letterSpacing: 2,
+                            color: isDark ? Colors.white70 : const Color(0xFF374151),
+                          ),
+                        ),
+                        ShaderMask(
+                          shaderCallback: (bounds) => const LinearGradient(
+                            colors: [Color(0xFF2ECC71), Color(0xFF1ABC9C)],
+                          ).createShader(bounds),
+                          child: const Text(
+                            'JOL',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 2,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          child: Container(
+                            width: 3, height: 3,
+                            decoration: BoxDecoration(
+                              color: muted.withValues(alpha: 0.5),
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                        ),
+                        Flexible(
+                          child: Text(
+                            '$greeting, $displayName',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                              color: isDark ? Colors.white : const Color(0xFF111827),
+                              letterSpacing: -0.2,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    // Address pill
+                    GestureDetector(
+                      onTap: onAddressTap,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? Colors.white.withValues(alpha: 0.05)
+                              : Colors.black.withValues(alpha: 0.03),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.06)
+                                : Colors.black.withValues(alpha: 0.05),
+                            width: 0.5,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 5, height: 5,
+                              decoration: BoxDecoration(
+                                color: AkJolTheme.primary,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AkJolTheme.primary.withValues(alpha: 0.5),
+                                    blurRadius: 4,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            if (loading)
+                              const SizedBox(
+                                width: 10, height: 10,
+                                child: CircularProgressIndicator(strokeWidth: 1.5, color: AkJolTheme.primary),
+                              )
+                            else
+                              Flexible(
+                                child: Text(
+                                  address,
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w500,
+                                    color: muted,
+                                    letterSpacing: 0.1,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            const SizedBox(width: 2),
+                            Icon(Icons.expand_more_rounded, size: 14, color: muted),
+                          ],
+                        ),
                       ),
                     ),
-                  const SizedBox(width: 4),
-                  Icon(Icons.keyboard_arrow_down_rounded, size: 16, color: muted),
-                ],
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 8),
+
+              // ── Right: Profile avatar ──
+              GestureDetector(
+                onTap: onProfileTap,
+                child: Container(
+                  width: 42, height: 42,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: AkJolTheme.primary.withValues(alpha: 0.35),
+                      width: 2,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AkJolTheme.primary.withValues(alpha: 0.12),
+                        blurRadius: 10,
+                        spreadRadius: -2,
+                      ),
+                    ],
+                  ),
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFF2ECC71), Color(0xFF1ABC9C)],
+                      ),
+                    ),
+                    child: Center(
+                      child: Text(
+                        initials,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 6) return 'Добрая ночь';
+    if (hour < 12) return 'Доброе утро';
+    if (hour < 18) return 'Добрый день';
+    return 'Добрый вечер';
+  }
+}
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+//  BENTO GRID — с tap-анимациями
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+class BentoGrid extends StatelessWidget {
+  final void Function(String category)? onCategoryTap;
+
+  const BentoGrid({super.key, this.onCategoryTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: SizedBox(
+        height: 200,
+        child: Row(
+          children: [
+            // ── Доставка ──
+            Expanded(
+              child: _AnimatedBentoCard(
+                gradient: const [Color(0xFF2ECC71), Color(0xFF1ABC9C)],
+                icon: Icons.local_shipping_rounded,
+                title: 'Доставка',
+                subtitle: 'Еда и товары\nиз магазинов',
+                iconSize: 36,
+                isDark: isDark,
+                badge: 'СКОРО',
+                onTap: () => onCategoryTap?.call('delivery'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // ── Услуги ──
+            Expanded(
+              child: _AnimatedBentoCard(
+                gradient: const [Color(0xFF6C5CE7), Color(0xFF3498DB)],
+                icon: Icons.handyman_rounded,
+                title: 'Услуги',
+                subtitle: 'Мастера\nи сервис',
+                iconSize: 36,
+                isDark: isDark,
+                badge: 'СКОРО',
+                onTap: () => onCategoryTap?.call('services'),
               ),
             ),
           ],
@@ -73,114 +286,213 @@ class AkJolHeader extends StatelessWidget {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  HERO CARDS — Доставка еды + Услуги
+//  ANIMATED BENTO CARD — Scale on tap + premium feel
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-class HeroServiceCards extends StatelessWidget {
-  final void Function(String category)? onCategoryTap;
-
-  const HeroServiceCards({super.key, this.onCategoryTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [
-          // ── Доставка — широкая карточка ──
-          _PremiumCard(
-            height: 160,
-            gradient: const [Color(0xFFFF6B35), Color(0xFFFF4444)],
-            icon: Icons.local_shipping_rounded,
-            title: 'Доставка',
-            subtitle: 'Магазины, товары и еда рядом с вами',
-            onTap: () => onCategoryTap?.call('delivery'),
-          ),
-          const SizedBox(height: 12),
-          // ── Услуги — широкая карточка ──
-          _PremiumCard(
-            height: 160,
-            gradient: const [Color(0xFF6C5CE7), Color(0xFF3498DB)],
-            icon: Icons.handyman_rounded,
-            title: 'Услуги',
-            subtitle: 'Мастера, клининг, ремонт и сервис',
-            onTap: () => onCategoryTap?.call('services'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _PremiumCard extends StatelessWidget {
-  final double height;
+class _AnimatedBentoCard extends StatefulWidget {
   final List<Color> gradient;
   final IconData icon;
   final String title;
   final String subtitle;
+  final String? imageUrl;
+  final double iconSize;
+  final bool compact;
+  final bool isDark;
+  final String? badge;
   final VoidCallback? onTap;
 
-  const _PremiumCard({
-    required this.height,
+  const _AnimatedBentoCard({
     required this.gradient,
     required this.icon,
     required this.title,
     required this.subtitle,
+    this.imageUrl,
+    this.iconSize = 28,
+    this.compact = false,
+    required this.isDark,
+    this.badge,
     this.onTap,
   });
 
   @override
+  State<_AnimatedBentoCard> createState() => _AnimatedBentoCardState();
+}
+
+class _AnimatedBentoCardState extends State<_AnimatedBentoCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scaleAnim = Tween<double>(begin: 1.0, end: 0.96).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: height,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: gradient),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(color: gradient.first.withValues(alpha: 0.3), blurRadius: 20, offset: const Offset(0, 8), spreadRadius: -4),
-          ],
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          children: [
-            // Декор — circles
-            Positioned(right: -30, top: -30, child: _glow(120, 0.08)),
-            Positioned(right: 40, bottom: -20, child: _glow(80, 0.05)),
-            Positioned(left: -20, bottom: -10, child: _glow(60, 0.04)),
-            // Иконка справа
-            Positioned(
-              right: 24,
-              top: 0,
-              bottom: 0,
-              child: Center(
-                child: Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(20),
+      onTapDown: (_) => _controller.forward(),
+      onTapUp: (_) {
+        _controller.reverse();
+        widget.onTap?.call();
+      },
+      onTapCancel: () => _controller.reverse(),
+      child: ScaleTransition(
+        scale: _scaleAnim,
+        child: Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: widget.gradient,
+            ),
+            borderRadius: BorderRadius.circular(22),
+            boxShadow: [
+              BoxShadow(
+                color: widget.gradient.first.withValues(alpha: 0.35),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
+                spreadRadius: -4,
+              ),
+            ],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
+              // Decorative circles
+              Positioned(
+                right: -20, top: -20,
+                child: _glow(widget.compact ? 60 : 90, 0.1),
+              ),
+              Positioned(
+                left: -10, bottom: -10,
+                child: _glow(widget.compact ? 35 : 55, 0.06),
+              ),
+              // Image overlay (top-right)
+              if (widget.imageUrl != null && !widget.compact)
+                Positioned(
+                  right: -8,
+                  top: -4,
+                  child: Image.network(
+                    widget.imageUrl!,
+                    width: 120,
+                    height: 120,
+                    fit: BoxFit.contain,
+                    color: Colors.white.withValues(alpha: 0.85),
+                    colorBlendMode: BlendMode.modulate,
+                    errorBuilder: (_, __, ___) => Icon(
+                      widget.icon,
+                      size: 60,
+                      color: Colors.white.withValues(alpha: 0.06),
+                    ),
                   ),
-                  child: Icon(icon, color: Colors.white.withValues(alpha: 0.9), size: 36),
+                )
+              else if (!widget.compact)
+                Positioned(
+                  right: 10, bottom: 10,
+                  child: Icon(
+                    widget.icon,
+                    size: 60,
+                    color: Colors.white.withValues(alpha: 0.06),
+                  ),
+                ),
+
+              // Content
+              Padding(
+                padding: EdgeInsets.all(widget.compact ? 12 : 18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: widget.compact
+                      ? MainAxisAlignment.center
+                      : MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Icon + badge
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          width: widget.compact ? 38 : 52,
+                          height: widget.compact ? 38 : 52,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(widget.compact ? 11 : 16),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.1),
+                              width: 1,
+                            ),
+                          ),
+                          child: Icon(widget.icon, color: Colors.white, size: widget.iconSize),
+                        ),
+                        if (widget.badge != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.25),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: Colors.white.withValues(alpha: 0.15),
+                              ),
+                            ),
+                            child: Text(
+                              widget.badge!,
+                              style: const TextStyle(
+                                fontSize: 8,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.white,
+                                letterSpacing: 1.2,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                    if (!widget.compact) const Spacer(),
+                    // Text
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (widget.compact) const SizedBox(height: 6),
+                        Text(
+                          widget.title,
+                          style: TextStyle(
+                            fontSize: widget.compact ? 14 : 22,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
+                            letterSpacing: -0.5,
+                            height: 1.1,
+                          ),
+                        ),
+                        if (!widget.compact) const SizedBox(height: 3),
+                        if (!widget.compact)
+                          Text(
+                            widget.subtitle,
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: Colors.white.withValues(alpha: 0.8),
+                              letterSpacing: 0.1,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-            ),
-            // Контент слева
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: Colors.white, letterSpacing: -0.5, height: 1.1)),
-                  const SizedBox(height: 4),
-                  Text(subtitle, style: TextStyle(fontSize: 13, color: Colors.white.withValues(alpha: 0.75), height: 1.3)),
-                ],
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -199,136 +511,6 @@ class _PremiumCard extends StatelessWidget {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  QUICK ACTIONS ROW — Такси, Доставка, Магазины...
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-class QuickActionsRow extends StatelessWidget {
-  final void Function(String id)? onTap;
-
-  const QuickActionsRow({super.key, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? const Color(0xFFCDD9E5) : const Color(0xFF374151);
-    final cardBg = isDark ? const Color(0xFF161B22) : Colors.white;
-    final shadow = isDark ? Colors.transparent : Colors.black.withValues(alpha: 0.04);
-
-    const actions = [
-      {'icon': Icons.local_taxi_rounded, 'label': 'Такси', 'id': 'taxi', 'color': 0xFFFFC107},
-      {'icon': Icons.inventory_2_rounded, 'label': 'Доставка', 'id': 'delivery', 'color': 0xFF2ECC71},
-      {'icon': Icons.storefront_rounded, 'label': 'Магазины', 'id': 'stores', 'color': 0xFFFF9800},
-      {'icon': Icons.local_pharmacy_rounded, 'label': 'Аптеки', 'id': 'pharmacy', 'color': 0xFFE91E63},
-      {'icon': Icons.directions_bus_rounded, 'label': 'Транспорт', 'id': 'transport', 'color': 0xFF3498DB},
-      {'icon': Icons.electric_bolt_rounded, 'label': 'Заряд', 'id': 'charger', 'color': 0xFF8BC34A},
-    ];
-
-    return SizedBox(
-      height: 88,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: actions.length,
-        separatorBuilder: (_, _) => const SizedBox(width: 10),
-        itemBuilder: (_, i) {
-          final a = actions[i];
-          final color = Color(a['color'] as int);
-          return GestureDetector(
-            onTap: () => onTap?.call(a['id'] as String),
-            child: SizedBox(
-              width: 68,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    width: 52, height: 52,
-                    decoration: BoxDecoration(
-                      color: cardBg,
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: [BoxShadow(color: shadow, blurRadius: 8, offset: const Offset(0, 2))],
-                      border: isDark ? Border.all(color: const Color(0xFF21262D)) : null,
-                    ),
-                    child: Icon(a['icon'] as IconData, color: color, size: 24),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    a['label'] as String,
-                    style: TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: textColor, letterSpacing: -0.1),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  DESTINATION BAR — "Куда едем?"
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-class DestinationBar extends StatelessWidget {
-  final VoidCallback? onTap;
-
-  const DestinationBar({super.key, this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF161B22) : Colors.white;
-    final border = isDark ? const Color(0xFF30363D) : const Color(0xFFE5E7EB);
-    final textColor = isDark ? const Color(0xFFCDD9E5) : const Color(0xFF374151);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          height: 56,
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: border, width: 0.5),
-            boxShadow: isDark ? null : [
-              BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 8, offset: const Offset(0, 2)),
-            ],
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              Container(
-                width: 34, height: 34,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFFC107).withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.local_taxi_rounded, color: Color(0xFFFFC107), size: 18),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text('Куда едем?', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: textColor)),
-              ),
-              Container(
-                width: 30, height: 30,
-                decoration: BoxDecoration(
-                  color: AkJolTheme.primary,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.arrow_forward_rounded, color: Colors.white, size: 15),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 //  SECTION HEADER
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -336,8 +518,9 @@ class SectionHeader extends StatelessWidget {
   final String title;
   final String? action;
   final VoidCallback? onAction;
+  final Widget? actionWidget;
 
-  const SectionHeader({super.key, required this.title, this.action, this.onAction});
+  const SectionHeader({super.key, required this.title, this.action, this.onAction, this.actionWidget});
 
   @override
   Widget build(BuildContext context) {
@@ -349,11 +532,35 @@ class SectionHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: textColor, letterSpacing: -0.3)),
-          if (action != null)
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+              color: textColor,
+              letterSpacing: -0.5,
+            ),
+          ),
+          if (actionWidget != null)
+            actionWidget!
+          else if (action != null)
             GestureDetector(
               onTap: onAction,
-              child: Text(action!, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AkJolTheme.primary)),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: AkJolTheme.primary.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  action!,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AkJolTheme.primary,
+                  ),
+                ),
+              ),
             ),
         ],
       ),
@@ -362,7 +569,7 @@ class SectionHeader extends StatelessWidget {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-//  STORE CARD
+//  STORE CARD (for horizontal scroll lists)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 class TakEsepStoreCard extends StatelessWidget {
@@ -396,9 +603,17 @@ class TakEsepStoreCard extends StatelessWidget {
         width: 200,
         decoration: BoxDecoration(
           color: cardBg,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isDark ? const Color(0xFF21262D) : const Color(0xFFF0F0F0),
+            width: 0.5,
+          ),
           boxShadow: [
-            BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06), blurRadius: 12, offset: const Offset(0, 4)),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.06),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
           ],
         ),
         clipBehavior: Clip.antiAlias,
@@ -411,30 +626,79 @@ class TakEsepStoreCard extends StatelessWidget {
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: canDeliver
-                      ? [AkJolTheme.primary.withValues(alpha: 0.12), AkJolTheme.primary.withValues(alpha: 0.04)]
-                      : [Colors.grey.withValues(alpha: 0.08), Colors.grey.withValues(alpha: 0.03)],
+                      ? [
+                          AkJolTheme.primary.withValues(alpha: 0.12),
+                          AkJolTheme.primary.withValues(alpha: 0.04),
+                        ]
+                      : [
+                          Colors.grey.withValues(alpha: 0.08),
+                          Colors.grey.withValues(alpha: 0.03),
+                        ],
                 ),
               ),
-              child: Icon(Icons.storefront_rounded, size: 36, color: canDeliver ? AkJolTheme.primary.withValues(alpha: 0.6) : Colors.grey.withValues(alpha: 0.4)),
+              child: Icon(
+                Icons.storefront_rounded,
+                size: 36,
+                color: canDeliver
+                    ? AkJolTheme.primary.withValues(alpha: 0.6)
+                    : Colors.grey.withValues(alpha: 0.4),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(name, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textColor), maxLines: 1, overflow: TextOverflow.ellipsis),
+                  Text(
+                    name,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   const SizedBox(height: 2),
                   Row(
                     children: [
                       if (description != null && description!.isNotEmpty)
-                        Flexible(child: Text(description!, style: TextStyle(fontSize: 11, color: muted), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                        Flexible(
+                          child: Text(
+                            description!,
+                            style: TextStyle(fontSize: 11, color: muted),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
                       if (canDeliver && distance != null)
-                        Text(' • ${distance!.toStringAsFixed(1)} км', style: const TextStyle(fontSize: 11, color: AkJolTheme.primary, fontWeight: FontWeight.w600)),
+                        Text(
+                          ' • ${distance!.toStringAsFixed(1)} км',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AkJolTheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                     ],
                   ),
                   if (deliveryMinutes != null) ...[
                     const SizedBox(height: 6),
-                    Text('~$deliveryMinutes мин', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w500, color: AkJolTheme.primary)),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AkJolTheme.primary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '~$deliveryMinutes мин',
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: AkJolTheme.primary,
+                        ),
+                      ),
+                    ),
                   ],
                 ],
               ),

@@ -75,8 +75,30 @@ class _AkjolCatalogScreenState extends ConsumerState<AkjolCatalogScreen> {
       'UPDATE products SET is_public = ?, updated_at = ? WHERE id = ?',
       [newValue ? 1 : 0, now, product.id],
     );
-    await SupabaseSync.update('products', product.id, {
-      'is_public': newValue, 'updated_at': now,
+
+    // Full upsert to ensure product exists in Supabase
+    await SupabaseSync.upsert('products', {
+      'id': product.id,
+      'company_id': product.companyId,
+      'warehouse_id': product.warehouseId,
+      'category_id': product.categoryId,
+      'name': product.name,
+      'sku': product.sku,
+      'barcode': product.barcode,
+      'description': product.description,
+      'cost_price': product.costPrice ?? 0.0,
+      'price': product.price,
+      'selling_price': product.price,
+      'quantity': product.quantity,
+      'min_stock': product.minQuantity,
+      'max_stock': product.maxQuantity ?? 0,
+      'stock_zone': product.stockZone.name,
+      'image_url': product.imageUrl,
+      'is_public': newValue,
+      'b2c_description': product.b2cDescription,
+      'b2c_price': product.b2cPrice,
+      'created_at': product.createdAt.toIso8601String(),
+      'updated_at': now,
     });
 
     setState(() {
@@ -87,74 +109,6 @@ class _AkjolCatalogScreenState extends ConsumerState<AkjolCatalogScreen> {
     });
   }
 
-  Future<void> _updateB2cPrice(Product product) async {
-    final controller = TextEditingController(
-      text: (product.b2cPrice ?? product.price).toStringAsFixed(0),
-    );
-
-    final result = await showDialog<double>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Цена для AkJol'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Товар: ${product.name}',
-                style: const TextStyle(fontWeight: FontWeight.w500)),
-            const SizedBox(height: 4),
-            Text('Закупочная: ${product.costPrice?.toStringAsFixed(0) ?? "-"} сом',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-            Text('Основная цена: ${product.price.toStringAsFixed(0)} сом',
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
-            const SizedBox(height: 16),
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Цена AkJol (сом)',
-                suffixText: 'сом',
-              ),
-              autofocus: true,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Отмена'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final val = double.tryParse(controller.text);
-              Navigator.pop(ctx, val);
-            },
-            child: const Text('Сохранить'),
-          ),
-        ],
-      ),
-    );
-
-    if (result != null) {
-      final now = DateTime.now().toIso8601String();
-      await powerSyncDb.execute(
-        'UPDATE products SET b2c_price = ?, updated_at = ? WHERE id = ?',
-        [result, now, product.id],
-      );
-      await SupabaseSync.update('products', product.id, {
-        'b2c_price': result, 'updated_at': now,
-      });
-
-      setState(() {
-        final idx = _allProducts.indexWhere((p) => p.id == product.id);
-        if (idx >= 0) {
-          _allProducts[idx] = product.copyWith(b2cPrice: result);
-        }
-      });
-
-      if (mounted) showInfoSnackBar(context, null, 'Цена обновлена');
-    }
-  }
 
   Future<void> _enableAll() async {
     final confirmed = await showDialog<bool>(
@@ -184,8 +138,22 @@ class _AkjolCatalogScreenState extends ConsumerState<AkjolCatalogScreen> {
         'UPDATE products SET is_public = 1, updated_at = ? WHERE warehouse_id = ?',
         [now, warehouseId],
       );
+      // Sync all products to Supabase
+      for (final p in _allProducts) {
+        await SupabaseSync.upsert('products', {
+          'id': p.id, 'company_id': p.companyId, 'warehouse_id': p.warehouseId,
+          'category_id': p.categoryId, 'name': p.name, 'sku': p.sku,
+          'barcode': p.barcode, 'description': p.description,
+          'cost_price': p.costPrice ?? 0.0, 'price': p.price, 'selling_price': p.price,
+          'quantity': p.quantity, 'min_stock': p.minQuantity,
+          'max_stock': p.maxQuantity ?? 0, 'stock_zone': p.stockZone.name,
+          'image_url': p.imageUrl, 'is_public': true,
+          'b2c_price': p.b2cPrice, 'b2c_description': p.b2cDescription,
+          'created_at': p.createdAt.toIso8601String(), 'updated_at': now,
+        });
+      }
       _loadProducts();
-      if (mounted) showInfoSnackBar(context, null, 'Все товары включены');
+      if (mounted) showInfoSnackBar(context, null, 'Все товары включены и синхронизированы');
     }
   }
 
@@ -218,6 +186,12 @@ class _AkjolCatalogScreenState extends ConsumerState<AkjolCatalogScreen> {
         'UPDATE products SET is_public = 0, updated_at = ? WHERE warehouse_id = ?',
         [now, warehouseId],
       );
+      // Sync to Supabase
+      for (final p in _allProducts) {
+        await SupabaseSync.update('products', p.id, {
+          'is_public': false, 'updated_at': now,
+        });
+      }
       _loadProducts();
       if (mounted) showInfoSnackBar(context, null, 'Все товары скрыты');
     }
@@ -448,26 +422,11 @@ class _AkjolCatalogScreenState extends ConsumerState<AkjolCatalogScreen> {
             ),
           ],
         ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Edit price
-            IconButton(
-              icon: Icon(Icons.edit_outlined, size: 18,
-                  color: cs.onSurface.withValues(alpha: 0.4)),
-              onPressed: () => _updateB2cPrice(product),
-              tooltip: 'Изменить цену AkJol',
-              constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
-              padding: EdgeInsets.zero,
-            ),
-            // Toggle
-            Switch(
-              value: isActive,
-              onChanged: (_) => _togglePublic(product),
-              activeTrackColor: const Color(0xFF2ECC71),
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-          ],
+        trailing: Switch(
+          value: isActive,
+          onChanged: (_) => _togglePublic(product),
+          activeTrackColor: const Color(0xFF2ECC71),
+          materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         ),
       ),
     ),

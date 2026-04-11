@@ -254,7 +254,7 @@ class ArrivalRepository {
       'warehouse_id': product.warehouseId, 'category_id': product.categoryId,
       'name': product.name, 'sku': product.sku, 'barcode': product.barcode,
       'description': product.description, 'cost_price': product.costPrice ?? 0.0,
-      'selling_price': product.price, 'quantity': product.quantity,
+      'price': product.price, 'selling_price': product.price, 'quantity': product.quantity,
       'min_stock': product.minQuantity, 'max_stock': product.maxQuantity ?? 0,
       'stock_zone': product.stockZone.name, 'image_url': product.imageUrl,
       'is_public': product.isPublic, 'created_at': now, 'updated_at': now,

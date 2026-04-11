@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:takesep_design_system/takesep_design_system.dart';
+import 'package:audioplayers/audioplayers.dart';
 import '../../providers/auth_providers.dart';
 
 // ═══════════════════════════════════════════════════════════════
-// Delivery Orders Screen — 4-Tab Workflow
-// Новые → Сборка → Выдача → История
+// Delivery Orders Screen — 3-Tab Workflow
+// Сборка → Выдача → История
+// Магазин видит заказы начиная с payment_verified
 // ═══════════════════════════════════════════════════════════════
 
 class DeliveryOrdersScreen extends ConsumerStatefulWidget {
@@ -24,15 +27,15 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
 
   List<Map<String, dynamic>> _allOrders = [];
   bool _loading = true;
-  bool _acting = false; // prevents double-tap
+
   RealtimeChannel? _channel;
+  int _previousOrderCount = 0;
+  final AudioPlayer _alertPlayer = AudioPlayer();
 
   // ─── Tab filters ──────────────────────────────────────────
-  static const _newStatuses = {'pending'};
-  static const _assemblyStatuses = {'confirmed', 'assembling'};
-  static const _pickupStatuses = {'ready', 'courier_assigned'};
-  static const _historyStatuses = {
-    'picked_up',
+  // Сборка = all active orders (everything except delivered/cancelled)
+  // История = delivered + cancelled
+  static const _doneStatuses = {
     'delivered',
     'cancelled_by_customer',
     'cancelled_by_customer_late',
@@ -41,19 +44,15 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
     'cancelled_no_courier',
   };
 
-  List<Map<String, dynamic>> get _newOrders =>
-      _allOrders.where((o) => _newStatuses.contains(o['status'])).toList();
   List<Map<String, dynamic>> get _assemblyOrders =>
-      _allOrders.where((o) => _assemblyStatuses.contains(o['status'])).toList();
-  List<Map<String, dynamic>> get _pickupOrders =>
-      _allOrders.where((o) => _pickupStatuses.contains(o['status'])).toList();
+      _allOrders.where((o) => !_doneStatuses.contains(o['status'])).toList();
   List<Map<String, dynamic>> get _historyOrders =>
-      _allOrders.where((o) => _historyStatuses.contains(o['status'])).toList();
+      _allOrders.where((o) => _doneStatuses.contains(o['status'])).toList();
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
     _loadOrders();
     _subscribeToOrders();
   }
@@ -62,6 +61,7 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
   void dispose() {
     _tabController.dispose();
     _channel?.unsubscribe();
+    _alertPlayer.dispose();
     super.dispose();
   }
 
@@ -91,15 +91,89 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
           .order('created_at', ascending: false)
           .limit(200);
 
+      final orders = List<Map<String, dynamic>>.from(data);
+
+      // Fallback: if any order has no items from JOIN, load them separately
+      for (int i = 0; i < orders.length; i++) {
+        final items = orders[i]['delivery_order_items'] as List?;
+        if ((items == null || items.isEmpty) && orders[i]['items_total'] != null) {
+          try {
+            final fallbackItems = await _supabase
+                .from('delivery_order_items')
+                .select('*, delivery_order_item_modifiers(*)')
+                .eq('order_id', orders[i]['id']);
+            orders[i]['delivery_order_items'] = fallbackItems;
+          } catch (_) {}
+        }
+      }
+
       if (mounted) {
+        // Check for new assembly orders (payment_verified) and play sound
+        final newTotalAssembly = orders
+            .where((o) => !_doneStatuses.contains(o['status']))
+            .length;
+        if (newTotalAssembly > _previousOrderCount && _previousOrderCount > 0) {
+          _playNewOrderSound();
+          _showNewOrderNotification(newTotalAssembly - _previousOrderCount);
+        }
+        _previousOrderCount = newTotalAssembly;
+
         setState(() {
-          _allOrders = List<Map<String, dynamic>>.from(data);
+          _allOrders = orders;
           _loading = false;
         });
       }
     } catch (e) {
+      debugPrint('⚠️ Load orders error: $e');
       if (mounted) setState(() => _loading = false);
     }
+  }
+
+  void _playNewOrderSound() async {
+    try {
+      // Use system sound on desktop (Windows/Mac/Linux)
+      // and audioplayers on mobile
+      bool isDesktop = false;
+      try {
+        isDesktop = Theme.of(context).platform == TargetPlatform.windows ||
+            Theme.of(context).platform == TargetPlatform.linux ||
+            Theme.of(context).platform == TargetPlatform.macOS;
+      } catch (_) {}
+
+      if (isDesktop) {
+        await SystemSound.play(SystemSoundType.alert);
+        await Future.delayed(const Duration(milliseconds: 300));
+        await SystemSound.play(SystemSoundType.alert);
+      } else {
+        _alertPlayer.setVolume(0.8);
+        _alertPlayer.setReleaseMode(ReleaseMode.release);
+        _alertPlayer.play(
+          UrlSource('https://cdn.pixabay.com/audio/2024/11/07/audio_77e36f21ee.mp3'),
+        );
+      }
+    } catch (e) {
+      debugPrint('Sound error: $e');
+    }
+  }
+
+  void _showNewOrderNotification(int count) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.notifications_active, color: Colors.white, size: 22),
+            const SizedBox(width: 10),
+            Text('Новый заказ ($count)',
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+          ],
+        ),
+        backgroundColor: AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 4),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -107,61 +181,7 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
   //                  handles everything else atomically.
   // ═══════════════════════════════════════════════════════════
 
-  Future<void> _updateStatus(String orderId, String newStatus) async {
-    if (_acting) return;
-    setState(() => _acting = true);
-    try {
-      await _supabase
-          .from('delivery_orders')
-          .update({'status': newStatus})
-          .eq('id', orderId);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Ошибка: ${e.toString().length > 80 ? e.toString().substring(0, 80) : e}'),
-            backgroundColor: AppColors.error,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _acting = false);
-    }
-  }
 
-  // Convenience wrappers
-  void _acceptOrder(String orderId) => _updateStatus(orderId, 'confirmed');
-
-  void _startAssembly(String orderId) => _updateStatus(orderId, 'assembling');
-
-  void _markReady(String orderId) => _updateStatus(orderId, 'ready');
-
-  void _markPickedUp(String orderId) => _updateStatus(orderId, 'picked_up');
-
-  void _cancelByStore(String orderId) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: Theme.of(context).colorScheme.surface,
-        title: const Text('Отклонить заказ?'),
-        content: const Text('Заказ будет отменён и клиент получит уведомление.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Нет'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: AppColors.error),
-            child: const Text('Отклонить', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true) {
-      _updateStatus(orderId, 'cancelled_by_store');
-    }
-  }
 
   // ═══════════════════════════════════════════════════════════
   // BUILD
@@ -205,9 +225,7 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
               ),
               unselectedLabelStyle: AppTypography.labelMedium,
               tabs: [
-                _buildTab('Новые', _newOrders.length, AppColors.warning),
                 _buildTab('Сборка', _assemblyOrders.length, AppColors.info),
-                _buildTab('Выдача', _pickupOrders.length, AppColors.success),
                 const Tab(text: 'История'),
               ],
             ),
@@ -219,9 +237,7 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
           : TabBarView(
               controller: _tabController,
               children: [
-                _buildNewTab(),
                 _buildAssemblyTab(),
-                _buildPickupTab(),
                 _buildHistoryTab(),
               ],
             ),
@@ -257,63 +273,13 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // TAB 1: НОВЫЕ (pending)
-  // ═══════════════════════════════════════════════════════════
-
-  Widget _buildNewTab() {
-    if (_newOrders.isEmpty) return _emptyState(Icons.notifications_none_rounded, 'Нет новых заказов');
-
-    return RefreshIndicator(
-      onRefresh: _loadOrders,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _newOrders.length,
-        itemBuilder: (_, i) {
-          final order = _newOrders[i];
-          return _OrderCard(
-            order: order,
-            statusColor: AppColors.warning,
-            statusLabel: 'Новый',
-            statusIcon: Icons.notifications_active_rounded,
-            showItems: true,
-            showTransport: true,
-            onChangeTransport: _acting ? null : () => _showChangeTransport(order),
-            actions: Row(
-              children: [
-                Expanded(
-                  child: _ActionButton(
-                    label: 'Отклонить',
-                    icon: Icons.close_rounded,
-                    color: AppColors.error,
-                    outlined: true,
-                    onTap: _acting ? null : () => _cancelByStore(order['id']),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  flex: 2,
-                  child: _ActionButton(
-                    label: 'Принять заказ',
-                    icon: Icons.check_rounded,
-                    color: AppColors.success,
-                    onTap: _acting ? null : () => _acceptOrder(order['id']),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
 
   // ═══════════════════════════════════════════════════════════
   // TAB 2: СБОРКА (confirmed, assembling)
   // ═══════════════════════════════════════════════════════════
 
   Widget _buildAssemblyTab() {
-    if (_assemblyOrders.isEmpty) return _emptyState(Icons.inventory_2_outlined, 'Нет заказов на сборку');
+    if (_assemblyOrders.isEmpty) return _emptyState(Icons.inventory_2_outlined, 'Нет активных заказов');
 
     return RefreshIndicator(
       onRefresh: _loadOrders,
@@ -323,124 +289,88 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
         itemBuilder: (_, i) {
           final order = _assemblyOrders[i];
           final status = order['status'] as String;
-          final isConfirmed = status == 'confirmed';
+
+          // Read-only status display
+          Color statusColor;
+          String statusLabel;
+          IconData statusIcon;
+
+          switch (status) {
+            case 'pending':
+              statusColor = AppColors.warning;
+              statusLabel = 'Ищем курьера';
+              statusIcon = Icons.search_rounded;
+              break;
+            case 'courier_assigned':
+              statusColor = AppColors.primary;
+              statusLabel = 'Курьер назначен';
+              statusIcon = Icons.delivery_dining_rounded;
+              break;
+            case 'payment_sent':
+              statusColor = Colors.blue;
+              statusLabel = 'Клиент оплатил';
+              statusIcon = Icons.payment_rounded;
+              break;
+            case 'payment_verified':
+              statusColor = AppColors.info;
+              statusLabel = 'Оплата подтверждена';
+              statusIcon = Icons.verified_rounded;
+              break;
+            case 'picked_up':
+              statusColor = AppColors.primary;
+              statusLabel = 'Курьер забрал';
+              statusIcon = Icons.local_shipping_rounded;
+              break;
+            case 'arrived':
+              statusColor = AppColors.success;
+              statusLabel = 'Курьер приехал';
+              statusIcon = Icons.location_on_rounded;
+              break;
+            default:
+              statusColor = AppColors.secondary;
+              statusLabel = _statusLabel(status);
+              statusIcon = Icons.inventory_2_rounded;
+          }
+
+          // Info banner instead of action buttons
+          final Widget infoBanner = Container(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              color: statusColor.withValues(alpha: 0.08),
+              border: Border.all(color: statusColor.withValues(alpha: 0.2)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.info_outline_rounded, size: 16, color: statusColor),
+                const SizedBox(width: 8),
+                Text(
+                  'Подготовьте товары — курьер заберёт',
+                  style: AppTypography.bodySmall.copyWith(
+                    color: statusColor,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          );
 
           return _OrderCard(
             order: order,
-            statusColor: isConfirmed ? AppColors.info : AppColors.secondary,
-            statusLabel: isConfirmed ? 'Принят' : 'Собирается',
-            statusIcon: isConfirmed
-                ? Icons.fact_check_rounded
-                : Icons.inventory_2_rounded,
-            showItems: true, // Show checklist
-            actions: isConfirmed
-                ? _ActionButton(
-                    label: 'Начать сборку',
-                    icon: Icons.play_arrow_rounded,
-                    color: AppColors.info,
-                    onTap: _acting ? null : () => _startAssembly(order['id']),
-                  )
-                : Row(
-                    children: [
-                      Expanded(
-                        child: _ActionButton(
-                          label: 'Нет товара',
-                          icon: Icons.remove_shopping_cart_rounded,
-                          color: AppColors.error,
-                          outlined: true,
-                          onTap: _acting ? null : () => _cancelByStore(order['id']),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        flex: 2,
-                        child: _ActionButton(
-                          label: 'Заказ собран ✓',
-                          icon: Icons.check_circle_rounded,
-                          color: AppColors.success,
-                          onTap: _acting ? null : () => _markReady(order['id']),
-                        ),
-                      ),
-                    ],
-                  ),
+            statusColor: statusColor,
+            statusLabel: statusLabel,
+            statusIcon: statusIcon,
+            showItems: true,
+            actions: infoBanner,
           );
         },
       ),
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // TAB 3: ВЫДАЧА (ready, courier_assigned)
-  // ═══════════════════════════════════════════════════════════
 
-  Widget _buildPickupTab() {
-    if (_pickupOrders.isEmpty) return _emptyState(Icons.delivery_dining_rounded, 'Нет заказов на выдачу');
 
-    return RefreshIndicator(
-      onRefresh: _loadOrders,
-      child: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: _pickupOrders.length,
-        itemBuilder: (_, i) {
-          final order = _pickupOrders[i];
-          final status = order['status'] as String;
-          final isCourierAssigned = status == 'courier_assigned';
-
-          return _OrderCard(
-            order: order,
-            statusColor: isCourierAssigned
-                ? AppColors.primary
-                : AppColors.warning,
-            statusLabel: isCourierAssigned
-                ? 'Курьер в пути'
-                : 'Ожидает курьера',
-            statusIcon: isCourierAssigned
-                ? Icons.delivery_dining_rounded
-                : Icons.hourglass_top_rounded,
-            actions: isCourierAssigned
-                ? _ActionButton(
-                    label: '🤝 Передано курьеру',
-                    icon: Icons.handshake_rounded,
-                    color: AppColors.primary,
-                    onTap: _acting ? null : () => _markPickedUp(order['id']),
-                  )
-                : Container(
-                    padding: const EdgeInsets.symmetric(
-                        vertical: 10, horizontal: 16),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      color: AppColors.warning.withValues(alpha: 0.08),
-                      border: Border.all(
-                        color: AppColors.warning.withValues(alpha: 0.2),
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 1.5,
-                            color: AppColors.warning,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          'Ищем курьера...',
-                          style: AppTypography.bodySmall.copyWith(
-                            color: AppColors.warning,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-          );
-        },
-      ),
-    );
-  }
 
   // ═══════════════════════════════════════════════════════════
   // TAB 4: ИСТОРИЯ (delivered, cancelled_*)
@@ -495,7 +425,9 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
   String _statusLabel(String status) {
     const labels = {
       'pending': 'Новый',
-      'confirmed': 'Принят',
+      'confirmed': 'Ожидает оплату',
+      'payment_sent': 'Чек получен',
+      'payment_verified': 'Оплата подтверждена',
       'assembling': 'Собирается',
       'ready': 'Ожидает курьера',
       'courier_assigned': 'Курьер в пути',
@@ -510,74 +442,8 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
     return labels[status] ?? status;
   }
 
-  // ─── Change transport dialog ──────────────────────────────
-  Future<void> _showChangeTransport(Map<String, dynamic> order) async {
-    final orderId = order['id'] as String;
-    final currentTransport = order['requested_transport'] as String? ?? 'bicycle';
-
-    // Load transport types
-    List<Map<String, dynamic>> transports;
-    try {
-      transports = List<Map<String, dynamic>>.from(
-        await _supabase.from('transport_types').select('*'),
-      );
-    } catch (_) {
-      return;
-    }
-
-    if (!mounted) return;
-
-    String selected = currentTransport;
-
-    final result = await showDialog<String>(
-      context: context,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setLocal) => AlertDialog(
-          backgroundColor: Theme.of(ctx).colorScheme.surface,
-          title: const Text('Сменить транспорт'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: transports.map((t) {
-              final tId = t['id'] as String;
-              final isSelected = selected == tId;
-              return RadioListTile<String>(
-                value: tId,
-                groupValue: selected,
-                title: Text(t['name'] ?? tId),
-                subtitle: Text(
-                  'до ${(t['max_weight_kg'] as num?)?.toInt() ?? 10} кг',
-                ),
-                activeColor: AppColors.primary,
-                selected: isSelected,
-                onChanged: (v) => setLocal(() => selected = v!),
-              );
-            }).toList(),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Отмена'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(ctx, selected),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-              ),
-              child: const Text('Применить',
-                  style: TextStyle(color: Colors.white)),
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (result != null && result != currentTransport) {
-      await _supabase.from('delivery_orders').update({
-        'approved_transport': result,
-      }).eq('id', orderId);
-    }
-  }
 }
+
 
 // ═══════════════════════════════════════════════════════════════
 // ORDER CARD — Universal card used across all tabs
@@ -590,8 +456,6 @@ class _OrderCard extends StatelessWidget {
   final IconData statusIcon;
   final Widget? actions;
   final bool showItems;
-  final bool showTransport;
-  final VoidCallback? onChangeTransport;
 
   const _OrderCard({
     required this.order,
@@ -600,8 +464,6 @@ class _OrderCard extends StatelessWidget {
     required this.statusIcon,
     this.actions,
     this.showItems = false,
-    this.showTransport = false,
-    this.onChangeTransport,
   });
 
   @override
@@ -664,7 +526,7 @@ class _OrderCard extends StatelessWidget {
                 ),
 
                 // ── Transport badge ──
-                if (showTransport && requestedTransport != null) ...[
+                if (requestedTransport != null) ...[
                   const SizedBox(width: 6),
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -783,40 +645,7 @@ class _OrderCard extends StatelessWidget {
             ),
           ),
 
-          // ── Change transport button ──
-          if (onChangeTransport != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: InkWell(
-                onTap: onChangeTransport,
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: AppColors.info.withValues(alpha: 0.3),
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.swap_horiz_rounded,
-                          size: 14, color: AppColors.info),
-                      const SizedBox(width: 6),
-                      Text(
-                        'Сменить транспорт',
-                        style: AppTypography.labelSmall.copyWith(
-                          color: AppColors.info,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+
 
           // ── Customer note ──
           if (note != null && note.isNotEmpty) ...[
@@ -963,36 +792,24 @@ class _OrderCard extends StatelessWidget {
             ),
           ],
 
-          // ── Total ──
+          // ── Total (только товары — доставка магазину не начисляется) ──
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Итого',
+                  'Сумма товаров',
                   style: AppTypography.bodySmall.copyWith(
                     color: cs.onSurface.withValues(alpha: 0.4),
                   ),
                 ),
-                Row(
-                  children: [
-                    if (deliveryFee > 0)
-                      Text(
-                        '(${itemsTotal.toStringAsFixed(0)} + ${deliveryFee.toStringAsFixed(0)} доставка) ',
-                        style: AppTypography.bodySmall.copyWith(
-                          color: cs.onSurface.withValues(alpha: 0.3),
-                          fontSize: 11,
-                        ),
-                      ),
-                    Text(
-                      '${total.toStringAsFixed(0)} сом',
-                      style: AppTypography.headlineSmall.copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 18,
-                      ),
-                    ),
-                  ],
+                Text(
+                  '${itemsTotal.toStringAsFixed(0)} сом',
+                  style: AppTypography.headlineSmall.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 18,
+                  ),
                 ),
               ],
             ),
@@ -1020,7 +837,7 @@ class _OrderCard extends StatelessWidget {
 
   static IconData _transportIcon(String type) {
     switch (type) {
-      case 'bicycle': return Icons.pedal_bike_rounded;
+      case 'bicycle': return Icons.electric_bike_rounded;
       case 'motorcycle': return Icons.two_wheeler_rounded;
       case 'car': return Icons.directions_car_rounded;
       case 'truck': return Icons.local_shipping_rounded;
@@ -1097,62 +914,3 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════
-// ACTION BUTTON — Gradient/outlined action button
-// ═══════════════════════════════════════════════════════════════
-
-class _ActionButton extends StatelessWidget {
-  final String label;
-  final IconData icon;
-  final Color color;
-  final bool outlined;
-  final VoidCallback? onTap;
-
-  const _ActionButton({
-    required this.label,
-    required this.icon,
-    required this.color,
-    this.outlined = false,
-    this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    if (outlined) {
-      return OutlinedButton.icon(
-        onPressed: onTap,
-        icon: Icon(icon, size: 16),
-        label: Text(label, style: const TextStyle(fontSize: 13)),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: color,
-          side: BorderSide(color: color.withValues(alpha: 0.4)),
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
-    }
-
-    return ElevatedButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, size: 16, color: Colors.white),
-      label: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: Colors.white,
-        ),
-      ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-        elevation: 0,
-      ),
-    );
-  }
-}

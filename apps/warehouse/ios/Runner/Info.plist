@@ -66,5 +66,13 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Для отображения зон доставки и определения местоположения склада</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Для отслеживания зон доставки в фоновом режиме</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Для сканирования штрихкодов товаров</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Для загрузки фотографий товаров</string>
 </dict>
 </plist>

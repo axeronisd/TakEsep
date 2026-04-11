@@ -40,8 +40,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         // Категории
         _supabase
             .from('categories')
-            .select('id, name, image_url, sort_order, parent_id')
-            .order('sort_order'),
+            .select('id, name, image_url, parent_id')
+            .order('name'),
         // Товары (публичные, в наличии)
         _supabase
             .from('products')

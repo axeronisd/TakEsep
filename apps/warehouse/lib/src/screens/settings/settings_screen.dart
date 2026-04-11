@@ -14,6 +14,7 @@ import '../../data/powersync_db.dart';
 import '../../utils/snackbar_helper.dart';
 import 'widgets/edit_role_sheet.dart';
 import 'widgets/payment_methods_sheet.dart';
+import 'widgets/storefront_settings_sheet.dart';
 
 /// Settings screen — organization, warehouses, roles, integrations, theme toggle.
 class SettingsScreen extends ConsumerWidget {
@@ -37,6 +38,9 @@ class SettingsScreen extends ConsumerWidget {
         _SettingsItem('Профиль компании', Icons.business_rounded,
             'Название, лицензия, статус',
             action: 'company'),
+        _SettingsItem(
+            'Витрина магазина', Icons.storefront_rounded, 'Логотип, баннер и описание',
+            action: 'storefront'),
         _SettingsItem(
             'Группы складов', Icons.category_rounded, 'Управление группами',
             action: 'groups'),
@@ -222,6 +226,9 @@ class SettingsScreen extends ConsumerWidget {
       case 'receipt':
         _showReceiptAndPrinterSettings(context, ref);
         break;
+      case 'storefront':
+        _showStorefront(context, ref);
+        break;
       case 'payment_methods':
         _showPaymentMethods(context, ref);
         break;
@@ -253,6 +260,25 @@ class SettingsScreen extends ConsumerWidget {
         ref.read(themeModeProvider.notifier).toggleTheme();
         break;
     }
+  }
+
+  // ═══════════════ STOREFRONT ═══════════════
+
+  void _showStorefront(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: cs.surface,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.85,
+        maxChildSize: 0.95,
+        builder: (ctx, sc) => const StorefrontSettingsSheet(),
+      ),
+    );
   }
 
   // ═══════════════ PAYMENT METHODS ═══════════════

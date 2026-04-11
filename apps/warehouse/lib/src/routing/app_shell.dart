@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:takesep_design_system/takesep_design_system.dart';
 
 import '../providers/auth_providers.dart';
+import '../providers/delivery_badge_provider.dart';
 import '../widgets/global_barcode_scanner.dart';
 import '../utils/barcode_scanner_fix.dart';
 import '../services/update_service.dart';
@@ -81,32 +82,18 @@ const _navSections = <_NavSection>[
         icon: Icons.delivery_dining_rounded,
         label: 'Заказы',
         path: '/delivery-orders',
-        permissionKey: 'delivery_orders'),
-    _NavItem(
-        icon: Icons.people_alt_rounded,
-        label: 'Курьеры',
-        path: '/couriers',
-        permissionKey: 'couriers'),
+        permissionKey: 'delivery_orders',
+        hasBadge: true),
     _NavItem(
         icon: Icons.tune_rounded,
         label: 'Настройки доставки',
         path: '/delivery-settings',
         permissionKey: 'delivery_settings'),
     _NavItem(
-        icon: Icons.analytics_rounded,
-        label: 'Аналитика доставки',
-        path: '/delivery-analytics',
-        permissionKey: 'delivery_analytics'),
-    _NavItem(
         icon: Icons.storefront_rounded,
         label: 'Каталог AkJol',
         path: '/akjol-catalog',
         permissionKey: 'akjol_catalog'),
-    _NavItem(
-        icon: Icons.map_rounded,
-        label: 'Зоны доставки',
-        path: '/delivery-zones',
-        permissionKey: 'delivery_zones'),
   ]),
 ];
 
@@ -255,12 +242,51 @@ class _DesktopLayout extends StatelessWidget {
                     else
                       const SizedBox(height: AppSpacing.lg),
                     for (final item in section.items)
-                      _SidebarNavItem(
-                        icon: item.icon,
-                        label: item.label,
-                        isSelected: currentPath.startsWith(item.path),
-                        collapsed: collapsed,
-                        onTap: () => context.go(item.path),
+                      Builder(
+                        builder: (ctx) {
+                          // Add badge for delivery orders
+                          Widget navItem = _SidebarNavItem(
+                            icon: item.icon,
+                            label: item.label,
+                            isSelected: currentPath.startsWith(item.path),
+                            collapsed: collapsed,
+                            onTap: () => context.go(item.path),
+                          );
+
+                          if (item.hasBadge) {
+                            return Consumer(
+                              builder: (_, ref, child) {
+                                final count = ref.watch(pendingDeliveryCountProvider);
+                                if (count > 0) {
+                                  return Stack(
+                                    clipBehavior: Clip.none,
+                                    children: [
+                                      navItem,
+                                      Positioned(
+                                        top: 6,
+                                        right: collapsed ? 10 : 16,
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                          decoration: BoxDecoration(
+                                            color: AppColors.error,
+                                            borderRadius: BorderRadius.circular(10),
+                                          ),
+                                          child: Text('$count',
+                                              style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w700)),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                }
+                                return navItem;
+                              },
+                            );
+                          }
+                          return navItem;
+                        },
                       ),
                   ],
                 ],
@@ -997,10 +1023,12 @@ class _NavItem {
   final String label;
   final String path;
   final String permissionKey;
+  final bool hasBadge;
   const _NavItem({
     required this.icon,
     required this.label,
     required this.path,
     required this.permissionKey,
+    this.hasBadge = false,
   });
 }

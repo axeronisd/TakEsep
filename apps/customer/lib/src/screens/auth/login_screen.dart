@@ -1,7 +1,9 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:akjol_auth/akjol_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -71,64 +73,129 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final bg = _isDark ? const Color(0xFF0D1117) : const Color(0xFFF7F8FA);
-    final cardBg = _isDark ? const Color(0xFF161B22) : Colors.white;
     final textColor = _isDark ? Colors.white : const Color(0xFF111827);
     final mutedColor = _isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280);
     final fieldBg = _isDark ? const Color(0xFF0D1117) : const Color(0xFFF3F4F6);
     final borderColor = _isDark ? const Color(0xFF30363D) : const Color(0xFFE5E7EB);
 
     return Scaffold(
-      backgroundColor: bg,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 420),
-            child: Column(
-              children: [
-                // ── Лого ──────────────────────
-                _logo(textColor, mutedColor),
-                const SizedBox(height: 32),
-
-                // ── Форма ─────────────────────
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
-                  decoration: BoxDecoration(
-                    color: cardBg,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: borderColor),
-                    boxShadow: _isDark
-                        ? null
-                        : [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.03),
-                              blurRadius: 24,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
-                  ),
-                  child: AnimatedSize(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                    child: _isRegister
-                        ? _registerForm(textColor, mutedColor, fieldBg, borderColor)
-                        : _loginForm(textColor, mutedColor, fieldBg, borderColor),
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-
-                // ── Футер ─────────────────────
-                Text(
-                  'Нажимая «${_isRegister ? 'Создать аккаунт' : 'Войти'}», вы принимаете\nусловия использования AkJol',
-                  style: TextStyle(fontSize: 11, color: mutedColor.withValues(alpha: 0.6), height: 1.5),
-                  textAlign: TextAlign.center,
-                ),
-              ],
+      body: Stack(
+        children: [
+          // Gradient background
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: _isDark
+                    ? [const Color(0xFF0D1117), const Color(0xFF0A0F14), const Color(0xFF0D1117)]
+                    : [const Color(0xFFF0FFF4), const Color(0xFFF7F8FA), const Color(0xFFECFDF5)],
+              ),
             ),
           ),
-        ),
+          // Green orb top-right
+          Positioned(
+            top: -60, right: -40,
+            child: Container(
+              width: 200, height: 200,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(colors: [
+                  const Color(0xFF2ECC71).withValues(alpha: _isDark ? 0.08 : 0.12),
+                  const Color(0xFF2ECC71).withValues(alpha: 0),
+                ]),
+              ),
+            ),
+          ),
+          // Green orb bottom-left
+          Positioned(
+            bottom: 100, left: -80,
+            child: Container(
+              width: 250, height: 250,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(colors: [
+                  const Color(0xFF1ABC9C).withValues(alpha: _isDark ? 0.06 : 0.08),
+                  const Color(0xFF1ABC9C).withValues(alpha: 0),
+                ]),
+              ),
+            ),
+          ),
+          // Content
+          SafeArea(
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 420),
+                  child: Column(
+                    children: [
+                      // ── Лого ──────────────────────
+                      _logo(textColor, mutedColor),
+                      const SizedBox(height: 32),
+
+                      // ── Форма (Dark Glass) ─────────
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(28),
+                        child: BackdropFilter(
+                          filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+                            decoration: BoxDecoration(
+                              color: _isDark
+                                  ? const Color(0xFF0D1117).withValues(alpha: 0.7)
+                                  : Colors.white.withValues(alpha: 0.85),
+                              borderRadius: BorderRadius.circular(28),
+                              border: Border.all(
+                                color: _isDark
+                                    ? Colors.white.withValues(alpha: 0.08)
+                                    : Colors.white.withValues(alpha: 0.6),
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: _isDark ? 0.5 : 0.08),
+                                  blurRadius: 32,
+                                  offset: const Offset(0, 12),
+                                ),
+                              ],
+                            ),
+                            child: AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 350),
+                              switchInCurve: Curves.easeOutCubic,
+                              switchOutCurve: Curves.easeInCubic,
+                              transitionBuilder: (child, anim) => FadeTransition(
+                                opacity: anim,
+                                child: SlideTransition(
+                                  position: Tween<Offset>(
+                                    begin: const Offset(0, 0.05),
+                                    end: Offset.zero,
+                                  ).animate(anim),
+                                  child: child,
+                                ),
+                              ),
+                              child: _isRegister
+                                  ? _registerForm(textColor, mutedColor, fieldBg, borderColor)
+                                  : _loginForm(textColor, mutedColor, fieldBg, borderColor),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 24),
+
+                      // ── Футер ─────────────────────
+                      Text(
+                        'Нажимая «${_isRegister ? 'Создать аккаунт' : 'Войти'}», вы принимаете\nусловия использования AkJol',
+                        style: TextStyle(fontSize: 11, color: mutedColor.withValues(alpha: 0.5), height: 1.5),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -171,30 +238,33 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ),
         const SizedBox(height: 14),
-        RichText(
-          text: TextSpan(
-            style: const TextStyle(
-              fontSize: 34,
-              letterSpacing: -1.2,
-              fontFamily: 'Inter',
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'AK',
+              style: TextStyle(
+                fontSize: 38,
+                fontWeight: FontWeight.w300,
+                letterSpacing: 2,
+                color: textColor,
+              ),
             ),
-            children: [
-              TextSpan(
-                text: 'Ak',
+            ShaderMask(
+              shaderCallback: (bounds) => const LinearGradient(
+                colors: [Color(0xFF2ECC71), Color(0xFF1ABC9C)],
+              ).createShader(bounds),
+              child: const Text(
+                'JOL',
                 style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  color: textColor,
+                  fontSize: 38,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 2,
+                  color: Colors.white,
                 ),
               ),
-              const TextSpan(
-                text: 'Jol',
-                style: TextStyle(
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xFF2ECC71),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ],
     );
@@ -300,11 +370,11 @@ class _LoginScreenState extends State<LoginScreen> {
       children: [
         Text('Создать аккаунт',
             style: TextStyle(
-                fontSize: 26, fontWeight: FontWeight.w800, color: text, height: 1.2, letterSpacing: -0.5, fontFamily: 'Inter')),
-        const SizedBox(height: 6),
+                fontSize: 24, fontWeight: FontWeight.w800, color: text, height: 1.2, letterSpacing: -0.5, fontFamily: 'Inter')),
+        const SizedBox(height: 4),
         Text('Заполните данные для регистрации',
-            style: TextStyle(fontSize: 14, color: muted, height: 1.4)),
-        const SizedBox(height: 28),
+            style: TextStyle(fontSize: 13, color: muted, height: 1.4)),
+        const SizedBox(height: 20),
 
         if (_error != null) ...[_errorWidget(), const SizedBox(height: 16)],
 
@@ -322,13 +392,13 @@ class _LoginScreenState extends State<LoginScreen> {
           capitalization: TextCapitalization.words,
           action: TextInputAction.next,
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
 
         // Номер телефона
         _label('Номер телефона', muted),
         const SizedBox(height: 6),
         _phoneInput(fieldBg, border, text, muted, _regPhoneError),
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
 
         // Username
         _label('Username', muted),
@@ -350,7 +420,7 @@ class _LoginScreenState extends State<LoginScreen> {
             LengthLimitingTextInputFormatter(20),
           ],
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
 
         // Пароль
         _label('Пароль', muted),
@@ -393,7 +463,7 @@ class _LoginScreenState extends State<LoginScreen> {
             onTap: () => setState(() => _regConfirmVisible = !_regConfirmVisible),
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 20),
 
         _primaryButton('Создать аккаунт', _handleRegister),
         const SizedBox(height: 20),
@@ -440,16 +510,17 @@ class _LoginScreenState extends State<LoginScreen> {
     void Function(String)? onSubmit,
   }) {
     final hasError = errorText != null;
-    final borderColor = hasError ? const Color(0xFFEF4444) : border;
     
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
+         Container(
           decoration: BoxDecoration(
             color: fieldBg,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: borderColor, width: hasError ? 1.5 : 1),
+            border: hasError
+                ? Border.all(color: const Color(0xFFEF4444), width: 1.5)
+                : null,
           ),
           child: TextField(
             controller: controller,
@@ -489,7 +560,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _phoneInput(Color fieldBg, Color border, Color text, Color muted, String? errorText) {
     final hasError = errorText != null;
-    final borderColor = hasError ? const Color(0xFFEF4444) : border;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -498,16 +568,18 @@ class _LoginScreenState extends State<LoginScreen> {
           decoration: BoxDecoration(
             color: fieldBg,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: borderColor, width: hasError ? 1.5 : 1),
+            border: hasError
+                ? Border.all(color: const Color(0xFFEF4444), width: 1.5)
+                : null,
           ),
           child: Row(
             children: [
               Padding(
                 padding: const EdgeInsets.only(left: 16),
-                child: Text('🇰🇬  +996',
+                child: Text('KG  +996',
                     style: TextStyle(
                         fontSize: 14,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                         color: text.withValues(alpha: 0.7))),
               ),
               Padding(
@@ -571,26 +643,42 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget _primaryButton(String label, VoidCallback onTap) {
     return SizedBox(
       width: double.infinity,
-      height: 50,
-      child: ElevatedButton(
-        onPressed: _loading ? null : onTap,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF2ECC71),
-          foregroundColor: Colors.white,
-          disabledBackgroundColor: const Color(0xFF2ECC71).withValues(alpha: 0.6),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-          elevation: 0,
+      height: 52,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF2ECC71), Color(0xFF27AE60)],
+          ),
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF2ECC71).withValues(alpha: 0.3),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        child: _loading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-            : Text(label,
-                style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.3)),
+        child: ElevatedButton(
+          onPressed: _loading ? null : onTap,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            foregroundColor: Colors.white,
+            disabledBackgroundColor: Colors.transparent,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            elevation: 0,
+          ),
+          child: _loading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+              : Text(label,
+                  style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5)),
+        ),
       ),
     );
   }
@@ -657,9 +745,15 @@ class _LoginScreenState extends State<LoginScreen> {
     if (login.isEmpty) {
       _loginIdError = 'Введите номер или username';
       hasErr = true;
+    } else if (!RegExp(r'^\d').hasMatch(login) && !RegExp(r'^@?[a-zA-Z0-9._]{3,}$').hasMatch(login)) {
+      _loginIdError = 'Некорректный формат';
+      hasErr = true;
     }
     if (password.isEmpty) {
       _loginPassError = 'Введите пароль';
+      hasErr = true;
+    } else if (password.length < 6) {
+      _loginPassError = 'Пароль минимум 6 символов';
       hasErr = true;
     }
 
@@ -675,6 +769,8 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) context.go('/');
     } on AkJolAuthException catch (e) {
       setState(() { _loading = false; _error = e.message; });
+    } catch (e) {
+      setState(() { _loading = false; _error = 'Ошибка соединения. Проверьте интернет.'; });
     }
   }
 
@@ -688,23 +784,68 @@ class _LoginScreenState extends State<LoginScreen> {
     _clearErrors();
     bool hasErr = false;
 
+    // Имя
     if (name.isEmpty) {
-      _regNameError = 'Обязательное поле';
+      _regNameError = 'Введите ваше имя';
+      hasErr = true;
+    } else if (name.length < 2) {
+      _regNameError = 'Имя слишком короткое';
+      hasErr = true;
+    } else if (name.length > 50) {
+      _regNameError = 'Имя слишком длинное';
       hasErr = true;
     }
-    if (phone.length < 9) {
-      _regPhoneError = 'Неполный номер';
+
+    // Телефон
+    if (phone.isEmpty) {
+      _regPhoneError = 'Введите номер телефона';
+      hasErr = true;
+    } else if (phone.length < 9) {
+      _regPhoneError = 'Номер должен быть 9 цифр (напр. 700123456)';
+      hasErr = true;
+    } else if (!RegExp(r'^[0-9]{9}$').hasMatch(phone)) {
+      _regPhoneError = 'Некорректный формат номера';
       hasErr = true;
     }
-    if (username.length < 3) {
+
+    // Username
+    if (username.isEmpty) {
+      _regUsernameError = 'Придумайте username';
+      hasErr = true;
+    } else if (username.length < 3) {
       _regUsernameError = 'Минимум 3 символа';
       hasErr = true;
-    }
-    if (password.length < 6) {
-      _regPassError = 'Минимум 6 символов';
+    } else if (username.length > 20) {
+      _regUsernameError = 'Максимум 20 символов';
+      hasErr = true;
+    } else if (!RegExp(r'^[a-zA-Z0-9._]+$').hasMatch(username)) {
+      _regUsernameError = 'Только латинские буквы, цифры, точка и _';
+      hasErr = true;
+    } else if (RegExp(r'^[0-9]').hasMatch(username)) {
+      _regUsernameError = 'Username не может начинаться с цифры';
       hasErr = true;
     }
-    if (password != confirm) {
+
+    // Пароль
+    if (password.isEmpty) {
+      _regPassError = 'Введите пароль';
+      hasErr = true;
+    } else if (password.length < 6) {
+      _regPassError = 'Минимум 6 символов';
+      hasErr = true;
+    } else if (!RegExp(r'[a-zA-Z]').hasMatch(password)) {
+      _regPassError = 'Добавьте хотя бы одну букву';
+      hasErr = true;
+    } else if (!RegExp(r'[0-9]').hasMatch(password)) {
+      _regPassError = 'Добавьте хотя бы одну цифру';
+      hasErr = true;
+    }
+
+    // Подтверждение
+    if (confirm.isEmpty) {
+      _regConfirmError = 'Подтвердите пароль';
+      hasErr = true;
+    } else if (password != confirm) {
       _regConfirmError = 'Пароли не совпадают';
       hasErr = true;
     }
@@ -717,6 +858,36 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() { _loading = true; });
 
     try {
+      // Проверить уникальность username
+      final existing = await Supabase.instance.client
+          .from('user_profiles')
+          .select('id')
+          .eq('username', username.toLowerCase())
+          .maybeSingle();
+
+      if (existing != null) {
+        setState(() {
+          _loading = false;
+          _regUsernameError = 'Этот username уже занят';
+        });
+        return;
+      }
+
+      // Проверить уникальность телефона
+      final existingPhone = await Supabase.instance.client
+          .from('user_profiles')
+          .select('id')
+          .eq('phone', '+996$phone')
+          .maybeSingle();
+
+      if (existingPhone != null) {
+        setState(() {
+          _loading = false;
+          _regPhoneError = 'Этот номер уже зарегистрирован';
+        });
+        return;
+      }
+
       await _auth.signUp(
         phone: phone,
         username: username,
@@ -726,6 +897,8 @@ class _LoginScreenState extends State<LoginScreen> {
       if (mounted) context.go('/');
     } on AkJolAuthException catch (e) {
       setState(() { _loading = false; _error = e.message; });
+    } catch (e) {
+      setState(() { _loading = false; _error = 'Ошибка регистрации. Проверьте интернет и попробуйте снова.'; });
     }
   }
 }

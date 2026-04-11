@@ -388,8 +388,12 @@ class AkJolAuthService {
     if (msg.contains('not enabled') || msg.contains('provider')) {
       return 'Способ входа не настроен';
     }
-    // Если неизвестная ошибка, вернуть её так, как передана Supabase
-    // Это поможет понять проблемы (например Database error)
+    if (msg.contains('Database error') || msg.contains('unexpected_failure')) {
+      return 'Ошибка сервера. Пожалуйста, попробуйте позже или обратитесь в поддержку.';
+    }
+    if (msg.contains('email_not_confirmed') || msg.contains('phone_not_confirmed')) {
+      return 'Аккаунт не подтверждён. Проверьте SMS.';
+    }
     return 'Ошибка: $msg';
   }
 }

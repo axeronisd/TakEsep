@@ -150,23 +150,23 @@ class _CourierOnboardingScreenState extends State<CourierOnboardingScreen> {
               Row(
                 children: [
                   _TransportOption(
-                    icon: Icons.pedal_bike,
-                    label: 'Вело',
+                    icon: Icons.electric_bike_rounded,
+                    label: 'Электровело',
                     value: 'bicycle',
                     selected: _transport == 'bicycle',
                     onTap: () => setState(() => _transport = 'bicycle'),
                   ),
                   const SizedBox(width: 12),
                   _TransportOption(
-                    icon: Icons.two_wheeler,
-                    label: 'Мото',
+                    icon: Icons.two_wheeler_rounded,
+                    label: 'Муравей',
                     value: 'motorcycle',
                     selected: _transport == 'motorcycle',
                     onTap: () => setState(() => _transport = 'motorcycle'),
                   ),
                   const SizedBox(width: 12),
                   _TransportOption(
-                    icon: Icons.local_shipping,
+                    icon: Icons.local_shipping_rounded,
                     label: 'Грузовой',
                     value: 'truck',
                     selected: _transport == 'truck',

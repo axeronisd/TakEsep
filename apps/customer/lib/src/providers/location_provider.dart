@@ -1,8 +1,11 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:path_provider/path_provider.dart';
 
 /// Точная геопозиция клиента
 class LocationState {
@@ -88,10 +91,29 @@ class LocationNotifier extends StateNotifier<LocationState> {
   }
 
   Future<void> _init() async {
-    await determinePosition();
+    // 1. Restore saved address if available
+    final saved = await _loadSavedAddress();
+    if (saved != null) {
+      state = state.copyWith(
+        lat: saved['lat'],
+        lng: saved['lng'],
+        address: saved['address'],
+        street: saved['street'] ?? saved['address'],
+        city: saved['city'],
+        loading: false,
+      );
+      debugPrint('📍 Restored saved address: ${saved['address']}');
+    }
+    // 2. Also determine GPS position (will update only if no saved address)
+    await determinePosition(skipIfSaved: saved != null);
   }
 
-  Future<void> determinePosition() async {
+  Future<void> determinePosition({bool skipIfSaved = false}) async {
+    if (skipIfSaved && state.address != null && state.address!.isNotEmpty) {
+      // Already have a saved address, just update GPS silently
+      state = state.copyWith(loading: false);
+      return;
+    }
     state = state.copyWith(loading: true, error: null);
 
     try {
@@ -118,16 +140,34 @@ class LocationNotifier extends StateNotifier<LocationState> {
         return;
       }
 
+      // Первая попытка — максимальная точность
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
-          accuracy: LocationAccuracy.high,
-          timeLimit: Duration(seconds: 15),
+          accuracy: LocationAccuracy.best,
+          timeLimit: Duration(seconds: 20),
         ),
       );
 
-      debugPrint('📍 GPS: ${position.latitude}, ${position.longitude} (±${position.accuracy.toStringAsFixed(0)}м)');
+      // Если точность GPS плохая (>100м) — пробуем ещё раз
+      Position finalPos = position;
+      if (position.accuracy > 100) {
+        debugPrint('⚠️ GPS грубая: ±${position.accuracy.toStringAsFixed(0)}м, повторяем...');
+        try {
+          finalPos = await Geolocator.getCurrentPosition(
+            locationSettings: const LocationSettings(
+              accuracy: LocationAccuracy.best,
+              timeLimit: Duration(seconds: 10),
+            ),
+          );
+          if (finalPos.accuracy > position.accuracy) finalPos = position;
+        } catch (_) {
+          finalPos = position;
+        }
+      }
 
-      await _reverseGeocodeNominatim(position.latitude, position.longitude, position.accuracy);
+      debugPrint('📍 GPS: ${finalPos.latitude}, ${finalPos.longitude} (±${finalPos.accuracy.toStringAsFixed(0)}м)');
+
+      await _reverseGeocodeNominatim(finalPos.latitude, finalPos.longitude, finalPos.accuracy);
     } catch (e) {
       debugPrint('❌ Geo error: $e');
       state = state.copyWith(loading: false, error: 'Ошибка позиции');
@@ -135,7 +175,7 @@ class LocationNotifier extends StateNotifier<LocationState> {
     }
   }
 
-  /// Точный адрес до номера дома через OpenStreetMap Nominatim
+  /// Reverse geocode: try 2GIS first (better for KG), then Nominatim
   Future<void> _reverseGeocodeNominatim(double lat, double lng, double accuracy) async {
     String? address;
     String? street;
@@ -143,6 +183,45 @@ class LocationNotifier extends StateNotifier<LocationState> {
     String? district;
     String? region;
 
+    // ─── Try our Supabase addresses first ───
+    try {
+      final supabase = Supabase.instance.client;
+      const delta = 0.0005; // ~50m
+      final data = await supabase
+          .from('addresses')
+          .select()
+          .eq('verified', true)
+          .gte('lat', lat - delta)
+          .lte('lat', lat + delta)
+          .gte('lng', lng - delta)
+          .lte('lng', lng + delta)
+          .limit(10);
+
+      final results = List<Map<String, dynamic>>.from(data);
+      if (results.isNotEmpty) {
+        final closest = results.first;
+        final sStreet = closest['street'] as String? ?? '';
+        final sHouse = closest['house_number'] as String? ?? '';
+
+        if (sStreet.isNotEmpty) {
+          street = sHouse.isNotEmpty ? '$sStreet, $sHouse' : sStreet;
+          city = closest['city'] as String? ?? _detectCityOffline(lat, lng);
+          address = '$street, $city';
+          debugPrint('🏠 Supabase: $address');
+
+          state = state.copyWith(
+            lat: lat, lng: lng,
+            address: address, street: street,
+            city: city, accuracy: accuracy, loading: false,
+          );
+          return;
+        }
+      }
+    } catch (e) {
+      debugPrint('⚠️ Supabase geocode: $e');
+    }
+
+    // ─── Fallback: Nominatim ───
     try {
       final url = Uri.parse(
         'https://nominatim.openstreetmap.org/reverse'
@@ -163,7 +242,8 @@ class LocationNotifier extends StateNotifier<LocationState> {
         final addr = data['address'] as Map<String, dynamic>?;
 
         if (addr != null) {
-          final road = addr['road'] ?? addr['pedestrian'] ?? addr['footway'] ?? '';
+          final road = addr['road'] ?? addr['pedestrian'] ?? addr['footway']
+              ?? addr['path'] ?? addr['residential'] ?? addr['tertiary'] ?? '';
           final houseNumber = addr['house_number'] ?? '';
 
           if (road.toString().isNotEmpty) {
@@ -179,19 +259,18 @@ class LocationNotifier extends StateNotifier<LocationState> {
 
           district = addr['suburb'] as String?
               ?? addr['neighbourhood'] as String?
-              ?? addr['city_district'] as String?;
+              ?? addr['city_district'] as String?
+              ?? addr['quarter'] as String?;
 
           region = addr['state'] as String?
               ?? addr['county'] as String?;
 
-          final displayName = data['display_name'] as String?;
           final addrParts = <String>[];
           if (street != null && street.isNotEmpty) addrParts.add(street);
           if (city != null && city.isNotEmpty) addrParts.add(city);
-          address = addrParts.isNotEmpty ? addrParts.join(', ') : displayName;
+          address = addrParts.isNotEmpty ? addrParts.join(', ') : data['display_name'];
 
-          debugPrint('📍 Адрес: $address');
-          debugPrint('   Улица: $street | Дом: $houseNumber | Город: $city | Район: $district');
+          debugPrint('📍 Nominatim: $address');
         }
       }
     } catch (e) {
@@ -209,7 +288,54 @@ class LocationNotifier extends StateNotifier<LocationState> {
   }
 
   void setManualAddress(String address, double lat, double lng) {
-    _reverseGeocodeNominatim(lat, lng, 0);
+    state = state.copyWith(
+      lat: lat,
+      lng: lng,
+      address: address,
+      street: address,
+      loading: false,
+    );
+    debugPrint('📍 Manual address set: $address ($lat, $lng)');
+    // Persist to local file
+    _saveAddress(address, lat, lng);
+  }
+
+  // ─── Address persistence ───
+
+  Future<File> get _addressFile async {
+    final dir = await getApplicationDocumentsDirectory();
+    return File('${dir.path}/akjol_address.json');
+  }
+
+  Future<void> _saveAddress(String address, double lat, double lng) async {
+    try {
+      final file = await _addressFile;
+      final data = json.encode({
+        'address': address,
+        'street': address,
+        'city': state.city ?? 'Бишкек',
+        'lat': lat,
+        'lng': lng,
+        'ts': DateTime.now().toIso8601String(),
+      });
+      await file.writeAsString(data);
+      debugPrint('💾 Address saved locally');
+    } catch (e) {
+      debugPrint('⚠️ Save address: $e');
+    }
+  }
+
+  Future<Map<String, dynamic>?> _loadSavedAddress() async {
+    try {
+      final file = await _addressFile;
+      if (await file.exists()) {
+        final content = await file.readAsString();
+        return json.decode(content) as Map<String, dynamic>;
+      }
+    } catch (e) {
+      debugPrint('⚠️ Load saved address: $e');
+    }
+    return null;
   }
 
   void setCity(String name, double lat, double lng) {

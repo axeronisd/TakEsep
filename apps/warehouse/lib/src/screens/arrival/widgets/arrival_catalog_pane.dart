@@ -371,90 +371,94 @@ class _ArrivalProductTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
 
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: cs.surface,
-          borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-          border: Border.all(color: cs.outline.withValues(alpha: 0.2)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
-                  borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(AppSpacing.radiusMd)),
-                ),
-                child: product.imageUrl != null && product.imageUrl!.isNotEmpty
-                    ? ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(AppSpacing.radiusMd)),
-                        child: product.imageUrl!.startsWith('http')
-                            ? CachedImageWidget(
-                                imageUrl: product.imageUrl!,
-                                fit: BoxFit.cover,
-                              )
-                            : Image.file(java_io.File(product.imageUrl!),
-                                fit: BoxFit.cover, width: double.infinity,
-                                errorBuilder: (_, __, ___) => Icon(
-                                    Icons.inventory_2_outlined,
-                                    color: cs.onSurface.withValues(alpha: 0.2), size: 32)),
-                      )
-                    : Icon(Icons.inventory_2_outlined,
-                        color: cs.onSurface.withValues(alpha: 0.2), size: 32),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(product.name,
-                      style: AppTypography.bodySmall.copyWith(
-                        color: cs.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 2),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                          '$currencySymbol ${_fmtNum((product.costPrice ?? 0).toInt())}',
-                          style: AppTypography.bodySmall
-                              .copyWith(color: AppColors.primary, fontWeight: FontWeight.w700)),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 1),
-                        decoration: BoxDecoration(
-                          color:
-                              product.quantity <= product.effectiveCriticalMin
-                                  ? AppColors.error.withValues(alpha: 0.15)
-                                  : AppColors.success.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-                        ),
-                        child: Text('${product.quantity} шт',
-                            style: TextStyle(
-                              color: product.quantity <=
-                                      product.effectiveCriticalMin
-                                  ? AppColors.error
-                                  : AppColors.success,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                            )),
-                      ),
-                    ],
+    return Material(
+      color: cs.surface,
+      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+            border: Border.all(color: cs.outline.withValues(alpha: 0.2)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                    borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(AppSpacing.radiusMd)),
                   ),
-                ],
+                  child: product.imageUrl != null && product.imageUrl!.isNotEmpty
+                      ? ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(AppSpacing.radiusMd)),
+                          child: product.imageUrl!.startsWith('http')
+                              ? CachedImageWidget(
+                                  imageUrl: product.imageUrl!,
+                                  fit: BoxFit.cover,
+                                )
+                              : Image.file(java_io.File(product.imageUrl!),
+                                  fit: BoxFit.cover, width: double.infinity,
+                                  errorBuilder: (_, __, ___) => Icon(
+                                      Icons.inventory_2_outlined,
+                                      color: cs.onSurface.withValues(alpha: 0.2), size: 32)),
+                        )
+                      : Icon(Icons.inventory_2_outlined,
+                          color: cs.onSurface.withValues(alpha: 0.2), size: 32),
+                ),
               ),
-            ),
-          ],
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(product.name,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: cs.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 2),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                            '$currencySymbol ${_fmtNum((product.costPrice ?? 0).toInt())}',
+                            style: AppTypography.bodySmall
+                                .copyWith(color: AppColors.primary, fontWeight: FontWeight.w700)),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color:
+                                product.quantity <= product.effectiveCriticalMin
+                                    ? AppColors.error.withValues(alpha: 0.15)
+                                    : AppColors.success.withValues(alpha: 0.15),
+                            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                          ),
+                          child: Text('${product.quantity} шт',
+                              style: TextStyle(
+                                color: product.quantity <=
+                                        product.effectiveCriticalMin
+                                    ? AppColors.error
+                                    : AppColors.success,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              )),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -347,15 +347,15 @@ class _CourierManagementScreenState extends State<CourierManagementScreen>
                   items: const [
                     DropdownMenuItem(
                       value: 'bicycle',
-                      child: Text('🚲 Велосипед'),
+                      child: Text('Электровелосипед'),
                     ),
                     DropdownMenuItem(
                       value: 'motorcycle',
-                      child: Text('🏍️ Мотоцикл'),
+                      child: Text('Муравей'),
                     ),
                     DropdownMenuItem(
                       value: 'truck',
-                      child: Text('🚛 Грузовой'),
+                      child: Text('Грузовой'),
                     ),
                   ],
                   onChanged: (v) {
@@ -680,24 +680,26 @@ class _CourierCard extends StatelessWidget {
   IconData _transportIcon(String type) {
     switch (type) {
       case 'bicycle':
-        return Icons.pedal_bike;
+        return Icons.electric_bike_rounded;
       case 'motorcycle':
-        return Icons.two_wheeler;
+      case 'scooter':
+        return Icons.two_wheeler_rounded;
       case 'truck':
-        return Icons.local_shipping;
+        return Icons.local_shipping_rounded;
       default:
-        return Icons.delivery_dining;
+        return Icons.delivery_dining_rounded;
     }
   }
 
   String _transportLabel(String type) {
     switch (type) {
       case 'bicycle':
-        return 'Велосипед';
+        return '⚡ Электровелосипед';
       case 'motorcycle':
-        return 'Мотоцикл';
+      case 'scooter':
+        return '🛵 Муравей';
       case 'truck':
-        return 'Грузовой';
+        return '🚚 Грузовой';
       default:
         return type;
     }

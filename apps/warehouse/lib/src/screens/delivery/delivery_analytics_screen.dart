@@ -144,6 +144,7 @@ class _DeliveryAnalyticsScreenState
         }
       }
 
+      if (!mounted) return;
       setState(() {
         _stats = {
           'total': totalOrders,
@@ -168,7 +169,7 @@ class _DeliveryAnalyticsScreenState
         _loading = false;
       });
     } catch (e) {
-      setState(() => _loading = false);
+      if (mounted) setState(() => _loading = false);
     }
   }
 

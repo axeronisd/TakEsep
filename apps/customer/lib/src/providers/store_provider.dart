@@ -22,6 +22,9 @@ class StoreDetail {
   final double deliveryFee;
   final double freeDeliveryFrom;
   final Map<String, dynamic>? workingHours;
+  final String? workStart;
+  final String? workEnd;
+  final bool is24h;
 
   const StoreDetail({
     required this.warehouseId,
@@ -37,38 +40,90 @@ class StoreDetail {
     this.deliveryFee = 0,
     this.freeDeliveryFrom = 0,
     this.workingHours,
+    this.workStart,
+    this.workEnd,
+    this.is24h = true,
   });
+
+  /// Открыт ли магазин сейчас
+  bool get isOpenNow {
+    if (is24h) return true;
+    if (workStart == null || workEnd == null) return true;
+    final now = DateTime.now();
+    final s = workStart!.split(':');
+    final e = workEnd!.split(':');
+    final startMin = int.parse(s[0]) * 60 + int.parse(s[1]);
+    final endMin = int.parse(e[0]) * 60 + int.parse(e[1]);
+    final nowMin = now.hour * 60 + now.minute;
+    return nowMin >= startMin && nowMin < endMin;
+  }
+
+  String get scheduleLabel {
+    if (is24h) return 'Круглосуточно';
+    if (workStart != null && workEnd != null) return '$workStart – $workEnd';
+    return '';
+  }
 }
 
 /// Fetch store detail
 final storeDetailProvider =
     FutureProvider.family<StoreDetail?, String>((ref, storeId) async {
   try {
+    // Get warehouse info (no company_id in warehouses table!)
+    final wh = await _supabase
+        .from('warehouses')
+        .select('id, name, group_id')
+        .eq('id', storeId)
+        .maybeSingle();
+
+    if (wh == null) return null;
+
+    final warehouseName = wh['name'] as String? ?? 'Магазин';
+    final groupId = wh['group_id'] as String?;
+
+    // Get company_id from warehouse_groups
+    String companyId = '';
+    if (groupId != null && groupId.isNotEmpty) {
+      final group = await _supabase
+          .from('warehouse_groups')
+          .select('company_id')
+          .eq('id', groupId)
+          .maybeSingle();
+      companyId = group?['company_id'] as String? ?? '';
+    }
+
+    // Fallback: get company_id from first product
+    if (companyId.isEmpty) {
+      final firstProduct = await _supabase
+          .from('products')
+          .select('company_id')
+          .eq('warehouse_id', storeId)
+          .limit(1)
+          .maybeSingle();
+      companyId = firstProduct?['company_id'] as String? ?? '';
+    }
+
+    // Get delivery settings for extra info
     final data = await _supabase
         .from('delivery_settings')
-        .select('*, warehouses(name, company_id)')
+        .select('*')
         .eq('warehouse_id', storeId)
         .maybeSingle();
 
+    debugPrint('🏪 Store detail: $warehouseName, company=$companyId, has_delivery_settings=${data != null}');
+
     if (data == null) {
-      // Fallback: just get warehouse name
-      final wh = await _supabase
-          .from('warehouses')
-          .select('name, company_id')
-          .eq('id', storeId)
-          .maybeSingle();
-      if (wh == null) return null;
       return StoreDetail(
         warehouseId: storeId,
-        companyId: wh['company_id'] as String? ?? '',
-        name: wh['name'] as String? ?? 'Магазин',
+        companyId: companyId,
+        name: warehouseName,
       );
     }
 
     return StoreDetail(
       warehouseId: storeId,
-      companyId: data['warehouses']?['company_id'] as String? ?? '',
-      name: data['warehouses']?['name'] as String? ?? 'Магазин',
+      companyId: companyId,
+      name: warehouseName,
       description: data['description'] as String?,
       logoUrl: data['logo_url'] as String?,
       bannerUrl: data['banner_url'] as String?,
@@ -78,9 +133,12 @@ final storeDetailProvider =
           (data['total_orders_count'] as num?)?.toInt() ?? 0,
       minOrderAmount:
           (data['min_order_amount'] as num?)?.toDouble() ?? 0,
-      deliveryFee: 0, // Will come from zone
+      deliveryFee: 0,
       freeDeliveryFrom: 0,
       workingHours: data['working_hours'] as Map<String, dynamic>?,
+      workStart: data['work_start'] as String?,
+      workEnd: data['work_end'] as String?,
+      is24h: data['is_24h'] == true,
     );
   } catch (e) {
     debugPrint('❌ storeDetailProvider error: $e');
@@ -114,21 +172,25 @@ final storeProductCategoriesProvider =
   try {
     // Get company_id from store detail
     final store = await ref.watch(storeDetailProvider(storeId).future);
-    if (store == null) return [];
+    debugPrint('📂 Categories: storeId=$storeId, companyId=${store?.companyId}');
+    if (store == null || store.companyId.isEmpty) {
+      debugPrint('⚠️ No company_id found for store $storeId — showing all products without category filter');
+      return [];
+    }
 
     // Fetch categories for this company
     final data = await _supabase
         .from('categories')
         .select('*')
         .eq('company_id', store.companyId)
-        .order('sort_order');
+        .order('name');
+    debugPrint('📂 Found ${(data as List).length} categories for company ${store.companyId}');
 
     // Count products per category
     final products = await _supabase
         .from('products')
         .select('category_id')
-        .eq('warehouse_id', storeId)
-        .eq('is_public', true);
+        .eq('warehouse_id', storeId);
 
     final countMap = <String, int>{};
     for (final p in products) {
@@ -145,7 +207,7 @@ final storeProductCategoriesProvider =
             id: id,
             name: e['name'] as String,
             imageUrl: e['image_url'] as String?,
-            sortOrder: (e['sort_order'] as num?)?.toInt() ?? 0,
+            sortOrder: 0,
             productCount: countMap[id] ?? 0,
           );
         })
@@ -230,13 +292,34 @@ final storeProductsProvider =
     FutureProvider.family<List<StoreProduct>, String>(
         (ref, storeId) async {
   try {
-    // 1. Fetch public products
+    // Debug: check auth state
+    final user = _supabase.auth.currentUser;
+    debugPrint('🔑 Auth user: ${user?.id ?? "NULL"}, role: ${user?.role}');
+
+    // Load all public products for this store
     final data = await _supabase
         .from('products')
         .select('*')
         .eq('warehouse_id', storeId)
-        .eq('is_public', true)
         .order('name');
+
+    debugPrint('🛍️ Loaded ${(data as List).length} products for store $storeId');
+    
+    if ((data as List).isEmpty) {
+      // Debug: try without warehouse_id filter to see if ANY products exist
+      try {
+        final allProducts = await _supabase
+            .from('products')
+            .select('id, warehouse_id, name')
+            .limit(5);
+        debugPrint('🔍 Total products in DB (first 5): ${(allProducts as List).length}');
+        for (final p in allProducts) {
+          debugPrint('   → ${p['name']} (warehouse: ${p['warehouse_id']})');
+        }
+      } catch (e) {
+        debugPrint('🔍 Cannot query products at all: $e');
+      }
+    }
 
     final productIds =
         (data as List).map((p) => p['id'] as String).toList();

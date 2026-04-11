@@ -15,7 +15,10 @@ const _activeStatuses = [
   'assembling',
   'ready',
   'courier_assigned',
+  'payment_sent',
+  'payment_verified',
   'picked_up',
+  'arrived',
 ];
 
 /// Model
@@ -69,7 +72,10 @@ class CustomerOrder {
       'assembling': 'Собирается',
       'ready': 'Готов к выдаче',
       'courier_assigned': 'Курьер назначен',
+      'payment_sent': 'Ожидание оплаты',
+      'payment_verified': 'Оплата подтверждена',
       'picked_up': 'Курьер везёт',
+      'arrived': 'Курьер приехал',
       'delivered': 'Доставлен',
       'cancelled_by_customer': 'Отменён',
       'cancelled_by_customer_late': 'Отменён',
@@ -83,19 +89,19 @@ class CustomerOrder {
   String get statusEmoji {
     switch (status) {
       case 'pending':
-        return '⏳';
+        return '';
       case 'confirmed':
       case 'assembling':
-        return '🧑‍🍳';
+        return '';
       case 'ready':
-        return '📦';
+        return '';
       case 'courier_assigned':
       case 'picked_up':
-        return '🚴';
+        return '';
       case 'delivered':
-        return '✅';
+        return '';
       default:
-        return '❌';
+        return '';
     }
   }
 

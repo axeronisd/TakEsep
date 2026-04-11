@@ -104,17 +104,16 @@ class _AkjolProductEditorDialogState extends ConsumerState<AkjolProductEditorDia
     setState(() => _saving = true);
     try {
       final now = DateTime.now().toIso8601String();
-      final b2cPrice = double.tryParse(_priceCtrl.text) ?? widget.product.price;
       final b2cDesc = _descCtrl.text.trim();
 
       await powerSyncDb.execute(
-        'UPDATE products SET b2c_description = ?, b2c_price = ?, is_public = ?, image_url = ?, updated_at = ? WHERE id = ?',
-        [b2cDesc.isEmpty ? null : b2cDesc, b2cPrice, _isPublic ? 1 : 0, _mainImageUrl, now, widget.product.id],
+        'UPDATE products SET b2c_description = ?, is_public = ?, image_url = ?, updated_at = ? WHERE id = ?',
+        [b2cDesc.isEmpty ? null : b2cDesc, _isPublic ? 1 : 0, _mainImageUrl, now, widget.product.id],
       );
 
       await SupabaseSync.update('products', widget.product.id, {
         'b2c_description': b2cDesc.isEmpty ? null : b2cDesc,
-        'b2c_price': b2cPrice, 'is_public': _isPublic,
+        'is_public': _isPublic,
         'image_url': _mainImageUrl, 'updated_at': now,
       });
 
@@ -236,38 +235,36 @@ class _AkjolProductEditorDialogState extends ConsumerState<AkjolProductEditorDia
             ),
             const SizedBox(height: 24),
 
-            // ── Цена ──
-            _label('Цена для AkJol'),
+            // ── Цена (только для чтения) ──
+            _label('Цена товара'),
             const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _priceCtrl,
-                    keyboardType: TextInputType.number,
-                    onChanged: (_) => setState(() {}),
-                    decoration: InputDecoration(
-                      suffixText: 'сом',
-                      filled: true,
-                      fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.2),
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: cs.surfaceContainerHighest.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.lock_outline, size: 18, color: Colors.grey),
+                  const SizedBox(width: 10),
+                  Text(
+                    '${p.price.toStringAsFixed(0)} сом',
+                    style: AppTypography.bodyLarge.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: const Color(0xFF2ECC71),
+                      fontSize: 18,
                     ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text('Закупочная', style: AppTypography.bodySmall.copyWith(color: cs.onSurface.withValues(alpha: 0.4))),
-                    Text('${p.costPrice?.toStringAsFixed(0) ?? "—"} сом',
-                        style: AppTypography.bodyMedium.copyWith(color: cs.onSurface.withValues(alpha: 0.6))),
-                    const SizedBox(height: 4),
-                    Text('Складская', style: AppTypography.bodySmall.copyWith(color: cs.onSurface.withValues(alpha: 0.4))),
-                    Text('${p.price.toStringAsFixed(0)} сом',
-                        style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600)),
-                  ],
-                ),
-              ],
+                  const Spacer(),
+                  Text(
+                    'из базы товаров',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: cs.onSurface.withValues(alpha: 0.4),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 32),
 

@@ -2,6 +2,12 @@
     <!-- Internet permission for Supabase -->
     <uses-permission android:name="android.permission.INTERNET"/>
     
+    <!-- Location permissions for delivery tracking -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <!-- Camera for image_picker -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    
     <application
         android:label="AkJol"
         android:name="${applicationName}"

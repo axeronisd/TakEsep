@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -10,27 +13,79 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'src/providers/auth_providers.dart';
 import 'src/data/powersync_db.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+void main() {
+  runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  await Supabase.initialize(
-    url: const String.fromEnvironment('SUPABASE_URL',
-        defaultValue: 'https://smvegrscjnoelfsipwqq.supabase.co'),
-    anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY',
-        defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdmVncnNjam5vZWxmc2lwd3FxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTU5MjcsImV4cCI6MjA4ODczMTkyN30.z6h0ubNjAC0QfdGgg3FhAfSCy9RVVCupOuQUKuD98ig'),
-  );
+    // Catch Flutter framework errors
+    FlutterError.onError = (FlutterErrorDetails details) {
+      FlutterError.presentError(details);
+      debugPrint('[TakEsep] Flutter error: ${details.exceptionAsString()}');
+    };
 
-  // Initialize PowerSync offline-first database
-  await initPowerSync();
+    // Catch platform errors
+    PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
+      debugPrint('[TakEsep] Platform error: $error');
+      return true; // handled
+    };
 
-  final prefs = await SharedPreferences.getInstance();
+    // Show inline error widget instead of crash
+    ErrorWidget.builder = (FlutterErrorDetails details) {
+      return Material(
+        color: Colors.transparent,
+        child: Container(
+          margin: const EdgeInsets.all(8),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.red.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 32),
+              const SizedBox(height: 8),
+              Text(
+                'Ошибка: ${details.exceptionAsString().length > 100 ? details.exceptionAsString().substring(0, 100) : details.exceptionAsString()}',
+                style: const TextStyle(color: Colors.red, fontSize: 11),
+                textAlign: TextAlign.center,
+                maxLines: 4,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      );
+    };
 
-  runApp(ProviderScope(
-    overrides: [
-      sharedPreferencesProvider.overrideWithValue(prefs),
-    ],
-    child: const TakEsepWarehouseApp(),
-  ));
+    await Supabase.initialize(
+      url: const String.fromEnvironment('SUPABASE_URL',
+          defaultValue: 'https://smvegrscjnoelfsipwqq.supabase.co'),
+      anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY',
+          defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdmVncnNjam5vZWxmc2lwd3FxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTU5MjcsImV4cCI6MjA4ODczMTkyN30.z6h0ubNjAC0QfdGgg3FhAfSCy9RVVCupOuQUKuD98ig'),
+    );
+
+    // Initialize PowerSync offline-first database
+    try {
+      await initPowerSync();
+    } catch (e) {
+      debugPrint('[TakEsep] PowerSync init error (non-fatal): $e');
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+
+    debugPrint('[TakEsep] Warehouse app initialized — crash handlers ACTIVE');
+
+    runApp(ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+      ],
+      child: const TakEsepWarehouseApp(),
+    ));
+  }, (Object error, StackTrace stack) {
+    debugPrint('[TakEsep] Unhandled exception: $error');
+  });
 }
 
 class TakEsepWarehouseApp extends ConsumerWidget {

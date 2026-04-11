@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../services/order_service.dart';
-import '../../services/courier_auth_service.dart';
+
 import '../../services/order_alert_service.dart';
 import '../../providers/courier_providers.dart';
 import '../../theme/akjol_theme.dart';
@@ -42,8 +42,9 @@ class _AvailableOrdersScreenState
   final _alertService = OrderAlertService();
   int _previousOrderCount = 0;
 
-  // Timers for delayed freelance broadcast
-  final Map<String, Timer> _broadcastTimers = {};
+  // GPS tracking
+  Timer? _locationTimer;
+  RealtimeChannel? _assignedChannel;
 
   @override
   void initState() {
@@ -54,180 +55,124 @@ class _AvailableOrdersScreenState
   @override
   void dispose() {
     _channel?.unsubscribe();
-    for (final timer in _broadcastTimers.values) {
-      timer.cancel();
-    }
-    _broadcastTimers.clear();
+    _assignedChannel?.unsubscribe();
+    _locationTimer?.cancel();
     super.dispose();
   }
 
-  // ─── Visible orders (respecting freelance_broadcast_at) ───
-  List<Map<String, dynamic>> get _visibleOrders {
-    final profile = ref.read(courierProfileProvider);
-    if (profile == null) return [];
+  // ─── All loaded orders are visible ───
+  List<Map<String, dynamic>> get _visibleOrders => _allOrders;
 
-    if (profile.isStoreCourier) {
-      // Store courier sees everything for their warehouse
-      return _allOrders;
-    }
-
-    // Freelancer: filter by broadcast time
-    final now = DateTime.now();
-    return _allOrders.where((order) {
-      final broadcastStr = order['freelance_broadcast_at'] as String?;
-      if (broadcastStr == null) return false; // NULL = not for freelancers
-
-      final broadcastAt = DateTime.tryParse(broadcastStr);
-      if (broadcastAt == null) return false;
-
-      return now.isAfter(broadcastAt) || now.isAtSameMomentAs(broadcastAt);
-    }).toList();
-  }
-
-  // ─── Count of orders waiting to appear ────────────────────
-  int get _pendingBroadcastCount {
-    final profile = ref.read(courierProfileProvider);
-    if (profile == null || profile.isStoreCourier) return 0;
-
-    final now = DateTime.now();
-    return _allOrders.where((order) {
-      final broadcastStr = order['freelance_broadcast_at'] as String?;
-      if (broadcastStr == null) return false;
-      final broadcastAt = DateTime.tryParse(broadcastStr);
-      if (broadcastAt == null) return false;
-      return now.isBefore(broadcastAt);
-    }).length;
-  }
+  // No pending broadcast logic needed
+  int get _pendingBroadcastCount => 0;
 
   Future<void> _initCourier() async {
     final profile = ref.read(courierProfileProvider);
 
     if (profile == null) {
-      final user = Supabase.instance.client.auth.currentUser;
-      if (user == null) {
-        if (mounted) context.go('/login');
-        return;
+      if (mounted) {
+        setState(() => _loading = false);
+        context.go('/login');
       }
-
-      try {
-        final courier = await Supabase.instance.client
-            .from('couriers')
-            .select()
-            .eq('user_id', user.id)
-            .maybeSingle();
-
-        if (courier != null) {
-          final courierAuth = CourierAuthService();
-          final reloaded =
-              await courierAuth.lookupCourier(courier['phone']);
-          if (reloaded != null && mounted) {
-            ref.read(courierProfileProvider.notifier).state = reloaded;
-          }
-        }
-      } catch (_) {}
+      return;
     }
 
-    final p = ref.read(courierProfileProvider);
-    if (p != null) {
-      _isOnline = p.isOnline;
+    _isOnline = profile.isOnline;
+
+    // Restore saved toggle state
+    final prefs = await SharedPreferences.getInstance();
+    final savedOnline = prefs.getBool('courier_online');
+    if (savedOnline != null) {
+      _isOnline = savedOnline;
+      if (mounted) setState(() {});
     }
 
     // Check for active delivery first
-    if (p != null) {
-      final active = await _orderService.getActiveDelivery(p.id);
+    try {
+      final active = await _orderService.getActiveDelivery(profile.id);
       if (active != null && mounted) {
         context.go('/delivery/${active['id']}');
         return;
       }
+    } catch (e) {
+      debugPrint('⚠️ Active delivery check failed: $e');
     }
 
     await _loadOrders();
     _subscribeToOrders();
+
+    // Start tracking if already online
+    if (_isOnline) {
+      _startLocationTracking();
+      _subscribeToAssignedOrders();
+    }
   }
 
   Future<void> _loadOrders() async {
     try {
       final profile = ref.read(courierProfileProvider);
       if (profile == null) {
+        debugPrint('❌ COURIER PROFILE IS NULL');
         setState(() => _loading = false);
         return;
       }
 
-      List<Map<String, dynamic>> orders;
+      debugPrint('🔍 Loading orders for courier: ${profile.id}, transport: ${profile.transportType}');
 
-      if (profile.isStoreCourier) {
-        orders = await _orderService.getStoreOrders(profile.warehouseIds);
-      } else {
-        orders = await _orderService.getFreelanceOrders();
+      final orders = await _orderService.getFreelanceOrders(
+        transportType: profile.transportType,
+        courierId: profile.id,
+      );
+
+      debugPrint('📦 Found ${orders.length} orders');
+      for (final o in orders) {
+        debugPrint('   → Order: ${o['id']} status=${o['status']} courier_id=${o['courier_id']}');
       }
 
       if (mounted) {
+        final hadNewOrders = orders.length > _previousOrderCount && _previousOrderCount > 0;
+        if (hadNewOrders) {
+          _alertService.playNewOrderAlert();
+        }
+
         setState(() {
-          // Play alert if new orders appeared
-          if (orders.length > _previousOrderCount && _previousOrderCount > 0) {
-            _alertService.playNewOrderAlert();
-          }
-          _previousOrderCount = orders.length;
           _allOrders = orders;
           _loading = false;
         });
 
-        // Schedule timers for not-yet-visible orders
-        if (!profile.isStoreCourier) {
-          _scheduleBroadcastTimers();
+        // Show notification for new orders
+        if (orders.length > _previousOrderCount && _previousOrderCount > 0) {
+          final newCount = orders.length - _previousOrderCount;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.notifications_active, color: Colors.white, size: 22),
+                  const SizedBox(width: 10),
+                  Text('Новый заказ ($newCount)',
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                ],
+              ),
+              backgroundColor: AkJolTheme.primary,
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 4),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          );
         }
+        _previousOrderCount = orders.length;
       }
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('⚠️ Load orders error: $e');
+      debugPrint('Stack: $stack');
       if (mounted) setState(() => _loading = false);
     }
   }
 
-  /// For each order with a future freelance_broadcast_at,
-  /// schedule a timer that triggers setState when it becomes visible.
-  void _scheduleBroadcastTimers() {
-    // Cancel old timers
-    for (final timer in _broadcastTimers.values) {
-      timer.cancel();
-    }
-    _broadcastTimers.clear();
-
-    final now = DateTime.now();
-
-    for (final order in _allOrders) {
-      final orderId = order['id'] as String;
-      final broadcastStr = order['freelance_broadcast_at'] as String?;
-      if (broadcastStr == null) continue;
-
-      final broadcastAt = DateTime.tryParse(broadcastStr);
-      if (broadcastAt == null) continue;
-
-      if (now.isBefore(broadcastAt)) {
-        final delay = broadcastAt.difference(now);
-        _broadcastTimers[orderId] = Timer(delay, () {
-          if (mounted) {
-            setState(() {}); // Re-render to show the newly visible order
-            _alertService.playNewOrderAlert(); // Alert when order becomes visible
-            _broadcastTimers.remove(orderId);
-          }
-        });
-      }
-    }
-  }
-
   void _subscribeToOrders() {
-    final profile = ref.read(courierProfileProvider);
-    if (profile == null) return;
-
-    if (profile.isStoreCourier) {
-      _channel = _orderService.subscribeToStoreOrders(
-        profile.warehouseIds,
-        (_) => _loadOrders(),
-      );
-    } else {
-      _channel = _orderService.subscribeToFreelanceOrders(
-        (_) => _loadOrders(),
-      );
-    }
+    _channel = _orderService.subscribeToFreelanceOrders(
+      (_) => _loadOrders(),
+    );
   }
 
   Future<void> _toggleOnline(bool value) async {
@@ -236,12 +181,116 @@ class _AvailableOrdersScreenState
 
     setState(() => _isOnline = value);
 
+    // Save state
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('courier_online', value);
+
     try {
       await _orderService.setOnline(profile.id, value);
-      if (value) _loadOrders();
+
+      if (value) {
+        _loadOrders();
+        _startLocationTracking();
+        _subscribeToAssignedOrders();
+      } else {
+        _stopLocationTracking();
+        _assignedChannel?.unsubscribe();
+        _assignedChannel = null;
+      }
     } catch (e) {
       setState(() => _isOnline = !value);
+      await prefs.setBool('courier_online', !value);
     }
+  }
+
+  // ─── GPS Tracking ────────────────────────────
+  void _startLocationTracking() {
+    _locationTimer?.cancel();
+
+    // Send location immediately
+    _sendLocation();
+
+    // Then every 30 seconds
+    _locationTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      _sendLocation();
+    });
+  }
+
+  void _stopLocationTracking() {
+    _locationTimer?.cancel();
+    _locationTimer = null;
+  }
+
+  Future<void> _sendLocation() async {
+    final profile = ref.read(courierProfileProvider);
+    if (profile == null) return;
+
+    try {
+      final perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        final newPerm = await Geolocator.requestPermission();
+        if (newPerm == LocationPermission.denied || newPerm == LocationPermission.deniedForever) return;
+      }
+
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+
+      await Supabase.instance.client.from('couriers').update({
+        'current_lat': pos.latitude,
+        'current_lng': pos.longitude,
+        'last_location_at': DateTime.now().toUtc().toIso8601String(),
+      }).eq('id', profile.id);
+
+      debugPrint('📍 Location sent: ${pos.latitude}, ${pos.longitude}');
+    } catch (e) {
+      debugPrint('Location error: $e');
+    }
+  }
+
+  // ─── Subscribe to orders assigned to this courier ───
+  void _subscribeToAssignedOrders() {
+    final profile = ref.read(courierProfileProvider);
+    if (profile == null) return;
+
+    _assignedChannel?.unsubscribe();
+    _assignedChannel = Supabase.instance.client
+        .channel('courier-assigned-${profile.id}')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'delivery_orders',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'courier_id',
+            value: profile.id,
+          ),
+          callback: (payload) {
+            final newStatus = payload.newRecord['status'];
+            if (newStatus == 'courier_assigned') {
+              _alertService.playNewOrderAlert();
+              final orderId = payload.newRecord['id'];
+              if (mounted && orderId != null) {
+                // Show snackbar + navigate
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Новый заказ назначен'),
+                    backgroundColor: AkJolTheme.primary,
+                    behavior: SnackBarBehavior.floating,
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+                Future.delayed(const Duration(seconds: 1), () {
+                  if (mounted) context.go('/delivery/$orderId');
+                });
+              }
+            }
+          },
+        )
+        .subscribe();
   }
 
   Future<void> _acceptOrder(Map<String, dynamic> order) async {
@@ -269,84 +318,189 @@ class _AvailableOrdersScreenState
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(courierProfileProvider);
-    final warehouseName =
-        profile?.primaryWarehouse?.warehouseName ?? 'AkJol';
     final visible = _visibleOrders;
     final pendingCount = _pendingBroadcastCount;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+      backgroundColor: const Color(0xFF0A0F0A),
+      body: SafeArea(
+        child: Column(
           children: [
-            const Text('Доступные заказы'),
-            if (profile?.isStoreCourier == true)
-              Text(
-                warehouseName,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w400,
-                  color: AkJolTheme.textTertiary,
-                ),
-              ),
+            // ── Status Header ──
+            _buildStatusHeader(profile),
+
+            // ── Content ──
+            Expanded(
+              child: !_isOnline
+                  ? _buildOfflineState()
+                  : _loading
+                      ? const Center(
+                          child: CircularProgressIndicator(color: AkJolTheme.primary))
+                      : visible.isEmpty
+                          ? _buildEmptyState(pendingCount)
+                          : Column(
+                              children: [
+                                if (pendingCount > 0)
+                                  _PendingBroadcastBanner(count: pendingCount),
+                                Expanded(
+                                  child: RefreshIndicator(
+                                    onRefresh: _loadOrders,
+                                    color: AkJolTheme.primary,
+                                    child: ListView.builder(
+                                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                                      itemCount: visible.length,
+                                      itemBuilder: (_, i) => _OrderCard(
+                                        order: visible[i],
+                                        isStoreCourier: false,
+                                        earningRate: profile?.earningRate ?? 0.90,
+                                        onAccept: () => _acceptOrder(visible[i]),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+            ),
           ],
         ),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Row(
-              children: [
-                Text(
-                  _isOnline ? 'Онлайн' : 'Офлайн',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    color: _isOnline
-                        ? AkJolTheme.success
-                        : AkJolTheme.textTertiary,
+      ),
+    );
+  }
+
+  Widget _buildStatusHeader(dynamic profile) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF111111),
+        border: Border(
+          bottom: BorderSide(color: Colors.white.withValues(alpha: 0.06)),
+        ),
+      ),
+      child: Column(
+        children: [
+          // Name row
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AkJolTheme.primary.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.delivery_dining, color: AkJolTheme.primary, size: 22),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      profile?.name ?? 'Курьер',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      _isOnline
+                          ? '${_visibleOrders.length} доступных заказов'
+                          : 'Не в сети',
+                      style: TextStyle(
+                        color: _isOnline
+                            ? AkJolTheme.primary.withValues(alpha: 0.8)
+                            : Colors.white38,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+
+          // ── Big Toggle ──
+          GestureDetector(
+            onTap: () => _toggleOnline(!_isOnline),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              decoration: BoxDecoration(
+                gradient: _isOnline
+                    ? const LinearGradient(
+                        colors: [Color(0xFF1B5E20), Color(0xFF2E7D32)],
+                      )
+                    : null,
+                color: _isOnline ? null : Colors.white.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: _isOnline
+                      ? AkJolTheme.primary.withValues(alpha: 0.4)
+                      : Colors.white.withValues(alpha: 0.1),
+                  width: 1,
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 200),
+                    child: Icon(
+                      _isOnline ? Icons.wifi_rounded : Icons.wifi_off_rounded,
+                      key: ValueKey(_isOnline),
+                      color: _isOnline
+                          ? AkJolTheme.primary
+                          : Colors.white38,
+                      size: 24,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 4),
-                Switch(
-                  value: _isOnline,
-                  onChanged: _toggleOnline,
-                  activeTrackColor: AkJolTheme.success,
-                ),
-              ],
+                  const SizedBox(width: 12),
+                  Text(
+                    _isOnline ? 'В СЕТИ' : 'НЕ В СЕТИ',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 1.5,
+                      color: _isOnline ? Colors.white : Colors.white38,
+                    ),
+                  ),
+                  const Spacer(),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    width: 50,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: _isOnline
+                          ? AkJolTheme.primary
+                          : Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: AnimatedAlign(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                      alignment: _isOnline
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: Container(
+                        width: 24,
+                        height: 24,
+                        margin: const EdgeInsets.symmetric(horizontal: 2),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
       ),
-      body: !_isOnline
-          ? _buildOfflineState()
-          : _loading
-              ? const Center(child: CircularProgressIndicator())
-              : visible.isEmpty
-                  ? _buildEmptyState(pendingCount)
-                  : Column(
-                      children: [
-                        // Pending broadcast banner (freelancers only)
-                        if (pendingCount > 0)
-                          _PendingBroadcastBanner(count: pendingCount),
-
-                        Expanded(
-                          child: RefreshIndicator(
-                            onRefresh: _loadOrders,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: visible.length,
-                              itemBuilder: (_, i) => _OrderCard(
-                                order: visible[i],
-                                isStoreCourier:
-                                    profile?.isStoreCourier ?? false,
-                                onAccept: () =>
-                                    _acceptOrder(visible[i]),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
     );
   }
 
@@ -356,25 +510,25 @@ class _AvailableOrdersScreenState
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 80,
-            height: 80,
+            width: 90,
+            height: 90,
             decoration: BoxDecoration(
-              color: AkJolTheme.textTertiary.withValues(alpha: 0.1),
+              color: Colors.white.withValues(alpha: 0.05),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.wifi_off,
-                size: 40, color: AkJolTheme.textTertiary),
+            child: Icon(Icons.wifi_off_rounded,
+                size: 44, color: Colors.white.withValues(alpha: 0.2)),
           ),
-          const SizedBox(height: 16),
-          Text('Вы офлайн',
+          const SizedBox(height: 20),
+          const Text('Вы офлайн',
               style: TextStyle(
-                  fontSize: 20,
+                  fontSize: 22,
                   fontWeight: FontWeight.w700,
-                  color: AkJolTheme.textSecondary)),
+                  color: Colors.white54)),
           const SizedBox(height: 8),
-          Text('Включите режим онлайн\nчтобы получать заказы',
+          Text('Включите режим «В сети»\nчтобы получать заказы',
               textAlign: TextAlign.center,
-              style: TextStyle(color: AkJolTheme.textTertiary)),
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 14)),
         ],
       ),
     );
@@ -386,31 +540,29 @@ class _AvailableOrdersScreenState
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            width: 80,
-            height: 80,
+            width: 90,
+            height: 90,
             decoration: BoxDecoration(
-              color: AkJolTheme.primary.withValues(alpha: 0.1),
+              color: AkJolTheme.primary.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.delivery_dining,
-                size: 40, color: AkJolTheme.primary),
+                size: 44, color: AkJolTheme.primary),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
           Text(
-            pendingCount > 0
-                ? 'Заказы скоро появятся'
-                : 'Нет заказов',
-            style: TextStyle(
+            pendingCount > 0 ? 'Заказы скоро появятся' : 'Нет доступных заказов',
+            style: const TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
-                color: AkJolTheme.textSecondary),
+                color: Colors.white54),
           ),
           const SizedBox(height: 8),
           Text(
             pendingCount > 0
-                ? '$pendingCount ${_ordWord(pendingCount)} ожидают приоритетного окна'
+                ? '$pendingCount ${_ordWord(pendingCount)} ожидают'
                 : 'Ожидайте новые заказы',
-            style: TextStyle(color: AkJolTheme.textTertiary),
+            style: TextStyle(color: Colors.white.withValues(alpha: 0.3)),
             textAlign: TextAlign.center,
           ),
         ],
@@ -474,10 +626,12 @@ class _PendingBroadcastBanner extends StatelessWidget {
 class _OrderCard extends StatelessWidget {
   final Map<String, dynamic> order;
   final bool isStoreCourier;
+  final double earningRate;
   final VoidCallback onAccept;
   const _OrderCard({
     required this.order,
     required this.isStoreCourier,
+    this.earningRate = 0.90,
     required this.onAccept,
   });
 
@@ -487,159 +641,236 @@ class _OrderCard extends StatelessWidget {
     final storeAddr = order['warehouses']?['address'] ?? '';
     final customerName = order['customers']?['name'] ?? '';
     final address = order['delivery_address'] ?? '';
-    final itemsTotal = (order['items_total'] as num?)?.toDouble() ?? 0;
     final deliveryFee = (order['delivery_fee'] as num?)?.toDouble() ?? 0;
-    final total = itemsTotal + deliveryFee;
-    final status = order['status'] ?? 'ready';
+    final total = (order['total'] as num?)?.toDouble() ?? 0;
+    final status = order['status'] ?? 'pending';
     final transport =
         order['approved_transport'] ?? order['requested_transport'] ?? '';
 
-    // Calculate courier earning based on type
-    final courierEarning = isStoreCourier
-        ? 0.0
-        : deliveryFee * 0.90;
+    final courierEarning = deliveryFee * earningRate;
+    final hour = DateTime.now().hour;
+    final isNight = hour >= 22 || hour < 6;
 
-    final isReady = status == 'ready';
-
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Store + status + earning
-            Row(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1A1A1A),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.08)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Header: Store + Earning ──
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
+            child: Row(
               children: [
-                Icon(_transportIcon(transport),
-                    color: AkJolTheme.primary, size: 20),
-                const SizedBox(width: 8),
+                Container(
+                  width: 36, height: 36,
+                  decoration: BoxDecoration(
+                    color: AkJolTheme.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(_transportIcon(transport),
+                      color: AkJolTheme.primary, size: 20),
+                ),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(storeName,
                           style: const TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w600)),
+                              color: Colors.white,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600)),
                       if (storeAddr.isNotEmpty)
                         Text(storeAddr,
                             style: TextStyle(
                                 fontSize: 11,
-                                color: AkJolTheme.textTertiary),
+                                color: Colors.white.withValues(alpha: 0.4)),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis),
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _statusColor(status).withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Text(
-                    isReady
-                        ? (courierEarning > 0
-                            ? '+${courierEarning.toStringAsFixed(0)} с'
-                            : 'Готов')
-                        : _statusLabel(status),
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                      color: _statusColor(status),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-
-            // Customer
-            if (customerName.isNotEmpty)
-              Row(
-                children: [
-                  const Icon(Icons.person_outline,
-                      size: 16, color: AkJolTheme.textTertiary),
-                  const SizedBox(width: 4),
-                  Text(customerName,
-                      style: TextStyle(
-                          fontSize: 13, color: AkJolTheme.textSecondary)),
-                ],
-              ),
-            const SizedBox(height: 4),
-
-            // Delivery address
-            Row(
-              children: [
-                const Icon(Icons.location_on_outlined,
-                    size: 16, color: AkJolTheme.textTertiary),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(address,
-                      style: TextStyle(
-                          fontSize: 13, color: AkJolTheme.textSecondary),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-
-            // Total + Accept
-            Row(
-              children: [
+                // Earning badge
                 Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('К оплате: ${total.toStringAsFixed(0)} сом',
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: AkJolTheme.primary.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        '+${courierEarning.toStringAsFixed(0)} сом',
                         style: const TextStyle(
-                            fontSize: 14, fontWeight: FontWeight.w500)),
-                    Text('Доставка: ${deliveryFee.toStringAsFixed(0)} сом',
-                        style: TextStyle(
-                            fontSize: 12,
-                            color: AkJolTheme.textTertiary)),
+                          fontSize: 14,
+                          fontWeight: FontWeight.w800,
+                          color: AkJolTheme.primary,
+                        ),
+                      ),
+                    ),
+                    if (isNight)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text('Ночной тариф',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.amber.withValues(alpha: 0.7),
+                            )),
+                      ),
                   ],
                 ),
-                const Spacer(),
-                if (isReady)
-                  ElevatedButton.icon(
-                    onPressed: onAccept,
-                    icon: const Icon(Icons.check, size: 18),
-                    label: const Text('Принять'),
-                    style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(110, 42),
-                    ),
-                  ),
               ],
             ),
+          ),
 
-            // ── Mini-map preview ──
-            if (_hasCoordinates(order)) ...[
-              const SizedBox(height: 12),
-              _buildMiniMap(order),
-            ],
-          ],
-        ),
+          // ── Divider ──
+          Container(height: 0.5, color: Colors.white.withValues(alpha: 0.06)),
+
+          // ── Details ──
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Customer
+                if (customerName.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Row(
+                      children: [
+                        Icon(Icons.person_outline,
+                            size: 16, color: Colors.white.withValues(alpha: 0.4)),
+                        const SizedBox(width: 6),
+                        Text(customerName,
+                            style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.white.withValues(alpha: 0.6))),
+                      ],
+                    ),
+                  ),
+
+                // Delivery address
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.location_on_rounded,
+                        size: 16, color: Colors.white.withValues(alpha: 0.4)),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(address,
+                          style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.white.withValues(alpha: 0.7)),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 10),
+
+                // ── Items List ──
+                _buildItemsList(),
+
+                const SizedBox(height: 8),
+
+                // Total + status
+                Row(
+                  children: [
+                    Text('Итого: ${total.toStringAsFixed(0)} сом',
+                        style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500)),
+                    const SizedBox(width: 8),
+                    Text('Доставка: ${deliveryFee.toStringAsFixed(0)}',
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.white.withValues(alpha: 0.35))),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: _statusColor(status).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(_statusLabel(status),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                            color: _statusColor(status),
+                          )),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // ── BIG Accept Button ──
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+            child: SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: onAccept,
+                icon: const Icon(Icons.check_circle_rounded, size: 22),
+                label: const Text('ПРИНЯТЬ ЗАКАЗ',
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
+                    )),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AkJolTheme.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Color _statusColor(String status) {
     switch (status) {
+      case 'pending':
+        return const Color(0xFFFF9800);
+      case 'confirmed':
+      case 'assembling':
+        return const Color(0xFF2196F3);
       case 'ready':
         return AkJolTheme.primary;
       case 'courier_assigned':
-        return AkJolTheme.statusAccepted;
+        return AkJolTheme.primary;
       case 'picked_up':
-        return AkJolTheme.statusDelivering;
+        return const Color(0xFF9C27B0);
       default:
-        return AkJolTheme.textTertiary;
+        return Colors.white54;
     }
   }
 
   String _statusLabel(String status) {
     switch (status) {
+      case 'pending':
+        return 'Новый';
+      case 'confirmed':
+        return 'Подтверждён';
+      case 'assembling':
+        return 'Собирается';
       case 'ready':
         return 'Готов';
       case 'courier_assigned':
@@ -654,91 +885,73 @@ class _OrderCard extends StatelessWidget {
   IconData _transportIcon(String type) {
     switch (type) {
       case 'bicycle':
-        return Icons.pedal_bike;
+        return Icons.electric_bike_rounded;
       case 'motorcycle':
-        return Icons.two_wheeler;
+      case 'scooter':
+        return Icons.two_wheeler_rounded;
       case 'truck':
-        return Icons.local_shipping;
+        return Icons.local_shipping_rounded;
       default:
-        return Icons.delivery_dining;
+        return Icons.delivery_dining_rounded;
     }
   }
 
-  bool _hasCoordinates(Map<String, dynamic> order) {
-    return (order['pickup_lat'] ?? order['warehouses']?['latitude']) != null &&
-        (order['delivery_lat'] != null);
-  }
+  Widget _buildItemsList() {
+    final items = order['delivery_order_items'] as List? ?? [];
+    if (items.isEmpty) return const SizedBox.shrink();
 
-  Widget _buildMiniMap(Map<String, dynamic> order) {
-    final pickupLat =
-        ((order['pickup_lat'] ?? order['warehouses']?['latitude']) as num?)?.toDouble();
-    final pickupLng =
-        ((order['pickup_lng'] ?? order['warehouses']?['longitude']) as num?)?.toDouble();
-    final deliveryLat = (order['delivery_lat'] as num?)?.toDouble();
-    final deliveryLng = (order['delivery_lng'] as num?)?.toDouble();
-
-    if (pickupLat == null || pickupLng == null ||
-        deliveryLat == null || deliveryLng == null) {
-      return const SizedBox.shrink();
-    }
-
-    final center = LatLng(
-      (pickupLat + deliveryLat) / 2,
-      (pickupLng + deliveryLng) / 2,
-    );
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: SizedBox(
-        height: 120,
-        child: IgnorePointer(
-          child: FlutterMap(
-            options: MapOptions(
-              initialCenter: center,
-              initialZoom: 13,
-            ),
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.04),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              TileLayer(
-                urlTemplate:
-                    'https://tile{s}.maps.2gis.com/tiles?x={x}&y={y}&z={z}&v=1',
-                subdomains: const ['0', '1', '2', '3'],
-                userAgentPackageName: 'com.akjol.courier',
-              ),
-              PolylineLayer(
-                polylines: [
-                  Polyline(
-                    points: [
-                      LatLng(pickupLat, pickupLng),
-                      LatLng(deliveryLat, deliveryLng),
-                    ],
-                    color: AkJolTheme.primary.withValues(alpha: 0.5),
-                    strokeWidth: 2,
-                    pattern: const StrokePattern.dotted(),
-                  ),
-                ],
-              ),
-              MarkerLayer(
-                markers: [
-                  Marker(
-                    point: LatLng(pickupLat, pickupLng),
-                    width: 28,
-                    height: 28,
-                    child: const Icon(Icons.storefront,
-                        color: Colors.blue, size: 24),
-                  ),
-                  Marker(
-                    point: LatLng(deliveryLat, deliveryLng),
-                    width: 28,
-                    height: 28,
-                    child: Icon(Icons.location_on,
-                        color: Colors.red[600], size: 24),
-                  ),
-                ],
-              ),
+              Icon(Icons.shopping_bag_outlined,
+                  size: 14, color: Colors.white.withValues(alpha: 0.5)),
+              const SizedBox(width: 6),
+              Text('Состав заказа (${items.length})',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white.withValues(alpha: 0.5),
+                  )),
             ],
           ),
-        ),
+          const SizedBox(height: 6),
+          ...items.map((item) {
+            final name = item['name'] ?? '—';
+            final qty = item['quantity'] ?? 1;
+            final price = (item['unit_price'] as num?)?.toDouble() ?? 0;
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text('$name ×$qty',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.white.withValues(alpha: 0.7),
+                        )),
+                  ),
+                  Text('${(price * qty).toStringAsFixed(0)} сом',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white.withValues(alpha: 0.5),
+                      )),
+                ],
+              ),
+            );
+          }),
+        ],
       ),
     );
   }
+
 }
+

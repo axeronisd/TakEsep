@@ -97,6 +97,7 @@ class InventoryRepository {
         'company_id': json['company_id'],
         'name': json['name'],
         'parent_id': json['parent_id'],
+        'image_url': json['image_url'],
         'created_at': json['created_at'] ?? DateTime.now().toIso8601String(),
       });
 
@@ -104,6 +105,24 @@ class InventoryRepository {
     } catch (e) {
       print('InventoryRepository createCategory error: $e');
       return null;
+    }
+  }
+
+  /// Update category image URL
+  Future<bool> updateCategoryImage(String categoryId, String? imageUrl) async {
+    try {
+      final now = DateTime.now().toIso8601String();
+      await _db.execute(
+        'UPDATE categories SET image_url = ?, updated_at = ? WHERE id = ?',
+        [imageUrl, now, categoryId],
+      );
+      await SupabaseSync.update('categories', categoryId, {
+        'image_url': imageUrl,
+      });
+      return true;
+    } catch (e) {
+      print('InventoryRepository updateCategoryImage error: $e');
+      return false;
     }
   }
 

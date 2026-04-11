@@ -10,8 +10,8 @@ class OrderService {
   // COURIER ACTIONS — each is a single status update
   // ═══════════════════════════════════════════════════════════
 
-  /// Courier accepts a ready order
-  /// ready → courier_assigned (trigger sets accepted_at)
+  /// Courier accepts a pending order
+  /// pending → courier_assigned
   Future<void> acceptOrder(String orderId, String courierId) async {
     await _supabase.from('delivery_orders').update({
       'courier_id': courierId,
@@ -19,35 +19,58 @@ class OrderService {
     }).eq('id', orderId);
   }
 
+  /// Courier verifies customer payment
+  /// payment_sent → payment_verified
+  Future<void> verifyPayment(String orderId) async {
+    await _supabase.from('delivery_orders').update({
+      'status': 'payment_verified',
+    }).eq('id', orderId);
+  }
+
   /// Courier picked up order from store
-  /// courier_assigned → picked_up (trigger sets picked_up_at)
+  /// ready → picked_up
   Future<void> pickedUp(String orderId) async {
     await _supabase.from('delivery_orders').update({
       'status': 'picked_up',
     }).eq('id', orderId);
   }
 
-  /// Courier delivered to customer
-  /// picked_up → delivered (trigger sets delivered_at + calculates finances)
-  Future<void> delivered(String orderId) async {
+  /// Courier arrived at customer location
+  /// picked_up → arrived
+  Future<void> markArrived(String orderId) async {
     await _supabase.from('delivery_orders').update({
-      'status': 'delivered',
-      'is_paid': true,
+      'status': 'arrived',
     }).eq('id', orderId);
   }
 
-  /// Courier declines order (goes back to ready for another courier)
-  /// courier_assigned → cancelled_by_courier → ready
-  Future<void> declineOrder(String orderId) async {
-    // First mark as cancelled_by_courier
-    await _supabase.from('delivery_orders').update({
-      'status': 'cancelled_by_courier',
-      'courier_id': null,
-    }).eq('id', orderId);
+  /// Courier delivered to customer
+  /// arrived → delivered
+  /// Calculates courier_earning from delivery_fee
+  Future<void> delivered(String orderId) async {
+    // Load order to get delivery_fee for earning calculation
+    double courierEarning = 0;
+    try {
+      final order = await _supabase
+          .from('delivery_orders')
+          .select('delivery_fee, items_total')
+          .eq('id', orderId)
+          .single();
+      courierEarning = (order['delivery_fee'] as num?)?.toDouble() ?? 0;
+    } catch (_) {}
 
-    // Then move back to ready (cascade routing)
     await _supabase.from('delivery_orders').update({
-      'status': 'ready',
+      'status': 'delivered',
+      'is_paid': true,
+      'delivered_at': DateTime.now().toIso8601String(),
+      'courier_earning': courierEarning,
+    }).eq('id', orderId);
+  }
+
+  /// Courier declines order (goes back to pending for another courier)
+  Future<void> declineOrder(String orderId) async {
+    await _supabase.from('delivery_orders').update({
+      'status': 'pending',
+      'courier_id': null,
     }).eq('id', orderId);
   }
 
@@ -67,19 +90,40 @@ class OrderService {
     return List<Map<String, dynamic>>.from(data);
   }
 
-  /// Get all ready orders for freelancer.
-  /// Includes orders with future freelance_broadcast_at
-  /// (UI will schedule timers for those).
-  /// Excludes orders where freelance_broadcast_at is NULL
-  /// (store-only mode, not visible to freelancers at all).
-  Future<List<Map<String, dynamic>>> getFreelanceOrders() async {
-    final data = await _supabase
+  /// Get orders for this courier:
+  /// 1. Orders assigned to them by the system (courier_id = their ID)
+  /// 2. Unassigned orders as fallback (courier_id IS NULL)
+  Future<List<Map<String, dynamic>>> getFreelanceOrders({String? transportType, String? courierId}) async {
+    if (courierId == null) return [];
+
+    // Get orders specifically assigned to this courier
+    final assigned = await _supabase
         .from('delivery_orders')
-        .select('*, customers(name, phone), warehouses(name, address)')
-        .eq('status', 'ready')
-        .not('freelance_broadcast_at', 'is', null)
+        .select('*, customers(name, phone), warehouses(name, address, latitude, longitude), delivery_order_items(name, quantity, unit_price, total)')
+        .eq('status', 'pending')
+        .eq('courier_id', courierId)
         .order('created_at', ascending: false);
-    return List<Map<String, dynamic>>.from(data);
+
+    // Also get unassigned orders matching courier's transport (fallback)
+    var unassignedQuery = _supabase
+        .from('delivery_orders')
+        .select('*, customers(name, phone), warehouses(name, address, latitude, longitude), delivery_order_items(name, quantity, unit_price, total)')
+        .eq('status', 'pending')
+        .isFilter('courier_id', null);
+
+    // Filter by courier's transport type
+    if (transportType != null) {
+      unassignedQuery = unassignedQuery.eq('requested_transport', transportType);
+    }
+
+    final unassigned = await unassignedQuery.order('created_at', ascending: false);
+
+    // Merge: assigned first, then unassigned
+    final all = <Map<String, dynamic>>[
+      ...List<Map<String, dynamic>>.from(assigned),
+      ...List<Map<String, dynamic>>.from(unassigned),
+    ];
+    return all;
   }
 
   /// Get single order with full details
@@ -98,7 +142,7 @@ class OrderService {
         .from('delivery_orders')
         .select()
         .eq('courier_id', courierId)
-        .inFilter('status', ['courier_assigned', 'picked_up'])
+        .inFilter('status', ['courier_assigned', 'payment_sent', 'payment_verified', 'assembling', 'ready', 'picked_up', 'arrived'])
         .maybeSingle();
   }
 

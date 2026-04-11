@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../theme/akjol_theme.dart';
 import '../../providers/location_provider.dart';
 import '../../providers/marketplace_provider.dart';
 import '../../providers/orders_provider.dart';
+import '../map/address_picker_screen.dart';
 import 'home_widgets.dart';
 import 'marketplace_widgets.dart';
 
@@ -38,16 +40,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              // ── 1. Header ──
-              SliverToBoxAdapter(
-                child: AkJolHeader(
-                  address: location.displayName,
-                  loading: location.loading,
-                  onAddressTap: () => _showCityPicker(context),
+              // ── 1. Pinned Header ──
+              SliverPersistentHeader(
+                pinned: true,
+                delegate: _StickyHeaderDelegate(
+                  child: AkJolHeader(
+                    address: location.displayName,
+                    loading: location.loading,
+                    userName: Supabase.instance.client.auth.currentUser
+                        ?.userMetadata?['name'] as String? ??
+                        Supabase.instance.client.auth.currentUser?.email?.split('@').first,
+                    onAddressTap: () => _showCityPicker(context),
+                    onProfileTap: () => context.go('/profile'),
+                  ),
                 ),
               ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 16)),
+              const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
               // ── 1.5 Active order banner ──
               SliverToBoxAdapter(
@@ -56,80 +65,130 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                 ),
               ),
 
-              // ── 2. Hero Cards ──
+              // ── 2. Bento Grid (replaces Hero Cards + Quick Actions + DestinationBar) ──
               SliverToBoxAdapter(
-                child: HeroServiceCards(
+                child: BentoGrid(
                   onCategoryTap: (cat) => _onCategoryTap(context, cat),
                 ),
               ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 20)),
+              const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-              // ── 3. Quick Actions ──
-              SliverToBoxAdapter(
-                child: QuickActionsRow(
-                  onTap: (id) => _onCategoryTap(context, id),
-                ),
-              ),
-
-              const SliverToBoxAdapter(child: SizedBox(height: 20)),
-
-              // ── 4. Куда едем? ──
-              SliverToBoxAdapter(
-                child: DestinationBar(
-                  onTap: () => _showComingSoon(context, '🚕 Такси скоро!'),
-                ),
-              ),
-
-              const SliverToBoxAdapter(child: SizedBox(height: 28)),
-
-              // ── 5. Store Categories Row ─── NEW! ──
-              SliverToBoxAdapter(
-                child: categoriesAsync.when(
-                  data: (categories) => StoreCategoriesRow(
-                    categories: categories,
-                    selectedId: selectedCategory,
-                    onTap: (id) {
-                      final current =
-                          ref.read(selectedStoreCategoryProvider);
-                      ref
-                          .read(selectedStoreCategoryProvider.notifier)
-                          .state = current == id ? null : id;
-                    },
-                  ),
-                  loading: () => const SizedBox(
-                    height: 90,
-                    child: Center(
-                      child: CircularProgressIndicator(
-                        color: AkJolTheme.primary,
-                        strokeWidth: 2,
+              // ── 3. Store Category Quick Filters ──
+              categoriesAsync.when(
+                data: (categories) {
+                  if (categories.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+                  return SliverToBoxAdapter(
+                    child: SizedBox(
+                      height: 42,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        itemCount: categories.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 8),
+                        itemBuilder: (_, i) {
+                          final cat = categories[i];
+                          final isActive = selectedCategory == cat.id;
+                          return GestureDetector(
+                            onTap: () {
+                              final current = ref.read(selectedStoreCategoryProvider);
+                              ref.read(selectedStoreCategoryProvider.notifier).state =
+                                  current == cat.id ? null : cat.id;
+                            },
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isActive
+                                    ? AkJolTheme.primary
+                                    : (isDark ? const Color(0xFF161B22) : Colors.white),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: isActive
+                                      ? AkJolTheme.primary
+                                      : (isDark ? const Color(0xFF30363D) : const Color(0xFFE5E7EB)),
+                                  width: 1,
+                                ),
+                                boxShadow: isActive ? [
+                                  BoxShadow(
+                                    color: AkJolTheme.primary.withValues(alpha: 0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ] : null,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    _getCategoryIcon(cat.icon),
+                                    size: 16,
+                                    color: isActive
+                                        ? Colors.white
+                                        : (isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280)),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    cat.name,
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                                      color: isActive
+                                          ? Colors.white
+                                          : (isDark ? const Color(0xFFCDD9E5) : const Color(0xFF374151)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
-                  ),
-                  error: (_, _) => const SizedBox.shrink(),
-                ),
+                  );
+                },
+                loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
+                error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
               ),
 
-              const SliverToBoxAdapter(child: SizedBox(height: 24)),
+              const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
-              // ── 6. Store Feed Header ──
+              // ── 4. Store Feed Header ──
               SliverToBoxAdapter(
                 child: SectionHeader(
                   title: selectedCategory != null
                       ? 'Результаты'
                       : 'Рядом с вами',
-                  action: storesAsync.when(
-                    data: (stores) =>
-                        '${filteredStores.length} ${_pluralStore(filteredStores.length)}',
-                    loading: () => null,
-                    error: (_, _) => null,
-                  ),
+                  action: selectedCategory != null ? null : null,
+                  actionWidget: selectedCategory != null
+                      ? GestureDetector(
+                          onTap: () => ref.read(selectedStoreCategoryProvider.notifier).state = null,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF21262D) : const Color(0xFFF3F4F6),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.close_rounded, size: 14,
+                                    color: isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280)),
+                                const SizedBox(width: 2),
+                                Text('Сбросить', style: TextStyle(
+                                    fontSize: 12, fontWeight: FontWeight.w600,
+                                    color: isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280))),
+                              ],
+                            ),
+                          ),
+                        )
+                      : null,
                 ),
               ),
 
               const SliverToBoxAdapter(child: SizedBox(height: 12)),
 
-              // ── 7. Store Feed — vertical cards ─── NEW! ──
+              // ── 5. Store Feed — vertical cards ──
               storesAsync.when(
                 data: (stores) {
                   if (filteredStores.isEmpty) {
@@ -188,25 +247,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     );
   }
 
-  String _pluralStore(int count) {
-    if (count % 10 == 1 && count % 100 != 11) return 'магазин';
-    if ([2, 3, 4].contains(count % 10) &&
-        ![12, 13, 14].contains(count % 100)) {
-      return 'магазина';
-    }
-    return 'магазинов';
-  }
-
   void _onCategoryTap(BuildContext context, String category) {
     switch (category) {
-      case 'delivery' || 'stores' || 'food':
+      case 'delivery' || 'stores' || 'food' || 'pharmacy':
         context.go('/catalog');
       case 'services':
         context.go('/services');
       case 'taxi':
-        _showComingSoon(context, '🚕 Такси скоро!');
+        _showComingSoon(context, 'Такси скоро будет доступно');
       default:
-        _showComingSoon(context, '🚀 Скоро!');
+        _showComingSoon(context, 'Скоро будет доступно');
     }
   }
 
@@ -222,102 +272,40 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   }
 
   void _showCityPicker(BuildContext context) {
-    const cities = [
-      {'name': 'Бишкек', 'lat': 42.8746, 'lng': 74.5698},
-      {'name': 'Ош', 'lat': 40.5333, 'lng': 72.8000},
-      {'name': 'Джалал-Абад', 'lat': 40.9333, 'lng': 73.0000},
-      {'name': 'Каракол', 'lat': 42.4903, 'lng': 78.3936},
-      {'name': 'Токмок', 'lat': 42.7667, 'lng': 75.3000},
-      {'name': 'Балыкчы', 'lat': 42.4600, 'lng': 76.1900},
-      {'name': 'Нарын', 'lat': 41.4300, 'lng': 76.0000},
-      {'name': 'Талас', 'lat': 42.5200, 'lng': 72.2400},
-      {'name': 'Баткен', 'lat': 40.0600, 'lng': 70.8200},
-    ];
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
-      builder: (ctx) => DraggableScrollableSheet(
-        initialChildSize: 0.6,
-        minChildSize: 0.4,
-        maxChildSize: 0.85,
-        expand: false,
-        builder: (_, scrollCtrl) => Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text('Выберите город',
-                  style: TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 4),
-              Text('Покажем сервисы в вашем городе',
-                  style: TextStyle(
-                      fontSize: 13, color: AkJolTheme.textSecondary)),
-              const SizedBox(height: 12),
-              Expanded(
-                child: ListView(
-                  controller: scrollCtrl,
-                  children: [
-                    ListTile(
-                      leading: Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color:
-                              AkJolTheme.primary.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.my_location,
-                            color: AkJolTheme.primary, size: 20),
-                      ),
-                      title: const Text('Автоматически',
-                          style: TextStyle(fontWeight: FontWeight.w600)),
-                      subtitle: const Text('По GPS'),
-                      onTap: () {
-                        Navigator.pop(ctx);
-                        ref
-                            .read(locationProvider.notifier)
-                            .determinePosition();
-                        ref.invalidate(nearbyStoresProvider);
-                      },
-                    ),
-                    const Divider(),
-                    ...cities.map((city) => ListTile(
-                          leading: const Icon(Icons.location_city,
-                              color: AkJolTheme.textSecondary),
-                          title: Text(city['name'] as String),
-                          onTap: () {
-                            Navigator.pop(ctx);
-                            ref.read(locationProvider.notifier).setCity(
-                                  city['name'] as String,
-                                  city['lat'] as double,
-                                  city['lng'] as double,
-                                );
-                            ref.invalidate(nearbyStoresProvider);
-                          },
-                        )),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const AddressPickerScreen(),
+        fullscreenDialog: true,
       ),
-    );
+    ).then((_) {
+      // Refresh stores after address change
+      ref.invalidate(nearbyStoresProvider);
+    });
+  }
+
+  IconData _getCategoryIcon(String icon) {
+    return switch (icon) {
+      'restaurant' => Icons.restaurant_rounded,
+      'cafe' => Icons.local_cafe_rounded,
+      'coffee' => Icons.coffee_rounded,
+      'fastfood' => Icons.fastfood_rounded,
+      'food' => Icons.lunch_dining_rounded,
+      'grocery' => Icons.local_grocery_store_rounded,
+      'pharmacy' => Icons.local_pharmacy_rounded,
+      'tech' || 'electronics' => Icons.devices_rounded,
+      'auto' || 'car' => Icons.directions_car_rounded,
+      'pets' => Icons.pets_rounded,
+      'flowers' => Icons.local_florist_rounded,
+      'toys' => Icons.toys_rounded,
+      'books' => Icons.menu_book_rounded,
+      'clothes' => Icons.checkroom_rounded,
+      'beauty' => Icons.face_rounded,
+      'sport' => Icons.sports_soccer_rounded,
+      'home' => Icons.home_rounded,
+      'gift' => Icons.card_giftcard_rounded,
+      'products' => Icons.shopping_bag_rounded,
+      _ => Icons.storefront_rounded,
+    };
   }
 }
 
@@ -475,11 +463,21 @@ class _ActiveOrderBanner extends ConsumerWidget {
 
     if (activeOrders.isEmpty) return const SizedBox.shrink();
 
-    final order = activeOrders.first;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Column(
+        children: activeOrders.map((order) {
+          return _buildOrderCard(order, isDark);
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildOrderCard(CustomerOrder order, bool isDark) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
       child: GestureDetector(
         onTap: () => onTap(order.id),
         child: AnimatedContainer(
@@ -513,9 +511,10 @@ class _ActiveOrderBanner extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 alignment: Alignment.center,
-                child: Text(
-                  order.statusEmoji,
-                  style: const TextStyle(fontSize: 20),
+                child: Icon(
+                  _statusIconForOrder(order.status),
+                  size: 20,
+                  color: AkJolTheme.primary,
                 ),
               ),
               const SizedBox(width: 12),
@@ -565,4 +564,50 @@ class _ActiveOrderBanner extends ConsumerWidget {
       ),
     );
   }
+
+  IconData _statusIconForOrder(String status) {
+    switch (status) {
+      case 'pending':
+        return Icons.hourglass_top_rounded;
+      case 'confirmed':
+      case 'assembling':
+        return Icons.inventory_2_rounded;
+      case 'ready':
+        return Icons.check_box_rounded;
+      case 'courier_assigned':
+      case 'payment_sent':
+      case 'payment_verified':
+        return Icons.payments_rounded;
+      case 'picked_up':
+        return Icons.delivery_dining_rounded;
+      case 'arrived':
+        return Icons.location_on_rounded;
+      case 'delivered':
+        return Icons.check_circle_rounded;
+      default:
+        return Icons.cancel_rounded;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  STICKY HEADER DELEGATE — Pinned header
+// ═══════════════════════════════════════════════════════════════
+
+class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final Widget child;
+  const _StickyHeaderDelegate({required this.child});
+
+  @override
+  double get minExtent => 80;
+  @override
+  double get maxExtent => 80;
+
+  @override
+  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return child;
+  }
+
+  @override
+  bool shouldRebuild(covariant _StickyHeaderDelegate oldDelegate) => true;
 }

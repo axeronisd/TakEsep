@@ -410,15 +410,10 @@ class _UpdateDialogState extends State<_UpdateDialog> {
         // Exit current app so installer can replace files
         exit(0);
       } else if (Platform.isAndroid) {
-        // On Android, open the APK with the system installer
-        final apkPath = '${dir.path}/TakEsep-update.apk';
-        final uri = Uri.parse(apkPath);
-        if (await canLaunchUrl(uri)) {
-          await launchUrl(uri, mode: LaunchMode.externalApplication);
-        } else {
-          // Fallback: open in browser
-          _openInBrowser();
-        }
+        // On Android, open the download URL in browser for manual install
+        // Direct APK install from temp dir requires FileProvider + content:// URI
+        // which needs native channel. Browser download is more reliable.
+        _openInBrowser();
       }
     } catch (e) {
       if (mounted) {

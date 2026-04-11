@@ -110,19 +110,23 @@ class PrinterService {
 
       // Fallback for Windows if `Printing` fails to grab printers
       if (Platform.isWindows) {
-        final result = await Process.run('powershell', ['-Command', 'Get-Printer | Select-Object -ExpandProperty Name']);
-        if (result.exitCode == 0) {
-          final lines = result.stdout.toString().split('\n');
-          final fallbackPrinters = <Printer>[];
-          for (var line in lines) {
-            final name = line.trim();
-            if (name.isNotEmpty) {
-              fallbackPrinters.add(Printer(url: name, name: name, isDefault: false, isAvailable: true));
+        try {
+          final result = await Process.run('powershell', ['-Command', 'Get-Printer | Select-Object -ExpandProperty Name']);
+          if (result.exitCode == 0) {
+            final lines = result.stdout.toString().split('\n');
+            final fallbackPrinters = <Printer>[];
+            for (var line in lines) {
+              final name = line.trim();
+              if (name.isNotEmpty) {
+                fallbackPrinters.add(Printer(url: name, name: name, isDefault: false, isAvailable: true));
+              }
+            }
+            if (fallbackPrinters.isNotEmpty) {
+              return fallbackPrinters;
             }
           }
-          if (fallbackPrinters.isNotEmpty) {
-            return fallbackPrinters;
-          }
+        } catch (e) {
+          print('PrinterService.getAvailablePrinters powershell fallback error: $e');
         }
       }
       return list;

@@ -4,81 +4,214 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 import 'package:takesep_core/takesep_core.dart';
 import '../../providers/currency_provider.dart';
 import '../../providers/service_providers.dart';
+import '../../providers/service_request_providers.dart';
 import '../../widgets/cached_image_widget.dart';
 import 'widgets/edit_service_dialog.dart';
+import 'widgets/service_requests_tab.dart';
 
-/// Services screen — catalog of services from DB.
-class ServicesScreen extends ConsumerWidget {
+/// Services screen — каталог услуг + заявки от клиентов Ак Жол.
+class ServicesScreen extends ConsumerStatefulWidget {
   const ServicesScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<ServicesScreen> createState() => _ServicesScreenState();
+}
+
+class _ServicesScreenState extends ConsumerState<ServicesScreen>
+    with SingleTickerProviderStateMixin {
+  late TabController _tabCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabCtrl = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final cur = ref.watch(currencyProvider).symbol;
     final isDesktop = MediaQuery.of(context).size.width >= 900;
     final cs = Theme.of(context).colorScheme;
     final servicesAsync = ref.watch(serviceListProvider);
+    final activeRequestsCount = ref.watch(activeServiceRequestsCountProvider);
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => showEditServiceDialog(context, ref, null, cur),
-        backgroundColor: AppColors.primary,
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Новая услуга', style: TextStyle(color: Colors.white)),
-      ),
+      floatingActionButton: _tabCtrl.index == 0
+          ? FloatingActionButton.extended(
+              onPressed: () => showEditServiceDialog(context, ref, null, cur),
+              backgroundColor: AppColors.primary,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text('Новая услуга', style: TextStyle(color: Colors.white)),
+            )
+          : null,
       bottomNavigationBar: isDesktop ? null : const SizedBox(height: 80),
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.all(isDesktop ? AppSpacing.xxl : AppSpacing.lg),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Expanded(child: Text('Услуги', style: AppTypography.displaySmall.copyWith(color: cs.onSurface))),
-            ]),
-            const SizedBox(height: AppSpacing.xs),
-            Text('Каталог услуг для добавления в чек', style: AppTypography.bodyMedium.copyWith(color: cs.onSurface.withValues(alpha: 0.6))),
-            const SizedBox(height: AppSpacing.xl),
-            Expanded(
-              child: servicesAsync.when(
-                data: (services) {
-                  if (services.isEmpty) {
-                    return Center(child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(AppSpacing.xl),
-                          decoration: BoxDecoration(
-                            color: AppColors.secondary.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(Icons.design_services_rounded, size: 48, color: AppColors.secondary.withValues(alpha: 0.5)),
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        Text('Нет услуг', style: AppTypography.headlineSmall.copyWith(color: cs.onSurface)),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text('Добавьте первую услугу, нажав кнопку «Новая услуга»', textAlign: TextAlign.center, style: AppTypography.bodyMedium.copyWith(color: cs.onSurface.withValues(alpha: 0.5))),
-                      ],
-                    ));
-                  }
-                  return ListView.separated(
-                    itemCount: services.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
-                    itemBuilder: (_, i) {
-                      final s = services[i];
-                      return _ServiceCard(
-                        service: s,
-                        currencySymbol: cur,
-                        onTap: () => showEditServiceDialog(context, ref, s, cur),
-                      );
-                    },
-                  );
-                },
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(child: Text('Ошибка: $e')),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header
+              Text('Услуги',
+                  style: AppTypography.displaySmall.copyWith(color: cs.onSurface)),
+              const SizedBox(height: AppSpacing.xs),
+              Text('Каталог услуг и заявки от клиентов',
+                  style: AppTypography.bodyMedium.copyWith(
+                      color: cs.onSurface.withValues(alpha: 0.6))),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Tabs
+              Container(
+                decoration: BoxDecoration(
+                  color: cs.surfaceContainerHighest.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: TabBar(
+                  controller: _tabCtrl,
+                  onTap: (_) => setState(() {}), // Rebuild FAB
+                  indicatorSize: TabBarIndicatorSize.tab,
+                  dividerHeight: 0,
+                  indicator: BoxDecoration(
+                    color: cs.surface,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: cs.shadow.withValues(alpha: 0.05),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                  labelColor: cs.onSurface,
+                  unselectedLabelColor: cs.onSurface.withValues(alpha: 0.5),
+                  labelStyle: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.w600),
+                  tabs: [
+                    const Tab(text: 'Каталог'),
+                    Tab(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Text('Заявки'),
+                          if (activeRequestsCount > 0) ...[
+                            const SizedBox(width: 6),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: AppColors.primary,
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '$activeRequestsCount',
+                                style: const TextStyle(
+                                    color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ]),
+              const SizedBox(height: AppSpacing.lg),
+
+              // Tab content
+              Expanded(
+                child: TabBarView(
+                  controller: _tabCtrl,
+                  children: [
+                    // TAB 1: Service catalog
+                    _ServiceCatalogTab(
+                      servicesAsync: servicesAsync,
+                      currencySymbol: cur,
+                      onCreateTap: () => showEditServiceDialog(context, ref, null, cur),
+                      onEditTap: (s) => showEditServiceDialog(context, ref, s, cur),
+                    ),
+
+                    // TAB 2: Incoming requests from AkJol
+                    const ServiceRequestsTab(),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+// ─── Service Catalog Tab ─────────────────────────────────────
+
+class _ServiceCatalogTab extends ConsumerWidget {
+  final AsyncValue<List<Service>> servicesAsync;
+  final String currencySymbol;
+  final VoidCallback onCreateTap;
+  final void Function(Service) onEditTap;
+
+  const _ServiceCatalogTab({
+    required this.servicesAsync,
+    required this.currencySymbol,
+    required this.onCreateTap,
+    required this.onEditTap,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+
+    return servicesAsync.when(
+      data: (services) {
+        if (services.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.xl),
+                  decoration: BoxDecoration(
+                    color: AppColors.secondary.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.design_services_rounded,
+                      size: 48, color: AppColors.secondary.withValues(alpha: 0.5)),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Text('Нет услуг',
+                    style: AppTypography.headlineSmall.copyWith(color: cs.onSurface)),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Добавьте первую услугу —\nклиенты смогут заказать её в Ак Жол',
+                  textAlign: TextAlign.center,
+                  style: AppTypography.bodyMedium.copyWith(
+                      color: cs.onSurface.withValues(alpha: 0.5)),
+                ),
+              ],
+            ),
+          );
+        }
+
+        return ListView.separated(
+          itemCount: services.length,
+          separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+          itemBuilder: (_, i) {
+            final s = services[i];
+            return _ServiceCard(
+              service: s,
+              currencySymbol: currencySymbol,
+              onTap: () => onEditTap(s),
+            );
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) => Center(child: Text('Ошибка: $e')),
     );
   }
 }

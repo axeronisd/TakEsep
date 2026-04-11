@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:crop_your_image/crop_your_image.dart';
 import 'package:takesep_design_system/takesep_design_system.dart';
@@ -36,9 +37,30 @@ class _ImageCropDialogState extends State<_ImageCropDialog> {
   }
 
   Future<void> _loadImage() async {
-    final bytes = await widget.imageFile.readAsBytes();
-    if (mounted) {
-      setState(() => _imageBytes = bytes);
+    try {
+      final bytes = await widget.imageFile.readAsBytes();
+      // Decode to check size and resize if too large (prevents crash)
+      final codec = await instantiateImageCodec(bytes, targetWidth: 2048);
+      final frame = await codec.getNextFrame();
+      final image = frame.image;
+      final byteData = await image.toByteData(format: ImageByteFormat.png);
+      image.dispose();
+
+      if (mounted && byteData != null) {
+        setState(() => _imageBytes = byteData.buffer.asUint8List());
+      } else if (mounted) {
+        // Fallback: use original bytes
+        setState(() => _imageBytes = bytes);
+      }
+    } catch (e) {
+      debugPrint('⚠️ Load image for crop: $e');
+      // Fallback: try original bytes
+      try {
+        final bytes = await widget.imageFile.readAsBytes();
+        if (mounted) setState(() => _imageBytes = bytes);
+      } catch (_) {
+        if (mounted) Navigator.pop(context, widget.imageFile);
+      }
     }
   }
 

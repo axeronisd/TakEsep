@@ -36,6 +36,8 @@ dependencies:
   # UI
   url_launcher: ^6.2.6
   audioplayers: ^6.1.0
+  image_picker: ^1.1.2
+  shared_preferences: ^2.3.3
   
   # Utils
   http: ^1.2.1

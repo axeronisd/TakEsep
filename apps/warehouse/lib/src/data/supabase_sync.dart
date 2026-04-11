@@ -12,8 +12,10 @@ class SupabaseSync {
       // Clean data: convert SQLite integer booleans to real booleans
       final cleaned = _sanitize(table, data);
       await _supabase.from(table).upsert(cleaned);
+      print('✅ SupabaseSync.upsert($table) OK: ${data['id']}');
     } catch (e) {
-      print('⚠️ SupabaseSync.upsert($table) error: $e');
+      print('❌ SupabaseSync.upsert($table) FAILED: $e');
+      print('   Data: ${data.keys.join(', ')}');
       // Don't rethrow — local SQLite already has the data
     }
   }

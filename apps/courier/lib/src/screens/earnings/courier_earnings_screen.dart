@@ -42,30 +42,146 @@ class _CourierEarningsScreenState
     }
 
     try {
-      // 1. Summary via RPC
-      final summary = await _supabase.rpc(
-        'rpc_courier_earnings_summary',
-        params: {'p_courier_id': courierId, 'p_days': _days},
-      );
+      // 1. Summary via RPC (may not exist yet)
+      Map<String, dynamic> summary = {};
+      try {
+        final rpcResult = await _supabase.rpc(
+          'rpc_courier_earnings_summary',
+          params: {'p_courier_id': courierId, 'p_days': _days},
+        );
+        if (rpcResult is Map) {
+          summary = Map<String, dynamic>.from(rpcResult);
+        }
+      } catch (e) {
+        debugPrint('⚠️ RPC earnings summary not available: $e');
+        // Fallback: calculate from orders directly
+        try {
+          final allDelivered = await _supabase
+              .from('delivery_orders')
+              .select('courier_earning, delivered_at, delivery_fee')
+              .eq('courier_id', courierId)
+              .eq('status', 'delivered')
+              .order('delivered_at', ascending: false);
 
-      // 2. Recent delivered orders
-      final orders = await _supabase
-          .from('delivery_orders')
-          .select('id, order_number, delivery_fee, courier_earning, '
-              'delivered_at, delivery_type, warehouses(name)')
-          .eq('courier_id', courierId)
-          .eq('status', 'delivered')
-          .order('delivered_at', ascending: false)
-          .limit(20);
+          final now = DateTime.now();
+          final todayStart = DateTime(now.year, now.month, now.day);
+          final periodStart = now.subtract(Duration(days: _days));
+
+          double todayEarned = 0;
+          int todayCount = 0;
+          double totalEarned = 0;
+          int totalCount = 0;
+          final byDayMap = <String, double>{};
+
+          for (final o in allDelivered) {
+            // Use courier_earning, fallback to delivery_fee
+            final earning = (o['courier_earning'] as num?)?.toDouble() ??
+                (o['delivery_fee'] as num?)?.toDouble() ?? 0;
+            final deliveredAt = DateTime.tryParse(o['delivered_at']?.toString() ?? '');
+            if (deliveredAt == null) continue;
+
+            if (deliveredAt.isAfter(periodStart)) {
+              totalEarned += earning;
+              totalCount++;
+              // Group by day
+              final dayKey = '${deliveredAt.year}-${deliveredAt.month.toString().padLeft(2, '0')}-${deliveredAt.day.toString().padLeft(2, '0')}';
+              byDayMap[dayKey] = (byDayMap[dayKey] ?? 0) + earning;
+            }
+            if (deliveredAt.isAfter(todayStart)) {
+              todayEarned += earning;
+              todayCount++;
+            }
+          }
+
+          // Build by_day list sorted by date
+          final byDayList = byDayMap.entries.map((e) => <String, dynamic>{
+            'day': e.key,
+            'earned': e.value,
+          }).toList()
+            ..sort((a, b) => (a['day'] as String).compareTo(b['day'] as String));
+
+          summary = {
+            'today_earned': todayEarned,
+            'today_deliveries': todayCount,
+            'total_earned': totalEarned,
+            'total_deliveries': totalCount,
+            'avg_per_delivery': totalCount > 0 ? totalEarned / totalCount : 0,
+            'by_day': byDayList,
+          };
+        } catch (_) {}
+      }
+
+      // 2. Recent delivered orders (without join to avoid FK issues)
+      List<Map<String, dynamic>> orders = [];
+      double totalDebt = 0;
+      double totalPaid = 0;
+      try {
+        final rawOrders = await _supabase
+            .from('delivery_orders')
+            .select('id, order_number, delivery_fee, courier_earning, '
+                'items_total, delivered_at, delivery_type, warehouse_id, payment_method')
+            .eq('courier_id', courierId)
+            .eq('status', 'delivered')
+            .order('delivered_at', ascending: false)
+            .limit(50);
+        
+        // Calculate debt: courier collected items_total but only keeps delivery_fee
+        for (final o in rawOrders) {
+          final itemsTotal = (o['items_total'] as num?)?.toDouble() ?? 0;
+          totalDebt += itemsTotal; // Courier owes items_total to AkJol
+        }
+
+        // Load confirmed payments
+        try {
+          final payments = await _supabase
+              .from('courier_payments')
+              .select('amount')
+              .eq('courier_id', courierId);
+          for (final p in payments) {
+            totalPaid += (p['amount'] as num?)?.toDouble() ?? 0;
+          }
+        } catch (_) {}
+        
+        // Manually fetch warehouse names
+        final warehouseIds = <String>{};
+        for (final o in rawOrders) {
+          final wid = o['warehouse_id'] as String?;
+          if (wid != null) warehouseIds.add(wid);
+        }
+        
+        Map<String, String> warehouseNames = {};
+        if (warehouseIds.isNotEmpty) {
+          try {
+            final whs = await _supabase
+                .from('warehouses')
+                .select('id, name')
+                .inFilter('id', warehouseIds.toList());
+            for (final w in whs) {
+              warehouseNames[w['id'] as String] = w['name'] as String? ?? '';
+            }
+          } catch (_) {}
+        }
+
+        orders = (rawOrders as List).take(20).map((o) {
+          final m = Map<String, dynamic>.from(o);
+          m['warehouses'] = {'name': warehouseNames[o['warehouse_id']] ?? ''};
+          return m;
+        }).toList();
+      } catch (e) {
+        debugPrint('⚠️ Orders load error: $e');
+      }
 
       if (mounted) {
         setState(() {
-          _summary = Map<String, dynamic>.from(summary ?? {});
-          _recentOrders = List<Map<String, dynamic>>.from(orders);
+          _summary = summary;
+          _summary['debt'] = totalDebt - totalPaid;
+          _summary['total_paid'] = totalPaid;
+          _recentOrders = orders;
           _loading = false;
         });
       }
     } catch (e) {
+      debugPrint('❌ Earnings load error: $e');
       if (mounted) setState(() => _loading = false);
     }
   }
@@ -149,6 +265,67 @@ class _CourierEarningsScreenState
                     ],
                   ),
                   const SizedBox(height: 20),
+
+                  // ── Debt to AkJol ──
+                  Builder(builder: (_) {
+                    final debt = (_summary['debt'] as num?)?.toDouble() ?? 0;
+                    final isDebt = debt > 0;
+                    return Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: isDebt
+                            ? AkJolTheme.error.withValues(alpha: 0.08)
+                            : AkJolTheme.statusAccepted.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isDebt
+                              ? AkJolTheme.error.withValues(alpha: 0.3)
+                              : AkJolTheme.statusAccepted.withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            isDebt ? Icons.warning_amber_rounded : Icons.check_circle_outline,
+                            color: isDebt ? AkJolTheme.error : AkJolTheme.statusAccepted,
+                            size: 28,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  isDebt ? 'Долг перед AkJol' : 'Нет задолженности',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: isDebt ? AkJolTheme.error : AkJolTheme.statusAccepted,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                if (isDebt)
+                                  Text(
+                                    'Передайте сумму администратору',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.grey[500],
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ),
+                          Text(
+                            '${debt.toStringAsFixed(0)} сом',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 20,
+                              color: isDebt ? AkJolTheme.error : AkJolTheme.statusAccepted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }),
 
                   // ── Daily bar chart ──
                   if (byDay.isNotEmpty) ...[
@@ -257,7 +434,7 @@ class _CourierEarningsScreenState
       height: 140,
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       decoration: BoxDecoration(
-        color: AkJolTheme.surfaceVariant,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -323,7 +500,8 @@ class _CourierEarningsScreenState
 
   Widget _buildOrderTile(Map<String, dynamic> order) {
     final earning =
-        (order['courier_earning'] as num?)?.toDouble() ?? 0;
+        (order['courier_earning'] as num?)?.toDouble() ??
+        (order['delivery_fee'] as num?)?.toDouble() ?? 0;
     final store = order['warehouses']?['name'] ?? '';
     final number = order['order_number'] ?? '';
     final deliveredAt = order['delivered_at'] ?? '';

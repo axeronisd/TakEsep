@@ -144,6 +144,10 @@ class AkJolTheme {
       color: border,
       thickness: 1,
     ),
+    navigationBarTheme: const NavigationBarThemeData(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+    ),
   );
 
   // ─── Dark Theme ───────────────────────────────
@@ -255,6 +259,10 @@ class AkJolTheme {
     dividerTheme: const DividerThemeData(
       color: _darkBorder,
       thickness: 1,
+    ),
+    navigationBarTheme: const NavigationBarThemeData(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
     ),
   );
 }

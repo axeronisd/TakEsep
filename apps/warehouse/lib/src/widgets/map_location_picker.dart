@@ -284,10 +284,8 @@ class _MapLocationPickerState extends State<MapLocationPicker> {
                   ),
                   children: [
                     TileLayer(
-                      urlTemplate:
-                          'https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+                      urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                       userAgentPackageName: 'com.takesep.warehouse',
-                      retinaMode: true,
                     ),
                     if (_hasMarker)
                       MarkerLayer(

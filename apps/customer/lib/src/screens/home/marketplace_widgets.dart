@@ -308,35 +308,7 @@ class MarketplaceStoreCard extends StatelessWidget {
                   : _logoFallback(store.name),
             ),
           ),
-          // Distance badge
-          if (store.distanceKm != null)
-            Positioned(
-              right: 10,
-              top: 10,
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.black.withValues(alpha: 0.55),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.near_me, size: 11, color: Colors.white),
-                    const SizedBox(width: 3),
-                    Text(
-                      '${store.distanceKm!.toStringAsFixed(1)} км',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
+
         ],
       ),
     );
@@ -397,35 +369,19 @@ class MarketplaceStoreCard extends StatelessWidget {
   }
 
   Widget _buildInfoRow(bool isDark, Color muted) {
-    final chipBg = isDark ? const Color(0xFF21262D) : const Color(0xFFF3F4F6);
-    final chipText =
-        isDark ? const Color(0xFFCDD9E5) : const Color(0xFF374151);
-
     return Wrap(
       spacing: 8,
       runSpacing: 6,
       children: [
-        // Delivery time
-        if (store.estimatedMinutes != null)
+        // Distance
+        if (store.distanceKm != null)
           _InfoChip(
-            icon: Icons.schedule_rounded,
-            label: '${store.estimatedMinutes} мин',
-            bg: chipBg,
-            textColor: chipText,
+            icon: Icons.near_me_rounded,
+            label: _formatDistance(store.distanceKm!),
+            bg: AkJolTheme.primary.withValues(alpha: 0.08),
+            textColor: AkJolTheme.primary,
             iconColor: AkJolTheme.primary,
           ),
-        // Delivery fee
-        _InfoChip(
-          icon: Icons.delivery_dining_rounded,
-          label: store.deliveryFee <= 0
-              ? 'Бесплатно'
-              : '${store.deliveryFee.toStringAsFixed(0)} сом',
-          bg: store.deliveryFee <= 0
-              ? AkJolTheme.primary.withValues(alpha: 0.1)
-              : chipBg,
-          textColor: store.deliveryFee <= 0 ? AkJolTheme.primary : chipText,
-          iconColor: store.deliveryFee <= 0 ? AkJolTheme.primary : muted,
-        ),
         // Free delivery from
         if (store.freeDeliveryFrom > 0)
           _InfoChip(
@@ -436,17 +392,15 @@ class MarketplaceStoreCard extends StatelessWidget {
             textColor: const Color(0xFF2ECC71),
             iconColor: const Color(0xFF2ECC71),
           ),
-        // Min order
-        if (store.minOrderAmount > 0)
-          _InfoChip(
-            icon: Icons.shopping_cart_outlined,
-            label: 'Мин ${store.minOrderAmount.toStringAsFixed(0)} сом',
-            bg: chipBg,
-            textColor: muted,
-            iconColor: muted,
-          ),
       ],
     );
+  }
+
+  String _formatDistance(double km) {
+    if (km < 1.0) {
+      return '${(km * 1000).toStringAsFixed(0)} м от вас';
+    }
+    return '${km.toStringAsFixed(1)} км от вас';
   }
 
   Widget _gradientFallback(bool isDark) {
