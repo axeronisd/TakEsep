@@ -9,7 +9,7 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
     
     <application
-        android:label="AkJol Курьер"
+        android:label="AkJol Go"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity

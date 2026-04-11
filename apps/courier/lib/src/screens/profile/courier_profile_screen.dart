@@ -518,7 +518,7 @@ class _CourierProfileScreenState extends ConsumerState<CourierProfileScreen> {
             _SettingsTile(
               icon: Icons.info_outline_rounded,
               label: 'О приложении',
-              subtitle: 'AkJol Курьер v1.0.0',
+              subtitle: 'AkJol Go v1.0.0',
               trailing: Icon(Icons.chevron_right, color: cs.onSurface.withValues(alpha: 0.25)),
               onTap: () {},
             ),

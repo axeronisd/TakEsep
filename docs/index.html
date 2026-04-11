@@ -79,6 +79,41 @@
       50% { opacity: 1; transform: translateX(-50%) scale(1.15); }
     }
 
+    /* ─── Floating particles ─── */
+    .particles {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+
+    .particle {
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      border-radius: 50%;
+      background: var(--primary-light);
+      opacity: 0;
+      animation: particleFloat linear infinite;
+    }
+
+    .particle:nth-child(1) { left: 10%; animation-duration: 18s; animation-delay: 0s; }
+    .particle:nth-child(2) { left: 25%; animation-duration: 22s; animation-delay: 3s; }
+    .particle:nth-child(3) { left: 40%; animation-duration: 16s; animation-delay: 1s; background: var(--accent); }
+    .particle:nth-child(4) { left: 55%; animation-duration: 20s; animation-delay: 5s; }
+    .particle:nth-child(5) { left: 70%; animation-duration: 24s; animation-delay: 2s; background: var(--accent); }
+    .particle:nth-child(6) { left: 85%; animation-duration: 19s; animation-delay: 4s; }
+    .particle:nth-child(7) { left: 15%; animation-duration: 21s; animation-delay: 7s; background: var(--green); width: 2px; height: 2px; }
+    .particle:nth-child(8) { left: 65%; animation-duration: 17s; animation-delay: 6s; width: 2px; height: 2px; }
+
+    @keyframes particleFloat {
+      0% { transform: translateY(100vh) scale(0); opacity: 0; }
+      10% { opacity: 0.6; }
+      90% { opacity: 0.6; }
+      100% { transform: translateY(-20vh) scale(1); opacity: 0; }
+    }
+
     .noise {
       position: fixed;
       inset: 0;
@@ -87,6 +122,22 @@
       opacity: 0.015;
       background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
     }
+
+    /* ─── Scroll reveal animations ─── */
+    .reveal {
+      opacity: 0;
+      transform: translateY(30px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .reveal-delay-1 { transition-delay: 0.1s; }
+    .reveal-delay-2 { transition-delay: 0.2s; }
+    .reveal-delay-3 { transition-delay: 0.3s; }
 
     /* ─── Container ─── */
     .container {
@@ -103,6 +154,12 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      animation: fadeDown 0.8s ease-out;
+    }
+
+    @keyframes fadeDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .nav-brand {
@@ -173,6 +230,7 @@
       font-weight: 500;
       margin-bottom: 32px;
       letter-spacing: 0.02em;
+      animation: fadeUp 0.8s 0.2s ease-out both;
     }
 
     .hero-label .dot {
@@ -188,12 +246,18 @@
       50% { opacity: 0.3; }
     }
 
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
     h1 {
       font-size: clamp(2.2rem, 5vw, 3.5rem);
       font-weight: 800;
       letter-spacing: -0.04em;
       line-height: 1.1;
       color: var(--text);
+      animation: fadeUp 0.8s 0.3s ease-out both;
     }
 
     h1 span {
@@ -212,6 +276,45 @@
       max-width: 560px;
       margin-left: auto;
       margin-right: auto;
+      animation: fadeUp 0.8s 0.4s ease-out both;
+    }
+
+    /* ─── Stats Section ─── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--surface-border);
+      border: 1px solid var(--surface-border);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-top: 48px;
+    }
+
+    .stat-item {
+      background: var(--bg);
+      padding: 28px 16px;
+      text-align: center;
+      transition: background 0.3s;
+    }
+
+    .stat-item:hover { background: rgba(255,255,255,0.015); }
+
+    .stat-number {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      background: linear-gradient(135deg, var(--primary-light), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 4px;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      font-weight: 500;
     }
 
     /* ─── App Section ─── */
@@ -277,8 +380,10 @@
 
     .dl-card {
       position: relative;
-      background: var(--surface);
-      border: 1px solid var(--surface-border);
+      background: rgba(255,255,255,0.025);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.06);
       border-radius: 16px;
       padding: 28px 20px 24px;
       text-align: center;
@@ -292,7 +397,7 @@
       inset: 0;
       border-radius: 16px;
       padding: 1px;
-      background: linear-gradient(135deg, rgba(108,92,231,0.2), transparent, rgba(0,210,255,0.1));
+      background: linear-gradient(135deg, rgba(108,92,231,0.3), transparent, rgba(0,210,255,0.15));
       -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
       -webkit-mask-composite: xor;
@@ -302,27 +407,39 @@
     }
 
     .dl-card:hover {
-      transform: translateY(-4px);
-      border-color: rgba(108,92,231,0.2);
-      box-shadow: 0 16px 48px rgba(108,92,231,0.06), 0 0 0 1px rgba(108,92,231,0.1);
+      transform: translateY(-6px);
+      border-color: rgba(108,92,231,0.25);
+      box-shadow: 0 20px 60px rgba(108,92,231,0.08), 0 0 0 1px rgba(108,92,231,0.15);
     }
 
     .dl-card:hover::before { opacity: 1; }
 
     .dl-icon {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
+      width: 48px;
+      height: 48px;
+      border-radius: 13px;
       margin: 0 auto 16px;
       display: flex;
       align-items: center;
       justify-content: center;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+
+    .dl-card:hover .dl-icon {
+      transform: scale(1.1);
     }
 
     .dl-icon svg { width: 22px; height: 22px; fill: white; }
 
-    .dl-icon.win { background: linear-gradient(135deg, #0078D4, #00A4EF); }
-    .dl-icon.and { background: linear-gradient(135deg, #3DDC84, #00A956); }
+    .dl-icon.win {
+      background: linear-gradient(135deg, #0078D4, #00A4EF);
+      box-shadow: 0 4px 16px rgba(0,120,212,0.3);
+    }
+
+    .dl-icon.and {
+      background: linear-gradient(135deg, #3DDC84, #00A956);
+      box-shadow: 0 4px 16px rgba(61,220,132,0.3);
+    }
 
     .dl-platform {
       font-size: 0.65rem;
@@ -351,7 +468,7 @@
       justify-content: center;
       gap: 8px;
       width: 100%;
-      padding: 11px 16px;
+      padding: 12px 16px;
       border-radius: 10px;
       font-size: 0.85rem;
       font-weight: 600;
@@ -364,21 +481,76 @@
 
     .dl-btn svg { width: 15px; height: 15px; fill: currentColor; }
 
-    .dl-btn.win { background: linear-gradient(135deg, #0078D4, #00A4EF); }
-    .dl-btn.and { background: linear-gradient(135deg, #3DDC84, #00A956); }
+    .dl-btn.win {
+      background: linear-gradient(135deg, #0078D4, #00A4EF);
+    }
+    .dl-btn.and {
+      background: linear-gradient(135deg, #3DDC84, #00A956);
+    }
 
     .dl-btn:hover {
-      transform: scale(1.03);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      transform: scale(1.04);
+    }
+
+    .dl-btn.win:hover {
+      box-shadow: 0 0 24px rgba(0,120,212,0.4), 0 8px 24px rgba(0,0,0,0.3);
+    }
+
+    .dl-btn.and:hover {
+      box-shadow: 0 0 24px rgba(61,220,132,0.4), 0 8px 24px rgba(0,0,0,0.3);
     }
 
     .dl-size {
       display: block;
-      margin-top: 8px;
+      margin-top: 10px;
       font-size: 0.72rem;
       color: var(--text-tertiary);
       position: relative;
       z-index: 1;
+    }
+
+    /* iOS coming soon */
+    .dl-icon.ios {
+      background: linear-gradient(135deg, #555, #333);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+    }
+
+    .dl-btn.ios {
+      background: linear-gradient(135deg, #555, #333);
+      cursor: default;
+      opacity: 0.7;
+    }
+
+    .dl-btn.ios:hover {
+      transform: none;
+      box-shadow: none;
+    }
+
+    .dl-card.coming-soon {
+      opacity: 0.6;
+    }
+
+    .dl-card.coming-soon:hover {
+      transform: translateY(-3px);
+      opacity: 0.75;
+    }
+
+    .coming-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: rgba(255,255,255,0.06);
+      color: var(--text-secondary);
+      border: 1px solid rgba(255,255,255,0.08);
+      margin-top: 10px;
+    }
+
+    .downloads.three {
+      grid-template-columns: 1fr 1fr 1fr;
     }
 
     /* ─── Divider ─── */
@@ -427,14 +599,17 @@
     .feat:hover { background: rgba(255,255,255,0.02); }
 
     .feat-icon {
-      width: 38px;
-      height: 38px;
-      border-radius: 10px;
+      width: 40px;
+      height: 40px;
+      border-radius: 11px;
       display: flex;
       align-items: center;
       justify-content: center;
       margin-bottom: 14px;
+      transition: transform 0.3s;
     }
+
+    .feat:hover .feat-icon { transform: scale(1.1) rotate(3deg); }
 
     .feat-icon svg { width: 18px; height: 18px; }
 
@@ -451,9 +626,9 @@
       line-height: 1.5;
     }
 
-    .fi-purple { background: rgba(108,92,231,0.08); }
-    .fi-green { background: rgba(61,220,132,0.08); }
-    .fi-orange { background: rgba(255,107,53,0.08); }
+    .fi-purple { background: rgba(108,92,231,0.1); }
+    .fi-green { background: rgba(61,220,132,0.1); }
+    .fi-orange { background: rgba(255,107,53,0.1); }
 
     /* ─── Ecosystem grid ─── */
     .eco-grid {
@@ -461,29 +636,37 @@
       grid-template-columns: repeat(3, 1fr);
       gap: 16px;
       margin-top: 48px;
+      animation: fadeUp 0.8s 0.5s ease-out both;
     }
 
     .eco-card {
-      background: var(--surface);
+      background: rgba(255,255,255,0.025);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
       border: 1px solid var(--surface-border);
       border-radius: 16px;
       padding: 28px 20px;
       text-align: center;
-      transition: all 0.3s;
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
     .eco-card:hover {
-      border-color: rgba(108,92,231,0.15);
-      transform: translateY(-3px);
+      border-color: rgba(108,92,231,0.2);
+      transform: translateY(-5px);
+      box-shadow: 0 16px 48px rgba(108,92,231,0.06);
     }
 
     .eco-card-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 14px;
+      width: 52px;
+      height: 52px;
+      border-radius: 15px;
       margin: 0 auto 14px;
       overflow: hidden;
+      transition: transform 0.3s;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.3);
     }
+
+    .eco-card:hover .eco-card-icon { transform: scale(1.1); }
 
     .eco-card-icon img { width: 100%; height: 100%; object-fit: cover; }
 
@@ -508,10 +691,10 @@
       font-weight: 600;
       color: var(--primary-light);
       text-decoration: none;
-      transition: color 0.2s;
+      transition: color 0.2s, gap 0.2s;
     }
 
-    .eco-card .eco-link:hover { color: var(--accent); }
+    .eco-card .eco-link:hover { color: var(--accent); gap: 8px; }
 
     /* ─── Install guide ─── */
     .install-grid {
@@ -525,6 +708,11 @@
       border: 1px solid var(--surface-border);
       border-radius: 14px;
       padding: 24px 20px;
+      transition: border-color 0.3s;
+    }
+
+    .install-card:hover {
+      border-color: rgba(108,92,231,0.15);
     }
 
     .install-card h4 {
@@ -580,6 +768,30 @@
       top: 9px;
     }
 
+    /* ─── Tech Stack ─── */
+    .tech-stack {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 32px;
+      flex-wrap: wrap;
+      padding: 20px 0;
+    }
+
+    .tech-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--text-tertiary);
+      font-size: 0.78rem;
+      font-weight: 500;
+      transition: color 0.3s;
+    }
+
+    .tech-item:hover { color: var(--text-secondary); }
+
+    .tech-item svg { width: 20px; height: 20px; opacity: 0.5; }
+
     /* ─── Footer ─── */
     footer {
       text-align: center;
@@ -610,12 +822,16 @@
     @media (max-width: 768px) {
       .hero { padding: 56px 0 40px; }
       .downloads { grid-template-columns: 1fr; max-width: 340px; }
+      .downloads.three { grid-template-columns: 1fr; }
       .features { grid-template-columns: 1fr 1fr; }
       .install-grid { grid-template-columns: 1fr; }
       .eco-grid { grid-template-columns: 1fr; max-width: 360px; margin-left: auto; margin-right: auto; }
       .app-header { flex-wrap: wrap; }
       .app-badge { margin-left: 0; }
       .nav-links { display: none; }
+      .stats { grid-template-columns: 1fr; }
+      .stat-number { font-size: 1.6rem; }
+      .tech-stack { gap: 20px; }
     }
 
     @media (max-width: 480px) {
@@ -627,6 +843,18 @@
 <body>
   <div class="ambient"></div>
   <div class="noise"></div>
+  
+  <!-- Floating particles -->
+  <div class="particles">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+  </div>
 
   <div class="container">
     <!-- Nav -->
@@ -641,7 +869,7 @@
         <a href="#takesep">Склад</a>
         <a href="#customer">Клиент</a>
         <a href="#courier">Курьер</a>
-        <span class="nav-version">v2.0</span>
+        <span class="nav-version">v1.0.2</span>
       </div>
     </nav>
 
@@ -657,6 +885,22 @@
         Три приложения, одна цель — ваш бизнес работает как часы.
       </p>
 
+      <!-- Stats -->
+      <div class="stats reveal">
+        <div class="stat-item">
+          <div class="stat-number">3</div>
+          <div class="stat-label">Приложения в экосистеме</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">3</div>
+          <div class="stat-label">Платформы: Windows, Android, iOS</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number">∞</div>
+          <div class="stat-label">Бесплатно навсегда</div>
+        </div>
+      </div>
+
       <!-- Ecosystem cards -->
       <div class="eco-grid">
         <div class="eco-card">
@@ -665,23 +909,23 @@
           </div>
           <h4>TakEsep</h4>
           <p>Склад, продажи, аналитика и отчёты для владельца бизнеса</p>
-          <a href="#takesep" class="eco-link">Скачать ↓</a>
+          <a href="#takesep" class="eco-link">Скачать →</a>
         </div>
         <div class="eco-card">
           <div class="eco-card-icon">
             <img src="akjol_customer.png" alt="AkJol">
           </div>
-          <h4>AkJol Клиент</h4>
+          <h4>AkJol</h4>
           <p>Заказ товаров с доставкой для ваших клиентов</p>
-          <a href="#customer" class="eco-link">Скачать ↓</a>
+          <a href="#customer" class="eco-link">Скачать →</a>
         </div>
         <div class="eco-card">
           <div class="eco-card-icon">
             <img src="akjol_courier.png" alt="AkJol Courier">
           </div>
-          <h4>AkJol Курьер</h4>
+          <h4>AkJol Go</h4>
           <p>Управление доставками и навигация для курьеров</p>
-          <a href="#courier" class="eco-link">Скачать ↓</a>
+          <a href="#courier" class="eco-link">Скачать →</a>
         </div>
       </div>
     </section>
@@ -689,7 +933,7 @@
     <div class="divider"></div>
 
     <!-- ═══════ TakEsep Section ═══════ -->
-    <section class="app-section" id="takesep">
+    <section class="app-section reveal" id="takesep">
       <div class="app-header">
         <div class="app-header-icon">
           <img src="logo.png" alt="TakEsep">
@@ -701,7 +945,7 @@
         <span class="app-badge badge-purple">Основное</span>
       </div>
 
-      <div class="downloads">
+      <div class="downloads three">
         <div class="dl-card">
           <div class="dl-icon win">
             <svg viewBox="0 0 24 24"><path d="M3 12V6.75l6-1.32v6.48L3 12zm6.09.09l-.01 6.54-6.08-1.36V12.1l6.09-.01zM10 5.31L20 3.5V12h-10V5.31zM20 12.5V21l-10-1.5V12.5h10z"/></svg>
@@ -709,11 +953,11 @@
           <div class="dl-platform">Десктоп</div>
           <div class="dl-title">Windows</div>
           <div class="dl-meta">Windows 10 / 11 · 64-bit</div>
-          <a href="https://github.com/axeronisd/TakEsep/releases/download/v2.0/TakEsep_Setup.exe" class="dl-btn win">
+          <a href="https://github.com/axeronisd/TakEsep/releases/download/v1.0.2/TakEsep_Setup.exe" class="dl-btn win">
             <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>
             Скачать .exe
           </a>
-          <span class="dl-size">66 МБ · Инсталлятор</span>
+          <span class="dl-size">~66 МБ · Инсталлятор</span>
         </div>
 
         <div class="dl-card">
@@ -722,17 +966,28 @@
           </div>
           <div class="dl-platform">Мобильное</div>
           <div class="dl-title">Android</div>
-          <div class="dl-meta">Android 6.0+ · APK</div>
-          <a href="https://github.com/axeronisd/TakEsep/releases/download/v2.0/TakEsep.apk" class="dl-btn and">
+          <div class="dl-meta">Android 7.0+ · APK</div>
+          <a href="https://github.com/axeronisd/TakEsep/releases/download/v1.0.2/TakEsep.apk" class="dl-btn and">
             <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>
             Скачать .apk
           </a>
-          <span class="dl-size">93 МБ · Установочный файл</span>
+          <span class="dl-size">~93 МБ · Установочный файл</span>
+        </div>
+
+        <div class="dl-card coming-soon">
+          <div class="dl-icon ios">
+            <svg viewBox="0 0 24 24" fill="white"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          </div>
+          <div class="dl-platform">Мобильное</div>
+          <div class="dl-title">iOS</div>
+          <div class="dl-meta">iPhone · iPad</div>
+          <span class="dl-btn ios">Скоро</span>
+          <span class="coming-badge">Coming Soon</span>
         </div>
       </div>
 
       <!-- Features -->
-      <div style="margin-top: 40px;">
+      <div class="reveal" style="margin-top: 40px;">
         <div class="features">
           <div class="feat">
             <div class="feat-icon fi-purple">
@@ -759,8 +1014,8 @@
             <div class="feat-icon fi-purple">
               <svg viewBox="0 0 24 24" fill="none" stroke="#A29BFE" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
             </div>
-            <h4>Работа офлайн</h4>
-            <p>Без интернета, синхронизация автоматически</p>
+            <h4>Синхронизация</h4>
+            <p>Автоматическая синхронизация при восстановлении связи</p>
           </div>
         </div>
       </div>
@@ -769,16 +1024,16 @@
     <div class="divider"></div>
 
     <!-- ═══════ AkJol Customer Section ═══════ -->
-    <section class="app-section" id="customer">
+    <section class="app-section reveal" id="customer">
       <div class="app-header">
         <div class="app-header-icon">
           <img src="akjol_customer.png" alt="AkJol">
         </div>
         <div class="app-header-text">
-          <h2>AkJol Клиент</h2>
+          <h2>AkJol</h2>
           <p>Мобильное приложение для ваших покупателей</p>
         </div>
-        <span class="app-badge badge-green">Клиенты</span>
+        <span class="app-badge badge-green">Покупатели</span>
       </div>
 
       <div class="downloads">
@@ -788,37 +1043,48 @@
           </div>
           <div class="dl-platform">Мобильное</div>
           <div class="dl-title">Android</div>
-          <div class="dl-meta">Android 6.0+ · APK</div>
-          <a href="https://github.com/axeronisd/TakEsep/releases/download/v2.0/AkJol_Customer.apk" class="dl-btn and">
+          <div class="dl-meta">Android 7.0+ · APK</div>
+          <a href="https://github.com/axeronisd/TakEsep/releases/download/v1.0.2/AkJol.apk" class="dl-btn and">
             <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>
             Скачать .apk
           </a>
           <span class="dl-size">APK · Установочный файл</span>
         </div>
+
+        <div class="dl-card coming-soon">
+          <div class="dl-icon ios">
+            <svg viewBox="0 0 24 24" fill="white"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          </div>
+          <div class="dl-platform">Мобильное</div>
+          <div class="dl-title">iOS</div>
+          <div class="dl-meta">iPhone · iPad</div>
+          <span class="dl-btn ios">Скоро</span>
+          <span class="coming-badge">Coming Soon</span>
+        </div>
       </div>
 
-      <div style="margin-top: 32px;">
+      <div class="reveal" style="margin-top: 32px;">
         <div class="features" style="grid-template-columns: repeat(3, 1fr);">
           <div class="feat">
             <div class="feat-icon fi-green">
               <svg viewBox="0 0 24 24" fill="none" stroke="#3DDC84" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"></circle><circle cx="20" cy="21" r="1"></circle><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path></svg>
             </div>
-            <h4>Каталог товаров</h4>
-            <p>Просмотр и заказ товаров из магазина</p>
+            <h4>Каталог и заказ</h4>
+            <p>Просмотр товаров и оформление заказа с доставкой</p>
           </div>
           <div class="feat">
             <div class="feat-icon fi-green">
               <svg viewBox="0 0 24 24" fill="none" stroke="#3DDC84" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
             </div>
-            <h4>Доставка на адрес</h4>
-            <p>Указание адреса и отслеживание курьера</p>
+            <h4>Карта отслеживания</h4>
+            <p>Отслеживание курьера на карте в реальном времени</p>
           </div>
           <div class="feat">
             <div class="feat-icon fi-green">
               <svg viewBox="0 0 24 24" fill="none" stroke="#3DDC84" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
             </div>
-            <h4>История заказов</h4>
-            <p>Статус заказа и история покупок</p>
+            <h4>Выбор магазина</h4>
+            <p>Поиск ближайших магазинов и сервисов</p>
           </div>
         </div>
       </div>
@@ -827,13 +1093,13 @@
     <div class="divider"></div>
 
     <!-- ═══════ AkJol Courier Section ═══════ -->
-    <section class="app-section" id="courier">
+    <section class="app-section reveal" id="courier">
       <div class="app-header">
         <div class="app-header-icon">
           <img src="akjol_courier.png" alt="AkJol Courier">
         </div>
         <div class="app-header-text">
-          <h2>AkJol Курьер</h2>
+          <h2>AkJol Go</h2>
           <p>Приложение для курьеров с навигацией</p>
         </div>
         <span class="app-badge badge-orange">Доставка</span>
@@ -846,30 +1112,41 @@
           </div>
           <div class="dl-platform">Мобильное</div>
           <div class="dl-title">Android</div>
-          <div class="dl-meta">Android 6.0+ · APK</div>
-          <a href="https://github.com/axeronisd/TakEsep/releases/download/v2.0/AkJol_Courier.apk" class="dl-btn and">
+          <div class="dl-meta">Android 7.0+ · APK</div>
+          <a href="https://github.com/axeronisd/TakEsep/releases/download/v1.0.2/AkJol_Go.apk" class="dl-btn and">
             <svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z"/></svg>
             Скачать .apk
           </a>
           <span class="dl-size">APK · Установочный файл</span>
         </div>
+
+        <div class="dl-card coming-soon">
+          <div class="dl-icon ios">
+            <svg viewBox="0 0 24 24" fill="white"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+          </div>
+          <div class="dl-platform">Мобильное</div>
+          <div class="dl-title">iOS</div>
+          <div class="dl-meta">iPhone · iPad</div>
+          <span class="dl-btn ios">Скоро</span>
+          <span class="coming-badge">Coming Soon</span>
+        </div>
       </div>
 
-      <div style="margin-top: 32px;">
+      <div class="reveal" style="margin-top: 32px;">
         <div class="features" style="grid-template-columns: repeat(3, 1fr);">
           <div class="feat">
             <div class="feat-icon fi-orange">
               <svg viewBox="0 0 24 24" fill="none" stroke="#FF6B35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
             </div>
-            <h4>Навигация 2GIS</h4>
-            <p>Маршруты к клиентам через 2GIS, Google Maps, Yandex</p>
+            <h4>Навигация</h4>
+            <p>Построение маршрутов к клиентам на встроенной карте</p>
           </div>
           <div class="feat">
             <div class="feat-icon fi-orange">
               <svg viewBox="0 0 24 24" fill="none" stroke="#FF6B35" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
             </div>
-            <h4>Уведомления</h4>
-            <p>Звуковые оповещения о новых заказах</p>
+            <h4>Push-уведомления</h4>
+            <p>Мгновенные оповещения о новых заказах</p>
           </div>
           <div class="feat">
             <div class="feat-icon fi-orange">
@@ -885,7 +1162,7 @@
     <div class="divider"></div>
 
     <!-- Install instructions -->
-    <section>
+    <section class="reveal">
       <p class="section-label">Установка</p>
       <h2 class="section-title">Начните за 2 минуты</h2>
 
@@ -917,11 +1194,68 @@
       </div>
     </section>
 
+    <div class="divider"></div>
+
+    <!-- Tech stack -->
+    <section class="reveal">
+      <p class="section-label">Технологии</p>
+      <div class="tech-stack">
+        <div class="tech-item">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14.314 0L2.3 12 6 15.7 21.684.013h-7.357zm.014 11.072L7.857 17.53l6.47 6.47H21.7l-6.46-6.468 6.46-6.46z"/></svg>
+          Flutter
+        </div>
+        <div class="tech-item">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21.362 9.354H12V.396h0c0-.198.019-.397.057-.593.216-1.084 1.128-1.964 2.244-1.964h14.074c1.116 0 2.028.88 2.244 1.964.038.196.057.395.057.593h0v8.958h-9.358zm-19.6 0h0c.217 1.084 1.129 1.964 2.245 1.964h5.488v4.631L3.507 21.65.376 18.74l1.386-9.387z" transform="scale(.7) translate(2,2)"/></svg>
+          Supabase
+        </div>
+        <div class="tech-item">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          PowerSync
+        </div>
+        <div class="tech-item">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3.89 15.672L6.255.461A.542.542 0 017.27.289l2.543 4.771zm16.794 3.692l-2.25-14a.54.54 0 00-.919-.295L3.316 19.365h13.735l2.04 3.6a.373.373 0 00.655-.037l.938-3.564z"/></svg>
+          Firebase
+        </div>
+        <div class="tech-item">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.128 0a10.134 10.134 0 00-2.755.403l-.063.02A10.922 10.922 0 0012.6.258C11.422.238 10.41.524 9.594 1 8.79.721 7.122.24 5.364.336 4.14.403 2.804.775 1.814 1.82.827 2.865.305 4.482.415 6.682c.11 2.2.86 4.944 2.144 7.823 1.285 2.878 2.674 4.928 4.085 6.254.706.663 1.42 1.128 2.168 1.241.374.057.75.024 1.103-.125.353-.15.635-.4.868-.69a.468.468 0 01.14-.1c.026-.01.088-.025.262-.013.17.012.39.05.67.098a5.2 5.2 0 001.6.081c.78-.074 1.387-.498 1.97-.916a.468.468 0 01.068-.044c.008-.004.004 0 .042-.01.063-.016.19-.03.395-.012.2.018.449.06.743.112.588.103 1.337.222 2.083.177.748-.046 1.5-.285 2.06-.81.558-.525.87-1.283.868-2.19 0-.063-.008-.124-.024-.182a4.01 4.01 0 00-.392-.99 7.772 7.772 0 01-.545-1.252c-.194-.594-.31-1.27-.256-2.02.048-.633.18-1.122.332-1.558.153-.436.327-.83.44-1.284.225-.914.1-1.7-.464-2.492-.57-.8-1.584-1.506-3.063-1.93zM16.97.64c1.327.38 2.164.992 2.592 1.594.425.6.48 1.18.3 1.91-.092.373-.252.74-.41 1.192-.16.453-.318 1.003-.374 1.737-.063.83.076 1.59.297 2.27.222.682.504 1.193.666 1.6.072.18.112.32.137.44-.014.7-.247 1.248-.644 1.621-.397.374-.96.553-1.574.59-.613.037-1.28-.062-1.85-.162-.286-.05-.555-.098-.758-.12-.203-.018-.384-.018-.548.024-.165.042-.292.122-.402.192-.533.34-1.004.67-1.56.723a4.306 4.306 0 01-1.273-.06 7.473 7.473 0 01-.742-.112c-.286-.05-.538-.094-.753-.064-.215.03-.375.13-.493.217l-.163.125z"/></svg>
+          PostgreSQL
+        </div>
+        <div class="tech-item">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 010-5 2.5 2.5 0 010 5z"/></svg>
+          OpenStreetMap
+        </div>
+        <div class="tech-item">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4.105 4.105S9.158 1.58 11.684.316a3.079 3.079 0 011.481-.315c.766.047 1.677.788 1.677.788L24 9.948v9.789h-4.263V24H.015l9.735-8.847L4.105 4.105zm0 0L18.221 19.34l1.516-1.516L4.105 4.105z" transform="scale(.85) translate(1.5,1.5)"/></svg>
+          Dart
+        </div>
+      </div>
+    </section>
+
     <!-- Footer -->
     <footer>
       <div class="footer-line"></div>
-      <p>&copy; 2026 TakEsep Ecosystem &nbsp;&middot;&nbsp; <a href="https://github.com/axeronisd/TakEsep/releases">Все версии</a></p>
+      <p>&copy; 2026 TakEsep Ecosystem &nbsp;&middot;&nbsp; <a href="https://github.com/axeronisd/TakEsep/releases">Все версии</a> &nbsp;&middot;&nbsp; <a href="admin.html">Админ-панель</a></p>
     </footer>
   </div>
+
+  <!-- Scroll reveal script -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const reveals = document.querySelectorAll('.reveal');
+      
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      }, {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+      });
+
+      reveals.forEach(el => observer.observe(el));
+    });
+  </script>
 </body>
 </html>

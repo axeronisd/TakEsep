@@ -82,27 +82,27 @@ jobs:
         run: |
           cp apps/warehouse/build/app/outputs/flutter-apk/app-release.apk TakEsep.apk
 
-      # AkJol Courier APK
-      - name: Build Courier APK
+      # AkJol Go APK
+      - name: Build AkJol Go APK
         run: |
           cd apps/courier
           flutter pub get
           flutter build apk --release
 
-      - name: Rename Courier APK
+      - name: Rename AkJol Go APK
         run: |
-          cp apps/courier/build/app/outputs/flutter-apk/app-release.apk AkJol_Courier.apk
+          cp apps/courier/build/app/outputs/flutter-apk/app-release.apk AkJol_Go.apk
 
-      # AkJol Customer APK
-      - name: Build Customer APK
+      # AkJol APK
+      - name: Build AkJol APK
         run: |
           cd apps/customer
           flutter pub get
           flutter build apk --release
 
-      - name: Rename Customer APK
+      - name: Rename AkJol APK
         run: |
-          cp apps/customer/build/app/outputs/flutter-apk/app-release.apk AkJol_Customer.apk
+          cp apps/customer/build/app/outputs/flutter-apk/app-release.apk AkJol.apk
 
       - name: Upload APKs
         uses: actions/upload-artifact@v4
@@ -110,8 +110,8 @@ jobs:
           name: android-apks
           path: |
             TakEsep.apk
-            AkJol_Courier.apk
-            AkJol_Customer.apk
+            AkJol_Go.apk
+            AkJol.apk
 
   # ═══════════════════════════════════════════════
   # Create GitHub Release
@@ -154,8 +154,8 @@ jobs:
 
             ### 📦 Приложения
             - **TakEsep** — управление складом и продажами (Windows + Android)
-            - **AkJol Клиент** — приложение для покупателей (Android)
-            - **AkJol Курьер** — приложение для курьеров (Android)
+            - **AkJol** — приложение для покупателей (Android)
+            - **AkJol Go** — приложение для курьеров (Android)
             - **Веб-админка** — [axeronisd.github.io/TakEsep/admin.html](https://axeronisd.github.io/TakEsep/admin.html)
 
             ### 📥 Скачать
@@ -163,13 +163,13 @@ jobs:
             |---|---|---|
             | TakEsep | Windows | `TakEsep_Setup.exe` |
             | TakEsep | Android | `TakEsep.apk` |
-            | AkJol Клиент | Android | `AkJol_Customer.apk` |
-            | AkJol Курьер | Android | `AkJol_Courier.apk` |
+            | AkJol | Android | `AkJol.apk` |
+            | AkJol Go | Android | `AkJol_Go.apk` |
           files: |
             ./artifacts/windows/TakEsep_Setup.exe
             ./artifacts/android/TakEsep.apk
-            ./artifacts/android/AkJol_Courier.apk
-            ./artifacts/android/AkJol_Customer.apk
+            ./artifacts/android/AkJol_Go.apk
+            ./artifacts/android/AkJol.apk
 
       - name: Update Supabase app_versions
         env:
