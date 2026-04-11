@@ -88,81 +88,100 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
+    final isMobile = MediaQuery.of(context).size.width < 720;
 
     return Stack(
       children: [
         Scaffold(
           backgroundColor: const Color(0xFF0F0F23),
-          body: Row(
-            children: [
-              // ── Table list sidebar ──
-              Container(
-                width: 280,
-                decoration: const BoxDecoration(
-                  color: Color(0xFF12122B),
-                  border: Border(right: BorderSide(color: Color(0xFF2A2A4E))),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          // Mobile: use AppBar + Drawer for table navigation
+          appBar: isMobile
+              ? AppBar(
+                  backgroundColor: const Color(0xFF12122B),
+                  title: Text(_selectedTableLabel ?? 'База данных',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
+                  leading: Builder(
+                    builder: (ctx) => IconButton(
+                      icon: const Icon(Icons.menu),
+                      onPressed: () => Scaffold.of(ctx).openDrawer(),
+                    ),
+                  ),
+                  actions: [
+                    if (_selectedTable != null)
+                      IconButton(
+                        onPressed: _fetchPage,
+                        icon: const Icon(Icons.refresh, size: 20),
+                        tooltip: 'Обновить',
+                      ),
+                  ],
+                )
+              : null,
+          drawer: isMobile ? _buildSidebarDrawer(cs) : null,
+          body: isMobile
+              ? (_selectedTable == null ? _buildEmptyState() : _buildDataView())
+              : Row(
                   children: [
-                    // Header
-                    Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Row(
+                    // ── Table list sidebar ──
+                    Container(
+                      width: 280,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF12122B),
+                        border: Border(right: BorderSide(color: Color(0xFF2A2A4E))),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.storage, color: cs.primary, size: 22),
-                          const SizedBox(width: 10),
-                          const Text('База данных',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: Colors.white,
-                              )),
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                Icon(Icons.storage, color: cs.primary, size: 22),
+                                const SizedBox(width: 10),
+                                const Text('База данных',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.white,
+                                    )),
+                              ],
+                            ),
+                          ),
+                          const Divider(color: Color(0xFF2A2A4E), height: 1),
+                          Expanded(
+                            child: ListView(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              children: _tableGroups.map((group) {
+                                return _buildTableGroup(group);
+                              }).toList(),
+                            ),
+                          ),
+                          const Divider(color: Color(0xFF2A2A4E), height: 1),
+                          Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: OutlinedButton.icon(
+                                onPressed: _confirmWipeAll,
+                                icon: const Icon(Icons.delete_forever, size: 18),
+                                label: const Text('Очистить ВСЁ'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: Colors.red[400],
+                                  side: BorderSide(color: Colors.red[400]!.withValues(alpha: 0.4)),
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
                       ),
                     ),
-                    const Divider(color: Color(0xFF2A2A4E), height: 1),
-
-                    // Table list
                     Expanded(
-                      child: ListView(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        children: _tableGroups.map((group) {
-                          return _buildTableGroup(group);
-                        }).toList(),
-                      ),
-                    ),
-
-                    // Danger zone
-                    const Divider(color: Color(0xFF2A2A4E), height: 1),
-                    Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: SizedBox(
-                        width: double.infinity,
-                        child: OutlinedButton.icon(
-                          onPressed: _confirmWipeAll,
-                          icon: const Icon(Icons.delete_forever, size: 18),
-                          label: const Text('Очистить ВСЁ'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.red[400],
-                            side: BorderSide(color: Colors.red[400]!.withValues(alpha: 0.4)),
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                          ),
-                        ),
-                      ),
+                      child: _selectedTable == null
+                          ? _buildEmptyState()
+                          : _buildDataView(),
                     ),
                   ],
                 ),
-              ),
-
-              // ── Data view ──
-              Expanded(
-                child: _selectedTable == null
-                    ? _buildEmptyState()
-                    : _buildDataView(),
-              ),
-            ],
-          ),
         ),
 
         // ── Wiping overlay ──
@@ -195,11 +214,58 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
     );
   }
 
+  Widget _buildSidebarDrawer(ColorScheme cs) {
+    return Drawer(
+      backgroundColor: const Color(0xFF12122B),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 48),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(Icons.storage, color: cs.primary, size: 22),
+                const SizedBox(width: 10),
+                const Text('База данных',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
+              ],
+            ),
+          ),
+          const Divider(color: Color(0xFF2A2A4E), height: 1),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              children: _tableGroups.map((group) => _buildTableGroup(group, closeDrawer: true)).toList(),
+            ),
+          ),
+          const Divider(color: Color(0xFF2A2A4E), height: 1),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: _confirmWipeAll,
+                icon: const Icon(Icons.delete_forever, size: 18),
+                label: const Text('Очистить ВСЁ'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.red[400],
+                  side: BorderSide(color: Colors.red[400]!.withValues(alpha: 0.4)),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   // ═══════════════════════════════════════════════════════════
   // TABLE GROUP SIDEBAR
   // ═══════════════════════════════════════════════════════════
 
-  Widget _buildTableGroup(_TableGroup group) {
+  Widget _buildTableGroup(_TableGroup group, {bool closeDrawer = false}) {
     return ExpansionTile(
       leading: Icon(group.icon, size: 18, color: Colors.grey[500]),
       title: Text(group.label,
@@ -218,7 +284,10 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
       children: group.tables.map((table) {
         final isActive = _selectedTable == table.key;
         return InkWell(
-          onTap: () => _loadTable(table),
+          onTap: () {
+            _loadTable(table);
+            if (closeDrawer && mounted) Navigator.of(context).pop();
+          },
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
@@ -417,89 +486,137 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
   }
 
   Widget _buildToolbar() {
+    final isMobile = MediaQuery.of(context).size.width < 720;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 20, vertical: 12),
       decoration: const BoxDecoration(
         color: Color(0xFF12122B),
         border: Border(bottom: BorderSide(color: Color(0xFF2A2A4E))),
       ),
-      child: Row(
-        children: [
-          // Title + count
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(_selectedTableLabel ?? '',
-                  style: const TextStyle(
-                      fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
-              Text('$_totalCount записей • Таблица: $_selectedTable',
-                  style: TextStyle(fontSize: 12, color: Colors.grey[500])),
-            ],
-          ),
-
-          const Spacer(),
-
-          // Search
-          SizedBox(
-            width: 220,
-            height: 38,
-            child: TextField(
-              onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
-              style: const TextStyle(fontSize: 13),
-              decoration: InputDecoration(
-                hintText: 'Поиск...',
-                hintStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
-                prefixIcon: Icon(Icons.search, size: 18, color: Colors.grey[600]),
-                filled: true,
-                fillColor: const Color(0xFF1A1A3E),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide.none,
+      child: isMobile
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('$_totalCount записей',
+                    style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+                const SizedBox(height: 8),
+                // Search
+                TextField(
+                  onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+                  style: const TextStyle(fontSize: 13),
+                  decoration: InputDecoration(
+                    hintText: 'Поиск...',
+                    hintStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
+                    prefixIcon: Icon(Icons.search, size: 18, color: Colors.grey[600]),
+                    filled: true,
+                    fillColor: const Color(0xFF1A1A3E),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide.none,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                  ),
                 ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 0),
-              ),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      if (_selectedIds.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: FilledButton.icon(
+                            onPressed: _deleteSelected,
+                            icon: const Icon(Icons.delete, size: 14),
+                            label: Text('Удалить (${_selectedIds.length})', style: const TextStyle(fontSize: 12)),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Colors.red[700],
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            ),
+                          ),
+                        ),
+                      OutlinedButton.icon(
+                        onPressed: _totalCount > 0 ? _confirmDeleteAllInTable : null,
+                        icon: Icon(Icons.delete_sweep, size: 14, color: Colors.red[400]),
+                        label: Text('Очистить', style: TextStyle(color: Colors.red[400], fontSize: 12)),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: Colors.red[400]!.withValues(alpha: 0.3)),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            )
+          : Row(
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(_selectedTableLabel ?? '',
+                        style: const TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.w700, color: Colors.white)),
+                    Text('$_totalCount записей • Таблица: $_selectedTable',
+                        style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+                  ],
+                ),
+                const Spacer(),
+                SizedBox(
+                  width: 220,
+                  height: 38,
+                  child: TextField(
+                    onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+                    style: const TextStyle(fontSize: 13),
+                    decoration: InputDecoration(
+                      hintText: 'Поиск...',
+                      hintStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
+                      prefixIcon: Icon(Icons.search, size: 18, color: Colors.grey[600]),
+                      filled: true,
+                      fillColor: const Color(0xFF1A1A3E),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                IconButton(
+                  onPressed: _fetchPage,
+                  icon: const Icon(Icons.refresh, size: 20),
+                  tooltip: 'Обновить',
+                  style: IconButton.styleFrom(foregroundColor: Colors.grey[400]),
+                ),
+                if (_selectedIds.isNotEmpty) ...[
+                  const SizedBox(width: 8),
+                  FilledButton.icon(
+                    onPressed: _deleteSelected,
+                    icon: const Icon(Icons.delete, size: 16),
+                    label: Text('Удалить (${_selectedIds.length})'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.red[700],
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    ),
+                  ),
+                ],
+                const SizedBox(width: 8),
+                OutlinedButton.icon(
+                  onPressed: _totalCount > 0 ? _confirmDeleteAllInTable : null,
+                  icon: Icon(Icons.delete_sweep, size: 16, color: Colors.red[400]),
+                  label: Text('Очистить таблицу',
+                      style: TextStyle(color: Colors.red[400], fontSize: 12)),
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.red[400]!.withValues(alpha: 0.3)),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  ),
+                ),
+              ],
             ),
-          ),
-
-          const SizedBox(width: 12),
-
-          // Refresh
-          IconButton(
-            onPressed: _fetchPage,
-            icon: const Icon(Icons.refresh, size: 20),
-            tooltip: 'Обновить',
-            style: IconButton.styleFrom(foregroundColor: Colors.grey[400]),
-          ),
-
-          // Delete selected
-          if (_selectedIds.isNotEmpty) ...[
-            const SizedBox(width: 8),
-            FilledButton.icon(
-              onPressed: _deleteSelected,
-              icon: const Icon(Icons.delete, size: 16),
-              label: Text('Удалить (${_selectedIds.length})'),
-              style: FilledButton.styleFrom(
-                backgroundColor: Colors.red[700],
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              ),
-            ),
-          ],
-
-          // Delete all in table
-          const SizedBox(width: 8),
-          OutlinedButton.icon(
-            onPressed: _totalCount > 0 ? _confirmDeleteAllInTable : null,
-            icon: Icon(Icons.delete_sweep, size: 16, color: Colors.red[400]),
-            label: Text('Очистить таблицу',
-                style: TextStyle(color: Colors.red[400], fontSize: 12)),
-            style: OutlinedButton.styleFrom(
-              side: BorderSide(color: Colors.red[400]!.withValues(alpha: 0.3)),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-            ),
-          ),
-        ],
-      ),
     );
   }
 

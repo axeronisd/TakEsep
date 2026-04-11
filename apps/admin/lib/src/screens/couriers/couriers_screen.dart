@@ -75,79 +75,134 @@ class _CouriersScreenState extends State<CouriersScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isMobile = MediaQuery.of(context).size.width < 720;
+
     return Scaffold(
+      backgroundColor: Colors.transparent,
+      floatingActionButton: isMobile
+          ? FloatingActionButton(
+              onPressed: () => _showAddCourierDialog(),
+              backgroundColor: const Color(0xFF2ECC71),
+              child: const Icon(Icons.person_add),
+            )
+          : null,
       body: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(isMobile ? 16 : 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFF2ECC71), Color(0xFF27AE60)],
-                    ),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(Icons.delivery_dining, color: Colors.white, size: 24),
-                ),
-                const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Курьеры Ак Жол',
-                        style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
-                    Text('${_couriers.length} курьеров',
-                        style: TextStyle(color: Colors.grey[400], fontSize: 14)),
-                  ],
-                ),
-                const Spacer(),
-                // Filter chips
-                _FilterChip(label: 'Все', value: 'all', current: _filter,
-                    onTap: () => setState(() => _filter = 'all')),
-                const SizedBox(width: 8),
-                _FilterChip(label: 'Активные', value: 'active', current: _filter,
-                    onTap: () => setState(() => _filter = 'active')),
-                const SizedBox(width: 8),
-                _FilterChip(label: 'Отключённые', value: 'inactive', current: _filter,
-                    onTap: () => setState(() => _filter = 'inactive')),
-                const SizedBox(width: 16),
-                ElevatedButton.icon(
-                  onPressed: () => _showAddCourierDialog(),
-                  icon: const Icon(Icons.person_add, size: 18),
-                  label: const Text('Добавить курьера'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF2ECC71),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-
-            // Table header
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: const Color(0xFF1A1A3E),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
+            if (isMobile) ...[
+              Row(
                 children: [
-                  _HeaderCell('Курьер', flex: 3),
-                  _HeaderCell('Телефон', flex: 2),
-                  _HeaderCell('Ключ', flex: 2),
-                  _HeaderCell('Транспорт', flex: 2),
-                  _HeaderCell('Ставка', flex: 1),
-                  _HeaderCell('Склады', flex: 2),
-                  _HeaderCell('Статус', flex: 1),
-                  _HeaderCell('Действия', flex: 2),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF2ECC71), Color(0xFF27AE60)],
+                      ),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.delivery_dining, color: Colors.white, size: 20),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Курьеры Ак Жол',
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+                      Text('${_couriers.length} курьеров',
+                          style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+                    ],
+                  ),
                 ],
               ),
-            ),
-            const SizedBox(height: 8),
+              const SizedBox(height: 12),
+              // Filter chips — horizontal scroll
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _FilterChip(label: 'Все', value: 'all', current: _filter,
+                        onTap: () => setState(() => _filter = 'all')),
+                    const SizedBox(width: 8),
+                    _FilterChip(label: 'Активные', value: 'active', current: _filter,
+                        onTap: () => setState(() => _filter = 'active')),
+                    const SizedBox(width: 8),
+                    _FilterChip(label: 'Отключённые', value: 'inactive', current: _filter,
+                        onTap: () => setState(() => _filter = 'inactive')),
+                  ],
+                ),
+              ),
+            ] else ...[
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [Color(0xFF2ECC71), Color(0xFF27AE60)],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.delivery_dining, color: Colors.white, size: 24),
+                  ),
+                  const SizedBox(width: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Курьеры Ак Жол',
+                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
+                      Text('${_couriers.length} курьеров',
+                          style: TextStyle(color: Colors.grey[400], fontSize: 14)),
+                    ],
+                  ),
+                  const Spacer(),
+                  _FilterChip(label: 'Все', value: 'all', current: _filter,
+                      onTap: () => setState(() => _filter = 'all')),
+                  const SizedBox(width: 8),
+                  _FilterChip(label: 'Активные', value: 'active', current: _filter,
+                      onTap: () => setState(() => _filter = 'active')),
+                  const SizedBox(width: 8),
+                  _FilterChip(label: 'Отключённые', value: 'inactive', current: _filter,
+                      onTap: () => setState(() => _filter = 'inactive')),
+                  const SizedBox(width: 16),
+                  ElevatedButton.icon(
+                    onPressed: () => _showAddCourierDialog(),
+                    icon: const Icon(Icons.person_add, size: 18),
+                    label: const Text('Добавить курьера'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF2ECC71),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            SizedBox(height: isMobile ? 12 : 24),
+
+            // Table header (desktop only)
+            if (!isMobile) ...[
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1A1A3E),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    _HeaderCell('Курьер', flex: 3),
+                    _HeaderCell('Телефон', flex: 2),
+                    _HeaderCell('Ключ', flex: 2),
+                    _HeaderCell('Транспорт', flex: 2),
+                    _HeaderCell('Ставка', flex: 1),
+                    _HeaderCell('Склады', flex: 2),
+                    _HeaderCell('Статус', flex: 1),
+                    _HeaderCell('Действия', flex: 2),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
 
             // List
             Expanded(
@@ -155,14 +210,217 @@ class _CouriersScreenState extends State<CouriersScreen> {
                   ? const Center(child: CircularProgressIndicator())
                   : _filteredCouriers.isEmpty
                       ? _buildEmptyState()
-                      : ListView.builder(
-                          itemCount: _filteredCouriers.length,
-                          itemBuilder: (_, i) => _buildCourierRow(_filteredCouriers[i]),
-                        ),
+                      : isMobile
+                          ? _buildMobileCourierList()
+                          : ListView.builder(
+                              itemCount: _filteredCouriers.length,
+                              itemBuilder: (_, i) => _buildCourierRow(_filteredCouriers[i]),
+                            ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  /// Mobile-friendly courier card list
+  Widget _buildMobileCourierList() {
+    return ListView.separated(
+      itemCount: _filteredCouriers.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        final courier = _filteredCouriers[index];
+        final isActive = courier['is_active'] == true;
+        final isOnline = courier['is_online'] == true;
+        final accessKey = courier['access_key'] ?? '—';
+        final earningRate = ((courier['earning_rate'] as num?)?.toDouble() ?? 0.90);
+        final linkedWarehouses = (courier['courier_warehouse'] as List? ?? [])
+            .where((w) => w['is_active'] == true).toList();
+        final warehouseNames = linkedWarehouses
+            .map((w) => w['warehouses']?['name'] ?? '?').join(', ');
+
+        return Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: const Color(0xFF12122B),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isActive ? const Color(0xFF2A2A5A) : Colors.red.withValues(alpha: 0.25),
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Name row
+                Row(
+                  children: [
+                    Container(
+                      width: 40, height: 40,
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? const Color(0xFF2ECC71).withValues(alpha: 0.15)
+                            : Colors.grey.withValues(alpha: 0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          (courier['name'] as String? ?? '?')[0].toUpperCase(),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 18,
+                            color: isActive ? const Color(0xFF2ECC71) : Colors.grey,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(courier['name'] ?? '—',
+                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                          const SizedBox(height: 2),
+                          Row(children: [
+                            Container(width: 7, height: 7,
+                              decoration: BoxDecoration(
+                                color: isOnline ? Colors.greenAccent : Colors.grey,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(isOnline ? 'Онлайн' : 'Офлайн',
+                                style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+                            const SizedBox(width: 12),
+                            Icon(_transportIcon(courier['transport_type'] ?? ''),
+                                size: 14, color: Colors.grey[500]),
+                            const SizedBox(width: 4),
+                            Text(_transportLabel(courier['transport_type'] ?? ''),
+                                style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+                          ]),
+                        ],
+                      ),
+                    ),
+                    // Status + Rate
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: isActive
+                                ? Colors.green.withValues(alpha: 0.12)
+                                : Colors.red.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            isActive ? 'Актив' : 'Откл.',
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
+                              color: isActive ? Colors.greenAccent : Colors.red[300]),
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        GestureDetector(
+                          onTap: () => _showEditRateDialog(courier),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF2ECC71).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text('${(earningRate * 100).toStringAsFixed(0)}%',
+                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700,
+                                color: Color(0xFF2ECC71)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+
+                // Phone + Key row
+                Row(
+                  children: [
+                    Icon(Icons.phone, size: 13, color: Colors.grey[600]),
+                    const SizedBox(width: 6),
+                    Text(courier['phone'] ?? '—',
+                        style: TextStyle(fontSize: 13, color: Colors.grey[300])),
+                    const SizedBox(width: 16),
+                    Icon(Icons.vpn_key, size: 13, color: Colors.grey[600]),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6C5CE7).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(accessKey,
+                          style: const TextStyle(fontFamily: 'monospace', fontSize: 13,
+                            fontWeight: FontWeight.w700, color: Color(0xFFA29BFE), letterSpacing: 1)),
+                    ),
+                    const SizedBox(width: 6),
+                    GestureDetector(
+                      onTap: () {
+                        Clipboard.setData(ClipboardData(text: accessKey));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Ключ скопирован'), duration: Duration(seconds: 1)),
+                        );
+                      },
+                      child: Icon(Icons.copy, size: 14, color: Colors.grey[500]),
+                    ),
+                  ],
+                ),
+
+                if (warehouseNames.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Row(children: [
+                    Icon(Icons.store, size: 13, color: Colors.grey[600]),
+                    const SizedBox(width: 6),
+                    Expanded(child: Text(warehouseNames,
+                        style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+                        maxLines: 1, overflow: TextOverflow.ellipsis)),
+                  ]),
+                ],
+
+                const SizedBox(height: 10),
+                const Divider(color: Color(0xFF2A2A5A), height: 1),
+                const SizedBox(height: 8),
+
+                // Actions row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _MobileAction(
+                      icon: Icons.percent,
+                      label: 'Ставка',
+                      color: const Color(0xFF2ECC71),
+                      onTap: () => _showEditRateDialog(courier),
+                    ),
+                    _MobileAction(
+                      icon: Icons.refresh,
+                      label: 'Ключ',
+                      color: const Color(0xFF6C5CE7),
+                      onTap: () => _regenerateKey(courier),
+                    ),
+                    _MobileAction(
+                      icon: Icons.store,
+                      label: 'Склады',
+                      color: Colors.blue,
+                      onTap: () => _showLinkWarehouseDialog(courier),
+                    ),
+                    _MobileAction(
+                      icon: isActive ? Icons.block : Icons.check_circle,
+                      label: isActive ? 'Откл.' : 'Вкл.',
+                      color: isActive ? Colors.orange : Colors.green,
+                      onTap: () => _toggleActive(courier),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+        );
+      },
     );
   }
 
@@ -433,8 +691,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: const Color(0xFF1A1A3E),
           title: const Text('Добавить курьера'),
-          content: SizedBox(
-            width: 420,
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -522,9 +780,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: const Color(0xFF1A1A3E),
           title: Text('Склады для ${courier['name']}'),
-          content: SizedBox(
-            width: 400,
-            height: 300,
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400, maxHeight: 300),
             child: _warehouses.isEmpty
                 ? const Center(child: Text('Нет складов'))
                 : ListView.builder(
@@ -630,8 +887,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: const Color(0xFF1A1A3E),
           title: Text('Ставка: $name'),
-          content: SizedBox(
-            width: 400,
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -1416,6 +1673,44 @@ class _ActionButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, size: 16, color: color),
+        ),
+      ),
+    );
+  }
+}
+
+class _MobileAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+  const _MobileAction({
+    required this.icon, required this.label,
+    required this.color, required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(10),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, size: 18, color: color),
+            ),
+            const SizedBox(height: 4),
+            Text(label,
+                style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w500)),
+          ],
         ),
       ),
     );
