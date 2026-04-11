@@ -116,6 +116,19 @@ class _CourierEarningsScreenState
       double totalDebt = 0;
       double totalPaid = 0;
       try {
+        // Load courier's earning_rate
+        double earningRate = 0.90; // default 90%
+        try {
+          final courierData = await _supabase
+              .from('couriers')
+              .select('earning_rate')
+              .eq('id', courierId)
+              .maybeSingle();
+          if (courierData != null) {
+            earningRate = (courierData['earning_rate'] as num?)?.toDouble() ?? 0.90;
+          }
+        } catch (_) {}
+
         final rawOrders = await _supabase
             .from('delivery_orders')
             .select('id, order_number, delivery_fee, courier_earning, '
@@ -125,10 +138,12 @@ class _CourierEarningsScreenState
             .order('delivered_at', ascending: false)
             .limit(50);
         
-        // Calculate debt: courier collected items_total but only keeps delivery_fee
+        // Calculate debt: platform share = delivery_fee * (1 - earning_rate)
+        // Example: delivery_fee=100, earning_rate=0.80 → courier keeps 80, owes 20 to AkJol
         for (final o in rawOrders) {
-          final itemsTotal = (o['items_total'] as num?)?.toDouble() ?? 0;
-          totalDebt += itemsTotal; // Courier owes items_total to AkJol
+          final deliveryFee = (o['delivery_fee'] as num?)?.toDouble() ?? 0;
+          final platformShare = deliveryFee * (1 - earningRate);
+          totalDebt += platformShare;
         }
 
         // Load confirmed payments

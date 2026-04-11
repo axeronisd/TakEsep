@@ -62,20 +62,46 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   List<LatLng> _routeToStore = [];
   List<LatLng> _routeToCustomer = [];
 
+  // Polling fallback timer (in case Realtime doesn't fire)
+  Timer? _pollTimer;
+  String? _lastKnownStatus;
+
   @override
   void initState() {
     super.initState();
     _loadOrder();
     _subscribeToOrderUpdates();
     _subscribeToChatMessages();
+    _startPolling();
   }
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _orderChannel?.unsubscribe();
     _locationChannel?.unsubscribe();
     _chatChannel?.unsubscribe();
     super.dispose();
+  }
+
+  /// Polling fallback — checks status every 5 seconds
+  void _startPolling() {
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+      if (!mounted) return;
+      try {
+        final row = await _supabase
+            .from('delivery_orders')
+            .select('status')
+            .eq('id', widget.orderId)
+            .maybeSingle();
+        if (row == null || !mounted) return;
+        final newStatus = row['status'] as String?;
+        if (newStatus != null && newStatus != _lastKnownStatus) {
+          _lastKnownStatus = newStatus;
+          _loadOrder();
+        }
+      } catch (_) {}
+    });
   }
 
   void _subscribeToOrderUpdates() {
@@ -213,6 +239,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 _courierSpeed = (payload['speed'] as num?)?.toDouble();
                 _lastLocationUpdate = DateTime.now();
               });
+              _refreshRouteFromCourier();
             } catch (e) {
               debugPrint('[OrderTracking] Realtime location callback error: $e');
             }
@@ -257,7 +284,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       final data = await _supabase
           .from('delivery_orders')
           .select(
-              '*, warehouses(name, latitude, longitude), couriers(name, phone, transport_type, current_lat, current_lng, bank_name, card_number, qr_image_url), delivery_order_items(*)')
+          '*, warehouses(name, latitude, longitude), couriers(name, phone, transport_type, current_lat, current_lng, bank_name, card_number, qr_url), delivery_order_items(*)')
           .eq('id', widget.orderId)
           .maybeSingle();
 
@@ -302,6 +329,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
       // Start location tracking if courier is active
       final status = data['status'] as String?;
+      _lastKnownStatus = status;
       _handleStatusChange(status, fromLoadOrder: true);
 
       // Load OSRM street routes
@@ -314,7 +342,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     }
   }
 
-  /// Fetch OSRM routes for store→customer path
+  /// Fetch OSRM routes based on delivery phase
+  DateTime? _lastRouteUpdate;
+
   Future<void> _loadRoutes(Map<String, dynamic> data) async {
     final storeLat = (data['_store_lat'] as num?)?.toDouble()
         ?? (data['warehouses']?['latitude'] as num?)?.toDouble()
@@ -324,21 +354,45 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         ?? (data['pickup_lng'] as num?)?.toDouble();
     final custLat = (data['delivery_lat'] as num?)?.toDouble();
     final custLng = (data['delivery_lng'] as num?)?.toDouble();
+    final status = data['status'] as String? ?? '';
 
-    // Route: Store → Customer
-    if (storeLat != null && storeLng != null &&
-        custLat != null && custLng != null) {
-      final storePos = LatLng(storeLat, storeLng);
-      final custPos = LatLng(custLat, custLng);
+    // Determine start point: courier position if available, else store
+    final startLat = _courierLat;
+    final startLng = _courierLng;
 
-      final route = await RouteService.getRoute(storePos, custPos);
+    if (status == 'courier_assigned' && startLat != null && startLng != null &&
+        storeLat != null && storeLng != null) {
+      // Phase 1: Courier → Store
+      final route = await RouteService.getRoute(
+        LatLng(startLat, startLng), LatLng(storeLat, storeLng));
       if (mounted && route.length > 2) {
-        setState(() {
-          _routeToStore = route; // reversed for courier → store
-          _routeToCustomer = route;
-        });
+        setState(() => _routeToStore = route);
       }
     }
+
+    if (storeLat != null && storeLng != null &&
+        custLat != null && custLng != null) {
+      // Route: from courier (or store) → customer
+      final from = (startLat != null && startLng != null &&
+          (status == 'picked_up' || status == 'arrived'))
+          ? LatLng(startLat, startLng)
+          : LatLng(storeLat, storeLng);
+      final route = await RouteService.getRoute(from, LatLng(custLat, custLng));
+      if (mounted && route.length > 2) {
+        setState(() => _routeToCustomer = route);
+      }
+    }
+
+    _lastRouteUpdate = DateTime.now();
+  }
+
+  /// Refresh route from courier's live position (throttled)
+  void _refreshRouteFromCourier() {
+    if (_courierLat == null || _courierLng == null || _order == null) return;
+    // Throttle: max once per 30 seconds
+    if (_lastRouteUpdate != null &&
+        DateTime.now().difference(_lastRouteUpdate!).inSeconds < 30) return;
+    _loadRoutes(_order!);
   }
 
   @override
@@ -931,7 +985,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final courierName = courier?['name'] ?? '';
     final bankName = courier?['bank_name'] as String? ?? '';
     final cardNumber = courier?['card_number'] as String? ?? '';
-    final qrImageUrl = courier?['qr_image_url'] as String?;
+    final qrImageUrl = courier?['qr_url'] as String?;
 
     return Container(
       margin: const EdgeInsets.only(top: 12),

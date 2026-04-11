@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -40,6 +41,8 @@ class _ActiveDeliveryScreenState
   int _unreadMessages = 0;
   String? _error;
   List<LatLng> _routePoints = [];
+  Timer? _pollTimer;
+  String? _lastKnownStatus;
 
   @override
   void initState() {
@@ -47,14 +50,36 @@ class _ActiveDeliveryScreenState
     _loadOrder();
     _subscribeToOrder();
     _subscribeToChat();
+    _startPolling();
   }
 
   @override
   void dispose() {
+    _pollTimer?.cancel();
     _channel?.unsubscribe();
     _chatBadgeChannel?.unsubscribe();
     _locationService.stopTracking();
     super.dispose();
+  }
+
+  /// Polling fallback — checks status every 5 seconds
+  void _startPolling() {
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) async {
+      if (!mounted) return;
+      try {
+        final row = await Supabase.instance.client
+            .from('delivery_orders')
+            .select('status')
+            .eq('id', widget.orderId)
+            .maybeSingle();
+        if (row == null || !mounted) return;
+        final newStatus = row['status'] as String?;
+        if (newStatus != null && newStatus != _lastKnownStatus) {
+          _lastKnownStatus = newStatus;
+          _loadOrder();
+        }
+      } catch (_) {}
+    });
   }
 
   void _subscribeToOrder() {
@@ -164,6 +189,7 @@ class _ActiveDeliveryScreenState
 
         // Resume tracking if picked_up/arrived
         final status = data['status'] as String?;
+        _lastKnownStatus = status;
         final courierId = ref.read(courierIdProvider);
         if ((status == 'picked_up' || status == 'arrived') &&
             courierId != null &&

@@ -439,13 +439,33 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
           .eq('user_id', userId)
           .maybeSingle();
 
-      if (existing != null) return existing['id'] as String;
+      if (existing != null) {
+        // Update phone if it's currently empty (fixes existing customers)
+        try {
+          final user = _supabase.auth.currentUser;
+          final phone = user?.phone
+              ?? user?.userMetadata?['phone'] as String?
+              ?? user?.userMetadata?['phone_number'] as String?
+              ?? '';
+          if (phone.isNotEmpty) {
+            await _supabase.from('customers')
+                .update({'phone': phone})
+                .eq('id', existing['id'])
+                .eq('phone', ''); // only update if currently empty
+          }
+        } catch (_) {}
+        return existing['id'] as String;
+      }
 
       final user = _supabase.auth.currentUser;
+      final phone = user?.phone
+          ?? user?.userMetadata?['phone'] as String?
+          ?? user?.userMetadata?['phone_number'] as String?
+          ?? '';
       final newCustomer = await _supabase.from('customers').insert({
         'user_id': userId,
         'name': user?.userMetadata?['full_name'] ?? user?.email ?? 'Клиент',
-        'phone': user?.phone ?? '',
+        'phone': phone,
       }).select('id').single();
 
       return newCustomer['id'] as String;
