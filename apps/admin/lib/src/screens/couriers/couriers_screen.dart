@@ -39,9 +39,10 @@ class _CouriersScreenState extends State<CouriersScreen> {
     try {
       final couriers = await _supabase
           .from('couriers')
-          .select('*, courier_warehouse(warehouse_id, is_active, warehouses(name))')
+          .select(
+              '*, courier_warehouse(warehouse_id, is_active, warehouses(name))')
           .order('created_at', ascending: false);
-      
+
       final warehouses = await _supabase
           .from('warehouses')
           .select('id, name, address')
@@ -56,15 +57,19 @@ class _CouriersScreenState extends State<CouriersScreen> {
       setState(() => _loading = false);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка загрузки: $e'), backgroundColor: Colors.red),
+          SnackBar(
+              content: Text('Ошибка загрузки: $e'),
+              backgroundColor: Colors.red),
         );
       }
     }
   }
 
   List<Map<String, dynamic>> get _filteredCouriers {
-    if (_filter == 'active') return _couriers.where((c) => c['is_active'] == true).toList();
-    if (_filter == 'inactive') return _couriers.where((c) => c['is_active'] != true).toList();
+    if (_filter == 'active')
+      return _couriers.where((c) => c['is_active'] == true).toList();
+    if (_filter == 'inactive')
+      return _couriers.where((c) => c['is_active'] != true).toList();
     return _couriers;
   }
 
@@ -103,16 +108,19 @@ class _CouriersScreenState extends State<CouriersScreen> {
                       ),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.delivery_dining, color: Colors.white, size: 20),
+                    child: const Icon(Icons.delivery_dining,
+                        color: Colors.white, size: 20),
                   ),
                   const SizedBox(width: 12),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text('Курьеры Ак Жол',
-                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
+                          style: TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.w700)),
                       Text('${_couriers.length} курьеров',
-                          style: TextStyle(color: Colors.grey[400], fontSize: 13)),
+                          style:
+                              TextStyle(color: Colors.grey[400], fontSize: 13)),
                     ],
                   ),
                 ],
@@ -123,13 +131,22 @@ class _CouriersScreenState extends State<CouriersScreen> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _FilterChip(label: 'Все', value: 'all', current: _filter,
+                    _FilterChip(
+                        label: 'Все',
+                        value: 'all',
+                        current: _filter,
                         onTap: () => setState(() => _filter = 'all')),
                     const SizedBox(width: 8),
-                    _FilterChip(label: 'Активные', value: 'active', current: _filter,
+                    _FilterChip(
+                        label: 'Активные',
+                        value: 'active',
+                        current: _filter,
                         onTap: () => setState(() => _filter = 'active')),
                     const SizedBox(width: 8),
-                    _FilterChip(label: 'Отключённые', value: 'inactive', current: _filter,
+                    _FilterChip(
+                        label: 'Отключённые',
+                        value: 'inactive',
+                        current: _filter,
                         onTap: () => setState(() => _filter = 'inactive')),
                   ],
                 ),
@@ -145,26 +162,38 @@ class _CouriersScreenState extends State<CouriersScreen> {
                       ),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.delivery_dining, color: Colors.white, size: 24),
+                    child: const Icon(Icons.delivery_dining,
+                        color: Colors.white, size: 24),
                   ),
                   const SizedBox(width: 16),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Text('Курьеры Ак Жол',
-                          style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
+                          style: TextStyle(
+                              fontSize: 24, fontWeight: FontWeight.w700)),
                       Text('${_couriers.length} курьеров',
-                          style: TextStyle(color: Colors.grey[400], fontSize: 14)),
+                          style:
+                              TextStyle(color: Colors.grey[400], fontSize: 14)),
                     ],
                   ),
                   const Spacer(),
-                  _FilterChip(label: 'Все', value: 'all', current: _filter,
+                  _FilterChip(
+                      label: 'Все',
+                      value: 'all',
+                      current: _filter,
                       onTap: () => setState(() => _filter = 'all')),
                   const SizedBox(width: 8),
-                  _FilterChip(label: 'Активные', value: 'active', current: _filter,
+                  _FilterChip(
+                      label: 'Активные',
+                      value: 'active',
+                      current: _filter,
                       onTap: () => setState(() => _filter = 'active')),
                   const SizedBox(width: 8),
-                  _FilterChip(label: 'Отключённые', value: 'inactive', current: _filter,
+                  _FilterChip(
+                      label: 'Отключённые',
+                      value: 'inactive',
+                      current: _filter,
                       onTap: () => setState(() => _filter = 'inactive')),
                   const SizedBox(width: 16),
                   ElevatedButton.icon(
@@ -183,7 +212,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
             // Table header (desktop only)
             if (!isMobile) ...[
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
                   color: const Color(0xFF1A1A3E),
                   borderRadius: BorderRadius.circular(12),
@@ -214,7 +244,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
                           ? _buildMobileCourierList()
                           : ListView.builder(
                               itemCount: _filteredCouriers.length,
-                              itemBuilder: (_, i) => _buildCourierRow(_filteredCouriers[i]),
+                              itemBuilder: (_, i) =>
+                                  _buildCourierRow(_filteredCouriers[i]),
                             ),
             ),
           ],
@@ -233,192 +264,244 @@ class _CouriersScreenState extends State<CouriersScreen> {
         final isActive = courier['is_active'] == true;
         final isOnline = courier['is_online'] == true;
         final accessKey = courier['access_key'] ?? '—';
-        final earningRate = ((courier['earning_rate'] as num?)?.toDouble() ?? 0.90);
+        final earningRate =
+            ((courier['earning_rate'] as num?)?.toDouble() ?? 0.90);
         final linkedWarehouses = (courier['courier_warehouse'] as List? ?? [])
-            .where((w) => w['is_active'] == true).toList();
+            .where((w) => w['is_active'] == true)
+            .toList();
         final warehouseNames = linkedWarehouses
-            .map((w) => w['warehouses']?['name'] ?? '?').join(', ');
+            .map((w) => w['warehouses']?['name'] ?? '?')
+            .join(', ');
 
         return Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: const Color(0xFF12122B),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: isActive ? const Color(0xFF2A2A5A) : Colors.red.withValues(alpha: 0.25),
-              ),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: const Color(0xFF12122B),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: isActive
+                  ? const Color(0xFF2A2A5A)
+                  : Colors.red.withValues(alpha: 0.25),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Name row
-                Row(
-                  children: [
-                    Container(
-                      width: 40, height: 40,
-                      decoration: BoxDecoration(
-                        color: isActive
-                            ? const Color(0xFF2ECC71).withValues(alpha: 0.15)
-                            : Colors.grey.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Center(
-                        child: Text(
-                          (courier['name'] as String? ?? '?')[0].toUpperCase(),
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700, fontSize: 18,
-                            color: isActive ? const Color(0xFF2ECC71) : Colors.grey,
-                          ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Name row
+              Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: isActive
+                          ? const Color(0xFF2ECC71).withValues(alpha: 0.15)
+                          : Colors.grey.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: Text(
+                        (courier['name'] as String? ?? '?')[0].toUpperCase(),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 18,
+                          color:
+                              isActive ? const Color(0xFF2ECC71) : Colors.grey,
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(courier['name'] ?? '—',
-                              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-                          const SizedBox(height: 2),
-                          Row(children: [
-                            Container(width: 7, height: 7,
-                              decoration: BoxDecoration(
-                                color: isOnline ? Colors.greenAccent : Colors.grey,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 5),
-                            Text(isOnline ? 'Онлайн' : 'Офлайн',
-                                style: TextStyle(fontSize: 12, color: Colors.grey[500])),
-                            const SizedBox(width: 12),
-                            Icon(_transportIcon(courier['transport_type'] ?? ''),
-                                size: 14, color: Colors.grey[500]),
-                            const SizedBox(width: 4),
-                            Text(_transportLabel(courier['transport_type'] ?? ''),
-                                style: TextStyle(fontSize: 12, color: Colors.grey[500])),
-                          ]),
-                        ],
-                      ),
-                    ),
-                    // Status + Rate
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        Text(courier['name'] ?? '—',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w600, fontSize: 16)),
+                        const SizedBox(height: 2),
+                        Row(children: [
+                          Container(
+                            width: 7,
+                            height: 7,
+                            decoration: BoxDecoration(
+                              color:
+                                  isOnline ? Colors.greenAccent : Colors.grey,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(isOnline ? 'Онлайн' : 'Офлайн',
+                              style: TextStyle(
+                                  fontSize: 12, color: Colors.grey[500])),
+                          const SizedBox(width: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 4,
+                            children: _getTransportTypes(courier)
+                                .map((t) => Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(_transportIcon(t),
+                                            size: 14, color: Colors.grey[500]),
+                                        const SizedBox(width: 4),
+                                        Text(_transportLabel(t),
+                                            style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey[500])),
+                                      ],
+                                    ))
+                                .toList(),
+                          ),
+                        ]),
+                      ],
+                    ),
+                  ),
+                  // Status + Rate
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: isActive
+                              ? Colors.green.withValues(alpha: 0.12)
+                              : Colors.red.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          isActive ? 'Актив' : 'Откл.',
+                          style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: isActive
+                                  ? Colors.greenAccent
+                                  : Colors.red[300]),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      GestureDetector(
+                        onTap: () => _showEditRateDialog(courier),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color: isActive
-                                ? Colors.green.withValues(alpha: 0.12)
-                                : Colors.red.withValues(alpha: 0.12),
+                            color:
+                                const Color(0xFF2ECC71).withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
-                            isActive ? 'Актив' : 'Откл.',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
-                              color: isActive ? Colors.greenAccent : Colors.red[300]),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        GestureDetector(
-                          onTap: () => _showEditRateDialog(courier),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF2ECC71).withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text('${(earningRate * 100).toStringAsFixed(0)}%',
-                              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700,
+                            '${(earningRate * 100).toStringAsFixed(0)}%',
+                            style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
                                 color: Color(0xFF2ECC71)),
-                            ),
                           ),
                         ),
-                      ],
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-
-                // Phone + Key row
-                Row(
-                  children: [
-                    Icon(Icons.phone, size: 13, color: Colors.grey[600]),
-                    const SizedBox(width: 6),
-                    Text(courier['phone'] ?? '—',
-                        style: TextStyle(fontSize: 13, color: Colors.grey[300])),
-                    const SizedBox(width: 16),
-                    Icon(Icons.vpn_key, size: 13, color: Colors.grey[600]),
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF6C5CE7).withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(4),
                       ),
-                      child: Text(accessKey,
-                          style: const TextStyle(fontFamily: 'monospace', fontSize: 13,
-                            fontWeight: FontWeight.w700, color: Color(0xFFA29BFE), letterSpacing: 1)),
-                    ),
-                    const SizedBox(width: 6),
-                    GestureDetector(
-                      onTap: () {
-                        Clipboard.setData(ClipboardData(text: accessKey));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Ключ скопирован'), duration: Duration(seconds: 1)),
-                        );
-                      },
-                      child: Icon(Icons.copy, size: 14, color: Colors.grey[500]),
-                    ),
-                  ],
-                ),
-
-                if (warehouseNames.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Row(children: [
-                    Icon(Icons.store, size: 13, color: Colors.grey[600]),
-                    const SizedBox(width: 6),
-                    Expanded(child: Text(warehouseNames,
-                        style: TextStyle(fontSize: 12, color: Colors.grey[400]),
-                        maxLines: 1, overflow: TextOverflow.ellipsis)),
-                  ]),
+                    ],
+                  ),
                 ],
+              ),
+              const SizedBox(height: 10),
 
-                const SizedBox(height: 10),
-                const Divider(color: Color(0xFF2A2A5A), height: 1),
-                const SizedBox(height: 8),
+              // Phone + Key row
+              Row(
+                children: [
+                  Icon(Icons.phone, size: 13, color: Colors.grey[600]),
+                  const SizedBox(width: 6),
+                  Text(courier['phone'] ?? '—',
+                      style: TextStyle(fontSize: 13, color: Colors.grey[300])),
+                  const SizedBox(width: 16),
+                  Icon(Icons.vpn_key, size: 13, color: Colors.grey[600]),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6C5CE7).withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(accessKey,
+                        style: const TextStyle(
+                            fontFamily: 'monospace',
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFFA29BFE),
+                            letterSpacing: 1)),
+                  ),
+                  const SizedBox(width: 6),
+                  GestureDetector(
+                    onTap: () {
+                      Clipboard.setData(ClipboardData(text: accessKey));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Ключ скопирован'),
+                            duration: Duration(seconds: 1)),
+                      );
+                    },
+                    child: Icon(Icons.copy, size: 14, color: Colors.grey[500]),
+                  ),
+                ],
+              ),
 
-                // Actions row
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _MobileAction(
-                      icon: Icons.percent,
-                      label: 'Ставка',
-                      color: const Color(0xFF2ECC71),
-                      onTap: () => _showEditRateDialog(courier),
-                    ),
-                    _MobileAction(
-                      icon: Icons.refresh,
-                      label: 'Ключ',
-                      color: const Color(0xFF6C5CE7),
-                      onTap: () => _regenerateKey(courier),
-                    ),
-                    _MobileAction(
-                      icon: Icons.store,
-                      label: 'Склады',
-                      color: Colors.blue,
-                      onTap: () => _showLinkWarehouseDialog(courier),
-                    ),
-                    _MobileAction(
-                      icon: isActive ? Icons.block : Icons.check_circle,
-                      label: isActive ? 'Откл.' : 'Вкл.',
-                      color: isActive ? Colors.orange : Colors.green,
-                      onTap: () => _toggleActive(courier),
-                    ),
-                  ],
-                ),
+              if (warehouseNames.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Row(children: [
+                  Icon(Icons.store, size: 13, color: Colors.grey[600]),
+                  const SizedBox(width: 6),
+                  Expanded(
+                      child: Text(warehouseNames,
+                          style:
+                              TextStyle(fontSize: 12, color: Colors.grey[400]),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis)),
+                ]),
               ],
-            ),
+
+              const SizedBox(height: 10),
+              const Divider(color: Color(0xFF2A2A5A), height: 1),
+              const SizedBox(height: 8),
+
+              // Actions row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  _MobileAction(
+                    icon: Icons.percent,
+                    label: 'Ставка',
+                    color: const Color(0xFF2ECC71),
+                    onTap: () => _showEditRateDialog(courier),
+                  ),
+                  _MobileAction(
+                    icon: Icons.local_shipping,
+                    label: 'Транспорт',
+                    color: const Color(0xFF9B59B6),
+                    onTap: () => _showEditTransportDialog(courier),
+                  ),
+                  _MobileAction(
+                    icon: Icons.refresh,
+                    label: 'Ключ',
+                    color: const Color(0xFF6C5CE7),
+                    onTap: () => _regenerateKey(courier),
+                  ),
+                  _MobileAction(
+                    icon: Icons.store,
+                    label: 'Склады',
+                    color: Colors.blue,
+                    onTap: () => _showLinkWarehouseDialog(courier),
+                  ),
+                  _MobileAction(
+                    icon: isActive ? Icons.block : Icons.check_circle,
+                    label: isActive ? 'Откл.' : 'Вкл.',
+                    color: isActive ? Colors.orange : Colors.green,
+                    onTap: () => _toggleActive(courier),
+                  ),
+                ],
+              ),
+            ],
+          ),
         );
       },
     );
@@ -431,7 +514,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
         children: [
           Icon(Icons.delivery_dining, size: 64, color: Colors.grey[700]),
           const SizedBox(height: 16),
-          Text('Нет курьеров', style: TextStyle(fontSize: 18, color: Colors.grey[500])),
+          Text('Нет курьеров',
+              style: TextStyle(fontSize: 18, color: Colors.grey[500])),
           const SizedBox(height: 8),
           Text('Нажмите "Добавить курьера" чтобы создать первого',
               style: TextStyle(color: Colors.grey[600])),
@@ -447,231 +531,254 @@ class _CouriersScreenState extends State<CouriersScreen> {
     final linkedWarehouses = (courier['courier_warehouse'] as List? ?? [])
         .where((w) => w['is_active'] == true)
         .toList();
-    final warehouseNames = linkedWarehouses
-        .map((w) => w['warehouses']?['name'] ?? '?')
-        .join(', ');
+    final warehouseNames =
+        linkedWarehouses.map((w) => w['warehouses']?['name'] ?? '?').join(', ');
 
     return GestureDetector(
       onTap: () => _showCourierDetailDialog(courier),
       child: Container(
-      margin: const EdgeInsets.only(bottom: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: const Color(0xFF12122B),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: isActive ? Colors.transparent : Colors.red.withValues(alpha: 0.2),
+        margin: const EdgeInsets.only(bottom: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        decoration: BoxDecoration(
+          color: const Color(0xFF12122B),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(
+            color: isActive
+                ? Colors.transparent
+                : Colors.red.withValues(alpha: 0.2),
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          // Name + online status
-          Expanded(
-            flex: 3,
-            child: Row(
-              children: [
-                Container(
-                  width: 36, height: 36,
-                  decoration: BoxDecoration(
-                    color: isActive
-                        ? const Color(0xFF2ECC71).withValues(alpha: 0.15)
-                        : Colors.grey.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: Text(
-                      (courier['name'] as String? ?? '?')[0].toUpperCase(),
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: isActive ? const Color(0xFF2ECC71) : Colors.grey,
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(courier['name'] ?? '—',
-                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                      Row(
-                        children: [
-                          Container(
-                            width: 6, height: 6,
-                            decoration: BoxDecoration(
-                              color: isOnline ? Colors.greenAccent : Colors.grey,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(isOnline ? 'Онлайн' : 'Офлайн',
-                              style: TextStyle(fontSize: 11, color: Colors.grey[500])),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          // Phone
-          Expanded(
-            flex: 2,
-            child: Text(courier['phone'] ?? '—',
-                style: TextStyle(fontSize: 13, color: Colors.grey[300])),
-          ),
-
-          // Access Key
-          Expanded(
-            flex: 2,
-            child: Row(
-              children: [
-                Flexible(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        child: Row(
+          children: [
+            // Name + online status
+            Expanded(
+              flex: 3,
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF6C5CE7).withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(6),
+                      color: isActive
+                          ? const Color(0xFF2ECC71).withValues(alpha: 0.15)
+                          : Colors.grey.withValues(alpha: 0.15),
+                      shape: BoxShape.circle,
                     ),
-                    child: Text(accessKey,
-                        style: const TextStyle(
-                            fontFamily: 'monospace',
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFFA29BFE),
-                            letterSpacing: 1),
-                        overflow: TextOverflow.ellipsis),
+                    child: Center(
+                      child: Text(
+                        (courier['name'] as String? ?? '?')[0].toUpperCase(),
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color:
+                              isActive ? const Color(0xFF2ECC71) : Colors.grey,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(courier['name'] ?? '—',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w600, fontSize: 14)),
+                        Row(
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color:
+                                    isOnline ? Colors.greenAccent : Colors.grey,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(isOnline ? 'Онлайн' : 'Офлайн',
+                                style: TextStyle(
+                                    fontSize: 11, color: Colors.grey[500])),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Phone
+            Expanded(
+              flex: 2,
+              child: Text(courier['phone'] ?? '—',
+                  style: TextStyle(fontSize: 13, color: Colors.grey[300])),
+            ),
+
+            // Access Key
+            Expanded(
+              flex: 2,
+              child: Row(
+                children: [
+                  Flexible(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF6C5CE7).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(accessKey,
+                          style: const TextStyle(
+                              fontFamily: 'monospace',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFFA29BFE),
+                              letterSpacing: 1),
+                          overflow: TextOverflow.ellipsis),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  InkWell(
+                    onTap: () {
+                      Clipboard.setData(ClipboardData(text: accessKey));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                            content: Text('Ключ скопирован'),
+                            duration: Duration(seconds: 1)),
+                      );
+                    },
+                    child: Icon(Icons.copy, size: 14, color: Colors.grey[500]),
+                  ),
+                ],
+              ),
+            ),
+
+            // Transport
+            Expanded(
+              flex: 2,
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 4,
+                children: _getTransportTypes(courier)
+                    .map((t) => Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(_transportIcon(t),
+                                size: 16, color: Colors.grey[400]),
+                            const SizedBox(width: 6),
+                            Text(_transportLabel(t),
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.grey[400])),
+                          ],
+                        ))
+                    .toList(),
+              ),
+            ),
+
+            // Earning Rate
+            Expanded(
+              flex: 1,
+              child: GestureDetector(
+                onTap: () => _showEditRateDialog(courier),
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF2ECC71).withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    '${((courier['earning_rate'] as num?)?.toDouble() ?? 0.90) * 100 ~/ 1}%',
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF2ECC71),
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
-                const SizedBox(width: 4),
-                InkWell(
-                  onTap: () {
-                    Clipboard.setData(ClipboardData(text: accessKey));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Ключ скопирован'),
-                          duration: Duration(seconds: 1)),
-                    );
-                  },
-                  child: Icon(Icons.copy, size: 14, color: Colors.grey[500]),
-                ),
-              ],
+              ),
             ),
-          ),
 
-          // Transport
-          Expanded(
-            flex: 2,
-            child: Row(
-              children: [
-                Icon(_transportIcon(courier['transport_type'] ?? ''),
-                    size: 16, color: Colors.grey[400]),
-                const SizedBox(width: 6),
-                Flexible(
-                  child: Text(_transportLabel(courier['transport_type'] ?? ''),
-                      style: TextStyle(fontSize: 12, color: Colors.grey[400]),
-                      overflow: TextOverflow.ellipsis),
-                ),
-              ],
+            // Warehouses
+            Expanded(
+              flex: 2,
+              child: Text(
+                warehouseNames.isEmpty ? '—' : warehouseNames,
+                style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
-          ),
 
-          // Earning Rate
-          Expanded(
-            flex: 1,
-            child: GestureDetector(
-              onTap: () => _showEditRateDialog(courier),
+            // Status
+            Expanded(
+              flex: 1,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2ECC71).withValues(alpha: 0.1),
+                  color: isActive
+                      ? Colors.green.withValues(alpha: 0.12)
+                      : Colors.red.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
-                  '${((courier['earning_rate'] as num?)?.toDouble() ?? 0.90) * 100 ~/ 1}%',
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF2ECC71),
+                  isActive ? 'Актив' : 'Откл.',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: isActive ? Colors.greenAccent : Colors.red[300],
                   ),
                   textAlign: TextAlign.center,
                 ),
               ),
             ),
-          ),
 
-          // Warehouses
-          Expanded(
-            flex: 2,
-            child: Text(
-              warehouseNames.isEmpty ? '—' : warehouseNames,
-              style: TextStyle(fontSize: 12, color: Colors.grey[400]),
-              maxLines: 1, overflow: TextOverflow.ellipsis,
-            ),
-          ),
-
-          // Status
-          Expanded(
-            flex: 1,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: isActive
-                    ? Colors.green.withValues(alpha: 0.12)
-                    : Colors.red.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(6),
+            // Actions
+            Expanded(
+              flex: 2,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  _ActionButton(
+                    icon: Icons.percent,
+                    tooltip: 'Изменить ставку',
+                    color: const Color(0xFF2ECC71),
+                    onTap: () => _showEditRateDialog(courier),
+                  ),
+                  const SizedBox(width: 4),
+                  _ActionButton(
+                    icon: Icons.local_shipping,
+                    tooltip: 'Изменить транспорт',
+                    color: const Color(0xFF9B59B6),
+                    onTap: () => _showEditTransportDialog(courier),
+                  ),
+                  const SizedBox(width: 4),
+                  _ActionButton(
+                    icon: Icons.refresh,
+                    tooltip: 'Новый ключ',
+                    color: const Color(0xFF6C5CE7),
+                    onTap: () => _regenerateKey(courier),
+                  ),
+                  const SizedBox(width: 4),
+                  _ActionButton(
+                    icon: Icons.store,
+                    tooltip: 'Привязать склад',
+                    color: Colors.blue,
+                    onTap: () => _showLinkWarehouseDialog(courier),
+                  ),
+                  const SizedBox(width: 4),
+                  _ActionButton(
+                    icon: isActive ? Icons.block : Icons.check_circle,
+                    tooltip: isActive ? 'Отключить' : 'Активировать',
+                    color: isActive ? Colors.orange : Colors.green,
+                    onTap: () => _toggleActive(courier),
+                  ),
+                ],
               ),
-              child: Text(
-                isActive ? 'Актив' : 'Откл.',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: isActive ? Colors.greenAccent : Colors.red[300],
-                ),
-                textAlign: TextAlign.center,
-              ),
             ),
-          ),
-
-          // Actions
-          Expanded(
-            flex: 2,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                _ActionButton(
-                  icon: Icons.percent,
-                  tooltip: 'Изменить ставку',
-                  color: const Color(0xFF2ECC71),
-                  onTap: () => _showEditRateDialog(courier),
-                ),
-                const SizedBox(width: 4),
-                _ActionButton(
-                  icon: Icons.refresh,
-                  tooltip: 'Новый ключ',
-                  color: const Color(0xFF6C5CE7),
-                  onTap: () => _regenerateKey(courier),
-                ),
-                const SizedBox(width: 4),
-                _ActionButton(
-                  icon: Icons.store,
-                  tooltip: 'Привязать склад',
-                  color: Colors.blue,
-                  onTap: () => _showLinkWarehouseDialog(courier),
-                ),
-                const SizedBox(width: 4),
-                _ActionButton(
-                  icon: isActive ? Icons.block : Icons.check_circle,
-                  tooltip: isActive ? 'Отключить' : 'Активировать',
-                  color: isActive ? Colors.orange : Colors.green,
-                  onTap: () => _toggleActive(courier),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+          ],
+        ),
       ),
     );
   }
@@ -683,7 +790,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
   void _showAddCourierDialog() {
     final nameCtrl = TextEditingController();
     final phoneCtrl = TextEditingController();
-    String transport = 'bicycle';
+    final selectedTransports = <String>['bicycle'];
 
     showDialog(
       context: context,
@@ -710,7 +817,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
                     labelText: 'Номер телефона',
                     prefixIcon: const Icon(Icons.phone),
                     prefixText: '+996 ',
-                    prefixStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+                    prefixStyle: const TextStyle(
+                        fontWeight: FontWeight.w600, fontSize: 16),
                     hintText: '700123456',
                   ),
                   keyboardType: TextInputType.phone,
@@ -722,19 +830,52 @@ class _CouriersScreenState extends State<CouriersScreen> {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    ChoiceChip(
+                    FilterChip(
                       label: const Text('Электровелосипед'),
-                      selected: transport == 'bicycle',
-                      onSelected: (_) => setDialogState(() => transport = 'bicycle'),
+                      selected: selectedTransports.contains('bicycle'),
+                      onSelected: (sel) => setDialogState(() {
+                        sel
+                            ? selectedTransports.add('bicycle')
+                            : selectedTransports.remove('bicycle');
+                        if (selectedTransports.isEmpty)
+                          selectedTransports.add('bicycle');
+                      }),
                     ),
-                    ChoiceChip(
+                    FilterChip(
                       label: const Text('Муравей'),
-                      selected: transport == 'scooter',
-                      onSelected: (_) => setDialogState(() => transport = 'scooter'),
+                      selected: selectedTransports.contains('scooter'),
+                      onSelected: (sel) => setDialogState(() {
+                        sel
+                            ? selectedTransports.add('scooter')
+                            : selectedTransports.remove('scooter');
+                        if (selectedTransports.isEmpty)
+                          selectedTransports.add('bicycle');
+                      }),
+                    ),
+                    FilterChip(
+                      label: const Text('Мотоцикл'),
+                      selected: selectedTransports.contains('motorcycle'),
+                      onSelected: (sel) => setDialogState(() {
+                        sel
+                            ? selectedTransports.add('motorcycle')
+                            : selectedTransports.remove('motorcycle');
+                        if (selectedTransports.isEmpty)
+                          selectedTransports.add('bicycle');
+                      }),
+                    ),
+                    FilterChip(
+                      label: const Text('Грузовой'),
+                      selected: selectedTransports.contains('truck'),
+                      onSelected: (sel) => setDialogState(() {
+                        sel
+                            ? selectedTransports.add('truck')
+                            : selectedTransports.remove('truck');
+                        if (selectedTransports.isEmpty)
+                          selectedTransports.add('bicycle');
+                      }),
                     ),
                   ],
                 ),
-
               ],
             ),
           ),
@@ -745,9 +886,12 @@ class _CouriersScreenState extends State<CouriersScreen> {
             ),
             ElevatedButton.icon(
               onPressed: () async {
-                if (nameCtrl.text.trim().isEmpty || phoneCtrl.text.trim().isEmpty) {
+                if (nameCtrl.text.trim().isEmpty ||
+                    phoneCtrl.text.trim().isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Заполните все поля'), backgroundColor: Colors.orange),
+                    const SnackBar(
+                        content: Text('Заполните все поля'),
+                        backgroundColor: Colors.orange),
                   );
                   return;
                 }
@@ -755,12 +899,13 @@ class _CouriersScreenState extends State<CouriersScreen> {
                 await _createCourier(
                   name: nameCtrl.text.trim(),
                   phone: '+996${phoneCtrl.text.trim()}',
-                  transport: transport,
+                  transportTypes: selectedTransports.toList(),
                 );
               },
               icon: const Icon(Icons.check, size: 18),
               label: const Text('Создать'),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2ECC71)),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2ECC71)),
             ),
           ],
         ),
@@ -791,7 +936,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
                       final isLinked = linkedIds.contains(wh['id']);
                       return CheckboxListTile(
                         title: Text(wh['name'] ?? '—'),
-                        subtitle: Text(wh['address'] ?? '', style: const TextStyle(fontSize: 12)),
+                        subtitle: Text(wh['address'] ?? '',
+                            style: const TextStyle(fontSize: 12)),
                         value: isLinked,
                         activeColor: const Color(0xFF2ECC71),
                         onChanged: (val) async {
@@ -841,7 +987,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
               decoration: BoxDecoration(
                 color: const Color(0xFF6C5CE7).withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: const Color(0xFF6C5CE7).withValues(alpha: 0.3)),
+                border: Border.all(
+                    color: const Color(0xFF6C5CE7).withValues(alpha: 0.3)),
               ),
               child: Text(
                 key,
@@ -859,7 +1006,9 @@ class _CouriersScreenState extends State<CouriersScreen> {
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: key));
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Ключ скопирован'), duration: Duration(seconds: 1)),
+                  const SnackBar(
+                      content: Text('Ключ скопирован'),
+                      duration: Duration(seconds: 1)),
                 );
               },
               icon: const Icon(Icons.copy, size: 16),
@@ -892,7 +1041,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('Процент от стоимости доставки, который получает курьер',
+                const Text(
+                    'Процент от стоимости доставки, который получает курьер',
                     style: TextStyle(fontSize: 13, color: Colors.grey)),
                 const SizedBox(height: 24),
                 Text(
@@ -921,7 +1071,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
                     return GestureDetector(
                       onTap: () => setDialogState(() => rate = p / 100),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 8),
                         decoration: BoxDecoration(
                           color: isSelected
                               ? const Color(0xFF2ECC71).withValues(alpha: 0.2)
@@ -936,7 +1087,9 @@ class _CouriersScreenState extends State<CouriersScreen> {
                         child: Text('$p%',
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              color: isSelected ? const Color(0xFF2ECC71) : Colors.grey,
+                              color: isSelected
+                                  ? const Color(0xFF2ECC71)
+                                  : Colors.grey,
                             )),
                       ),
                     );
@@ -951,12 +1104,14 @@ class _CouriersScreenState extends State<CouriersScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.info_outline, size: 16, color: Colors.grey),
+                      const Icon(Icons.info_outline,
+                          size: 16, color: Colors.grey),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
                           'При доставке 100 сом курьер получит ${(100 * rate).toStringAsFixed(0)} сом',
-                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          style:
+                              const TextStyle(fontSize: 12, color: Colors.grey),
                         ),
                       ),
                     ],
@@ -981,7 +1136,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: Text('Ставка $name обновлена: ${(rate * 100).toStringAsFixed(0)}%'),
+                        content: Text(
+                            'Ставка $name обновлена: ${(rate * 100).toStringAsFixed(0)}%'),
                         backgroundColor: const Color(0xFF2ECC71),
                       ),
                     );
@@ -989,14 +1145,110 @@ class _CouriersScreenState extends State<CouriersScreen> {
                 } catch (e) {
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Ошибка: $e'), backgroundColor: Colors.red),
+                      SnackBar(
+                          content: Text('Ошибка: $e'),
+                          backgroundColor: Colors.red),
                     );
                   }
                 }
               },
               icon: const Icon(Icons.check, size: 18),
               label: const Text('Сохранить'),
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2ECC71)),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2ECC71)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEditTransportDialog(Map<String, dynamic> courier) {
+    final currentTypes = _getTransportTypes(courier);
+    final selectedTransports = <String>[...currentTypes];
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          backgroundColor: const Color(0xFF1A1A3E),
+          title: Text('Транспорт: ${courier['name'] ?? 'Курьер'}'),
+          content: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 420),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Выберите доступные виды транспорта:',
+                    style: TextStyle(fontSize: 13)),
+                const SizedBox(height: 12),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    FilterChip(
+                      label: const Text('Электровелосипед'),
+                      selected: selectedTransports.contains('bicycle'),
+                      onSelected: (sel) => setDialogState(() {
+                        sel
+                            ? selectedTransports.add('bicycle')
+                            : selectedTransports.remove('bicycle');
+                        if (selectedTransports.isEmpty)
+                          selectedTransports.add('bicycle');
+                      }),
+                    ),
+                    FilterChip(
+                      label: const Text('Муравей'),
+                      selected: selectedTransports.contains('scooter'),
+                      onSelected: (sel) => setDialogState(() {
+                        sel
+                            ? selectedTransports.add('scooter')
+                            : selectedTransports.remove('scooter');
+                        if (selectedTransports.isEmpty)
+                          selectedTransports.add('bicycle');
+                      }),
+                    ),
+                    FilterChip(
+                      label: const Text('Мотоцикл'),
+                      selected: selectedTransports.contains('motorcycle'),
+                      onSelected: (sel) => setDialogState(() {
+                        sel
+                            ? selectedTransports.add('motorcycle')
+                            : selectedTransports.remove('motorcycle');
+                        if (selectedTransports.isEmpty)
+                          selectedTransports.add('bicycle');
+                      }),
+                    ),
+                    FilterChip(
+                      label: const Text('Грузовой'),
+                      selected: selectedTransports.contains('truck'),
+                      onSelected: (sel) => setDialogState(() {
+                        sel
+                            ? selectedTransports.add('truck')
+                            : selectedTransports.remove('truck');
+                        if (selectedTransports.isEmpty)
+                          selectedTransports.add('bicycle');
+                      }),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Отмена'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () async {
+                Navigator.pop(ctx);
+                await _updateCourierTransportTypes(
+                    courier['id'], selectedTransports.toList());
+              },
+              icon: const Icon(Icons.check, size: 18),
+              label: const Text('Сохранить'),
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2ECC71)),
             ),
           ],
         ),
@@ -1011,7 +1263,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
   Future<void> _createCourier({
     required String name,
     required String phone,
-    required String transport,
+    required List<String> transportTypes,
   }) async {
     final key = _generateAccessKey();
     try {
@@ -1019,13 +1271,33 @@ class _CouriersScreenState extends State<CouriersScreen> {
         'name': name,
         'phone': phone,
         'access_key': key,
-        'transport_type': transport,
+        'transport_type':
+            transportTypes.isNotEmpty ? transportTypes.first : 'bicycle',
+        'transport_types': transportTypes,
         'courier_type': 'store',
         'is_active': true,
         'is_online': false,
       });
 
       _showKeyDialog(name, key);
+      _loadData();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  Future<void> _updateCourierTransportTypes(
+      String courierId, List<String> transportTypes) async {
+    try {
+      await _supabase.from('couriers').update({
+        'transport_type':
+            transportTypes.isNotEmpty ? transportTypes.first : 'bicycle',
+        'transport_types': transportTypes,
+      }).eq('id', courierId);
       _loadData();
     } catch (e) {
       if (mounted) {
@@ -1089,10 +1361,14 @@ class _CouriersScreenState extends State<CouriersScreen> {
 
   Future<void> _unlinkWarehouse(String courierId, String warehouseId) async {
     try {
-      await _supabase.from('courier_warehouse').update({
-        'is_active': false,
-        'left_at': DateTime.now().toIso8601String(),
-      }).eq('courier_id', courierId).eq('warehouse_id', warehouseId);
+      await _supabase
+          .from('courier_warehouse')
+          .update({
+            'is_active': false,
+            'left_at': DateTime.now().toIso8601String(),
+          })
+          .eq('courier_id', courierId)
+          .eq('warehouse_id', warehouseId);
 
       // Проверить есть ли ещё активные связи
       final remaining = await _supabase
@@ -1123,7 +1399,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
     // Load data in parallel
     List<Map<String, dynamic>> reviews = [];
     double totalCollected = 0; // Total delivery_fee collected by courier
-    double totalDebt = 0;      // Amount courier owes to AkJol
+    double totalDebt = 0; // Amount courier owes to AkJol
     double totalPaid = 0;
     double avgRating = 0;
     int totalOrders = 0;
@@ -1132,7 +1408,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
       // Load delivered orders with ratings
       final orders = await _supabase
           .from('delivery_orders')
-          .select('id, items_total, delivery_fee, courier_earning, courier_rating, courier_review, order_number, delivered_at, customer_id, customers(name)')
+          .select(
+              'id, items_total, delivery_fee, courier_earning, courier_rating, courier_review, order_number, delivered_at, customer_id, customers(name)')
           .eq('courier_id', courierId)
           .eq('status', 'delivered')
           .order('delivered_at', ascending: false);
@@ -1144,9 +1421,9 @@ class _CouriersScreenState extends State<CouriersScreen> {
 
       for (final o in orders) {
         final deliveryFee = (o['delivery_fee'] as num?)?.toDouble() ?? 0;
-        final courierEarning = (o['courier_earning'] as num?)?.toDouble() 
-            ?? (deliveryFee * earningRate);
-        
+        final courierEarning = (o['courier_earning'] as num?)?.toDouble() ??
+            (deliveryFee * earningRate);
+
         totalCollected += deliveryFee;
         // Courier owes the difference: delivery_fee - courier_earning
         totalDebt += (deliveryFee - courierEarning);
@@ -1155,7 +1432,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
         if (rating != null && rating > 0) {
           ratingSum += rating;
           ratingCount++;
-          if (o['courier_review'] != null && (o['courier_review'] as String).isNotEmpty) {
+          if (o['courier_review'] != null &&
+              (o['courier_review'] as String).isNotEmpty) {
             reviews.add(o);
           }
         }
@@ -1189,7 +1467,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
         title: Row(
           children: [
             Container(
-              width: 44, height: 44,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
                 color: const Color(0xFF2ECC71).withValues(alpha: 0.15),
                 shape: BoxShape.circle,
@@ -1269,7 +1548,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
                           const SizedBox(height: 8),
                           Text(
                             '${reviews.length} отзывов из $totalOrders заказов',
-                            style: TextStyle(color: Colors.grey[400], fontSize: 13),
+                            style: TextStyle(
+                                color: Colors.grey[400], fontSize: 13),
                           ),
                         ],
                       ),
@@ -1297,22 +1577,28 @@ class _CouriersScreenState extends State<CouriersScreen> {
                                 children: [
                                   // Total delivery fees collected
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       const Text('Собрано за доставку:',
                                           style: TextStyle(fontSize: 13)),
-                                      Text('${totalCollected.toStringAsFixed(0)} сом',
-                                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                                      Text(
+                                          '${totalCollected.toStringAsFixed(0)} сом',
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w600)),
                                     ],
                                   ),
                                   const SizedBox(height: 6),
                                   // Courier's share
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text('Доля курьера (${(earningRate * 100).toStringAsFixed(0)}%):',
+                                      Text(
+                                          'Доля курьера (${(earningRate * 100).toStringAsFixed(0)}%):',
                                           style: const TextStyle(fontSize: 13)),
-                                      Text('−${(totalCollected * earningRate).toStringAsFixed(0)} сом',
+                                      Text(
+                                          '−${(totalCollected * earningRate).toStringAsFixed(0)} сом',
                                           style: const TextStyle(
                                             fontWeight: FontWeight.w600,
                                             color: Color(0xFF2ECC71),
@@ -1322,22 +1608,28 @@ class _CouriersScreenState extends State<CouriersScreen> {
                                   const SizedBox(height: 6),
                                   // What courier owes AkJol
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text('Доля AkJol (${((1 - earningRate) * 100).toStringAsFixed(0)}%):',
+                                      Text(
+                                          'Доля AkJol (${((1 - earningRate) * 100).toStringAsFixed(0)}%):',
                                           style: const TextStyle(fontSize: 13)),
-                                      Text('${totalDebt.toStringAsFixed(0)} сом',
-                                          style: const TextStyle(fontWeight: FontWeight.w600)),
+                                      Text(
+                                          '${totalDebt.toStringAsFixed(0)} сом',
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.w600)),
                                     ],
                                   ),
                                   const SizedBox(height: 6),
                                   // Confirmed payments
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       const Text('Оплачено:',
                                           style: TextStyle(fontSize: 13)),
-                                      Text('−${totalPaid.toStringAsFixed(0)} сом',
+                                      Text(
+                                          '−${totalPaid.toStringAsFixed(0)} сом',
                                           style: const TextStyle(
                                             fontWeight: FontWeight.w600,
                                             color: Color(0xFF2ECC71),
@@ -1346,7 +1638,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
                                   ),
                                   const Divider(height: 20),
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
                                         remainingDebt > 0 ? 'Долг:' : 'Баланс:',
@@ -1360,7 +1653,9 @@ class _CouriersScreenState extends State<CouriersScreen> {
                                         style: TextStyle(
                                           fontSize: 22,
                                           fontWeight: FontWeight.w800,
-                                          color: remainingDebt > 0 ? Colors.red : const Color(0xFF2ECC71),
+                                          color: remainingDebt > 0
+                                              ? Colors.red
+                                              : const Color(0xFF2ECC71),
                                         ),
                                       ),
                                     ],
@@ -1375,13 +1670,16 @@ class _CouriersScreenState extends State<CouriersScreen> {
                               child: ElevatedButton.icon(
                                 onPressed: () {
                                   Navigator.pop(ctx);
-                                  _showConfirmPaymentDialog(courier, remainingDebt);
+                                  _showConfirmPaymentDialog(
+                                      courier, remainingDebt);
                                 },
-                                icon: const Icon(Icons.payments_rounded, size: 18),
+                                icon: const Icon(Icons.payments_rounded,
+                                    size: 18),
                                 label: const Text('Подтвердить оплату'),
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: const Color(0xFF2ECC71),
-                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 14),
                                 ),
                               ),
                             ),
@@ -1399,15 +1697,19 @@ class _CouriersScreenState extends State<CouriersScreen> {
                               itemCount: reviews.length,
                               itemBuilder: (_, i) {
                                 final r = reviews[i];
-                                final rating = (r['courier_rating'] as num?)?.toInt() ?? 0;
+                                final rating =
+                                    (r['courier_rating'] as num?)?.toInt() ?? 0;
                                 final review = r['courier_review'] ?? '';
-                                final customerName = r['customers']?['name'] ?? 'Клиент';
+                                final customerName =
+                                    r['customers']?['name'] ?? 'Клиент';
                                 final orderNum = r['order_number'] ?? '';
                                 final deliveredAt = r['delivered_at'] ?? '';
                                 String dateLabel = '';
-                                final dt = DateTime.tryParse(deliveredAt.toString());
+                                final dt =
+                                    DateTime.tryParse(deliveredAt.toString());
                                 if (dt != null) {
-                                  dateLabel = '${dt.day}.${dt.month}.${dt.year}';
+                                  dateLabel =
+                                      '${dt.day}.${dt.month}.${dt.year}';
                                 }
 
                                 return Container(
@@ -1418,18 +1720,26 @@ class _CouriersScreenState extends State<CouriersScreen> {
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Row(
                                         children: [
-                                          ...List.generate(5, (s) => Icon(
-                                            s < rating ? Icons.star_rounded : Icons.star_border_rounded,
-                                            color: Colors.amber,
-                                            size: 16,
-                                          )),
+                                          ...List.generate(
+                                              5,
+                                              (s) => Icon(
+                                                    s < rating
+                                                        ? Icons.star_rounded
+                                                        : Icons
+                                                            .star_border_rounded,
+                                                    color: Colors.amber,
+                                                    size: 16,
+                                                  )),
                                           const Spacer(),
                                           Text(dateLabel,
-                                              style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+                                              style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: Colors.grey[500])),
                                         ],
                                       ),
                                       const SizedBox(height: 6),
@@ -1437,7 +1747,9 @@ class _CouriersScreenState extends State<CouriersScreen> {
                                           style: const TextStyle(fontSize: 13)),
                                       const SizedBox(height: 4),
                                       Text('$customerName • $orderNum',
-                                          style: TextStyle(fontSize: 11, color: Colors.grey[500])),
+                                          style: TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.grey[500])),
                                     ],
                                   ),
                                 );
@@ -1460,7 +1772,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
     );
   }
 
-  void _showConfirmPaymentDialog(Map<String, dynamic> courier, double currentDebt) {
+  void _showConfirmPaymentDialog(
+      Map<String, dynamic> courier, double currentDebt) {
     final amountCtrl = TextEditingController();
     final noteCtrl = TextEditingController();
 
@@ -1527,7 +1840,9 @@ class _CouriersScreenState extends State<CouriersScreen> {
               final amount = double.tryParse(amountCtrl.text.trim());
               if (amount == null || amount <= 0) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Введите корректную сумму'), backgroundColor: Colors.orange),
+                  const SnackBar(
+                      content: Text('Введите корректную сумму'),
+                      backgroundColor: Colors.orange),
                 );
                 return;
               }
@@ -1544,7 +1859,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text('Оплата ${amount.toStringAsFixed(0)} сом от ${courier['name']} подтверждена'),
+                      content: Text(
+                          'Оплата ${amount.toStringAsFixed(0)} сом от ${courier['name']} подтверждена'),
                       backgroundColor: const Color(0xFF2ECC71),
                     ),
                   );
@@ -1552,14 +1868,17 @@ class _CouriersScreenState extends State<CouriersScreen> {
               } catch (e) {
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Ошибка: $e'), backgroundColor: Colors.red),
+                    SnackBar(
+                        content: Text('Ошибка: $e'),
+                        backgroundColor: Colors.red),
                   );
                 }
               }
             },
             icon: const Icon(Icons.check, size: 18),
             label: const Text('Подтвердить'),
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2ECC71)),
+            style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF2ECC71)),
           ),
         ],
       ),
@@ -1570,23 +1889,45 @@ class _CouriersScreenState extends State<CouriersScreen> {
   // HELPERS
   // ═══════════════════════════════════════════════════════════
 
+  List<String> _getTransportTypes(Map<String, dynamic> courier) {
+    final types = courier['transport_types'];
+    if (types is List && types.isNotEmpty) {
+      return types.map((t) => t.toString()).where((t) => t.isNotEmpty).toList();
+    }
+    final legacy = courier['transport_type'];
+    if (legacy != null && legacy.toString().isNotEmpty) {
+      return [legacy.toString()];
+    }
+    return [];
+  }
+
   IconData _transportIcon(String type) {
     switch (type) {
-      case 'bicycle': return Icons.electric_bike_rounded;
-      case 'scooter': return Icons.electric_rickshaw_rounded;
-      case 'motorcycle': return Icons.two_wheeler_rounded;
-      case 'truck': return Icons.local_shipping_rounded;
-      default: return Icons.delivery_dining_rounded;
+      case 'bicycle':
+        return Icons.electric_bike_rounded;
+      case 'scooter':
+        return Icons.electric_rickshaw_rounded;
+      case 'motorcycle':
+        return Icons.two_wheeler_rounded;
+      case 'truck':
+        return Icons.local_shipping_rounded;
+      default:
+        return Icons.delivery_dining_rounded;
     }
   }
 
   String _transportLabel(String type) {
     switch (type) {
-      case 'bicycle': return 'Электровело';
-      case 'scooter': return 'Муравей';
-      case 'motorcycle': return 'Мотоцикл';
-      case 'truck': return 'Грузовой';
-      default: return type;
+      case 'bicycle':
+        return 'Электровело';
+      case 'scooter':
+        return 'Муравей';
+      case 'motorcycle':
+        return 'Мотоцикл';
+      case 'truck':
+        return 'Грузовой';
+      default:
+        return type;
     }
   }
 }
@@ -1620,8 +1961,10 @@ class _FilterChip extends StatelessWidget {
   final String current;
   final VoidCallback onTap;
   const _FilterChip({
-    required this.label, required this.value,
-    required this.current, required this.onTap,
+    required this.label,
+    required this.value,
+    required this.current,
+    required this.onTap,
   });
 
   @override
@@ -1632,10 +1975,14 @@ class _FilterChip extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF6C5CE7).withValues(alpha: 0.2) : Colors.transparent,
+          color: isSelected
+              ? const Color(0xFF6C5CE7).withValues(alpha: 0.2)
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isSelected ? const Color(0xFF6C5CE7) : Colors.grey.withValues(alpha: 0.3),
+            color: isSelected
+                ? const Color(0xFF6C5CE7)
+                : Colors.grey.withValues(alpha: 0.3),
           ),
         ),
         child: Text(label,
@@ -1655,8 +2002,10 @@ class _ActionButton extends StatelessWidget {
   final Color color;
   final VoidCallback onTap;
   const _ActionButton({
-    required this.icon, required this.tooltip,
-    required this.color, required this.onTap,
+    required this.icon,
+    required this.tooltip,
+    required this.color,
+    required this.onTap,
   });
 
   @override
@@ -1685,8 +2034,10 @@ class _MobileAction extends StatelessWidget {
   final Color color;
   final VoidCallback onTap;
   const _MobileAction({
-    required this.icon, required this.label,
-    required this.color, required this.onTap,
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
   });
 
   @override
@@ -1709,7 +2060,8 @@ class _MobileAction extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(label,
-                style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.w500)),
+                style: TextStyle(
+                    fontSize: 10, color: color, fontWeight: FontWeight.w500)),
           ],
         ),
       ),

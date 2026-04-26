@@ -17,15 +17,16 @@ class SupportScreen extends StatelessWidget {
     final bg = isDark ? const Color(0xFF0D1117) : const Color(0xFFFAFBFC);
     final cardBg = isDark ? const Color(0xFF161B22) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF111827);
-    final mutedColor = isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280);
-    final borderColor = isDark ? const Color(0xFF30363D) : const Color(0xFFE5E7EB);
+    final mutedColor = isDark
+        ? const Color(0xFF8B949E)
+        : const Color(0xFF6B7280);
+    final borderColor = isDark
+        ? const Color(0xFF30363D)
+        : const Color(0xFFE5E7EB);
 
     return Scaffold(
       backgroundColor: bg,
-      appBar: AppBar(
-        title: const Text('Поддержка'),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text('Поддержка'), centerTitle: true),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -53,15 +54,29 @@ class SupportScreen extends StatelessWidget {
                     color: const Color(0xFF3498DB).withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: const Icon(Icons.support_agent, color: Color(0xFF3498DB), size: 32),
+                  child: const Icon(
+                    Icons.support_agent,
+                    color: Color(0xFF3498DB),
+                    size: 32,
+                  ),
                 ),
                 const SizedBox(height: 14),
-                Text('Как мы можем помочь?',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: textColor)),
+                Text(
+                  'Как мы можем помочь?',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: textColor,
+                  ),
+                ),
                 const SizedBox(height: 6),
                 Text(
                   'Ответим на вопросы о заказах,\nдоставке и работе приложения',
-                  style: TextStyle(fontSize: 14, color: mutedColor, height: 1.4),
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: mutedColor,
+                    height: 1.4,
+                  ),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -78,7 +93,7 @@ class SupportScreen extends StatelessWidget {
                   label: 'Позвонить',
                   color: AkJolTheme.primary,
                   isDark: isDark,
-                  onTap: () => _launch('tel:+996555000000'),
+                  onTap: () => _launch('tel:+996506384666'),
                 ),
               ),
               const SizedBox(width: 12),
@@ -98,7 +113,7 @@ class SupportScreen extends StatelessWidget {
                   label: 'WhatsApp',
                   color: const Color(0xFF25D366),
                   isDark: isDark,
-                  onTap: () => _launch('https://wa.me/996555000000'),
+                  onTap: () => _launch('https://wa.me/996506384666'),
                 ),
               ),
             ],
@@ -106,38 +121,50 @@ class SupportScreen extends StatelessWidget {
           const SizedBox(height: 24),
 
           // ── FAQ ──
-          Text('Частые вопросы',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: textColor)),
+          Text(
+            'Частые вопросы',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+              color: textColor,
+            ),
+          ),
           const SizedBox(height: 12),
 
           _FaqItem(
             question: 'Как оформить заказ?',
-            answer: 'Выберите магазин, добавьте товары в корзину, укажите адрес доставки и нажмите «Оформить заказ».',
+            answer:
+                'Выберите магазин, добавьте товары в корзину, укажите адрес доставки и нажмите «Оформить заказ».',
             isDark: isDark,
           ),
           _FaqItem(
             question: 'Сколько стоит доставка?',
-            answer: 'Стоимость доставки зависит от расстояния и магазина. Обычно от 100 до 300 сом. Вы увидите точную стоимость при оформлении.',
+            answer:
+                'Стоимость доставки зависит от расстояния и магазина. Обычно от 100 до 300 сом. Вы увидите точную стоимость при оформлении.',
             isDark: isDark,
           ),
           _FaqItem(
             question: 'Как отследить заказ?',
-            answer: 'После оформления заказа вы можете отслеживать его статус в разделе "Заказы". Когда курьер заберёт заказ, вы увидите его на карте в реальном времени.',
+            answer:
+                'После оформления заказа вы можете отслеживать его статус в разделе "Заказы". Когда курьер заберёт заказ, вы увидите его на карте в реальном времени.',
             isDark: isDark,
           ),
           _FaqItem(
             question: 'Как отменить заказ?',
-            answer: 'Вы можете отменить заказ пока он не был отправлен. Зайдите в детали заказа и нажмите «Отменить». Если заказ уже в пути — свяжитесь с поддержкой.',
+            answer:
+                'Вы можете отменить заказ пока он не был отправлен. Зайдите в детали заказа и нажмите «Отменить». Если заказ уже в пути — свяжитесь с поддержкой.',
             isDark: isDark,
           ),
           _FaqItem(
             question: 'Какие способы оплаты?',
-            answer: 'Наличными курьеру при получении, а также банковской картой через приложение.',
+            answer:
+                'Наличными курьеру при получении, а также банковской картой через приложение.',
             isDark: isDark,
           ),
           _FaqItem(
             question: 'Можно ли заказать на другой адрес?',
-            answer: 'Да, при оформлении заказа вы можете указать любой адрес доставки в пределах города.',
+            answer:
+                'Да, при оформлении заказа вы можете указать любой адрес доставки в пределах города.',
             isDark: isDark,
           ),
 
@@ -156,15 +183,33 @@ class SupportScreen extends StatelessWidget {
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: Icon(Icons.schedule, color: mutedColor),
-                  title: Text('Время работы', style: TextStyle(fontWeight: FontWeight.w500, color: textColor)),
-                  subtitle: Text('Пн-Вс: 08:00 – 23:00', style: TextStyle(color: mutedColor, fontSize: 13)),
+                  title: Text(
+                    'Время работы',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      color: textColor,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'Пн-Вс: 08:00 – 23:00',
+                    style: TextStyle(color: mutedColor, fontSize: 13),
+                  ),
                 ),
                 Divider(color: borderColor, height: 1),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: Icon(Icons.email_outlined, color: mutedColor),
-                  title: Text('Email', style: TextStyle(fontWeight: FontWeight.w500, color: textColor)),
-                  subtitle: Text('support@akjol.kg', style: TextStyle(color: mutedColor, fontSize: 13)),
+                  title: Text(
+                    'Email',
+                    style: TextStyle(
+                      fontWeight: FontWeight.w500,
+                      color: textColor,
+                    ),
+                  ),
+                  subtitle: Text(
+                    'support@akjol.kg',
+                    style: TextStyle(color: mutedColor, fontSize: 13),
+                  ),
                   onTap: () => _launch('mailto:support@akjol.kg'),
                 ),
               ],
@@ -216,7 +261,8 @@ class _QuickAction extends StatelessWidget {
         child: Column(
           children: [
             Container(
-              width: 44, height: 44,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
                 color: color.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
@@ -224,10 +270,14 @@ class _QuickAction extends StatelessWidget {
               child: Icon(icon, color: color, size: 22),
             ),
             const SizedBox(height: 8),
-            Text(label, style: TextStyle(
-              fontSize: 12, fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white : const Color(0xFF374151),
-            )),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: isDark ? Colors.white : const Color(0xFF374151),
+              ),
+            ),
           ],
         ),
       ),
@@ -256,9 +306,13 @@ class _FaqItemState extends State<_FaqItem> {
   @override
   Widget build(BuildContext context) {
     final cardBg = widget.isDark ? const Color(0xFF161B22) : Colors.white;
-    final borderColor = widget.isDark ? const Color(0xFF30363D) : const Color(0xFFE5E7EB);
+    final borderColor = widget.isDark
+        ? const Color(0xFF30363D)
+        : const Color(0xFFE5E7EB);
     final textColor = widget.isDark ? Colors.white : const Color(0xFF111827);
-    final mutedColor = widget.isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280);
+    final mutedColor = widget.isDark
+        ? const Color(0xFF8B949E)
+        : const Color(0xFF6B7280);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -270,8 +324,14 @@ class _FaqItemState extends State<_FaqItem> {
       child: Column(
         children: [
           ListTile(
-            title: Text(widget.question,
-                style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: textColor)),
+            title: Text(
+              widget.question,
+              style: TextStyle(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+                color: textColor,
+              ),
+            ),
             trailing: AnimatedRotation(
               duration: const Duration(milliseconds: 200),
               turns: _expanded ? 0.5 : 0,
@@ -283,10 +343,14 @@ class _FaqItemState extends State<_FaqItem> {
             firstChild: const SizedBox.shrink(),
             secondChild: Padding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-              child: Text(widget.answer,
-                  style: TextStyle(fontSize: 13, color: mutedColor, height: 1.5)),
+              child: Text(
+                widget.answer,
+                style: TextStyle(fontSize: 13, color: mutedColor, height: 1.5),
+              ),
             ),
-            crossFadeState: _expanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+            crossFadeState: _expanded
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
             duration: const Duration(milliseconds: 200),
           ),
         ],

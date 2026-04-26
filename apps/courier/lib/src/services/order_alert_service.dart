@@ -1,13 +1,13 @@
-import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'dart:io' show Platform;
+import 'notification_service.dart';
 
 // ═══════════════════════════════════════════════════════════════
-// Order Alert Service — Sound notifications for courier app
+// Order Alert Service — Sound + System notifications for courier
 //
-// Plays alert sound when new order arrives via Realtime.
-// Uses system beep on desktop, audioplayers on mobile.
+// v2: Integrates with NotificationService for system-level
+// notifications that appear even when app is in foreground.
 // ═══════════════════════════════════════════════════════════════
 
 class OrderAlertService {
@@ -15,7 +15,7 @@ class OrderAlertService {
   factory OrderAlertService() => _instance;
   OrderAlertService._();
 
-  AudioPlayer? _player;
+  final _notifService = NotificationService();
   bool _enabled = true;
 
   /// Enable/disable sound alerts
@@ -30,65 +30,68 @@ class OrderAlertService {
     }
   }
 
-  /// Play new order alert
-  Future<void> playNewOrderAlert() async {
+  /// Play new order alert + show system notification
+  Future<void> playNewOrderAlert({String? orderInfo}) async {
     if (!_enabled) return;
 
     try {
+      // Show system notification
+      _notifService.show(
+        title: 'Новый заказ',
+        body: orderInfo ?? 'Доступен новый заказ для доставки',
+        channelId: 'new_orders',
+        soundName: 'new_order_alert',
+      );
+
+      // On desktop, also play system sound
       if (_isDesktop) {
-        // On desktop, use system alert sound (reliable on Windows)
         await SystemSound.play(SystemSoundType.alert);
-        // Play it twice with a short delay for emphasis
         await Future.delayed(const Duration(milliseconds: 300));
         await SystemSound.play(SystemSoundType.alert);
         debugPrint('[Alert] System sound played (desktop)');
-      } else {
-        // On mobile, try audioplayers with URL
-        _player ??= AudioPlayer();
-        await _player!.setVolume(0.8);
-        await _player!.setReleaseMode(ReleaseMode.release);
-        try {
-          await _player!.play(
-            UrlSource(
-              'https://cdn.pixabay.com/audio/2024/11/07/audio_77e36f21ee.mp3',
-            ),
-          );
-          debugPrint('[Alert] New order sound played (mobile)');
-        } catch (e) {
-          // Fallback to system sound
-          await SystemSound.play(SystemSoundType.alert);
-          debugPrint('[Alert] Fallback to system sound: $e');
-        }
       }
     } catch (e) {
       debugPrint('[Alert] Sound error: $e');
-      // Last resort: just use system click
       try {
         await SystemSound.play(SystemSoundType.click);
       } catch (_) {}
     }
   }
 
-  /// Play delivery complete chime
-  Future<void> playDeliveryComplete() async {
+  /// Play delivery complete chime + show notification
+  Future<void> playDeliveryComplete({String? orderInfo}) async {
     if (!_enabled) return;
 
     try {
+      _notifService.show(
+        title: 'Доставка завершена',
+        body: orderInfo ?? 'Заказ успешно доставлен',
+        channelId: 'order_status',
+        soundName: 'order_delivered',
+      );
+
       if (_isDesktop) {
         await SystemSound.play(SystemSoundType.click);
-      } else {
-        _player ??= AudioPlayer();
-        await _player!.setVolume(0.6);
-        await _player!.setReleaseMode(ReleaseMode.release);
-        try {
-          await _player!.play(
-            UrlSource(
-              'https://cdn.pixabay.com/audio/2022/03/24/audio_5fae3a00d7.mp3',
-            ),
-          );
-        } catch (e) {
-          await SystemSound.play(SystemSoundType.click);
-        }
+      }
+    } catch (e) {
+      debugPrint('[Alert] Sound error: $e');
+    }
+  }
+
+  /// Show order cancelled notification
+  Future<void> playOrderCancelled({String? orderInfo}) async {
+    if (!_enabled) return;
+
+    try {
+      _notifService.show(
+        title: 'Заказ отменён',
+        body: orderInfo ?? 'Заказ был отменён клиентом',
+        channelId: 'order_status',
+        soundName: 'order_cancelled',
+      );
+
+      if (_isDesktop) {
+        await SystemSound.play(SystemSoundType.alert);
       }
     } catch (e) {
       debugPrint('[Alert] Sound error: $e');
@@ -96,7 +99,6 @@ class OrderAlertService {
   }
 
   void dispose() {
-    _player?.dispose();
-    _player = null;
+    _notifService.dispose();
   }
 }

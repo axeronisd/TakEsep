@@ -47,11 +47,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   child: AkJolHeader(
                     address: location.displayName,
                     loading: location.loading,
-                    userName: Supabase.instance.client.auth.currentUser
-                        ?.userMetadata?['name'] as String? ??
-                        Supabase.instance.client.auth.currentUser?.email?.split('@').first,
+                    userName:
+                        Supabase
+                                .instance
+                                .client
+                                .auth
+                                .currentUser
+                                ?.userMetadata?['name']
+                            as String? ??
+                        Supabase.instance.client.auth.currentUser?.email
+                            ?.split('@')
+                            .first,
                     onAddressTap: () => _showCityPicker(context),
                     onProfileTap: () => context.go('/profile'),
+                    onOrdersTap: () => context.go('/orders'),
                   ),
                 ),
               ),
@@ -77,7 +86,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               // ── 3. Store Category Quick Filters ──
               categoriesAsync.when(
                 data: (categories) {
-                  if (categories.isEmpty) return const SliverToBoxAdapter(child: SizedBox.shrink());
+                  if (categories.isEmpty)
+                    return const SliverToBoxAdapter(child: SizedBox.shrink());
                   return SliverToBoxAdapter(
                     child: SizedBox(
                       height: 42,
@@ -91,31 +101,47 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                           final isActive = selectedCategory == cat.id;
                           return GestureDetector(
                             onTap: () {
-                              final current = ref.read(selectedStoreCategoryProvider);
-                              ref.read(selectedStoreCategoryProvider.notifier).state =
-                                  current == cat.id ? null : cat.id;
+                              final current = ref.read(
+                                selectedStoreCategoryProvider,
+                              );
+                              ref
+                                  .read(selectedStoreCategoryProvider.notifier)
+                                  .state = current == cat.id
+                                  ? null
+                                  : cat.id;
                             },
                             child: AnimatedContainer(
                               duration: const Duration(milliseconds: 200),
-                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 8,
+                              ),
                               decoration: BoxDecoration(
                                 color: isActive
                                     ? AkJolTheme.primary
-                                    : (isDark ? const Color(0xFF161B22) : Colors.white),
+                                    : (isDark
+                                          ? const Color(0xFF161B22)
+                                          : Colors.white),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
                                   color: isActive
                                       ? AkJolTheme.primary
-                                      : (isDark ? const Color(0xFF30363D) : const Color(0xFFE5E7EB)),
+                                      : (isDark
+                                            ? const Color(0xFF30363D)
+                                            : const Color(0xFFE5E7EB)),
                                   width: 1,
                                 ),
-                                boxShadow: isActive ? [
-                                  BoxShadow(
-                                    color: AkJolTheme.primary.withValues(alpha: 0.3),
-                                    blurRadius: 8,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ] : null,
+                                boxShadow: isActive
+                                    ? [
+                                        BoxShadow(
+                                          color: AkJolTheme.primary.withValues(
+                                            alpha: 0.3,
+                                          ),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ]
+                                    : null,
                               ),
                               child: Row(
                                 mainAxisSize: MainAxisSize.min,
@@ -125,17 +151,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     size: 16,
                                     color: isActive
                                         ? Colors.white
-                                        : (isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280)),
+                                        : (isDark
+                                              ? const Color(0xFF8B949E)
+                                              : const Color(0xFF6B7280)),
                                   ),
                                   const SizedBox(width: 6),
                                   Text(
                                     cat.name,
                                     style: TextStyle(
                                       fontSize: 13,
-                                      fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                                      fontWeight: isActive
+                                          ? FontWeight.w700
+                                          : FontWeight.w500,
                                       color: isActive
                                           ? Colors.white
-                                          : (isDark ? const Color(0xFFCDD9E5) : const Color(0xFF374151)),
+                                          : (isDark
+                                                ? const Color(0xFFCDD9E5)
+                                                : const Color(0xFF374151)),
                                     ),
                                   ),
                                 ],
@@ -147,8 +179,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   );
                 },
-                loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
-                error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+                loading: () =>
+                    const SliverToBoxAdapter(child: SizedBox.shrink()),
+                error: (_, __) =>
+                    const SliverToBoxAdapter(child: SizedBox.shrink()),
               ),
 
               const SliverToBoxAdapter(child: SizedBox(height: 12)),
@@ -162,22 +196,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                   action: selectedCategory != null ? null : null,
                   actionWidget: selectedCategory != null
                       ? GestureDetector(
-                          onTap: () => ref.read(selectedStoreCategoryProvider.notifier).state = null,
+                          onTap: () =>
+                              ref
+                                      .read(
+                                        selectedStoreCategoryProvider.notifier,
+                                      )
+                                      .state =
+                                  null,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 4,
+                            ),
                             decoration: BoxDecoration(
-                              color: isDark ? const Color(0xFF21262D) : const Color(0xFFF3F4F6),
+                              color: isDark
+                                  ? const Color(0xFF21262D)
+                                  : const Color(0xFFF3F4F6),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.close_rounded, size: 14,
-                                    color: isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280)),
+                                Icon(
+                                  Icons.close_rounded,
+                                  size: 14,
+                                  color: isDark
+                                      ? const Color(0xFF8B949E)
+                                      : const Color(0xFF6B7280),
+                                ),
                                 const SizedBox(width: 2),
-                                Text('Сбросить', style: TextStyle(
-                                    fontSize: 12, fontWeight: FontWeight.w600,
-                                    color: isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280))),
+                                Text(
+                                  'Сбросить',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: isDark
+                                        ? const Color(0xFF8B949E)
+                                        : const Color(0xFF6B7280),
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -195,9 +252,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     return SliverToBoxAdapter(
                       child: _EmptyStoresPlaceholder(
                         hasCategory: selectedCategory != null,
-                        onClear: () => ref
-                            .read(selectedStoreCategoryProvider.notifier)
-                            .state = null,
+                        onClear: () =>
+                            ref
+                                    .read(
+                                      selectedStoreCategoryProvider.notifier,
+                                    )
+                                    .state =
+                                null,
                       ),
                     );
                   }
@@ -206,8 +267,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     sliver: SliverList.separated(
                       itemCount: filteredStores.length,
-                      separatorBuilder: (_, _) =>
-                          const SizedBox(height: 16),
+                      separatorBuilder: (_, _) => const SizedBox(height: 16),
                       itemBuilder: (_, idx) {
                         final store = filteredStores[idx];
                         return MarketplaceStoreCard(
@@ -219,9 +279,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                   );
                 },
-                loading: () => SliverToBoxAdapter(
-                  child: _StoresLoadingShimmer(),
-                ),
+                loading: () =>
+                    SliverToBoxAdapter(child: _StoresLoadingShimmer()),
                 error: (e, _) => SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.all(32),
@@ -265,22 +324,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       SnackBar(
         content: Text(msg),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
     );
   }
 
   void _showCityPicker(BuildContext context) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => const AddressPickerScreen(),
-        fullscreenDialog: true,
-      ),
-    ).then((_) {
-      // Refresh stores after address change
-      ref.invalidate(nearbyStoresProvider);
-    });
+    Navigator.of(context)
+        .push(
+          MaterialPageRoute(
+            builder: (_) => const AddressPickerScreen(),
+            fullscreenDialog: true,
+          ),
+        )
+        .then((_) {
+          // Refresh stores after address change
+          ref.invalidate(nearbyStoresProvider);
+        });
   }
 
   IconData _getCategoryIcon(String icon) {
@@ -315,10 +375,7 @@ class _EmptyStoresPlaceholder extends StatelessWidget {
   final bool hasCategory;
   final VoidCallback? onClear;
 
-  const _EmptyStoresPlaceholder({
-    this.hasCategory = false,
-    this.onClear,
-  });
+  const _EmptyStoresPlaceholder({this.hasCategory = false, this.onClear});
 
   @override
   Widget build(BuildContext context) {
@@ -361,9 +418,7 @@ class _EmptyStoresPlaceholder extends StatelessWidget {
                 : 'Попробуйте изменить местоположение',
             style: TextStyle(
               fontSize: 13,
-              color: isDark
-                  ? const Color(0xFF8B949E)
-                  : const Color(0xFF9CA3AF),
+              color: isDark ? const Color(0xFF8B949E) : const Color(0xFF9CA3AF),
             ),
           ),
           if (hasCategory) ...[
@@ -372,9 +427,7 @@ class _EmptyStoresPlaceholder extends StatelessWidget {
               onPressed: onClear,
               icon: const Icon(Icons.clear, size: 16),
               label: const Text('Сбросить фильтр'),
-              style: TextButton.styleFrom(
-                foregroundColor: AkJolTheme.primary,
-              ),
+              style: TextButton.styleFrom(foregroundColor: AkJolTheme.primary),
             ),
           ],
         ],
@@ -411,7 +464,8 @@ class _StoresLoadingShimmer extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: shimmer,
                     borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(20)),
+                      top: Radius.circular(20),
+                    ),
                   ),
                 ),
                 Padding(
@@ -527,9 +581,7 @@ class _ActiveOrderBanner extends ConsumerWidget {
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
-                        color: isDark
-                            ? Colors.white
-                            : const Color(0xFF111827),
+                        color: isDark ? Colors.white : const Color(0xFF111827),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -604,7 +656,11 @@ class _StickyHeaderDelegate extends SliverPersistentHeaderDelegate {
   double get maxExtent => 80;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
     return child;
   }
 

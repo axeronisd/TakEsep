@@ -74,5 +74,10 @@
 	<string>Для загрузки чеков и фотографий</string>\r
 	<key>NSPhotoLibraryUsageDescription</key>\r
 	<string>Для выбора фотографий из галереи</string>\r
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+		<string>fetch</string>
+	</array>
 </dict>
 </plist>

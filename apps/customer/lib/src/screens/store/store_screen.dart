@@ -14,20 +14,68 @@ import 'modifier_sheet.dart';
 class _SmartSearch {
   // Russian → Latin transliteration map
   static const _ruToEn = {
-    'а': 'a', 'б': 'b', 'в': 'v', 'г': 'g', 'д': 'd', 'е': 'e',
-    'ё': 'yo', 'ж': 'zh', 'з': 'z', 'и': 'i', 'й': 'y', 'к': 'k',
-    'л': 'l', 'м': 'm', 'н': 'n', 'о': 'o', 'п': 'p', 'р': 'r',
-    'с': 's', 'т': 't', 'у': 'u', 'ф': 'f', 'х': 'h', 'ц': 'ts',
-    'ч': 'ch', 'ш': 'sh', 'щ': 'sch', 'ъ': '', 'ы': 'y', 'ь': '',
-    'э': 'e', 'ю': 'yu', 'я': 'ya',
+    'а': 'a',
+    'б': 'b',
+    'в': 'v',
+    'г': 'g',
+    'д': 'd',
+    'е': 'e',
+    'ё': 'yo',
+    'ж': 'zh',
+    'з': 'z',
+    'и': 'i',
+    'й': 'y',
+    'к': 'k',
+    'л': 'l',
+    'м': 'm',
+    'н': 'n',
+    'о': 'o',
+    'п': 'p',
+    'р': 'r',
+    'с': 's',
+    'т': 't',
+    'у': 'u',
+    'ф': 'f',
+    'х': 'h',
+    'ц': 'ts',
+    'ч': 'ch',
+    'ш': 'sh',
+    'щ': 'sch',
+    'ъ': '',
+    'ы': 'y',
+    'ь': '',
+    'э': 'e',
+    'ю': 'yu',
+    'я': 'ya',
   };
 
   static const _enToRu = {
-    'a': 'а', 'b': 'б', 'c': 'к', 'd': 'д', 'e': 'е', 'f': 'ф',
-    'g': 'г', 'h': 'х', 'i': 'и', 'j': 'дж', 'k': 'к', 'l': 'л',
-    'm': 'м', 'n': 'н', 'o': 'о', 'p': 'п', 'q': 'к', 'r': 'р',
-    's': 'с', 't': 'т', 'u': 'у', 'v': 'в', 'w': 'в', 'x': 'кс',
-    'y': 'й', 'z': 'з',
+    'a': 'а',
+    'b': 'б',
+    'c': 'к',
+    'd': 'д',
+    'e': 'е',
+    'f': 'ф',
+    'g': 'г',
+    'h': 'х',
+    'i': 'и',
+    'j': 'дж',
+    'k': 'к',
+    'l': 'л',
+    'm': 'м',
+    'n': 'н',
+    'o': 'о',
+    'p': 'п',
+    'q': 'к',
+    'r': 'р',
+    's': 'с',
+    't': 'т',
+    'u': 'у',
+    'v': 'в',
+    'w': 'в',
+    'x': 'кс',
+    'y': 'й',
+    'z': 'з',
   };
 
   static String _transliterate(String input, Map<String, String> map) {
@@ -121,16 +169,15 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
   Widget build(BuildContext context) {
     final storeId = widget.storeId;
     final storeAsync = ref.watch(storeDetailProvider(storeId));
-    final categoriesAsync =
-        ref.watch(storeProductCategoriesProvider(storeId));
+    final categoriesAsync = ref.watch(storeProductCategoriesProvider(storeId));
     final productsAsync = ref.watch(storeProductsProvider(storeId));
-    final selectedCat =
-        ref.watch(selectedProductCategoryProvider(storeId));
+    final selectedCat = ref.watch(selectedProductCategoryProvider(storeId));
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor:
-          isDark ? const Color(0xFF0D1117) : const Color(0xFFF5F5F5),
+      backgroundColor: isDark
+          ? const Color(0xFF0D1117)
+          : const Color(0xFFF5F5F5),
       body: storeAsync.when(
         data: (store) {
           if (store == null) {
@@ -138,14 +185,20 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.storefront_outlined,
-                      size: 64, color: AkJolTheme.textTertiary),
+                  Icon(
+                    Icons.storefront_outlined,
+                    size: 64,
+                    color: AkJolTheme.textTertiary,
+                  ),
                   const SizedBox(height: 16),
-                  Text('Магазин не найден',
-                      style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                          color: AkJolTheme.textSecondary)),
+                  Text(
+                    'Магазин не найден',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AkJolTheme.textSecondary,
+                    ),
+                  ),
                   const SizedBox(height: 24),
                   TextButton.icon(
                     onPressed: () => context.pop(),
@@ -181,7 +234,8 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
                   data: (categories) {
                     if (categories.isEmpty) {
                       return const SliverToBoxAdapter(
-                          child: SizedBox(height: 8));
+                        child: SizedBox(height: 8),
+                      );
                     }
                     return SliverToBoxAdapter(
                       child: _CategoryGrid(
@@ -190,39 +244,56 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
                         isDark: isDark,
                         onTap: (id) {
                           final current = ref.read(
-                              selectedProductCategoryProvider(storeId));
+                            selectedProductCategoryProvider(storeId),
+                          );
                           ref
-                              .read(selectedProductCategoryProvider(storeId)
-                                  .notifier)
-                              .state = current == id ? null : id;
+                              .read(
+                                selectedProductCategoryProvider(
+                                  storeId,
+                                ).notifier,
+                              )
+                              .state = current == id
+                              ? null
+                              : id;
                         },
                       ),
                     );
                   },
-                  loading: () => const SliverToBoxAdapter(
-                      child: SizedBox(height: 8)),
-                  error: (_, __) => const SliverToBoxAdapter(
-                      child: SizedBox(height: 8)),
+                  loading: () =>
+                      const SliverToBoxAdapter(child: SizedBox(height: 8)),
+                  error: (_, __) =>
+                      const SliverToBoxAdapter(child: SizedBox(height: 8)),
                 ),
 
               // ── 4. Selected category header ──
               if (selectedCat != null && _searchQuery.isEmpty)
                 categoriesAsync.when(
                   data: (categories) {
-                    final cat = categories.where((c) => c.id == selectedCat).firstOrNull;
-                    if (cat == null) return const SliverToBoxAdapter(child: SizedBox.shrink());
+                    final cat = categories
+                        .where((c) => c.id == selectedCat)
+                        .firstOrNull;
+                    if (cat == null)
+                      return const SliverToBoxAdapter(child: SizedBox.shrink());
                     return SliverToBoxAdapter(
                       child: _SelectedCategoryHeader(
                         category: cat,
                         isDark: isDark,
-                        onClear: () => ref
-                            .read(selectedProductCategoryProvider(storeId).notifier)
-                            .state = null,
+                        onClear: () =>
+                            ref
+                                    .read(
+                                      selectedProductCategoryProvider(
+                                        storeId,
+                                      ).notifier,
+                                    )
+                                    .state =
+                                null,
                       ),
                     );
                   },
-                  loading: () => const SliverToBoxAdapter(child: SizedBox.shrink()),
-                  error: (_, __) => const SliverToBoxAdapter(child: SizedBox.shrink()),
+                  loading: () =>
+                      const SliverToBoxAdapter(child: SizedBox.shrink()),
+                  error: (_, __) =>
+                      const SliverToBoxAdapter(child: SizedBox.shrink()),
                 ),
 
               // ── 5. Products grid ──
@@ -230,7 +301,9 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
                 data: (products) {
                   var filtered = selectedCat == null
                       ? products
-                      : products.where((p) => p.categoryId == selectedCat).toList();
+                      : products
+                            .where((p) => p.categoryId == selectedCat)
+                            .toList();
 
                   // Smart search filter
                   if (_searchQuery.isNotEmpty) {
@@ -258,11 +331,11 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
                     sliver: SliverGrid(
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        mainAxisSpacing: 6,
-                        crossAxisSpacing: 6,
-                        childAspectRatio: 0.82,
-                      ),
+                            crossAxisCount: 3,
+                            mainAxisSpacing: 6,
+                            crossAxisSpacing: 6,
+                            childAspectRatio: 0.82,
+                          ),
                       delegate: SliverChildBuilderDelegate(
                         (_, i) => _ProductCard(
                           product: filtered[i],
@@ -277,8 +350,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
                 loading: () => const SliverFillRemaining(
                   hasScrollBody: false,
                   child: Center(
-                    child: CircularProgressIndicator(
-                        color: AkJolTheme.primary),
+                    child: CircularProgressIndicator(color: AkJolTheme.primary),
                   ),
                 ),
                 error: (_, __) => const SliverFillRemaining(
@@ -292,8 +364,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
         loading: () => const Center(
           child: CircularProgressIndicator(color: AkJolTheme.primary),
         ),
-        error: (_, __) =>
-            const Center(child: Text('Ошибка загрузки магазина')),
+        error: (_, __) => const Center(child: Text('Ошибка загрузки магазина')),
       ),
 
       // Cart badge is shown in the tab bar instead
@@ -321,10 +392,8 @@ class _SearchBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bg = isDark ? const Color(0xFF161B22) : Colors.white;
-    final border =
-        isDark ? const Color(0xFF30363D) : const Color(0xFFE5E7EB);
-    final hint =
-        isDark ? const Color(0xFF484F58) : const Color(0xFF9CA3AF);
+    final border = isDark ? const Color(0xFF30363D) : const Color(0xFFE5E7EB);
+    final hint = isDark ? const Color(0xFF484F58) : const Color(0xFF9CA3AF);
 
     return Container(
       height: 44,
@@ -363,8 +432,10 @@ class _SearchBar extends StatelessWidget {
                 )
               : null,
           border: InputBorder.none,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 12,
+          ),
         ),
       ),
     );
@@ -492,7 +563,9 @@ class _CategoryCard extends StatelessWidget {
 
             // Category name at bottom
             Positioned(
-              left: 8, right: 8, bottom: 8,
+              left: 8,
+              right: 8,
+              bottom: 8,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
@@ -502,7 +575,9 @@ class _CategoryCard extends StatelessWidget {
                     style: TextStyle(
                       color: Colors.white,
                       fontSize: 12,
-                      fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                      fontWeight: isSelected
+                          ? FontWeight.w800
+                          : FontWeight.w600,
                       height: 1.1,
                     ),
                     maxLines: 2,
@@ -523,14 +598,20 @@ class _CategoryCard extends StatelessWidget {
             // Selected checkmark
             if (isSelected)
               Positioned(
-                top: 6, right: 6,
+                top: 6,
+                right: 6,
                 child: Container(
-                  width: 22, height: 22,
+                  width: 22,
+                  height: 22,
                   decoration: const BoxDecoration(
                     color: AkJolTheme.primary,
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.check_rounded, size: 14, color: Colors.white),
+                  child: const Icon(
+                    Icons.check_rounded,
+                    size: 14,
+                    color: Colors.white,
+                  ),
                 ),
               ),
           ],
@@ -628,15 +709,24 @@ class _SelectedCategoryHeader extends StatelessWidget {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.close_rounded, size: 14,
-                      color: isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280)),
+                  Icon(
+                    Icons.close_rounded,
+                    size: 14,
+                    color: isDark
+                        ? const Color(0xFF8B949E)
+                        : const Color(0xFF6B7280),
+                  ),
                   const SizedBox(width: 2),
-                  Text('Все',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280),
-                      )),
+                  Text(
+                    'Все',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: isDark
+                          ? const Color(0xFF8B949E)
+                          : const Color(0xFF6B7280),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -671,17 +761,16 @@ class _EmptyState extends StatelessWidget {
           Text(
             isSearch ? 'Ничего не найдено' : 'Нет товаров',
             style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AkJolTheme.textSecondary),
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+              color: AkJolTheme.textSecondary,
+            ),
           ),
           if (isSearch) ...[
             const SizedBox(height: 4),
             Text(
               'Попробуйте изменить запрос',
-              style: TextStyle(
-                  fontSize: 13,
-                  color: AkJolTheme.textTertiary),
+              style: TextStyle(fontSize: 13, color: AkJolTheme.textTertiary),
             ),
           ],
         ],
@@ -702,18 +791,14 @@ class _StoreHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasBanner =
-        store.bannerUrl != null && store.bannerUrl!.isNotEmpty;
-    final hasLogo =
-        store.logoUrl != null && store.logoUrl!.isNotEmpty;
+    final hasBanner = store.bannerUrl != null && store.bannerUrl!.isNotEmpty;
+    final hasLogo = store.logoUrl != null && store.logoUrl!.isNotEmpty;
 
     return SliverAppBar(
       expandedHeight: 170,
       pinned: true,
-      backgroundColor:
-          isDark ? const Color(0xFF161B22) : Colors.white,
-      foregroundColor:
-          isDark ? Colors.white : const Color(0xFF111827),
+      backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
+      foregroundColor: isDark ? Colors.white : const Color(0xFF111827),
       leading: Container(
         margin: const EdgeInsets.all(8),
         decoration: BoxDecoration(
@@ -721,8 +806,11 @@ class _StoreHeader extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
         ),
         child: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded,
-              color: Colors.white, size: 22),
+          icon: const Icon(
+            Icons.arrow_back_rounded,
+            color: Colors.white,
+            size: 22,
+          ),
           onPressed: () {
             if (context.canPop()) {
               context.pop();
@@ -744,7 +832,7 @@ class _StoreHeader extends StatelessWidget {
               )
             else
               _bannerFallback(isDark),
-            
+
             // Gradient overlay
             DecoratedBox(
               decoration: BoxDecoration(
@@ -761,11 +849,14 @@ class _StoreHeader extends StatelessWidget {
 
             // Logo + Name + Info
             Positioned(
-              left: 16, bottom: 12, right: 16,
+              left: 16,
+              bottom: 12,
+              right: 16,
               child: Row(
                 children: [
                   Container(
-                    width: 48, height: 48,
+                    width: 48,
+                    height: 48,
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(12),
@@ -778,9 +869,12 @@ class _StoreHeader extends StatelessWidget {
                     ),
                     clipBehavior: Clip.antiAlias,
                     child: hasLogo
-                        ? Image.network(store.logoUrl!,
+                        ? Image.network(
+                            store.logoUrl!,
                             fit: BoxFit.cover,
-                            errorBuilder: (c, e, s) => _logoFallback(store.name))
+                            errorBuilder: (c, e, s) =>
+                                _logoFallback(store.name),
+                          )
                         : _logoFallback(store.name),
                   ),
                   const SizedBox(width: 12),
@@ -818,10 +912,13 @@ class _StoreHeader extends StatelessWidget {
                           Row(
                             children: [
                               Container(
-                                width: 6, height: 6,
+                                width: 6,
+                                height: 6,
                                 decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: store.isOpenNow ? const Color(0xFF2ECC71) : const Color(0xFFE74C3C),
+                                  color: store.isOpenNow
+                                      ? const Color(0xFF2ECC71)
+                                      : const Color(0xFFE74C3C),
                                 ),
                               ),
                               const SizedBox(width: 4),
@@ -845,7 +942,10 @@ class _StoreHeader extends StatelessWidget {
                   ),
                   if (store.avgRating > 0) ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.4),
                         borderRadius: BorderRadius.circular(10),
@@ -853,7 +953,11 @@ class _StoreHeader extends StatelessWidget {
                       child: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          const Icon(Icons.star_rounded, size: 14, color: Color(0xFFFFC107)),
+                          const Icon(
+                            Icons.star_rounded,
+                            size: 14,
+                            color: Color(0xFFFFC107),
+                          ),
                           const SizedBox(width: 3),
                           Text(
                             store.avgRating.toStringAsFixed(1),
@@ -886,9 +990,11 @@ class _StoreHeader extends StatelessWidget {
         ),
       ),
       child: Center(
-        child: Icon(Icons.storefront_rounded,
-            size: 48,
-            color: Colors.white.withValues(alpha: 0.3)),
+        child: Icon(
+          Icons.storefront_rounded,
+          size: 48,
+          color: Colors.white.withValues(alpha: 0.3),
+        ),
       ),
     );
   }
@@ -930,15 +1036,13 @@ class _ProductCard extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final cardBg = isDark ? const Color(0xFF161B22) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF111827);
-    final borderColor =
-        isDark ? const Color(0xFF21262D) : const Color(0xFFE8E8E8);
+    final borderColor = isDark
+        ? const Color(0xFF21262D)
+        : const Color(0xFFE8E8E8);
 
     final cart = ref.watch(cartProvider);
-    final inCart = cart.items
-        .where((i) => i.productId == product.id)
-        .toList();
-    final totalInCart =
-        inCart.fold(0, (sum, item) => sum + item.quantity);
+    final inCart = cart.items.where((i) => i.productId == product.id).toList();
+    final totalInCart = inCart.fold(0, (sum, item) => sum + item.quantity);
 
     return GestureDetector(
       onTap: () => _handleAdd(context, ref),
@@ -974,15 +1078,25 @@ class _ProductCard extends ConsumerWidget {
                     Container(
                       color: Colors.black.withValues(alpha: 0.55),
                       child: const Center(
-                        child: Text('Нет в наличии',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 10)),
+                        child: Text(
+                          'Нет в наличии',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 10,
+                          ),
+                        ),
                       ),
                     ),
                   // Price badge top-left
                   Positioned(
-                    left: 4, bottom: 4,
+                    left: 4,
+                    bottom: 4,
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.black.withValues(alpha: 0.6),
                         borderRadius: BorderRadius.circular(6),
@@ -999,7 +1113,8 @@ class _ProductCard extends ConsumerWidget {
                   ),
                   // Favorite
                   Positioned(
-                    right: 4, top: 4,
+                    right: 4,
+                    top: 4,
                     child: _FavoriteButton(productId: product.id),
                   ),
                 ],
@@ -1026,18 +1141,46 @@ class _ProductCard extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(4, 3, 4, 4),
               child: product.isInStock
                   ? (totalInCart == 0
-                      ? _FullWidthAddBtn(onTap: () => _handleAdd(context, ref))
-                      : _FullWidthCounter(
-                          quantity: totalInCart,
-                          onAdd: () => _handleAdd(context, ref),
-                          onRemove: () {
-                            if (inCart.isNotEmpty) {
-                              final last = inCart.last;
-                              ref.read(cartProvider.notifier)
-                                  .updateQuantity(last.cartKey, last.quantity - 1);
-                            }
-                          },
-                        ))
+                        ? _FullWidthAddBtn(
+                            onTap: () {
+                              if (product.quantity > 0) {
+                                _handleAdd(context, ref);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text('Товар закончился на складе'),
+                                  ),
+                                );
+                              }
+                            },
+                          )
+                        : _FullWidthCounter(
+                            quantity: totalInCart,
+                            onAdd: () {
+                              if (totalInCart < product.quantity) {
+                                _handleAdd(context, ref);
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Достигнуто максимальное количество на складе',
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
+                            onRemove: () {
+                              if (inCart.isNotEmpty) {
+                                final last = inCart.last;
+                                ref
+                                    .read(cartProvider.notifier)
+                                    .updateQuantity(
+                                      last.cartKey,
+                                      last.quantity - 1,
+                                    );
+                              }
+                            },
+                          ))
                   : const SizedBox(height: 26),
             ),
           ],
@@ -1064,33 +1207,71 @@ class _ProductCard extends ConsumerWidget {
       if (result == null) return;
 
       if (cart.isDifferentStore(storeId)) {
-        ref.read(cartProvider.notifier).clearAndAddItem(
-              warehouseId: storeId, warehouseName: storeName,
-              productId: product.id, name: product.name,
-              price: product.b2cPrice, imageUrl: product.imageUrl,
+        ref
+            .read(cartProvider.notifier)
+            .clearAndAddItem(
+              warehouseId: storeId,
+              warehouseName: storeName,
+              productId: product.id,
+              name: product.name,
+              price: product.b2cPrice,
+              imageUrl: product.imageUrl,
               modifiers: result,
+              maxStock: product.quantity,
             );
       } else {
-        ref.read(cartProvider.notifier).addItem(
-              warehouseId: storeId, warehouseName: storeName,
-              productId: product.id, name: product.name,
-              price: product.b2cPrice, imageUrl: product.imageUrl,
+        final added = ref
+            .read(cartProvider.notifier)
+            .addItem(
+              warehouseId: storeId,
+              warehouseName: storeName,
+              productId: product.id,
+              name: product.name,
+              price: product.b2cPrice,
+              imageUrl: product.imageUrl,
               modifiers: result,
+              maxStock: product.quantity,
             );
+        if (!added && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Достигнуто максимальное количество на складе'),
+            ),
+          );
+        }
       }
     } else {
       if (cart.isDifferentStore(storeId)) {
-        ref.read(cartProvider.notifier).clearAndAddItem(
-              warehouseId: storeId, warehouseName: storeName,
-              productId: product.id, name: product.name,
-              price: product.b2cPrice, imageUrl: product.imageUrl,
+        ref
+            .read(cartProvider.notifier)
+            .clearAndAddItem(
+              warehouseId: storeId,
+              warehouseName: storeName,
+              productId: product.id,
+              name: product.name,
+              price: product.b2cPrice,
+              imageUrl: product.imageUrl,
+              maxStock: product.quantity,
             );
       } else {
-        ref.read(cartProvider.notifier).addItem(
-              warehouseId: storeId, warehouseName: storeName,
-              productId: product.id, name: product.name,
-              price: product.b2cPrice, imageUrl: product.imageUrl,
+        final added = ref
+            .read(cartProvider.notifier)
+            .addItem(
+              warehouseId: storeId,
+              warehouseName: storeName,
+              productId: product.id,
+              name: product.name,
+              price: product.b2cPrice,
+              imageUrl: product.imageUrl,
+              maxStock: product.quantity,
             );
+        if (!added && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Достигнуто максимальное количество на складе'),
+            ),
+          );
+        }
       }
     }
   }
@@ -1100,7 +1281,8 @@ class _ProductCard extends ConsumerWidget {
       color: isDark ? const Color(0xFF21262D) : const Color(0xFFF3F4F6),
       child: Center(
         child: Icon(
-          Icons.image_outlined, size: 32,
+          Icons.image_outlined,
+          size: 32,
           color: isDark ? const Color(0xFF484F58) : const Color(0xFFD1D5DB),
         ),
       ),
@@ -1162,7 +1344,11 @@ class _FullWidthCounter extends StatelessWidget {
               onTap: onRemove,
               behavior: HitTestBehavior.opaque,
               child: const Center(
-                child: Icon(Icons.remove_rounded, size: 16, color: Colors.white),
+                child: Icon(
+                  Icons.remove_rounded,
+                  size: 16,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
@@ -1189,7 +1375,6 @@ class _FullWidthCounter extends StatelessWidget {
   }
 }
 
-
 /// Heart button for adding/removing product from favorites
 class _FavoriteButton extends ConsumerWidget {
   final String productId;
@@ -1204,7 +1389,8 @@ class _FavoriteButton extends ConsumerWidget {
       onTap: () => ref.read(favoritesProvider.notifier).toggle(productId),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 28, height: 28,
+        width: 28,
+        height: 28,
         decoration: BoxDecoration(
           color: isFav
               ? Colors.red.withValues(alpha: 0.9)

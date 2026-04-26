@@ -9,6 +9,7 @@ import 'firebase_options.dart';
 import 'src/theme/akjol_theme.dart';
 import 'src/routing/app_router.dart';
 import 'src/services/firebase_push_bootstrap.dart';
+import 'src/services/notification_service.dart';
 
 void main() {
   runZonedGuarded(() async {
@@ -63,11 +64,13 @@ void main() {
           'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdmVncnNjam5vZWxmc2lwd3FxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTU5MjcsImV4cCI6MjA4ODczMTkyN30.z6h0ubNjAC0QfdGgg3FhAfSCy9RVVCupOuQUKuD98ig',
     );
 
-    // Firebase (skip on web if not configured)
+    // Firebase + Notifications
     try {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
+      // Initialize local notification channels
+      await NotificationService().initialize();
       // Push Notifications
       await FirebasePushBootstrap.initialize();
     } catch (e) {

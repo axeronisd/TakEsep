@@ -1,19 +1,31 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:go_router/go_router.dart';
 import 'package:akjol_auth/akjol_auth.dart';
+import 'notification_service.dart';
 
 // ═══════════════════════════════════════════════════════════════
-// Firebase Push Bootstrap — Courier App
+// Firebase Push Bootstrap — Courier App v2
+//
+// Now with:
+//   - flutter_local_notifications for foreground display
+//   - Custom sounds per notification type
+//   - Proper Android channels (new_orders = MAX priority)
 // ═══════════════════════════════════════════════════════════════
+
+// Global navigator key for push navigation (set in app_router.dart)
+final GlobalKey<NavigatorState> courierNavigatorKey = GlobalKey<NavigatorState>();
 
 // Background message handler — must be top-level function
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('[Push] Background message: ${message.notification?.title}');
+  // System tray notification shown automatically by FCM
 }
 
 class FirebasePushBootstrap {
   static final _pushService = PushNotificationService('courier');
+  static final _notifService = NotificationService();
   static String? _currentToken;
 
   /// Call once in main() after Firebase.initializeApp()
@@ -49,19 +61,79 @@ class FirebasePushBootstrap {
       debugPrint('[Push] Token refreshed');
     });
 
-    // 4. Handle foreground messages
+    // 4. Handle foreground messages — show local notification + sound
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       debugPrint('[Push] Foreground: ${message.notification?.title}');
-      // The courier_alert_service will handle sound playback
+
+      final notification = message.notification;
+      final data = message.data;
+
+      if (notification != null) {
+        final type = data['type'] ?? '';
+        final channelId = _inferChannel(type);
+        final soundName = _inferSound(type, data['status']);
+
+        _notifService.show(
+          title: notification.title ?? 'AkJol Go',
+          body: notification.body ?? '',
+          channelId: channelId,
+          soundName: soundName,
+          payload: data['order_id'],
+        );
+      }
     });
 
     // 5. Handle background/terminated tap
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       debugPrint('[Push] Opened from background: ${message.data}');
-      // TODO: Navigate to order detail based on message.data['order_id']
+      _handleNavigation(message.data);
     });
 
-    debugPrint('[Push] Firebase Push Bootstrap initialized ✅');
+    // Check if opened from terminated state
+    final initialMessage = await messaging.getInitialMessage();
+    if (initialMessage != null) {
+      debugPrint('[Push] Opened from terminated: ${initialMessage.data}');
+      _handleNavigation(initialMessage.data);
+    }
+
+    debugPrint('[Push] Courier Firebase Push initialized ✅');
+  }
+
+  /// Infer notification channel from event type
+  static String _inferChannel(String type) {
+    if (type == 'new_order' || type == 'order_assigned') return 'new_orders';
+    if (type == 'chat_message') return 'chat_messages';
+    if (type == 'order_cancelled') return 'order_status';
+    return 'system_info';
+  }
+
+  /// Infer sound name from type
+  static String _inferSound(String type, String? status) {
+    if (type == 'new_order' || type == 'order_assigned') return 'new_order_alert';
+    if (type == 'chat_message') return 'chat_message';
+    if (type == 'order_cancelled') return 'order_cancelled';
+    return 'order_accepted';
+  }
+
+  /// Navigate based on push payload
+  static void _handleNavigation(Map<String, dynamic> data) {
+    final context = courierNavigatorKey.currentContext;
+    if (context == null) return;
+
+    final type = data['type'] ?? '';
+    final orderId = data['order_id'];
+
+    if (type == 'new_order' || type == 'order_assigned' || type == 'order_status') {
+      if (orderId != null) {
+        context.go('/delivery/$orderId');
+      } else {
+        context.go('/');
+      }
+    } else if (type == 'chat_message') {
+      if (orderId != null) {
+        context.go('/delivery/$orderId');
+      }
+    }
   }
 
   /// Call on logout to remove FCM token

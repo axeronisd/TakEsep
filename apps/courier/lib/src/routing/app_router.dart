@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../services/firebase_push_bootstrap.dart';
 import '../screens/auth/courier_login_screen.dart';
 import '../screens/orders/available_orders_screen.dart';
 import '../screens/delivery/active_delivery_screen.dart';
@@ -12,6 +13,7 @@ import '../theme/akjol_theme.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
+    navigatorKey: courierNavigatorKey,
     initialLocation: '/',
     redirect: (context, state) {
       final profile = ref.read(courierProfileProvider);
@@ -23,30 +25,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(
-        path: '/login',
-        builder: (_, __) => const CourierLoginScreen(),
-      ),
+      GoRoute(path: '/login', builder: (_, __) => const CourierLoginScreen()),
       ShellRoute(
         builder: (_, state, child) => _CourierShell(child: child),
         routes: [
-          GoRoute(
-            path: '/',
-            builder: (_, __) => const AvailableOrdersScreen(),
-          ),
+          GoRoute(path: '/', builder: (_, __) => const AvailableOrdersScreen()),
           GoRoute(
             path: '/analytics',
             builder: (_, __) => const CourierEarningsScreen(),
           ),
-          GoRoute(
-            path: '/map',
-            builder: (_, __) => const CourierMapScreen(),
-          ),
+          GoRoute(path: '/map', builder: (_, __) => const CourierMapScreen()),
           GoRoute(
             path: '/delivery/:id',
-            builder: (_, state) => ActiveDeliveryScreen(
-              orderId: state.pathParameters['id']!,
-            ),
+            builder: (_, state) =>
+                ActiveDeliveryScreen(orderId: state.pathParameters['id']!),
           ),
           GoRoute(
             path: '/profile',
@@ -79,7 +71,9 @@ class _CourierShell extends StatelessWidget {
           color: Theme.of(context).colorScheme.surface,
           border: Border(
             top: BorderSide(
-              color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.15),
+              color: Theme.of(
+                context,
+              ).colorScheme.outlineVariant.withValues(alpha: 0.15),
               width: 0.5,
             ),
           ),
@@ -93,31 +87,55 @@ class _CourierShell extends StatelessWidget {
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           onDestinationSelected: (i) {
             switch (i) {
-              case 0: context.go('/'); break;
-              case 1: context.go('/analytics'); break;
-              case 2: context.go('/map'); break;
-              case 3: context.go('/profile'); break;
+              case 0:
+                context.go('/');
+                break;
+              case 1:
+                context.go('/analytics');
+                break;
+              case 2:
+                context.go('/map');
+                break;
+              case 3:
+                context.go('/profile');
+                break;
             }
           },
           destinations: const [
             NavigationDestination(
               icon: Icon(Icons.receipt_long_outlined, size: 24),
-              selectedIcon: Icon(Icons.receipt_long, size: 24, color: AkJolTheme.primary),
+              selectedIcon: Icon(
+                Icons.receipt_long,
+                size: 24,
+                color: AkJolTheme.primary,
+              ),
               label: 'Заказы',
             ),
             NavigationDestination(
               icon: Icon(Icons.bar_chart_outlined, size: 24),
-              selectedIcon: Icon(Icons.bar_chart, size: 24, color: AkJolTheme.primary),
+              selectedIcon: Icon(
+                Icons.bar_chart,
+                size: 24,
+                color: AkJolTheme.primary,
+              ),
               label: 'Аналитика',
             ),
             NavigationDestination(
               icon: Icon(Icons.map_outlined, size: 24),
-              selectedIcon: Icon(Icons.map, size: 24, color: AkJolTheme.primary),
+              selectedIcon: Icon(
+                Icons.map,
+                size: 24,
+                color: AkJolTheme.primary,
+              ),
               label: 'Карта',
             ),
             NavigationDestination(
               icon: Icon(Icons.person_outline, size: 24),
-              selectedIcon: Icon(Icons.person, size: 24, color: AkJolTheme.primary),
+              selectedIcon: Icon(
+                Icons.person,
+                size: 24,
+                color: AkJolTheme.primary,
+              ),
               label: 'Профиль',
             ),
           ],

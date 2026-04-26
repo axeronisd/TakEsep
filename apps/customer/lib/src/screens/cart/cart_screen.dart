@@ -18,7 +18,9 @@ class CartScreen extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? const Color(0xFF0D1117) : const Color(0xFFF5F5F5);
     final cardBg = isDark ? const Color(0xFF161B22) : Colors.white;
-    final borderColor = isDark ? const Color(0xFF21262D) : const Color(0xFFE5E7EB);
+    final borderColor = isDark
+        ? const Color(0xFF21262D)
+        : const Color(0xFFE5E7EB);
     final textColor = isDark ? Colors.white : const Color(0xFF111827);
     final muted = isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280);
 
@@ -31,27 +33,45 @@ class CartScreen extends ConsumerWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  width: 100, height: 100,
+                  width: 100,
+                  height: 100,
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(colors: [
-                      AkJolTheme.primary.withValues(alpha: 0.1),
-                      AkJolTheme.primary.withValues(alpha: 0.03),
-                    ]),
+                    gradient: LinearGradient(
+                      colors: [
+                        AkJolTheme.primary.withValues(alpha: 0.1),
+                        AkJolTheme.primary.withValues(alpha: 0.03),
+                      ],
+                    ),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(Icons.shopping_cart_outlined, size: 44,
-                      color: AkJolTheme.primary.withValues(alpha: 0.5)),
+                  child: Icon(
+                    Icons.shopping_cart_outlined,
+                    size: 44,
+                    color: AkJolTheme.primary.withValues(alpha: 0.5),
+                  ),
                 ),
                 const SizedBox(height: 20),
-                Text('Корзина пуста',
-                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700,
-                        color: textColor, letterSpacing: -0.3)),
+                Text(
+                  'Корзина пуста',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: textColor,
+                    letterSpacing: -0.3,
+                  ),
+                ),
                 const SizedBox(height: 8),
-                Text('Добавьте товары из магазинов',
-                    style: TextStyle(fontSize: 14, color: muted)),
+                Text(
+                  'Добавьте товары из магазинов',
+                  style: TextStyle(fontSize: 14, color: muted),
+                ),
                 const SizedBox(height: 24),
                 // Check for drafts
-                _DraftButton(isDark: isDark, textColor: textColor, muted: muted),
+                _DraftButton(
+                  isDark: isDark,
+                  textColor: textColor,
+                  muted: muted,
+                ),
               ],
             ),
           ),
@@ -74,8 +94,14 @@ class CartScreen extends ConsumerWidget {
             ),
 
             // ── Store header ──
-            _StoreHeader(cart: cart, isDark: isDark, cardBg: cardBg,
-                borderColor: borderColor, textColor: textColor, muted: muted),
+            _StoreHeader(
+              cart: cart,
+              isDark: isDark,
+              cardBg: cardBg,
+              borderColor: borderColor,
+              textColor: textColor,
+              muted: muted,
+            ),
 
             // ── Items list ──
             Expanded(
@@ -125,14 +151,21 @@ class CartScreen extends ConsumerWidget {
               ref.read(cartProvider.notifier).clear();
               Navigator.pop(ctx);
             },
-            child: const Text('Очистить', style: TextStyle(color: AkJolTheme.error)),
+            child: const Text(
+              'Очистить',
+              style: TextStyle(color: AkJolTheme.error),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _saveDraft(BuildContext context, WidgetRef ref, CartState cart) async {
+  Future<void> _saveDraft(
+    BuildContext context,
+    WidgetRef ref,
+    CartState cart,
+  ) async {
     try {
       final userId = Supabase.instance.client.auth.currentUser?.id;
       if (userId == null) return;
@@ -141,14 +174,18 @@ class CartScreen extends ConsumerWidget {
         'user_id': userId,
         'warehouse_id': cart.warehouseId,
         'warehouse_name': cart.warehouseName,
-        'items': cart.items.map((i) => {
-          'product_id': i.productId,
-          'name': i.name,
-          'price': i.basePrice,
-          'image_url': i.imageUrl,
-          'quantity': i.quantity,
-          'modifiers': i.modifiers.map((m) => m.toJson()).toList(),
-        }).toList(),
+        'items': cart.items
+            .map(
+              (i) => {
+                'product_id': i.productId,
+                'name': i.name,
+                'price': i.basePrice,
+                'image_url': i.imageUrl,
+                'quantity': i.quantity,
+                'modifiers': i.modifiers.map((m) => m.toJson()).toList(),
+              },
+            )
+            .toList(),
         'total': cart.itemsTotal,
         'updated_at': DateTime.now().toIso8601String(),
       }, onConflict: 'user_id');
@@ -158,7 +195,9 @@ class CartScreen extends ConsumerWidget {
           SnackBar(
             content: const Text('Корзина сохранена как черновик'),
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
       }
@@ -201,9 +240,15 @@ class _CartTopBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 8, 0),
       child: Row(
         children: [
-          Text('Корзина',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800,
-                  color: textColor, letterSpacing: -0.5)),
+          Text(
+            'Корзина',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: textColor,
+              letterSpacing: -0.5,
+            ),
+          ),
           const Spacer(),
           // Save as draft
           IconButton(
@@ -213,7 +258,11 @@ class _CartTopBar extends StatelessWidget {
           ),
           // Clear
           IconButton(
-            icon: const Icon(Icons.delete_outline_rounded, color: AkJolTheme.error, size: 22),
+            icon: const Icon(
+              Icons.delete_outline_rounded,
+              color: AkJolTheme.error,
+              size: 22,
+            ),
             onPressed: onClear,
             tooltip: 'Очистить',
           ),
@@ -257,21 +306,28 @@ class _StoreHeader extends StatelessWidget {
           decoration: BoxDecoration(
             color: cardBg,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AkJolTheme.primary.withValues(alpha: 0.15)),
+            border: Border.all(
+              color: AkJolTheme.primary.withValues(alpha: 0.15),
+            ),
           ),
           child: Row(
             children: [
               // Store logo
               Container(
-                width: 44, height: 44,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: AkJolTheme.primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 clipBehavior: Clip.antiAlias,
                 child: logoUrl != null && logoUrl.isNotEmpty
-                    ? Image.network(logoUrl, fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => _logoFallback(cart.warehouseName))
+                    ? Image.network(
+                        logoUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, _, _) =>
+                            _logoFallback(cart.warehouseName),
+                      )
                     : _logoFallback(cart.warehouseName),
               ),
               const SizedBox(width: 12),
@@ -281,7 +337,11 @@ class _StoreHeader extends StatelessWidget {
                   children: [
                     Text(
                       cart.warehouseName ?? 'Магазин',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: textColor),
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: textColor,
+                      ),
                     ),
                     Text(
                       '${cart.itemCount} ${_pluralItem(cart.itemCount)}',
@@ -294,14 +354,22 @@ class _StoreHeader extends StatelessWidget {
               GestureDetector(
                 onTap: () => context.go('/store/${cart.warehouseId}'),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AkJolTheme.primary.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text('В магазин',
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
-                          color: AkJolTheme.primary)),
+                  child: const Text(
+                    'В магазин',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: AkJolTheme.primary,
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -315,8 +383,11 @@ class _StoreHeader extends StatelessWidget {
     return Container(
       color: AkJolTheme.primary.withValues(alpha: 0.1),
       child: Center(
-        child: Icon(Icons.storefront_rounded, size: 22,
-            color: AkJolTheme.primary.withValues(alpha: 0.5)),
+        child: Icon(
+          Icons.storefront_rounded,
+          size: 22,
+          color: AkJolTheme.primary.withValues(alpha: 0.5),
+        ),
       ),
     );
   }
@@ -337,7 +408,8 @@ class _StoreHeader extends StatelessWidget {
 
   String _pluralItem(int count) {
     if (count % 10 == 1 && count % 100 != 11) return 'товар';
-    if ([2, 3, 4].contains(count % 10) && ![12, 13, 14].contains(count % 100)) return 'товара';
+    if ([2, 3, 4].contains(count % 10) && ![12, 13, 14].contains(count % 100))
+      return 'товара';
     return 'товаров';
   }
 }
@@ -368,7 +440,8 @@ class _CartItemCard extends ConsumerWidget {
     return Dismissible(
       key: Key(item.cartKey),
       direction: DismissDirection.endToStart,
-      onDismissed: (_) => ref.read(cartProvider.notifier).removeItem(item.cartKey),
+      onDismissed: (_) =>
+          ref.read(cartProvider.notifier).removeItem(item.cartKey),
       background: Container(
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
@@ -391,9 +464,12 @@ class _CartItemCard extends ConsumerWidget {
           children: [
             // Image
             Container(
-              width: 56, height: 56,
+              width: 56,
+              height: 56,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF21262D) : const Color(0xFFF3F4F6),
+                color: isDark
+                    ? const Color(0xFF21262D)
+                    : const Color(0xFFF3F4F6),
                 borderRadius: BorderRadius.circular(12),
               ),
               clipBehavior: Clip.antiAlias,
@@ -416,18 +492,29 @@ class _CartItemCard extends ConsumerWidget {
                     item.name,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: textColor),
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: textColor,
+                    ),
                   ),
                   if (item.modifiersSummary.isNotEmpty) ...[
                     const SizedBox(height: 1),
-                    Text(item.modifiersSummary, maxLines: 1, overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 10, color: muted)),
+                    Text(
+                      item.modifiersSummary,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 10, color: muted),
+                    ),
                   ],
                   const SizedBox(height: 4),
                   Text(
                     '${item.total.toStringAsFixed(0)} сом',
-                    style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800,
-                        color: AkJolTheme.primary),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: AkJolTheme.primary,
+                    ),
                   ),
                 ],
               ),
@@ -438,28 +525,53 @@ class _CartItemCard extends ConsumerWidget {
             // Quantity controls
             Container(
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF21262D) : const Color(0xFFF3F4F6),
+                color: isDark
+                    ? const Color(0xFF21262D)
+                    : const Color(0xFFF3F4F6),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   _qtyBtn(
-                    icon: item.quantity == 1 ? Icons.delete_outline : Icons.remove,
+                    icon: item.quantity == 1
+                        ? Icons.delete_outline
+                        : Icons.remove,
                     color: item.quantity == 1 ? AkJolTheme.error : textColor,
-                    onTap: () => ref.read(cartProvider.notifier)
+                    onTap: () => ref
+                        .read(cartProvider.notifier)
                         .updateQuantity(item.cartKey, item.quantity - 1),
                   ),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Text('${item.quantity}',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: textColor)),
+                    child: Text(
+                      '${item.quantity}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w700,
+                        color: textColor,
+                      ),
+                    ),
                   ),
                   _qtyBtn(
                     icon: Icons.add,
                     color: AkJolTheme.primary,
-                    onTap: () => ref.read(cartProvider.notifier)
-                        .updateQuantity(item.cartKey, item.quantity + 1),
+                    onTap: () {
+                      if (item.maxStock != null &&
+                          item.quantity >= item.maxStock!) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Достигнуто максимальное количество на складе',
+                            ),
+                          ),
+                        );
+                        return;
+                      }
+                      ref
+                          .read(cartProvider.notifier)
+                          .updateQuantity(item.cartKey, item.quantity + 1);
+                    },
                   ),
                 ],
               ),
@@ -470,7 +582,11 @@ class _CartItemCard extends ConsumerWidget {
     );
   }
 
-  Widget _qtyBtn({required IconData icon, required Color color, required VoidCallback onTap}) {
+  Widget _qtyBtn({
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -486,7 +602,11 @@ class _CartItemCard extends ConsumerWidget {
 
   Widget _placeholder() {
     return Center(
-      child: Icon(Icons.image_outlined, size: 22, color: muted.withValues(alpha: 0.4)),
+      child: Icon(
+        Icons.image_outlined,
+        size: 22,
+        color: muted.withValues(alpha: 0.4),
+      ),
     );
   }
 }
@@ -557,9 +677,17 @@ class _CheckoutBar extends StatelessWidget {
                 style: FilledButton.styleFrom(
                   backgroundColor: AkJolTheme.primary,
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 14,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
             ],
@@ -579,14 +707,19 @@ class _DraftButton extends ConsumerWidget {
   final Color textColor;
   final Color muted;
 
-  const _DraftButton({required this.isDark, required this.textColor, required this.muted});
+  const _DraftButton({
+    required this.isDark,
+    required this.textColor,
+    required this.muted,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return FutureBuilder(
       future: _loadDraft(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData || snapshot.data == null) return const SizedBox.shrink();
+        if (!snapshot.hasData || snapshot.data == null)
+          return const SizedBox.shrink();
         final draft = snapshot.data!;
         final storeName = draft['warehouse_name'] as String? ?? 'Магазин';
         final total = (draft['total'] as num?)?.toDouble() ?? 0;
@@ -594,26 +727,48 @@ class _DraftButton extends ConsumerWidget {
         return Column(
           children: [
             const SizedBox(height: 16),
-            Text('Есть сохранённый черновик', style: TextStyle(fontSize: 13, color: muted)),
+            Text(
+              'Есть сохранённый черновик',
+              style: TextStyle(fontSize: 13, color: muted),
+            ),
             const SizedBox(height: 8),
             GestureDetector(
               onTap: () => _restoreDraft(context, ref, draft),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: isDark ? const Color(0xFF161B22) : Colors.white,
                   borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AkJolTheme.primary.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: AkJolTheme.primary.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.bookmark_rounded, color: AkJolTheme.primary, size: 18),
+                    const Icon(
+                      Icons.bookmark_rounded,
+                      color: AkJolTheme.primary,
+                      size: 18,
+                    ),
                     const SizedBox(width: 8),
-                    Text('$storeName — ${total.toStringAsFixed(0)} сом',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: textColor)),
+                    Text(
+                      '$storeName — ${total.toStringAsFixed(0)} сом',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: textColor,
+                      ),
+                    ),
                     const SizedBox(width: 8),
-                    const Icon(Icons.restore_rounded, color: AkJolTheme.primary, size: 16),
+                    const Icon(
+                      Icons.restore_rounded,
+                      color: AkJolTheme.primary,
+                      size: 16,
+                    ),
                   ],
                 ),
               ),
@@ -638,7 +793,11 @@ class _DraftButton extends ConsumerWidget {
     }
   }
 
-  void _restoreDraft(BuildContext context, WidgetRef ref, Map<String, dynamic> draft) {
+  void _restoreDraft(
+    BuildContext context,
+    WidgetRef ref,
+    Map<String, dynamic> draft,
+  ) {
     try {
       final notifier = ref.read(cartProvider.notifier);
       notifier.clear();
@@ -648,12 +807,16 @@ class _DraftButton extends ConsumerWidget {
       final items = (draft['items'] as List?) ?? [];
 
       for (final item in items) {
-        final modifiers = ((item['modifiers'] as List?) ?? []).map((m) => CartModifier(
-          modifierId: m['modifier_id'] as String,
-          groupName: m['group_name'] as String? ?? '',
-          name: m['modifier_name'] as String? ?? '',
-          priceDelta: (m['price_delta'] as num?)?.toDouble() ?? 0,
-        )).toList();
+        final modifiers = ((item['modifiers'] as List?) ?? [])
+            .map(
+              (m) => CartModifier(
+                modifierId: m['modifier_id'] as String,
+                groupName: m['group_name'] as String? ?? '',
+                name: m['modifier_name'] as String? ?? '',
+                priceDelta: (m['price_delta'] as num?)?.toDouble() ?? 0,
+              ),
+            )
+            .toList();
 
         notifier.addItem(
           warehouseId: warehouseId,
@@ -680,7 +843,9 @@ class _DraftButton extends ConsumerWidget {
         SnackBar(
           content: const Text('Черновик восстановлен'),
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
     } catch (e) {

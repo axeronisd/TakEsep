@@ -1,6 +1,8 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/auth_providers.dart';
+import '../services/firebase_push_bootstrap.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/sales/sales_screen.dart';
 import '../screens/arrival/arrival_screen.dart';
@@ -29,6 +31,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authProvider);
 
   return GoRouter(
+    navigatorKey: warehouseNavigatorKey,
     initialLocation: '/dashboard',
     redirect: (context, state) {
       final isLoggingIn = state.matchedLocation == '/login';

@@ -53,9 +53,9 @@ jobs:
           path: apps/warehouse/build/windows/x64/runner/Release/TakEsep_Setup.exe
 
   # ═══════════════════════════════════════════════
-  # Build All Android APKs
+  # Build All Android APKs (GitHub Releases / Sideload)
   # ═══════════════════════════════════════════════
-  build-android:
+  build-android-apks:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -114,10 +114,142 @@ jobs:
             AkJol.apk
 
   # ═══════════════════════════════════════════════
+  # Build All Android AABs (Google Play Store)
+  # ═══════════════════════════════════════════════
+  build-android-aabs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Setup Android signing
+        env:
+          UPLOAD_KEYSTORE_BASE64: ${{ secrets.UPLOAD_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          if [ -n "$UPLOAD_KEYSTORE_BASE64" ]; then
+            echo "$UPLOAD_KEYSTORE_BASE64" | base64 -d > upload-keystore.jks
+            for app in warehouse courier customer; do
+              cat > apps/$app/android/key.properties <<EOF
+storePassword=$KEYSTORE_PASSWORD
+keyPassword=$KEY_PASSWORD
+keyAlias=$KEY_ALIAS
+storeFile=${{ github.workspace }}/upload-keystore.jks
+EOF
+            done
+            echo "✅ Android signing configured"
+          else
+            echo "⚠️ No signing secrets found — AABs will use debug signing"
+          fi
+
+      # TakEsep Warehouse AAB
+      - name: Build TakEsep AAB
+        run: |
+          cd apps/warehouse
+          flutter pub get
+          flutter build appbundle --release
+
+      - name: Rename TakEsep AAB
+        run: |
+          cp apps/warehouse/build/app/outputs/bundle/release/app-release.aab TakEsep.aab
+
+      # AkJol Go AAB
+      - name: Build AkJol Go AAB
+        run: |
+          cd apps/courier
+          flutter pub get
+          flutter build appbundle --release
+
+      - name: Rename AkJol Go AAB
+        run: |
+          cp apps/courier/build/app/outputs/bundle/release/app-release.aab AkJol_Go.aab
+
+      # AkJol AAB
+      - name: Build AkJol AAB
+        run: |
+          cd apps/customer
+          flutter pub get
+          flutter build appbundle --release
+
+      - name: Rename AkJol AAB
+        run: |
+          cp apps/customer/build/app/outputs/bundle/release/app-release.aab AkJol.aab
+
+      - name: Upload AABs
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-aabs
+          path: |
+            TakEsep.aab
+            AkJol_Go.aab
+            AkJol.aab
+
+  # ═══════════════════════════════════════════════
+  # Build iOS IPAs (App Store Connect)
+  # ═══════════════════════════════════════════════
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - name: Install CocoaPods
+        run: sudo gem install cocoapods
+
+      # AkJol Customer iOS
+      - name: Build AkJol iOS
+        run: |
+          cd apps/customer
+          flutter pub get
+          flutter build ipa --release --no-codesign
+
+      - name: Rename AkJol IPA
+        run: |
+          mkdir -p ios-ipas
+          if [ -f apps/customer/build/ios/ipa/*.ipa ]; then
+            cp apps/customer/build/ios/ipa/*.ipa ios-ipas/AkJol.ipa
+          fi
+
+      # AkJol Courier iOS
+      - name: Build AkJol Go iOS
+        run: |
+          cd apps/courier
+          flutter pub get
+          flutter build ipa --release --no-codesign
+
+      - name: Rename AkJol Go IPA
+        run: |
+          if [ -f apps/courier/build/ios/ipa/*.ipa ]; then
+            cp apps/courier/build/ios/ipa/*.ipa ios-ipas/AkJol_Go.ipa
+          fi
+
+      - name: Upload iOS IPAs
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-ipas
+          path: ios-ipas/*.ipa
+
+  # ═══════════════════════════════════════════════
   # Create GitHub Release
   # ═══════════════════════════════════════════════
   release:
-    needs: [build-windows, build-android]
+    needs: [build-windows, build-android-apks, build-android-aabs, build-ios]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -128,11 +260,23 @@ jobs:
           name: windows-installer
           path: ./artifacts/windows
 
-      - name: Download Android artifacts
+      - name: Download Android APK artifacts
         uses: actions/download-artifact@v4
         with:
           name: android-apks
-          path: ./artifacts/android
+          path: ./artifacts/android-apks
+
+      - name: Download Android AAB artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: android-aabs
+          path: ./artifacts/android-aabs
+
+      - name: Download iOS artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-ipas
+          path: ./artifacts/ios
 
       - name: Extract version from tag
         id: version
@@ -154,22 +298,32 @@ jobs:
 
             ### 📦 Приложения
             - **TakEsep** — управление складом и продажами (Windows + Android)
-            - **AkJol** — приложение для покупателей (Android)
-            - **AkJol Go** — приложение для курьеров (Android)
+            - **AkJol** — приложение для покупателей (Android + iOS)
+            - **AkJol Go** — приложение для курьеров (Android + iOS)
             - **Веб-админка** — [axeronisd.github.io/TakEsep/admin.html](https://axeronisd.github.io/TakEsep/admin.html)
 
             ### 📥 Скачать
             | Приложение | Платформа | Файл |
             |---|---|---|
             | TakEsep | Windows | `TakEsep_Setup.exe` |
-            | TakEsep | Android | `TakEsep.apk` |
-            | AkJol | Android | `AkJol.apk` |
-            | AkJol Go | Android | `AkJol_Go.apk` |
+            | TakEsep | Android (APK) | `TakEsep.apk` |
+            | TakEsep | Android (AAB) | `TakEsep.aab` |
+            | AkJol | Android (APK) | `AkJol.apk` |
+            | AkJol | Android (AAB) | `AkJol.aab` |
+            | AkJol Go | Android (APK) | `AkJol_Go.apk` |
+            | AkJol Go | Android (AAB) | `AkJol_Go.aab` |
+            | AkJol | iOS | `AkJol.ipa` |
+            | AkJol Go | iOS | `AkJol_Go.ipa` |
           files: |
             ./artifacts/windows/TakEsep_Setup.exe
-            ./artifacts/android/TakEsep.apk
-            ./artifacts/android/AkJol_Go.apk
-            ./artifacts/android/AkJol.apk
+            ./artifacts/android-apks/TakEsep.apk
+            ./artifacts/android-apks/AkJol_Go.apk
+            ./artifacts/android-apks/AkJol.apk
+            ./artifacts/android-aabs/TakEsep.aab
+            ./artifacts/android-aabs/AkJol_Go.aab
+            ./artifacts/android-aabs/AkJol.aab
+            ./artifacts/ios/AkJol.ipa
+            ./artifacts/ios/AkJol_Go.ipa
 
       - name: Update Supabase app_versions
         env:
@@ -201,3 +355,74 @@ jobs:
             -d "{\"platform\":\"android\",\"version\":\"${VERSION}\",\"build_number\":${BUILD},\"download_url\":\"${APK_URL}\",\"release_notes\":\"Обновление v${VERSION}\"}"
 
           echo "✅ Supabase updated with v${VERSION} (build ${BUILD})"
+
+  # ═══════════════════════════════════════════════
+  # Upload to Google Play (Internal Testing)
+  # ═══════════════════════════════════════════════
+  upload-google-play:
+    needs: [build-android-aabs, release]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download AABs
+        uses: actions/download-artifact@v4
+        with:
+          name: android-aabs
+          path: ./artifacts/android-aabs
+
+      - name: Upload TakEsep to Google Play
+        if: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.takesep.warehouse
+          releaseFiles: ./artifacts/android-aabs/TakEsep.aab
+          track: internal
+
+      - name: Upload AkJol to Google Play
+        if: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.akjol.customer
+          releaseFiles: ./artifacts/android-aabs/AkJol.aab
+          track: internal
+
+      - name: Upload AkJol Go to Google Play
+        if: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.akjol.courier
+          releaseFiles: ./artifacts/android-aabs/AkJol_Go.aab
+          track: internal
+
+  # ═══════════════════════════════════════════════
+  # Upload to App Store Connect (TestFlight)
+  # ═══════════════════════════════════════════════
+  upload-testflight:
+    needs: [build-ios, release]
+    runs-on: macos-latest
+    steps:
+      - name: Download iOS IPAs
+        uses: actions/download-artifact@v4
+        with:
+          name: ios-ipas
+          path: ./artifacts/ios
+
+      - name: Upload AkJol to TestFlight
+        if: ${{ secrets.APPSTORE_API_KEY_ID != '' }}
+        uses: apple-actions/upload-testflight-build@v1
+        with:
+          app-path: ./artifacts/ios/AkJol.ipa
+          issuer-id: ${{ secrets.APPSTORE_ISSUER_ID }}
+          api-key-id: ${{ secrets.APPSTORE_API_KEY_ID }}
+          api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
+
+      - name: Upload AkJol Go to TestFlight
+        if: ${{ secrets.APPSTORE_API_KEY_ID != '' }}
+        uses: apple-actions/upload-testflight-build@v1
+        with:
+          app-path: ./artifacts/ios/AkJol_Go.ipa
+          issuer-id: ${{ secrets.APPSTORE_ISSUER_ID }}
+          api-key-id: ${{ secrets.APPSTORE_API_KEY_ID }}
+          api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}

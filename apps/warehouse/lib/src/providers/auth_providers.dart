@@ -6,6 +6,8 @@ import 'package:takesep_core/takesep_core.dart';
 
 import '../data/auth_repository.dart';
 import '../data/powersync_db.dart';
+import '../data/inventory_repository.dart';
+import '../services/firebase_push_bootstrap.dart';
 
 const _kLicenseKeyPref = 'takesep_license_key';
 const _kWarehouseIdPref = 'takesep_warehouse_id';
@@ -97,12 +99,14 @@ class AuthState {
       selectedWarehouseId: clearWarehouse
           ? null
           : (selectedWarehouseId ?? this.selectedWarehouseId),
-      availableWarehouses:
-          availableWarehouses ?? this.availableWarehouses,
+      availableWarehouses: availableWarehouses ?? this.availableWarehouses,
       isLoading: isLoading ?? this.isLoading,
       error: clearError ? null : (error ?? this.error),
-      isDeactivated: clearDeactivation ? false : (isDeactivated ?? this.isDeactivated),
-      deactivationMessage: clearDeactivation ? null : (deactivationMessage ?? this.deactivationMessage),
+      isDeactivated:
+          clearDeactivation ? false : (isDeactivated ?? this.isDeactivated),
+      deactivationMessage: clearDeactivation
+          ? null
+          : (deactivationMessage ?? this.deactivationMessage),
     );
   }
 }
@@ -243,6 +247,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         );
         _saveSession();
         _saveBiometricCredentials('owner', licenseKey: licenseKey);
+        // Seed local database from Supabase for offline use
+        InventoryRepository().seedLocalDbFromSupabase(company.id);
         return true;
       } else {
         state = state.copyWith(
@@ -365,6 +371,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
       );
       _saveSession();
+      InventoryRepository().seedLocalDbFromSupabase(company.id);
       return true;
     } catch (e) {
       state = state.copyWith(
@@ -379,9 +386,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<bool> loginByNameAndPassword(String name, String password) async {
     state = state.copyWith(isLoading: true, clearError: true);
     try {
-      final employee = await _repository.verifyByNameAndPassword(name, password);
+      final employee =
+          await _repository.verifyByNameAndPassword(name, password);
       if (employee == null) {
-        state = state.copyWith(isLoading: false, error: 'Неверный логин или пароль');
+        state = state.copyWith(
+            isLoading: false, error: 'Неверный логин или пароль');
         return false;
       }
 
@@ -423,6 +432,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       _saveSession();
       _saveBiometricCredentials('employee', login: name, pin: password);
+      InventoryRepository().seedLocalDbFromSupabase(company.id);
       return true;
     } catch (e) {
       state = state.copyWith(
@@ -465,6 +475,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logoutEmployee() async {
+    await FirebasePushBootstrap.onLogout();
     await _prefs.remove(_kWarehouseIdPref);
     state = state.copyWith(
       clearEmployee: true,
@@ -476,6 +487,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logoutCompany() async {
+    await FirebasePushBootstrap.onLogout();
     await _prefs.remove(_kLicenseKeyPref);
     await _prefs.remove(_kWarehouseIdPref);
     await _prefs.remove(_kCachedSessionPref);
@@ -524,7 +536,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   // ─── Biometric credential helpers ────────────────────────
 
-  void _saveBiometricCredentials(String mode, {String? licenseKey, String? login, String? pin}) {
+  void _saveBiometricCredentials(String mode,
+      {String? licenseKey, String? login, String? pin}) {
     _prefs.setString(_kBiometricModePref, mode);
     if (mode == 'owner' && licenseKey != null) {
       _prefs.setString(_kBiometricKeyPref, licenseKey);
@@ -536,10 +549,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   bool get hasBiometricCredentials {
     final mode = _prefs.getString(_kBiometricModePref);
-    if (mode == 'owner') return _prefs.getString(_kBiometricKeyPref)?.isNotEmpty == true;
+    if (mode == 'owner')
+      return _prefs.getString(_kBiometricKeyPref)?.isNotEmpty == true;
     if (mode == 'employee') {
       return (_prefs.getString(_kBiometricLoginPref)?.isNotEmpty == true) &&
-             (_prefs.getString(_kBiometricPinPref)?.isNotEmpty == true);
+          (_prefs.getString(_kBiometricPinPref)?.isNotEmpty == true);
     }
     return false;
   }

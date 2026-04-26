@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/firebase_push_bootstrap.dart';
 import '../screens/auth/login_screen.dart';
 import '../screens/auth/splash_screen.dart';
 import '../screens/home/home_screen.dart';
@@ -22,6 +23,7 @@ import '../theme/akjol_theme.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
+    navigatorKey: customerNavigatorKey,
     initialLocation: '/splash',
     redirect: (context, state) {
       final session = Supabase.instance.client.auth.currentSession;
@@ -36,31 +38,33 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       return null;
     },
     routes: [
-      GoRoute(
-        path: '/splash',
-        builder: (_, __) => const SplashScreen(),
-      ),
-      GoRoute(
-        path: '/login',
-        builder: (_, __) => const LoginScreen(),
-      ),
+      GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
+      GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
       ShellRoute(
         builder: (_, state, child) => _AppShell(child: child),
         routes: [
           GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
           GoRoute(path: '/orders', builder: (_, __) => const OrdersScreen()),
-          GoRoute(path: '/services', builder: (_, __) => const ServicesScreen()),
+          GoRoute(
+            path: '/services',
+            builder: (_, __) => const ServicesScreen(),
+          ),
           GoRoute(path: '/support', builder: (_, __) => const SupportScreen()),
           GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
           GoRoute(
             path: '/store/:id',
-            builder: (_, state) => StoreScreen(storeId: state.pathParameters['id']!),
+            builder: (_, state) =>
+                StoreScreen(storeId: state.pathParameters['id']!),
           ),
           GoRoute(path: '/cart', builder: (_, __) => const CartScreen()),
-          GoRoute(path: '/checkout', builder: (_, __) => const CheckoutScreen()),
+          GoRoute(
+            path: '/checkout',
+            builder: (_, __) => const CheckoutScreen(),
+          ),
           GoRoute(
             path: '/order/:id',
-            builder: (_, state) => OrderTrackingScreen(orderId: state.pathParameters['id']!),
+            builder: (_, state) =>
+                OrderTrackingScreen(orderId: state.pathParameters['id']!),
           ),
           GoRoute(path: '/catalog', builder: (_, __) => const CatalogScreen()),
           GoRoute(path: '/map', builder: (_, __) => const MapScreen()),
@@ -88,13 +92,13 @@ class _AppShell extends ConsumerWidget {
       body: child,
       extendBody: true,
       bottomNavigationBar: _FloatingGlassBar(
-              currentPath: location,
-              cartCount: cart.itemCount,
-              isDark: isDark,
-              onMapTap: () => context.go('/map'),
-              onHomeTap: () => context.go('/'),
-              onCartTap: () => showCartSheet(context),
-            ),
+        currentPath: location,
+        cartCount: cart.itemCount,
+        isDark: isDark,
+        onMapTap: () => context.go('/map'),
+        onHomeTap: () => context.go('/'),
+        onCartTap: () => showCartSheet(context),
+      ),
     );
   }
 }
@@ -188,18 +192,27 @@ class _FloatingGlassBar extends StatelessWidget {
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                           colors: isHome
-                              ? [const Color(0xFF2ECC71), const Color(0xFF1ABC9C)]
+                              ? [
+                                  const Color(0xFF2ECC71),
+                                  const Color(0xFF1ABC9C),
+                                ]
                               : isDark
-                                  ? [const Color(0xFF21262D), const Color(0xFF2D333B)]
-                                  : [const Color(0xFFF0F2F5), const Color(0xFFE4E7EB)],
+                              ? [
+                                  const Color(0xFF21262D),
+                                  const Color(0xFF2D333B),
+                                ]
+                              : [
+                                  const Color(0xFFF0F2F5),
+                                  const Color(0xFFE4E7EB),
+                                ],
                         ),
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: isHome
                               ? Colors.white.withValues(alpha: 0.3)
                               : (isDark
-                                  ? Colors.white.withValues(alpha: 0.06)
-                                  : Colors.black.withValues(alpha: 0.04)),
+                                    ? Colors.white.withValues(alpha: 0.06)
+                                    : Colors.black.withValues(alpha: 0.04)),
                           width: 1.5,
                         ),
                         boxShadow: [
@@ -210,7 +223,9 @@ class _FloatingGlassBar extends StatelessWidget {
                               spreadRadius: -2,
                             ),
                           BoxShadow(
-                            color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
+                            color: Colors.black.withValues(
+                              alpha: isDark ? 0.3 : 0.06,
+                            ),
                             blurRadius: 8,
                             offset: const Offset(0, 2),
                           ),
@@ -310,7 +325,12 @@ class _GlassBtn extends StatelessWidget {
               color: AkJolTheme.primary,
               shape: BoxShape.circle,
               boxShadow: isActive
-                  ? [BoxShadow(color: AkJolTheme.primary.withValues(alpha: 0.6), blurRadius: 8)]
+                  ? [
+                      BoxShadow(
+                        color: AkJolTheme.primary.withValues(alpha: 0.6),
+                        blurRadius: 8,
+                      ),
+                    ]
                   : null,
             ),
           ),
@@ -324,7 +344,10 @@ class _GlassBtn extends StatelessWidget {
                   right: -12,
                   top: -8,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 5,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [Color(0xFF2ECC71), Color(0xFF1ABC9C)],

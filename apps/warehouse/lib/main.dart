@@ -10,8 +10,12 @@ import 'src/providers/theme_provider.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 import 'src/providers/auth_providers.dart';
 import 'src/data/powersync_db.dart';
+import 'src/services/firebase_push_bootstrap.dart';
+import 'src/services/notification_service.dart';
 
 void main() {
   runZonedGuarded(() async {
@@ -44,7 +48,8 @@ void main() {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 32),
+              const Icon(Icons.warning_amber_rounded,
+                  color: Colors.red, size: 32),
               const SizedBox(height: 8),
               Text(
                 'Ошибка: ${details.exceptionAsString().length > 100 ? details.exceptionAsString().substring(0, 100) : details.exceptionAsString()}',
@@ -63,7 +68,8 @@ void main() {
       url: const String.fromEnvironment('SUPABASE_URL',
           defaultValue: 'https://smvegrscjnoelfsipwqq.supabase.co'),
       anonKey: const String.fromEnvironment('SUPABASE_ANON_KEY',
-          defaultValue: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdmVncnNjam5vZWxmc2lwd3FxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTU5MjcsImV4cCI6MjA4ODczMTkyN30.z6h0ubNjAC0QfdGgg3FhAfSCy9RVVCupOuQUKuD98ig'),
+          defaultValue:
+              'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdmVncnNjam5vZWxmc2lwd3FxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTU5MjcsImV4cCI6MjA4ODczMTkyN30.z6h0ubNjAC0QfdGgg3FhAfSCy9RVVCupOuQUKuD98ig'),
     );
 
     // Initialize PowerSync offline-first database
@@ -71,6 +77,18 @@ void main() {
       await initPowerSync();
     } catch (e) {
       debugPrint('[TakEsep] PowerSync init error (non-fatal): $e');
+    }
+
+    // Initialize Firebase & Push Notifications
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+      await NotificationService().initialize();
+      await FirebasePushBootstrap.initialize();
+      debugPrint('[TakEsep] Firebase + Push initialized ✅');
+    } catch (e) {
+      debugPrint('[TakEsep] Firebase init error (non-fatal): $e');
     }
 
     final prefs = await SharedPreferences.getInstance();

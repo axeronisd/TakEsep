@@ -39,7 +39,19 @@ docker-compose.override.yml
 # Logs
 *.log
 
+# Qoder internal
+.qoder/
+
+# Compiled web app
+docs/app/
+
 # Landing page & web admin (GitHub Pages)
 !docs/
 !docs/**
 docs/*.apk
+
+# Qoder internal
+.qoder/
+
+# Compiled web app
+docs/app/

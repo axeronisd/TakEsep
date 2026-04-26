@@ -3,11 +3,13 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-const _waSvg = '''<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+const _waSvg =
+    '''<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
 <path d="M12.031 0C5.398 0 0 5.398 0 12.031c0 2.126.549 4.195 1.594 6.015L.031 24l6.111-1.604A11.968 11.968 0 0 0 12.031 24c6.633 0 12.031-5.398 12.031-12.031S18.665 0 12.031 0zm0 22.016a9.964 9.964 0 0 1-5.093-1.391l-.364-.216-3.784.992.997-3.69-.236-.376C2.261 15.143 1.636 13.626 1.636 12.031c0-5.741 4.673-10.413 10.414-10.413 5.74 0 10.413 4.672 10.413 10.413s-4.673 10.413-10.414 10.413zm5.719-7.81c-.314-.157-1.859-.918-2.147-1.024-.288-.105-.497-.157-.707.157-.21.314-.811 1.024-.995 1.233-.183.21-.366.236-.68.079-1.371-.62-2.385-1.125-3.396-2.584-.262-.379.262-.351.865-1.564.08-.157.04-.288-.013-.445-.052-.157-.707-1.704-.969-2.333-.255-.612-.515-.529-.707-.539-.183-.008-.393-.01-.602-.01-.21 0-.55.079-.838.393-.288.314-1.1 1.075-1.1 2.621 0 1.546 1.126 3.039 1.283 3.249.157.21 2.213 3.379 5.358 4.736.75.32 1.334.508 1.789.65.753.238 1.438.204 1.979.124.606-.09 1.859-.76 2.121-1.494.262-.734.262-1.363.183-1.494-.079-.131-.288-.21-.602-.367z"/>
 </svg>''';
 
-const _instaSvg = '''<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+const _instaSvg =
+    '''<svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
 <path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.22.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.05.41 2.22.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.22-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.05.36-2.22.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.22-.41-.56-.22-.96-.48-1.38-.9-.42-.42-.68-.82-.9-1.38-.16-.42-.36-1.05-.41-2.22C2.17 15.58 2.16 15.2 2.16 12s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.22.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.05-.36 2.22-.41C8.42 2.17 8.8 2.16 12 2.16M12 0C8.74 0 8.33.01 7.05.07c-1.27.06-2.14.26-2.9.56-.78.3-1.44.75-2.1 1.41-.66.66-1.11 1.32-1.41 2.1-.3.76-.5 1.63-.56 2.9C.01 8.33 0 8.74 0 12s.01 3.67.07 4.95c.06 1.27.26 2.14.56 2.9.3.78.75 1.44 1.41 2.1.66.66 1.32 1.11 2.1 1.41.76.3 1.63.5 2.9.56C8.33 23.99 8.74 24 12 24s3.67-.01 4.95-.07c1.27-.06 2.14-.26 2.9-.56.78-.3 1.44-.75 2.1-1.41.66-.66 1.11-1.32 1.41-2.1.3-.76.5-1.63.56-2.9C23.99 15.67 24 15.26 24 12s-.01-3.67-.07-4.95c-.06-1.27-.26-2.14-.56-2.9-.3-.78-.75-1.44-1.41-2.1-.66-.66-1.32-1.11-2.1-1.41-.76-.3-1.63-.5-2.9-.56C15.67.01 15.26 0 12 0zm0 5.84A6.16 6.16 0 1 0 18.16 12 6.16 6.16 0 0 0 12 5.84zm0 10.16A4 4 0 1 1 16 12a4 4 0 0 1-4 4zm5.8-9.66a1.44 1.44 0 1 1-2.88 0 1.44 1.44 0 0 1 2.88 0z"/>
 </svg>''';
 
@@ -46,8 +48,7 @@ final _helpCategories = [
       HelpArticle(
         icon: Icons.login_rounded,
         title: 'Вход в систему и выбор склада',
-        content:
-            'При первом запуске приложения вы увидите экран входа.\n\n'
+        content: 'При первом запуске приложения вы увидите экран входа.\n\n'
             'Шаг 1: Имя пользователя\n'
             'Введите ваше имя. Это имя связывается с вашим PIN-кодом, выданным администратором или владельцем бизнеса.\n\n'
             'Шаг 2: PIN-код\n'
@@ -106,8 +107,7 @@ final _helpCategories = [
       HelpArticle(
         icon: Icons.discount_rounded,
         title: 'Система скидок в чеке',
-        content:
-            'Приложение поддерживает два уровня скидок.\n\n'
+        content: 'Приложение поддерживает два уровня скидок.\n\n'
             '1. Скидка на весь чек (Глобальная):\n'
             'В панели корзины, рядом с итоговой суммой есть иконка "процента" или "ценника". Нажмите её.\n'
             'Всплывет окно: вы можете указать скидку просто суммой (например, скинуть 500 сом) либо процентом (скидка 10%).\n\n'
@@ -239,8 +239,7 @@ final _helpCategories = [
       HelpArticle(
         icon: Icons.attach_money_rounded,
         title: 'Настройка Зарплат',
-        content:
-            'В карточке сотрудника есть вкладка "Зарплата".\n\n'
+        content: 'В карточке сотрудника есть вкладка "Зарплата".\n\n'
             'Типы зарплат:\n'
             '• Фиксированная в Месяц/День/Смену.\n'
             '• Процент от ПРОДАЖ (Оклад).\n'
@@ -258,8 +257,7 @@ final _helpCategories = [
       HelpArticle(
         icon: Icons.history_rounded,
         title: 'Журнал Отчётов (Лента событий)',
-        content:
-            'В любой непонятной ситуации — открывайте раздел "Отчёты".\n\n'
+        content: 'В любой непонятной ситуации — открывайте раздел "Отчёты".\n\n'
             'Там хранится железобетонная лента ВСЕХ событий, кто и когда что нажал.\n'
             '• Кто-то удалил товар из чека? Он там будет.\n'
             '• Кладовщик Асанов провел списание 5 бананов? Будет строчка "Списание", время, дата.\n\n'
@@ -287,8 +285,7 @@ final _helpCategories = [
       HelpArticle(
         icon: Icons.color_lens_rounded,
         title: 'Внешний вид и Тема',
-        content:
-            'В Настройках вы можете включить Светлую или Тёмную тему.\n\n'
+        content: 'В Настройках вы можете включить Светлую или Тёмную тему.\n\n'
             'Важный момент: тема запоминается ЛОКАЛЬНО для каждого отдельного сотрудника. Если кассир А любит тёмную тему, а кассир Б светлую (работая за одним и тем же планшетом) — приложение само переключит тему в момент, когда кассир введет свой PIN.',
       ),
       HelpArticle(
@@ -353,13 +350,13 @@ class _HelpScreenState extends State<HelpScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text('Центр Помощи',
-                  style: AppTypography.displaySmall
-                      .copyWith(color: cs.onSurface)),
+                  style:
+                      AppTypography.displaySmall.copyWith(color: cs.onSurface)),
               const SizedBox(height: AppSpacing.xs),
               Text(
                   '${_helpCategories.length} категорий · ${_helpCategories.expand((c) => c.articles).length} подробных статей',
-                  style: AppTypography.bodyMedium.copyWith(
-                      color: cs.onSurface.withValues(alpha: 0.7))),
+                  style: AppTypography.bodyMedium
+                      .copyWith(color: cs.onSurface.withValues(alpha: 0.7))),
               const SizedBox(height: AppSpacing.lg),
 
               // Search
@@ -368,13 +365,13 @@ class _HelpScreenState extends State<HelpScreen> {
                 child: TextField(
                   onChanged: (v) => setState(() => _searchQuery = v),
                   decoration: InputDecoration(
-                    hintText: 'Поиск (например: как списать брак, qr код, зарплата)...',
+                    hintText:
+                        'Поиск (например: как списать брак, qr код, зарплата)...',
                     hintStyle: TextStyle(
                         color: cs.onSurface.withValues(alpha: 0.4),
                         fontSize: 14),
                     prefixIcon: Icon(Icons.search_rounded,
-                        size: 20,
-                        color: cs.onSurface.withValues(alpha: 0.4)),
+                        size: 20, color: cs.onSurface.withValues(alpha: 0.4)),
                     contentPadding: EdgeInsets.zero,
                     border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -505,9 +502,7 @@ class _HelpScreenState extends State<HelpScreen> {
     final articles = _filteredArticles;
     final title = _searchQuery.isNotEmpty
         ? 'Результаты поиска (${articles.length})'
-        : _helpCategories
-            .firstWhere((c) => c.id == _selectedCategoryId)
-            .name;
+        : _helpCategories.firstWhere((c) => c.id == _selectedCategoryId).name;
 
     return ListView(
       children: [
@@ -523,8 +518,8 @@ class _HelpScreenState extends State<HelpScreen> {
                     size: 56, color: cs.onSurface.withValues(alpha: 0.2)),
                 const SizedBox(height: AppSpacing.md),
                 Text('Ничего не найдено. Попробуйте другой запрос.',
-                    style: AppTypography.bodyLarge.copyWith(
-                        color: cs.onSurface.withValues(alpha: 0.4))),
+                    style: AppTypography.bodyLarge
+                        .copyWith(color: cs.onSurface.withValues(alpha: 0.4))),
               ]),
             ),
           )
@@ -582,7 +577,7 @@ class _HelpScreenState extends State<HelpScreen> {
               ),
             ),
           ],
-        
+
         // On mobile, append the support card to the bottom of the scrollable content
         if (isMobile) ...[
           const SizedBox(height: AppSpacing.lg),
@@ -624,13 +619,20 @@ class _HelpScreenState extends State<HelpScreen> {
 
     final whatsappButton = FilledButton.icon(
       onPressed: () async {
-        final uri = Uri.parse('https://wa.me/message/F4VR3MNB5NUNF1');
+        final uri = Uri.parse('https://wa.me/996506384666');
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri);
         }
       },
-      icon: SvgPicture.string(_waSvg, width: 22, height: 22, colorFilter: ColorFilter.mode(Color(0xFF25D366), BlendMode.srcIn)),
-      label: Text('WhatsApp', style: TextStyle(color: Color(0xFF25D366), fontSize: 15, fontWeight: FontWeight.bold)),
+      icon: SvgPicture.string(_waSvg,
+          width: 22,
+          height: 22,
+          colorFilter: ColorFilter.mode(Color(0xFF25D366), BlendMode.srcIn)),
+      label: Text('WhatsApp',
+          style: TextStyle(
+              color: Color(0xFF25D366),
+              fontSize: 15,
+              fontWeight: FontWeight.bold)),
       style: FilledButton.styleFrom(
         backgroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
@@ -640,13 +642,15 @@ class _HelpScreenState extends State<HelpScreen> {
 
     final instaButton = FilledButton.icon(
       onPressed: () async {
-        final uri = Uri.parse('https://www.instagram.com/takesep?igsh=bmR6NHZxdW85bGRr&utm_source=qr');
+        final uri = Uri.parse(
+            'https://www.instagram.com/takesep?igsh=bmR6NHZxdW85bGRr&utm_source=qr');
         if (await canLaunchUrl(uri)) {
           await launchUrl(uri);
         }
       },
       icon: SvgPicture.string(_instaSvg, width: 22, height: 22),
-      label: const Text('Instagram', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+      label: const Text('Instagram',
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
       style: FilledButton.styleFrom(
         backgroundColor: Colors.white.withValues(alpha: 0.2),
         foregroundColor: Colors.white,

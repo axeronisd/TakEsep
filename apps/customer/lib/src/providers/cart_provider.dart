@@ -16,11 +16,11 @@ class CartModifier {
   });
 
   Map<String, dynamic> toJson() => {
-        'modifier_id': modifierId,
-        'group_name': groupName,
-        'modifier_name': name,
-        'price_delta': priceDelta,
-      };
+    'modifier_id': modifierId,
+    'group_name': groupName,
+    'modifier_name': name,
+    'price_delta': priceDelta,
+  };
 }
 
 /// Элемент корзины
@@ -31,6 +31,7 @@ class CartItem {
   final String? imageUrl;
   final List<CartModifier> modifiers;
   int quantity;
+  final int? maxStock; // null = unlimited
 
   CartItem({
     required this.productId,
@@ -39,6 +40,7 @@ class CartItem {
     this.imageUrl,
     this.modifiers = const [],
     this.quantity = 1,
+    this.maxStock,
   });
 
   /// Цена с учётом модификаторов
@@ -61,15 +63,19 @@ class CartItem {
     return modifiers.map((m) => m.name).join(', ');
   }
 
-  CartItem copyWith({int? quantity, List<CartModifier>? modifiers}) =>
-      CartItem(
-        productId: productId,
-        name: name,
-        basePrice: basePrice,
-        imageUrl: imageUrl,
-        modifiers: modifiers ?? this.modifiers,
-        quantity: quantity ?? this.quantity,
-      );
+  CartItem copyWith({
+    int? quantity,
+    List<CartModifier>? modifiers,
+    int? maxStock,
+  }) => CartItem(
+    productId: productId,
+    name: name,
+    basePrice: basePrice,
+    imageUrl: imageUrl,
+    modifiers: modifiers ?? this.modifiers,
+    quantity: quantity ?? this.quantity,
+    maxStock: maxStock ?? this.maxStock,
+  );
 }
 
 /// Состояние корзины
@@ -94,8 +100,7 @@ class CartState {
     this.customerNote,
   });
 
-  double get itemsTotal =>
-      items.fold(0, (sum, item) => sum + item.total);
+  double get itemsTotal => items.fold(0, (sum, item) => sum + item.total);
 
   int get itemCount => items.fold(0, (sum, item) => sum + item.quantity);
 
@@ -116,17 +121,16 @@ class CartState {
     double? deliveryLat,
     double? deliveryLng,
     String? customerNote,
-  }) =>
-      CartState(
-        warehouseId: warehouseId ?? this.warehouseId,
-        warehouseName: warehouseName ?? this.warehouseName,
-        items: items ?? this.items,
-        selectedTransport: selectedTransport ?? this.selectedTransport,
-        deliveryAddress: deliveryAddress ?? this.deliveryAddress,
-        deliveryLat: deliveryLat ?? this.deliveryLat,
-        deliveryLng: deliveryLng ?? this.deliveryLng,
-        customerNote: customerNote ?? this.customerNote,
-      );
+  }) => CartState(
+    warehouseId: warehouseId ?? this.warehouseId,
+    warehouseName: warehouseName ?? this.warehouseName,
+    items: items ?? this.items,
+    selectedTransport: selectedTransport ?? this.selectedTransport,
+    deliveryAddress: deliveryAddress ?? this.deliveryAddress,
+    deliveryLat: deliveryLat ?? this.deliveryLat,
+    deliveryLng: deliveryLng ?? this.deliveryLng,
+    customerNote: customerNote ?? this.customerNote,
+  );
 }
 
 /// Провайдер корзины
@@ -142,6 +146,7 @@ class CartNotifier extends StateNotifier<CartState> {
     required double price,
     String? imageUrl,
     List<CartModifier> modifiers = const [],
+    int? maxStock,
   }) {
     // Если товар из другого магазина — НЕ добавляем (вызывающий код покажет диалог)
     if (state.isDifferentStore(warehouseId)) {
@@ -154,13 +159,18 @@ class CartNotifier extends StateNotifier<CartState> {
       basePrice: price,
       imageUrl: imageUrl,
       modifiers: modifiers,
+      maxStock: maxStock,
     );
 
     final items = [...state.items];
     final idx = items.indexWhere((i) => i.cartKey == newItem.cartKey);
 
     if (idx >= 0) {
-      items[idx] = items[idx].copyWith(quantity: items[idx].quantity + 1);
+      final nextQty = items[idx].quantity + 1;
+      if (items[idx].maxStock != null && nextQty > items[idx].maxStock!) {
+        return false; // out of stock
+      }
+      items[idx] = items[idx].copyWith(quantity: nextQty);
     } else {
       items.add(newItem);
     }
@@ -182,6 +192,7 @@ class CartNotifier extends StateNotifier<CartState> {
     required double price,
     String? imageUrl,
     List<CartModifier> modifiers = const [],
+    int? maxStock,
   }) {
     state = CartState(
       warehouseId: warehouseId,
@@ -193,6 +204,7 @@ class CartNotifier extends StateNotifier<CartState> {
           basePrice: price,
           imageUrl: imageUrl,
           modifiers: modifiers,
+          maxStock: maxStock,
         ),
       ],
     );
@@ -204,18 +216,19 @@ class CartNotifier extends StateNotifier<CartState> {
       removeItem(cartKey);
       return;
     }
+    final item = state.items.firstWhere((i) => i.cartKey == cartKey);
+    if (item.maxStock != null && quantity > item.maxStock!) {
+      return; // cannot exceed stock
+    }
     final items = state.items
-        .map((i) => i.cartKey == cartKey
-            ? i.copyWith(quantity: quantity)
-            : i)
+        .map((i) => i.cartKey == cartKey ? i.copyWith(quantity: quantity) : i)
         .toList();
     state = state.copyWith(items: items);
   }
 
   /// Удалить товар по cartKey
   void removeItem(String cartKey) {
-    final items =
-        state.items.where((i) => i.cartKey != cartKey).toList();
+    final items = state.items.where((i) => i.cartKey != cartKey).toList();
     if (items.isEmpty) {
       state = const CartState();
     } else {
@@ -262,8 +275,7 @@ Future<bool> showStoreConflictDialog(
   final result = await showDialog<bool>(
     context: context,
     builder: (ctx) => AlertDialog(
-      shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       title: const Text('Очистить корзину?'),
       content: Text(
         'В вашей корзине товары из «$currentStoreName». '
@@ -276,9 +288,7 @@ Future<bool> showStoreConflictDialog(
         ),
         ElevatedButton(
           onPressed: () => Navigator.pop(ctx, true),
-          style: ElevatedButton.styleFrom(
-            minimumSize: const Size(100, 40),
-          ),
+          style: ElevatedButton.styleFrom(minimumSize: const Size(100, 40)),
           child: const Text('Очистить'),
         ),
       ],

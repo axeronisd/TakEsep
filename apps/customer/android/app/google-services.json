@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "427394139285",
+    "project_id": "akjol-f479a",
+    "storage_bucket": "akjol-f479a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:427394139285:android:965f83e9aec3c0dbec079c",
+        "android_client_info": {
+          "package_name": "com.akjol.courier"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNl63a9xCTPa9RTcnZr7XuhxxaWHf-rgk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:427394139285:android:30f43487c480d0f9ec079c",
+        "android_client_info": {
+          "package_name": "com.akjol.customer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNl63a9xCTPa9RTcnZr7XuhxxaWHf-rgk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

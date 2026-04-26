@@ -44,32 +44,48 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
   void _handleScanOrSearch(String value) {
     if (value.isEmpty) return;
 
-    // Try to find by exact barcode match
-    final productsAsync = ref.read(inventoryProvider);
-    final allProducts = productsAsync.value ?? [];
-    final product = allProducts.where((p) => p.barcode == value.trim()).firstOrNull;
+    try {
+      // Try to find by exact barcode match
+      final productsAsync = ref.read(inventoryProvider);
+      final allProducts = productsAsync.value ?? [];
+      final product =
+          allProducts.where((p) => p.barcode == value.trim()).firstOrNull;
 
-    if (product != null) {
-      // Add to cart (or +1 if already there)
-      final added = ref.read(cartProvider.notifier).addProduct(product);
+      if (product != null) {
+        // Add to cart (or +1 if already there)
+        final added = ref.read(cartProvider.notifier).addProduct(product);
+        _searchController.clear();
+        ref.read(salesSearchQueryProvider.notifier).state = '';
+        _searchFocusNode.requestFocus();
+
+        if (added) {
+          showInfoSnackBar(context, ref, '"${product.name}" добавлен в чек',
+              margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+              duration: const Duration(seconds: 1));
+        } else {
+          showErrorSnackBar(context, '"${product.name}" — нет в наличии',
+              margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+              duration: const Duration(seconds: 1));
+        }
+        return;
+      }
+
+      // If barcode not found, show message
       _searchController.clear();
       ref.read(salesSearchQueryProvider.notifier).state = '';
       _searchFocusNode.requestFocus();
 
-      if (added) {
-        showInfoSnackBar(context, ref, '"${product.name}" добавлен в чек', margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16), duration: const Duration(seconds: 1));
-      } else {
-        showErrorSnackBar(context, '"${product.name}" — нет в наличии', margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16), duration: const Duration(seconds: 1));
+      showErrorSnackBar(context, 'Позиция с этим штрих-кодом не существует',
+          margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+          duration: const Duration(seconds: 2));
+    } catch (e, st) {
+      debugPrint('[_handleScanOrSearch] error: $e\n$st');
+      if (mounted) {
+        showErrorSnackBar(context, 'Ошибка при добавлении товара',
+            margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+            duration: const Duration(seconds: 2));
       }
-      return;
     }
-
-    // If barcode not found, show message
-    _searchController.clear();
-    ref.read(salesSearchQueryProvider.notifier).state = '';
-    _searchFocusNode.requestFocus();
-
-    showErrorSnackBar(context, 'Позиция с этим штрих-кодом не существует', margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16), duration: const Duration(seconds: 2));
   }
 
   @override
@@ -94,7 +110,9 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
             children: [
               _buildTopHeader(isMobile: false),
               Expanded(
-                child: _selectedTab == 0 ? _buildProductCatalog() : _buildServiceCatalog(),
+                child: _selectedTab == 0
+                    ? _buildProductCatalog()
+                    : _buildServiceCatalog(),
               ),
             ],
           ),
@@ -122,7 +140,10 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
     return Column(
       children: [
         _buildTopHeader(isMobile: true),
-        Expanded(child: _selectedTab == 0 ? _buildProductCatalog() : _buildServiceCatalog()),
+        Expanded(
+            child: _selectedTab == 0
+                ? _buildProductCatalog()
+                : _buildServiceCatalog()),
         // Cart summary bar
         if (cart.isNotEmpty)
           InkWell(
@@ -182,7 +203,8 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
 
   Widget _buildTopHeader({required bool isMobile}) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, isMobile ? 0 : AppSpacing.lg),
+      padding: EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg,
+          isMobile ? 0 : AppSpacing.lg),
       child: Row(
         children: [
           Text('Продажа',
@@ -192,15 +214,20 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
           const Spacer(),
           SegmentedButton<int>(
             segments: const [
-              ButtonSegment(value: 0, label: Text('Товары', style: TextStyle(fontSize: 13))),
-              ButtonSegment(value: 1, label: Text('Услуги', style: TextStyle(fontSize: 13))),
+              ButtonSegment(
+                  value: 0,
+                  label: Text('Товары', style: TextStyle(fontSize: 13))),
+              ButtonSegment(
+                  value: 1,
+                  label: Text('Услуги', style: TextStyle(fontSize: 13))),
             ],
             selected: {_selectedTab},
             onSelectionChanged: (set) {
               setState(() => _selectedTab = set.first);
             },
             style: ButtonStyle(
-              padding: WidgetStateProperty.all(const EdgeInsets.symmetric(horizontal: 12)),
+              padding: WidgetStateProperty.all(
+                  const EdgeInsets.symmetric(horizontal: 12)),
               visualDensity: VisualDensity.compact,
             ),
           ),
@@ -318,7 +345,8 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                                   .withValues(alpha: 0.5)),
                           onPressed: () {
                             _searchController.clear();
-                            ref.read(salesSearchQueryProvider.notifier).state = '';
+                            ref.read(salesSearchQueryProvider.notifier).state =
+                                '';
                             _searchFocusNode.requestFocus();
                           },
                         )
@@ -413,9 +441,23 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
                           product: p,
                           currencySymbol: _cur,
                           onTap: () {
-                            final added = ref.read(cartProvider.notifier).addProduct(p);
-                            if (!added) {
-                              showErrorSnackBar(context, '"${p.name}" — нет в наличии', margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16), duration: const Duration(seconds: 1));
+                            try {
+                              final added =
+                                  ref.read(cartProvider.notifier).addProduct(p);
+                              if (!added) {
+                                showErrorSnackBar(
+                                    context, '"${p.name}" — нет в наличии',
+                                    margin: const EdgeInsets.only(
+                                        bottom: 80, left: 16, right: 16),
+                                    duration: const Duration(seconds: 1));
+                              }
+                            } catch (e, st) {
+                              debugPrint('[ProductTile.onTap] error: $e\n$st');
+                              showErrorSnackBar(
+                                  context, 'Ошибка при добавлении товара',
+                                  margin: const EdgeInsets.only(
+                                      bottom: 80, left: 16, right: 16),
+                                  duration: const Duration(seconds: 1));
                             }
                           },
                         );
@@ -442,7 +484,10 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
             return Center(
               child: Text('Нет активных услуг',
                   style: AppTypography.bodyMedium.copyWith(
-                      color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5))),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withValues(alpha: 0.5))),
             );
           }
 
@@ -476,58 +521,69 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
   }
 
   void _showExecutorSelector(Service service) async {
-    final employeesAsync = ref.read(employeeListProvider);
-    final List<Employee> employees = employeesAsync.value ?? [];
+    try {
+      final employeesAsync = ref.read(employeeListProvider);
+      final List<Employee> employees = employeesAsync.value ?? [];
 
-    if (employees.isEmpty) {
-      // Add without executor if none exist
-      ref.read(cartProvider.notifier).addService(service, null, null);
-      showInfoSnackBar(context, ref, '"${service.name}" добавлена в чек', margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16));
-      return;
-    }
+      if (employees.isEmpty) {
+        // Add without executor if none exist
+        ref.read(cartProvider.notifier).addService(service, null, null);
+        showInfoSnackBar(context, ref, '"${service.name}" добавлена в чек',
+            margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16));
+        return;
+      }
 
-    final executor = await showDialog<Employee?>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Кто выполнил услугу?'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: ListView.separated(
-            shrinkWrap: true,
-            itemCount: employees.length + 1,
-            separatorBuilder: (_, __) => const Divider(height: 1),
-            itemBuilder: (_, i) {
-              if (i == 0) {
+      final executor = await showDialog<Employee?>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('Кто выполнил услугу?'),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.separated(
+              shrinkWrap: true,
+              itemCount: employees.length + 1,
+              separatorBuilder: (_, __) => const Divider(height: 1),
+              itemBuilder: (_, i) {
+                if (i == 0) {
+                  return ListTile(
+                    leading: const Icon(Icons.person_off_outlined),
+                    title: const Text('Без имени (не назначать)'),
+                    onTap: () =>
+                        Navigator.pop(ctx, null), // Return null explicitly
+                  );
+                }
+                final emp = employees[i - 1];
                 return ListTile(
-                  leading: const Icon(Icons.person_off_outlined),
-                  title: const Text('Без имени (не назначать)'),
-                  onTap: () => Navigator.pop(ctx, null), // Return null explicitly
+                  leading: CircleAvatar(
+                    backgroundColor: AppColors.secondary.withValues(alpha: 0.1),
+                    child: Text(emp.name.characters.first.toUpperCase(),
+                        style: const TextStyle(color: AppColors.secondary)),
+                  ),
+                  title: Text(emp.name),
+                  subtitle: const Text('Сотрудник'),
+                  onTap: () => Navigator.pop(ctx, emp),
                 );
-              }
-              final emp = employees[i - 1];
-              return ListTile(
-                leading: CircleAvatar(
-                  backgroundColor: AppColors.secondary.withValues(alpha: 0.1),
-                  child: Text(emp.name.characters.first.toUpperCase(), style: const TextStyle(color: AppColors.secondary)),
-                ),
-                title: Text(emp.name),
-                subtitle: const Text('Сотрудник'),
-                onTap: () => Navigator.pop(ctx, emp),
-              );
-            },
+              },
+            ),
           ),
         ),
-      ),
-    );
+      );
 
-    // To differentiate between explicitly picking "Без имени" and dismissing the barrier (which also returns null),
-    // we can assume if they made it here, barrier dismiss is also just "no executor". It's fine for now.
-    // A more robust way is returning a wrapper object, but null is fine.
-    
-    ref.read(cartProvider.notifier).addService(service, executor?.id, executor?.name);
-    
-    if (mounted) {
-      showInfoSnackBar(context, ref, 'Услуга "${service.name}" добавлена', margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16), duration: const Duration(seconds: 1));
+      ref
+          .read(cartProvider.notifier)
+          .addService(service, executor?.id, executor?.name);
+
+      if (mounted) {
+        showInfoSnackBar(context, ref, 'Услуга "${service.name}" добавлена',
+            margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
+            duration: const Duration(seconds: 1));
+      }
+    } catch (e, st) {
+      debugPrint('[_showExecutorSelector] error: $e\n$st');
+      if (mounted) {
+        showErrorSnackBar(context, 'Ошибка при добавлении услуги',
+            margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16));
+      }
     }
   }
 
@@ -547,7 +603,6 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
       ),
     );
   }
-
 
   String _getSortLabel(SortType type) {
     switch (type) {
@@ -575,7 +630,9 @@ class _ProductTile extends StatelessWidget {
   final String currencySymbol;
   final VoidCallback onTap;
   const _ProductTile(
-      {required this.product, required this.currencySymbol, required this.onTap});
+      {required this.product,
+      required this.currencySymbol,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -597,69 +654,73 @@ class _ProductTile extends StatelessWidget {
             children: [
               Expanded(
                 child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
-                  borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(AppSpacing.radiusMd)),
-                ),
-                child: product.imageUrl != null && product.imageUrl!.isNotEmpty
-                    ? CachedImageWidget(
-                        imageUrl: product.imageUrl,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(AppSpacing.radiusMd)),
-                      )
-                    : Icon(Icons.inventory_2_outlined,
-                        color: cs.onSurface.withValues(alpha: 0.2), size: 32),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(product.name,
-                      style: AppTypography.bodySmall.copyWith(
-                        color: cs.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 2),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                          '$currencySymbol ${_fmtNum(product.price.toInt())}',
-                          style: AppTypography.bodySmall
-                              .copyWith(color: AppColors.primary, fontWeight: FontWeight.w700)),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 1),
-                        decoration: BoxDecoration(
-                          color:
-                              product.quantity <= product.effectiveCriticalMin
-                                  ? AppColors.error.withValues(alpha: 0.15)
-                                  : AppColors.success.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-                        ),
-                        child: Text('${product.quantity} шт',
-                            style: TextStyle(
-                              color: product.quantity <=
-                                      product.effectiveCriticalMin
-                                  ? AppColors.error
-                                  : AppColors.success,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w600,
-                            )),
-                      ),
-                    ],
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                    borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(AppSpacing.radiusMd)),
                   ),
-                ],
+                  child:
+                      product.imageUrl != null && product.imageUrl!.isNotEmpty
+                          ? CachedImageWidget(
+                              imageUrl: product.imageUrl,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(AppSpacing.radiusMd)),
+                            )
+                          : Icon(Icons.inventory_2_outlined,
+                              color: cs.onSurface.withValues(alpha: 0.2),
+                              size: 32),
+                ),
               ),
-            ),
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(product.name,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: cs.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 2),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                            '$currencySymbol ${_fmtNum(product.price.toInt())}',
+                            style: AppTypography.bodySmall.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w700)),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color:
+                                product.quantity <= product.effectiveCriticalMin
+                                    ? AppColors.error.withValues(alpha: 0.15)
+                                    : AppColors.success.withValues(alpha: 0.15),
+                            borderRadius:
+                                BorderRadius.circular(AppSpacing.radiusSm),
+                          ),
+                          child: Text('${product.quantity} шт',
+                              style: TextStyle(
+                                color: product.quantity <=
+                                        product.effectiveCriticalMin
+                                    ? AppColors.error
+                                    : AppColors.success,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                              )),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),
@@ -675,8 +736,11 @@ class _ServiceTile extends StatelessWidget {
   final Service service;
   final String currencySymbol;
   final VoidCallback onTap;
-  
-  const _ServiceTile({required this.service, required this.currencySymbol, required this.onTap});
+
+  const _ServiceTile(
+      {required this.service,
+      required this.currencySymbol,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -698,63 +762,67 @@ class _ServiceTile extends StatelessWidget {
             children: [
               Expanded(
                 child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: AppColors.secondary.withValues(alpha: 0.1),
-                  borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(AppSpacing.radiusMd)),
-                ),
-                child: service.imageUrl != null && service.imageUrl!.isNotEmpty
-                    ? CachedImageWidget(
-                        imageUrl: service.imageUrl,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(AppSpacing.radiusMd)),
-                      )
-                    : const Icon(Icons.design_services_rounded, color: AppColors.secondary, size: 32),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(service.name,
-                      style: AppTypography.bodySmall.copyWith(
-                        color: cs.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
-                  const SizedBox(height: 2),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                          '$currencySymbol ${_fmtNum(service.price.toInt())}',
-                          style: AppTypography.bodySmall
-                              .copyWith(color: AppColors.primary, fontWeight: FontWeight.w700)),
-                      if (service.category != null)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 5, vertical: 1),
-                          decoration: BoxDecoration(
-                            color: cs.surfaceContainerHighest,
-                            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-                          ),
-                          child: Text(service.category!,
-                              style: TextStyle(
-                                color: cs.onSurface.withValues(alpha: 0.6),
-                                fontSize: 9,
-                                fontWeight: FontWeight.w600,
-                              )),
-                        ),
-                    ],
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: AppColors.secondary.withValues(alpha: 0.1),
+                    borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(AppSpacing.radiusMd)),
                   ),
-                ],
+                  child:
+                      service.imageUrl != null && service.imageUrl!.isNotEmpty
+                          ? CachedImageWidget(
+                              imageUrl: service.imageUrl,
+                              width: double.infinity,
+                              fit: BoxFit.cover,
+                              borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(AppSpacing.radiusMd)),
+                            )
+                          : const Icon(Icons.design_services_rounded,
+                              color: AppColors.secondary, size: 32),
+                ),
               ),
-            ),
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(service.name,
+                        style: AppTypography.bodySmall.copyWith(
+                          color: cs.onSurface,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 2),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                            '$currencySymbol ${_fmtNum(service.price.toInt())}',
+                            style: AppTypography.bodySmall.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w700)),
+                        if (service.category != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 5, vertical: 1),
+                            decoration: BoxDecoration(
+                              color: cs.surfaceContainerHighest,
+                              borderRadius:
+                                  BorderRadius.circular(AppSpacing.radiusSm),
+                            ),
+                            child: Text(service.category!,
+                                style: TextStyle(
+                                  color: cs.onSurface.withValues(alpha: 0.6),
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w600,
+                                )),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
         ),

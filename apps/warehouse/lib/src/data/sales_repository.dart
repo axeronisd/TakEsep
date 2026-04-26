@@ -23,13 +23,18 @@ class SalesRepository {
     String? clientName,
     double? receivedAmount,
   }) async {
+    if (items.isEmpty)
+      throw ArgumentError('Sale must contain at least one item');
+    if (companyId.isEmpty) throw ArgumentError('Company ID is required');
+    if (warehouseId.isEmpty) throw ArgumentError('Warehouse ID is required');
+
     final saleId = const Uuid().v4();
     final now = DateTime.now().toIso8601String();
 
     // Calculate final actual total and received
     final finalTotal = totalAmount - discountAmount;
     final actualReceived = receivedAmount ?? finalTotal;
-    
+
     // Insert sale record
     await _db.execute(
       '''INSERT INTO sales (
@@ -59,43 +64,44 @@ class SalesRepository {
     for (final item in items) {
       final itemId = const Uuid().v4();
       await _db.execute(
-          '''INSERT INTO sale_items (
+        '''INSERT INTO sale_items (
             id, sale_id, product_id, product_name,
             quantity, selling_price, cost_price,
             discount_amount, item_type, executor_id, executor_name, created_at
           ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-          [
-            itemId,
-            saleId,
-            item.productId,
-            item.productName,
-            item.quantity,
-            item.sellingPrice,
-            item.costPrice,
-            item.discountAmount,
-            item.itemType,
-            item.executorId,
-            item.executorName,
-            now,
-          ],
-        );
+        [
+          itemId,
+          saleId,
+          item.productId,
+          item.productName,
+          item.quantity,
+          item.sellingPrice,
+          item.costPrice,
+          item.discountAmount,
+          item.itemType,
+          item.executorId,
+          item.executorName,
+          now,
+        ],
+      );
 
-        if (item.itemType == 'product') {
-          // Decrement stock in catalog
-          await _db.execute(
-            '''UPDATE products 
+      if (item.itemType == 'product') {
+        // Decrement stock in catalog
+        await _db.execute(
+          '''UPDATE products 
                SET quantity = quantity - ?,
                    sold_last_30_days = sold_last_30_days + ?,
                    updated_at = ?
                WHERE id = ?''',
-            [item.quantity, item.quantity, now, item.productId],
-          );
-        }
+          [item.quantity, item.quantity, now, item.productId],
+        );
+      }
     }
 
     // Update client stats if client is attached
     if (clientId != null) {
-      final addedDebt = finalTotal > actualReceived ? finalTotal - actualReceived : 0.0;
+      final addedDebt =
+          finalTotal > actualReceived ? finalTotal - actualReceived : 0.0;
       await _db.execute(
         '''UPDATE clients 
            SET purchases_count = purchases_count + 1,
@@ -109,23 +115,37 @@ class SalesRepository {
 
     // ── Sync to Supabase ──
     await SupabaseSync.upsert('sales', {
-      'id': saleId, 'company_id': companyId, 'employee_id': employeeId,
-      'warehouse_id': warehouseId, 'total_amount': totalAmount,
-      'discount_amount': discountAmount, 'payment_method': paymentMethod,
-      'status': 'completed', 'notes': notes, 'client_id': clientId,
-      'client_name': clientName, 'received_amount': actualReceived,
-      'created_at': now, 'updated_at': now,
+      'id': saleId,
+      'company_id': companyId,
+      'employee_id': employeeId,
+      'warehouse_id': warehouseId,
+      'total_amount': totalAmount,
+      'discount_amount': discountAmount,
+      'payment_method': paymentMethod,
+      'status': 'completed',
+      'notes': notes,
+      'client_id': clientId,
+      'client_name': clientName,
+      'received_amount': actualReceived,
+      'created_at': now,
+      'updated_at': now,
     });
 
     final saleItemsForSupabase = <Map<String, dynamic>>[];
     for (final item in items) {
       saleItemsForSupabase.add({
-        'id': const Uuid().v4(), 'sale_id': saleId,
-        'product_id': item.productId, 'product_name': item.productName,
-        'quantity': item.quantity, 'selling_price': item.sellingPrice,
-        'cost_price': item.costPrice, 'discount_amount': item.discountAmount,
-        'item_type': item.itemType, 'executor_id': item.executorId,
-        'executor_name': item.executorName, 'created_at': now,
+        'id': const Uuid().v4(),
+        'sale_id': saleId,
+        'product_id': item.productId,
+        'product_name': item.productName,
+        'quantity': item.quantity,
+        'selling_price': item.sellingPrice,
+        'cost_price': item.costPrice,
+        'discount_amount': item.discountAmount,
+        'item_type': item.itemType,
+        'executor_id': item.executorId,
+        'executor_name': item.executorName,
+        'created_at': now,
       });
     }
     await SupabaseSync.upsertAll('sale_items', saleItemsForSupabase);

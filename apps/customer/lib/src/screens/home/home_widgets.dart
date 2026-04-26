@@ -12,6 +12,7 @@ class AkJolHeader extends StatelessWidget {
   final String? userName;
   final VoidCallback? onAddressTap;
   final VoidCallback? onProfileTap;
+  final VoidCallback? onOrdersTap;
 
   const AkJolHeader({
     super.key,
@@ -20,6 +21,7 @@ class AkJolHeader extends StatelessWidget {
     this.userName,
     this.onAddressTap,
     this.onProfileTap,
+    this.onOrdersTap,
   });
 
   @override
@@ -27,7 +29,9 @@ class AkJolHeader extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final muted = isDark ? const Color(0xFF6E7681) : const Color(0xFF9CA3AF);
     final displayName = userName ?? 'Гость';
-    final initials = displayName.isNotEmpty ? displayName[0].toUpperCase() : '?';
+    final initials = displayName.isNotEmpty
+        ? displayName[0].toUpperCase()
+        : '?';
     final greeting = _getGreeting();
 
     return ClipRRect(
@@ -41,7 +45,9 @@ class AkJolHeader extends StatelessWidget {
             color: isDark
                 ? const Color(0xFF131920).withValues(alpha: 0.94)
                 : const Color(0xFFFDFDFD).withValues(alpha: 0.94),
-            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+            borderRadius: const BorderRadius.vertical(
+              bottom: Radius.circular(20),
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
@@ -67,7 +73,9 @@ class AkJolHeader extends StatelessWidget {
                             fontSize: 16,
                             fontWeight: FontWeight.w300,
                             letterSpacing: 2,
-                            color: isDark ? Colors.white70 : const Color(0xFF374151),
+                            color: isDark
+                                ? Colors.white70
+                                : const Color(0xFF374151),
                           ),
                         ),
                         ShaderMask(
@@ -87,7 +95,8 @@ class AkJolHeader extends StatelessWidget {
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 8),
                           child: Container(
-                            width: 3, height: 3,
+                            width: 3,
+                            height: 3,
                             decoration: BoxDecoration(
                               color: muted.withValues(alpha: 0.5),
                               shape: BoxShape.circle,
@@ -100,7 +109,9 @@ class AkJolHeader extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w500,
-                              color: isDark ? Colors.white : const Color(0xFF111827),
+                              color: isDark
+                                  ? Colors.white
+                                  : const Color(0xFF111827),
                               letterSpacing: -0.2,
                             ),
                             maxLines: 1,
@@ -114,7 +125,10 @@ class AkJolHeader extends StatelessWidget {
                     GestureDetector(
                       onTap: onAddressTap,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: isDark
                               ? Colors.white.withValues(alpha: 0.05)
@@ -131,13 +145,16 @@ class AkJolHeader extends StatelessWidget {
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Container(
-                              width: 5, height: 5,
+                              width: 5,
+                              height: 5,
                               decoration: BoxDecoration(
                                 color: AkJolTheme.primary,
                                 shape: BoxShape.circle,
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AkJolTheme.primary.withValues(alpha: 0.5),
+                                    color: AkJolTheme.primary.withValues(
+                                      alpha: 0.5,
+                                    ),
                                     blurRadius: 4,
                                   ),
                                 ],
@@ -146,8 +163,12 @@ class AkJolHeader extends StatelessWidget {
                             const SizedBox(width: 6),
                             if (loading)
                               const SizedBox(
-                                width: 10, height: 10,
-                                child: CircularProgressIndicator(strokeWidth: 1.5, color: AkJolTheme.primary),
+                                width: 10,
+                                height: 10,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 1.5,
+                                  color: AkJolTheme.primary,
+                                ),
                               )
                             else
                               Flexible(
@@ -164,7 +185,11 @@ class AkJolHeader extends StatelessWidget {
                                 ),
                               ),
                             const SizedBox(width: 2),
-                            Icon(Icons.expand_more_rounded, size: 14, color: muted),
+                            Icon(
+                              Icons.expand_more_rounded,
+                              size: 14,
+                              color: muted,
+                            ),
                           ],
                         ),
                       ),
@@ -175,11 +200,42 @@ class AkJolHeader extends StatelessWidget {
 
               const SizedBox(width: 8),
 
+              // ── Orders button ──
+              if (onOrdersTap != null)
+                GestureDetector(
+                  onTap: onOrdersTap,
+                  child: Container(
+                    width: 42,
+                    height: 42,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? const Color(0xFF161B22)
+                          : Colors.white,
+                      border: Border.all(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? const Color(0xFF30363D)
+                            : const Color(0xFFE5E7EB),
+                        width: 1,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.receipt_long_rounded,
+                      size: 20,
+                      color: isDark
+                          ? const Color(0xFF8B949E)
+                          : const Color(0xFF6B7280),
+                    ),
+                  ),
+                ),
+              if (onOrdersTap != null) const SizedBox(width: 8),
+
               // ── Right: Profile avatar ──
               GestureDetector(
                 onTap: onProfileTap,
                 child: Container(
-                  width: 42, height: 42,
+                  width: 42,
+                  height: 42,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     border: Border.all(
@@ -330,9 +386,10 @@ class _AnimatedBentoCardState extends State<_AnimatedBentoCard>
       vsync: this,
       duration: const Duration(milliseconds: 100),
     );
-    _scaleAnim = Tween<double>(begin: 1.0, end: 0.96).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnim = Tween<double>(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -375,11 +432,13 @@ class _AnimatedBentoCardState extends State<_AnimatedBentoCard>
             children: [
               // Decorative circles
               Positioned(
-                right: -20, top: -20,
+                right: -20,
+                top: -20,
                 child: _glow(widget.compact ? 60 : 90, 0.1),
               ),
               Positioned(
-                left: -10, bottom: -10,
+                left: -10,
+                bottom: -10,
                 child: _glow(widget.compact ? 35 : 55, 0.06),
               ),
               // Image overlay (top-right)
@@ -403,7 +462,8 @@ class _AnimatedBentoCardState extends State<_AnimatedBentoCard>
                 )
               else if (!widget.compact)
                 Positioned(
-                  right: 10, bottom: 10,
+                  right: 10,
+                  bottom: 10,
                   child: Icon(
                     widget.icon,
                     size: 60,
@@ -429,17 +489,26 @@ class _AnimatedBentoCardState extends State<_AnimatedBentoCard>
                           height: widget.compact ? 38 : 52,
                           decoration: BoxDecoration(
                             color: Colors.white.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(widget.compact ? 11 : 16),
+                            borderRadius: BorderRadius.circular(
+                              widget.compact ? 11 : 16,
+                            ),
                             border: Border.all(
                               color: Colors.white.withValues(alpha: 0.1),
                               width: 1,
                             ),
                           ),
-                          child: Icon(widget.icon, color: Colors.white, size: widget.iconSize),
+                          child: Icon(
+                            widget.icon,
+                            color: Colors.white,
+                            size: widget.iconSize,
+                          ),
                         ),
                         if (widget.badge != null)
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 3,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.white.withValues(alpha: 0.25),
                               borderRadius: BorderRadius.circular(8),
@@ -520,7 +589,13 @@ class SectionHeader extends StatelessWidget {
   final VoidCallback? onAction;
   final Widget? actionWidget;
 
-  const SectionHeader({super.key, required this.title, this.action, this.onAction, this.actionWidget});
+  const SectionHeader({
+    super.key,
+    required this.title,
+    this.action,
+    this.onAction,
+    this.actionWidget,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -547,7 +622,10 @@ class SectionHeader extends StatelessWidget {
             GestureDetector(
               onTap: onAction,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   color: AkJolTheme.primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(10),
@@ -685,7 +763,10 @@ class TakEsepStoreCard extends StatelessWidget {
                   if (deliveryMinutes != null) ...[
                     const SizedBox(height: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
                       decoration: BoxDecoration(
                         color: AkJolTheme.primary.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(6),

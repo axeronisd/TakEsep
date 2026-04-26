@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 /// Admin shell layout with responsive navigation.
 /// Desktop: sidebar | Mobile: bottom nav + hamburger drawer
@@ -82,6 +83,24 @@ class AdminShell extends StatelessWidget {
 
                 const Spacer(),
 
+                // WhatsApp Support
+                Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  child: _NavItem(
+                    icon: Icons.chat_bubble_outline,
+                    label: 'Поддержка WhatsApp',
+                    isActive: false,
+                    onTap: () async {
+                      final uri = Uri.parse('https://wa.me/996506384666');
+                      if (await canLaunchUrl(uri)) {
+                        await launchUrl(uri,
+                            mode: LaunchMode.externalApplication);
+                      }
+                    },
+                  ),
+                ),
+
                 // Version
                 Padding(
                   padding: const EdgeInsets.all(16),
@@ -100,7 +119,8 @@ class AdminShell extends StatelessWidget {
   }
 
   static bool _isActive(String location, _NavDef def) {
-    if (def.route == '/' && (location == '/' || location.startsWith('/companies'))) return true;
+    if (def.route == '/' &&
+        (location == '/' || location.startsWith('/companies'))) return true;
     return def.matches.any((m) => location == m || location.startsWith('$m/'));
   }
 }
@@ -130,7 +150,8 @@ class _MobileShell extends StatelessWidget {
         title: Row(
           children: [
             Container(
-              width: 30, height: 30,
+              width: 30,
+              height: 30,
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
                   colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
@@ -148,6 +169,19 @@ class _MobileShell extends StatelessWidget {
                     color: Colors.white)),
           ],
         ),
+        actions: [
+          IconButton(
+            icon:
+                const Icon(Icons.chat_bubble_outline, color: Color(0xFF25D366)),
+            onPressed: () async {
+              final uri = Uri.parse('https://wa.me/996506384666');
+              if (await canLaunchUrl(uri)) {
+                await launchUrl(uri, mode: LaunchMode.externalApplication);
+              }
+            },
+            tooltip: 'Поддержка WhatsApp',
+          ),
+        ],
       ),
       body: child,
       bottomNavigationBar: Container(
@@ -281,19 +315,22 @@ class _NavItem extends StatelessWidget {
               children: [
                 Icon(icon,
                     size: 20,
-                    color: isActive ? const Color(0xFFA29BFE) : Colors.grey[500]),
+                    color:
+                        isActive ? const Color(0xFFA29BFE) : Colors.grey[500]),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(label,
                       style: TextStyle(
                         fontSize: 14,
-                        fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
+                        fontWeight:
+                            isActive ? FontWeight.w600 : FontWeight.w400,
                         color: isActive ? Colors.white : Colors.grey[400],
                       )),
                 ),
                 if (badge != null)
                   Container(
-                    width: 8, height: 8,
+                    width: 8,
+                    height: 8,
                     decoration: BoxDecoration(
                       color: badge,
                       shape: BoxShape.circle,

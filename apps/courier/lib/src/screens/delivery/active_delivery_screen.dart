@@ -28,8 +28,7 @@ class ActiveDeliveryScreen extends ConsumerStatefulWidget {
       _ActiveDeliveryScreenState();
 }
 
-class _ActiveDeliveryScreenState
-    extends ConsumerState<ActiveDeliveryScreen> {
+class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
   final _orderService = OrderService();
   final _locationService = CourierLocationService();
   Map<String, dynamic>? _order;
@@ -145,7 +144,8 @@ class _ActiveDeliveryScreenState
 
       if (mounted) {
         final rawItems = List<Map<String, dynamic>>.from(
-            data['delivery_order_items'] ?? []);
+          data['delivery_order_items'] ?? [],
+        );
 
         // Enrich items with product images
         final productIds = rawItems
@@ -202,10 +202,11 @@ class _ActiveDeliveryScreenState
       }
     } catch (e) {
       debugPrint('[ERROR] Load order: $e');
-      if (mounted) setState(() {
-        _loading = false;
-        _error = e.toString();
-      });
+      if (mounted)
+        setState(() {
+          _loading = false;
+          _error = e.toString();
+        });
     }
   }
 
@@ -245,7 +246,9 @@ class _ActiveDeliveryScreenState
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Ошибка: ${e.toString().length > 60 ? e.toString().substring(0, 60) : e}'),
+            content: Text(
+              'Ошибка: ${e.toString().length > 60 ? e.toString().substring(0, 60) : e}',
+            ),
             backgroundColor: AkJolTheme.error,
           ),
         );
@@ -260,7 +263,8 @@ class _ActiveDeliveryScreenState
       builder: (ctx) => AlertDialog(
         title: const Text('Отказаться от заказа?'),
         content: const Text(
-            'Заказ вернётся в очередь и будет доступен другим курьерам.'),
+          'Заказ вернётся в очередь и будет доступен другим курьерам.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -268,10 +272,11 @@ class _ActiveDeliveryScreenState
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: ElevatedButton.styleFrom(
-                backgroundColor: AkJolTheme.error),
-            child: const Text('Отказаться',
-                style: TextStyle(color: Colors.white)),
+            style: ElevatedButton.styleFrom(backgroundColor: AkJolTheme.error),
+            child: const Text(
+              'Отказаться',
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -284,9 +289,9 @@ class _ActiveDeliveryScreenState
         if (mounted) context.go('/');
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Ошибка: $e')),
-          );
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
           setState(() => _updating = false);
         }
       }
@@ -317,15 +322,23 @@ class _ActiveDeliveryScreenState
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.error_outline_rounded, size: 48, color: AkJolTheme.error),
+                const Icon(
+                  Icons.error_outline_rounded,
+                  size: 48,
+                  color: AkJolTheme.error,
+                ),
                 const SizedBox(height: 16),
-                const Text('Не удалось загрузить заказ',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+                const Text(
+                  'Не удалось загрузить заказ',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
                 if (_error != null) ...[
                   const SizedBox(height: 8),
-                  Text(_error!,
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      textAlign: TextAlign.center),
+                  Text(
+                    _error!,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                    textAlign: TextAlign.center,
+                  ),
                 ],
                 const SizedBox(height: 20),
                 ElevatedButton.icon(
@@ -378,16 +391,24 @@ class _ActiveDeliveryScreenState
               ),
               if (_unreadMessages > 0)
                 Positioned(
-                  top: 8, right: 8,
+                  top: 8,
+                  right: 8,
                   child: Container(
-                    width: 18, height: 18,
+                    width: 18,
+                    height: 18,
                     decoration: const BoxDecoration(
                       color: Colors.red,
                       shape: BoxShape.circle,
                     ),
                     child: Center(
-                      child: Text('$_unreadMessages',
-                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700)),
+                      child: Text(
+                        '$_unreadMessages',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -421,31 +442,56 @@ class _ActiveDeliveryScreenState
             child: Row(
               children: [
                 Container(
-                  width: 40, height: 40,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     color: Colors.blue.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: storeLogo != null && storeLogo.isNotEmpty
-                      ? Image.network(storeLogo, fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) =>
-                              const Icon(Icons.storefront_rounded, color: Colors.blue, size: 22))
-                      : const Icon(Icons.storefront_rounded, color: Colors.blue, size: 22),
+                      ? Image.network(
+                          storeLogo,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const Icon(
+                            Icons.storefront_rounded,
+                            color: Colors.blue,
+                            size: 22,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.storefront_rounded,
+                          color: Colors.blue,
+                          size: 22,
+                        ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(storeName,
-                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                      if (storeDescription != null && storeDescription.isNotEmpty)
-                        Text(storeDescription,
-                            style: TextStyle(color: Colors.grey[500], fontSize: 11),
-                            maxLines: 1, overflow: TextOverflow.ellipsis),
-                      Text(storeAddr,
-                          style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                      Text(
+                        storeName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
+                      if (storeDescription != null &&
+                          storeDescription.isNotEmpty)
+                        Text(
+                          storeDescription,
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 11,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      Text(
+                        storeAddr,
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      ),
                     ],
                   ),
                 ),
@@ -460,36 +506,59 @@ class _ActiveDeliveryScreenState
             decoration: BoxDecoration(
               color: AkJolTheme.primary.withValues(alpha: 0.05),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AkJolTheme.primary.withValues(alpha: 0.15)),
+              border: Border.all(
+                color: AkJolTheme.primary.withValues(alpha: 0.15),
+              ),
             ),
             child: Row(
               children: [
                 Container(
-                  width: 40, height: 40,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     color: AkJolTheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(Icons.person_rounded, color: AkJolTheme.primary, size: 22),
+                  child: const Icon(
+                    Icons.person_rounded,
+                    color: AkJolTheme.primary,
+                    size: 22,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(customerName,
-                          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                      Text(deliveryAddr,
-                          style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                      Text(
+                        customerName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
+                      Text(
+                        deliveryAddr,
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      ),
                       if (customerPhone.isNotEmpty)
-                        Text(customerPhone,
-                            style: TextStyle(color: Colors.grey[500], fontSize: 11)),
+                        Text(
+                          customerPhone,
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 11,
+                          ),
+                        ),
                     ],
                   ),
                 ),
                 if (customerPhone.isNotEmpty)
                   IconButton(
-                    icon: const Icon(Icons.phone_rounded, color: AkJolTheme.primary, size: 20),
+                    icon: const Icon(
+                      Icons.phone_rounded,
+                      color: AkJolTheme.primary,
+                      size: 20,
+                    ),
                     onPressed: () => _callPhone(customerPhone),
                   ),
               ],
@@ -513,11 +582,17 @@ class _ActiveDeliveryScreenState
                 Row(
                   children: [
                     Container(
-                      width: 24, height: 24,
+                      width: 24,
+                      height: 24,
                       decoration: const BoxDecoration(
-                        color: Colors.blue, shape: BoxShape.circle,
+                        color: Colors.blue,
+                        shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.storefront, color: Colors.white, size: 14),
+                      child: const Icon(
+                        Icons.storefront,
+                        color: Colors.white,
+                        size: 14,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
@@ -543,7 +618,9 @@ class _ActiveDeliveryScreenState
                     ),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: AkJolTheme.primary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(8),
@@ -565,12 +642,14 @@ class _ActiveDeliveryScreenState
                   final qty = (item['quantity'] as num?)?.toInt() ?? 1;
                   final total = (item['total'] as num?)?.toDouble() ?? 0;
                   final imageUrl = item['image_url'] as String?;
-                  
+
                   return Container(
                     margin: const EdgeInsets.only(bottom: 8),
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest
+                      color: Theme.of(context)
+                          .colorScheme
+                          .surfaceContainerHighest
                           .withValues(alpha: 0.3),
                       borderRadius: BorderRadius.circular(10),
                     ),
@@ -630,7 +709,9 @@ class _ActiveDeliveryScreenState
                         // Quantity badge
                         Container(
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 6),
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
                           decoration: BoxDecoration(
                             color: AkJolTheme.primary.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(8),
@@ -664,11 +745,19 @@ class _ActiveDeliveryScreenState
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  paymentMethod == 'cash' ? 'Получить наличными:' : 'Сумма заказа:',
+                  paymentMethod == 'cash'
+                      ? 'Получить наличными:'
+                      : 'Сумма заказа:',
                   style: TextStyle(color: Colors.grey[600], fontSize: 14),
                 ),
-                Text('${total.toStringAsFixed(0)} сом',
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: AkJolTheme.primary)),
+                Text(
+                  '${total.toStringAsFixed(0)} сом',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: AkJolTheme.primary,
+                  ),
+                ),
               ],
             ),
           ),
@@ -684,12 +773,17 @@ class _ActiveDeliveryScreenState
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.chat_bubble_outline_rounded,
-                      size: 16, color: AkJolTheme.accentDark),
+                  const Icon(
+                    Icons.chat_bubble_outline_rounded,
+                    size: 16,
+                    color: AkJolTheme.accentDark,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(order['customer_note'],
-                        style: const TextStyle(fontSize: 13)),
+                    child: Text(
+                      order['customer_note'],
+                      style: const TextStyle(fontSize: 13),
+                    ),
                   ),
                 ],
               ),
@@ -719,11 +813,10 @@ class _ActiveDeliveryScreenState
                     width: double.infinity,
                     child: TextButton(
                       onPressed: _updating ? null : _declineOrder,
-                      child: const Text('Отказаться от заказа',
-                          style: TextStyle(
-                            color: AkJolTheme.error,
-                            fontSize: 13,
-                          )),
+                      child: const Text(
+                        'Отказаться от заказа',
+                        style: TextStyle(color: AkJolTheme.error, fontSize: 13),
+                      ),
                     ),
                   ),
                 ],
@@ -788,8 +881,14 @@ class _ActiveDeliveryScreenState
           Icon(icon, color: color, size: 22),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(text,
-                style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 13)),
+            child: Text(
+              text,
+              style: TextStyle(
+                color: color,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
           ),
         ],
       ),
@@ -801,9 +900,9 @@ class _ActiveDeliveryScreenState
       return const ElevatedButton(
         onPressed: null,
         child: SizedBox(
-          width: 20, height: 20,
-          child: CircularProgressIndicator(
-              color: Colors.white, strokeWidth: 2),
+          width: 20,
+          height: 20,
+          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
         ),
       );
     }
@@ -831,7 +930,10 @@ class _ActiveDeliveryScreenState
             backgroundColor: AkJolTheme.statusAccepted,
             foregroundColor: Colors.white,
             minimumSize: const Size(double.infinity, 56),
-            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            textStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         );
       case 'picked_up':
@@ -843,7 +945,10 @@ class _ActiveDeliveryScreenState
             backgroundColor: AkJolTheme.primary,
             foregroundColor: Colors.white,
             minimumSize: const Size(double.infinity, 56),
-            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            textStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         );
       case 'arrived':
@@ -855,7 +960,10 @@ class _ActiveDeliveryScreenState
             backgroundColor: AkJolTheme.success,
             foregroundColor: Colors.white,
             minimumSize: const Size(double.infinity, 56),
-            textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+            textStyle: const TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         );
       case 'courier_assigned':
@@ -875,18 +983,19 @@ class _ActiveDeliveryScreenState
     }
   }
 
-
   void _showDeliveryComplete() {
     _loadOrder().then((_) {
-      final earning =
-          (_order?['courier_earning'] as num?)?.toDouble() ?? 0;
+      final earning = (_order?['courier_earning'] as num?)?.toDouble() ?? 0;
 
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (dialogCtx) => AlertDialog(
-          icon: const Icon(Icons.check_circle_rounded,
-              color: AkJolTheme.primary, size: 64),
+          icon: const Icon(
+            Icons.check_circle_rounded,
+            color: AkJolTheme.primary,
+            size: 64,
+          ),
           title: const Text('Доставлено!'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -901,11 +1010,15 @@ class _ActiveDeliveryScreenState
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text('ваш заработок',
-                    style: TextStyle(color: Colors.grey[500])),
+                Text(
+                  'ваш заработок',
+                  style: TextStyle(color: Colors.grey[500]),
+                ),
               ] else
-                Text('Заказ успешно доставлен!',
-                    style: TextStyle(color: Colors.grey[600])),
+                Text(
+                  'Заказ успешно доставлен!',
+                  style: TextStyle(color: Colors.grey[600]),
+                ),
             ],
           ),
           actions: [
@@ -939,12 +1052,19 @@ class _ActiveDeliveryScreenState
     );
   }
 
-
-
   void _callPhone(String phone) async {
-    final uri = Uri.parse('tel:$phone');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
+    try {
+      final cleanPhone = phone.replaceAll(RegExp(r'[\s\-()]'), '');
+      if (cleanPhone.isEmpty) return;
+      final uri = Uri(scheme: 'tel', path: cleanPhone);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        final dialUri = Uri(scheme: 'tel', path: cleanPhone);
+        await launchUrl(dialUri, mode: LaunchMode.platformDefault);
+      }
+    } catch (e) {
+      debugPrint('Call error: $e');
     }
   }
 
@@ -953,17 +1073,22 @@ class _ActiveDeliveryScreenState
   // ═══════════════════════════════════════════════════════════
 
   Future<void> _loadRoute(Map<String, dynamic> data) async {
-    final storeLat = (data['_store_lat'] as num?)?.toDouble()
-        ?? (data['warehouses']?['latitude'] as num?)?.toDouble()
-        ?? (data['pickup_lat'] as num?)?.toDouble();
-    final storeLng = (data['_store_lng'] as num?)?.toDouble()
-        ?? (data['warehouses']?['longitude'] as num?)?.toDouble()
-        ?? (data['pickup_lng'] as num?)?.toDouble();
+    final storeLat =
+        (data['_store_lat'] as num?)?.toDouble() ??
+        (data['warehouses']?['latitude'] as num?)?.toDouble() ??
+        (data['pickup_lat'] as num?)?.toDouble();
+    final storeLng =
+        (data['_store_lng'] as num?)?.toDouble() ??
+        (data['warehouses']?['longitude'] as num?)?.toDouble() ??
+        (data['pickup_lng'] as num?)?.toDouble();
     final custLat = (data['delivery_lat'] as num?)?.toDouble();
     final custLng = (data['delivery_lng'] as num?)?.toDouble();
 
-    if (storeLat == null || storeLng == null ||
-        custLat == null || custLng == null) return;
+    if (storeLat == null ||
+        storeLng == null ||
+        custLat == null ||
+        custLng == null)
+      return;
 
     final points = await RouteService.getRoute(
       LatLng(storeLat, storeLng),
@@ -976,12 +1101,14 @@ class _ActiveDeliveryScreenState
   }
 
   Widget _buildDeliveryMap(Map<String, dynamic> order, String status) {
-    final storeLat = (order['_store_lat'] as num?)?.toDouble()
-        ?? (order['warehouses']?['latitude'] as num?)?.toDouble()
-        ?? (order['pickup_lat'] as num?)?.toDouble();
-    final storeLng = (order['_store_lng'] as num?)?.toDouble()
-        ?? (order['warehouses']?['longitude'] as num?)?.toDouble()
-        ?? (order['pickup_lng'] as num?)?.toDouble();
+    final storeLat =
+        (order['_store_lat'] as num?)?.toDouble() ??
+        (order['warehouses']?['latitude'] as num?)?.toDouble() ??
+        (order['pickup_lat'] as num?)?.toDouble();
+    final storeLng =
+        (order['_store_lng'] as num?)?.toDouble() ??
+        (order['warehouses']?['longitude'] as num?)?.toDouble() ??
+        (order['pickup_lng'] as num?)?.toDouble();
     final custLat = (order['delivery_lat'] as num?)?.toDouble();
     final custLng = (order['delivery_lng'] as num?)?.toDouble();
     final storeName = order['warehouses']?['name'] ?? 'Магазин';
@@ -1001,8 +1128,10 @@ class _ActiveDeliveryScreenState
             children: [
               Icon(Icons.map_outlined, size: 32, color: Colors.grey),
               SizedBox(height: 8),
-              Text('Координаты не заданы',
-                  style: TextStyle(color: Colors.grey, fontSize: 13)),
+              Text(
+                'Координаты не заданы',
+                style: TextStyle(color: Colors.grey, fontSize: 13),
+              ),
             ],
           ),
         ),
@@ -1011,7 +1140,7 @@ class _ActiveDeliveryScreenState
 
     final hasStore = storeLat != null && storeLng != null;
     final hasCust = custLat != null && custLng != null;
-    
+
     final LatLng center;
     if (hasStore && hasCust) {
       center = LatLng((storeLat + custLat) / 2, (storeLng + custLng) / 2);
@@ -1024,52 +1153,84 @@ class _ActiveDeliveryScreenState
     // Numbered markers: 1 = Store (pickup), 2 = Customer (delivery)
     final markers = <Marker>[];
     if (hasStore) {
-      markers.add(Marker(
-        point: LatLng(storeLat, storeLng),
-        width: 48, height: 56,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 36, height: 36,
-              decoration: BoxDecoration(
-                color: Colors.blue, shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2.5),
-                boxShadow: [BoxShadow(color: Colors.blue.withValues(alpha: 0.4), blurRadius: 8)],
+      markers.add(
+        Marker(
+          point: LatLng(storeLat, storeLng),
+          width: 48,
+          height: 56,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Colors.blue,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.blue.withValues(alpha: 0.4),
+                      blurRadius: 8,
+                    ),
+                  ],
+                ),
+                child: const Center(
+                  child: Text(
+                    '1',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
               ),
-              child: const Center(
-                child: Text('1', style: TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16)),
-              ),
-            ),
-            const Icon(Icons.arrow_drop_down, color: Colors.blue, size: 18),
-          ],
+              const Icon(Icons.arrow_drop_down, color: Colors.blue, size: 18),
+            ],
+          ),
         ),
-      ));
+      );
     }
     if (hasCust) {
-      markers.add(Marker(
-        point: LatLng(custLat, custLng),
-        width: 48, height: 56,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 36, height: 36,
-              decoration: BoxDecoration(
-                color: AkJolTheme.primary, shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2.5),
-                boxShadow: [BoxShadow(color: AkJolTheme.primary.withValues(alpha: 0.4), blurRadius: 8)],
+      markers.add(
+        Marker(
+          point: LatLng(custLat, custLng),
+          width: 48,
+          height: 56,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: AkJolTheme.primary,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AkJolTheme.primary.withValues(alpha: 0.4),
+                      blurRadius: 8,
+                    ),
+                  ],
+                ),
+                child: const Center(
+                  child: Text(
+                    '2',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
               ),
-              child: const Center(
-                child: Text('2', style: TextStyle(
-                  color: Colors.white, fontWeight: FontWeight.w900, fontSize: 16)),
-              ),
-            ),
-            Icon(Icons.arrow_drop_down, color: AkJolTheme.primary, size: 18),
-          ],
+              Icon(Icons.arrow_drop_down, color: AkJolTheme.primary, size: 18),
+            ],
+          ),
         ),
-      ));
+      );
     }
 
     return Column(
@@ -1085,34 +1246,72 @@ class _ActiveDeliveryScreenState
           child: Row(
             children: [
               Container(
-                width: 22, height: 22,
-                decoration: const BoxDecoration(color: Colors.blue, shape: BoxShape.circle),
+                width: 22,
+                height: 22,
+                decoration: const BoxDecoration(
+                  color: Colors.blue,
+                  shape: BoxShape.circle,
+                ),
                 child: const Center(
-                  child: Text('1', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
+                  child: Text(
+                    '1',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 6),
               Flexible(
-                child: Text(storeName,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                child: Text(
+                  storeName,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 6),
-                child: Icon(Icons.arrow_forward_rounded, size: 14, color: Colors.grey[500]),
+                child: Icon(
+                  Icons.arrow_forward_rounded,
+                  size: 14,
+                  color: Colors.grey[500],
+                ),
               ),
               Container(
-                width: 22, height: 22,
-                decoration: const BoxDecoration(color: AkJolTheme.primary, shape: BoxShape.circle),
+                width: 22,
+                height: 22,
+                decoration: const BoxDecoration(
+                  color: AkJolTheme.primary,
+                  shape: BoxShape.circle,
+                ),
                 child: const Center(
-                  child: Text('2', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
+                  child: Text(
+                    '2',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(width: 6),
               Flexible(
-                child: Text(customerAddr,
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                    maxLines: 1, overflow: TextOverflow.ellipsis),
+                child: Text(
+                  customerAddr,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
@@ -1127,10 +1326,7 @@ class _ActiveDeliveryScreenState
           child: SizedBox(
             height: 260,
             child: FlutterMap(
-              options: MapOptions(
-                initialCenter: center,
-                initialZoom: 13,
-              ),
+              options: MapOptions(initialCenter: center, initialZoom: 13),
               children: [
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -1142,7 +1338,10 @@ class _ActiveDeliveryScreenState
                       Polyline(
                         points: _routePoints.isNotEmpty
                             ? _routePoints
-                            : [LatLng(storeLat, storeLng), LatLng(custLat, custLng)],
+                            : [
+                                LatLng(storeLat, storeLng),
+                                LatLng(custLat, custLng),
+                              ],
                         color: AkJolTheme.primary,
                         strokeWidth: 4,
                       ),
@@ -1221,14 +1420,18 @@ class _StatusStepper extends StatelessWidget {
                     Expanded(
                       child: Container(
                         height: 2,
-                        color: isStepActive ? AkJolTheme.primary : Colors.grey[200],
+                        color: isStepActive
+                            ? AkJolTheme.primary
+                            : Colors.grey[200],
                       ),
                     ),
                   Container(
                     width: isStepCurrent ? 32 : 24,
                     height: isStepCurrent ? 32 : 24,
                     decoration: BoxDecoration(
-                      color: isStepActive ? AkJolTheme.primary : Colors.grey[200],
+                      color: isStepActive
+                          ? AkJolTheme.primary
+                          : Colors.grey[200],
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
@@ -1266,4 +1469,3 @@ class _StatusStepper extends StatelessWidget {
 }
 
 // _LocationCard removed — unused widget
-

@@ -117,9 +117,9 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
     } catch (e) {
       debugPrint('Send error: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка отправки: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Ошибка отправки: $e')));
         if (text == null) _msgCtrl.text = msg;
       }
     } finally {
@@ -140,9 +140,20 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
   }
 
   void _callRecipient() async {
-    final uri = Uri.parse('tel:${widget.recipientPhone}');
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
+    try {
+      final cleanPhone = widget.recipientPhone.replaceAll(
+        RegExp(r'[\s\-()]'),
+        '',
+      );
+      if (cleanPhone.isEmpty) return;
+      final uri = Uri(scheme: 'tel', path: cleanPhone);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(uri, mode: LaunchMode.platformDefault);
+      }
+    } catch (e) {
+      debugPrint('Call error: $e');
     }
   }
 
@@ -155,12 +166,7 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
         'Позвоните пожалуйста',
       ];
     } else {
-      return [
-        'Здравствуйте!',
-        'Когда будете?',
-        'Я на месте',
-        'Спасибо!',
-      ];
+      return ['Здравствуйте!', 'Когда будете?', 'Я на месте', 'Спасибо!'];
     }
   }
 
@@ -178,7 +184,8 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
         title: Row(
           children: [
             Container(
-              width: 40, height: 40,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -192,7 +199,8 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
                 widget.senderType == 'courier'
                     ? Icons.person_rounded
                     : Icons.delivery_dining_rounded,
-                color: Colors.white, size: 20,
+                color: Colors.white,
+                size: 20,
               ),
             ),
             const SizedBox(width: 12),
@@ -200,27 +208,32 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(widget.recipientName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                      )),
+                  Text(
+                    widget.recipientName,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
                   Row(
                     children: [
                       Container(
-                        width: 8, height: 8,
+                        width: 8,
+                        height: 8,
                         decoration: const BoxDecoration(
                           color: Color(0xFF4CAF50),
                           shape: BoxShape.circle,
                         ),
                       ),
                       const SizedBox(width: 4),
-                      Text('Онлайн',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.white.withValues(alpha: 0.4),
-                          )),
+                      Text(
+                        'Онлайн',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.white.withValues(alpha: 0.4),
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -240,48 +253,63 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
           // Messages
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator(color: AkJolTheme.primary))
+                ? const Center(
+                    child: CircularProgressIndicator(color: AkJolTheme.primary),
+                  )
                 : _messages.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Container(
-                              width: 72, height: 72,
-                              decoration: BoxDecoration(
-                                color: AkJolTheme.primary.withValues(alpha: 0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(Icons.chat_bubble_outline_rounded,
-                                  size: 32, color: AkJolTheme.primary.withValues(alpha: 0.5)),
-                            ),
-                            const SizedBox(height: 16),
-                            Text('Начните диалог',
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.3),
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w500,
-                                )),
-                          ],
+                ? Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 72,
+                          height: 72,
+                          decoration: BoxDecoration(
+                            color: AkJolTheme.primary.withValues(alpha: 0.1),
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.chat_bubble_outline_rounded,
+                            size: 32,
+                            color: AkJolTheme.primary.withValues(alpha: 0.5),
+                          ),
                         ),
-                      )
-                    : ListView.builder(
-                        controller: _scrollCtrl,
-                        padding: const EdgeInsets.fromLTRB(12, 16, 12, 8),
-                        itemCount: _messages.length,
-                        itemBuilder: (_, i) {
-                          final msg = _messages[i];
-                          final isSystem = (msg['message'] as String?)?.startsWith('Оплата отправлена') == true ||
-                              (msg['message'] as String?)?.startsWith('Оплата подтверждена') == true;
-                          
-                          return isSystem
-                              ? _SystemMessage(message: msg)
-                              : _MessageBubble(
-                                  message: msg,
-                                  isMe: msg['sender_type'] == widget.senderType,
-                                );
-                        },
-                      ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Начните диалог',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    controller: _scrollCtrl,
+                    padding: const EdgeInsets.fromLTRB(12, 16, 12, 8),
+                    itemCount: _messages.length,
+                    itemBuilder: (_, i) {
+                      final msg = _messages[i];
+                      final isSystem =
+                          (msg['message'] as String?)?.startsWith(
+                                'Оплата отправлена',
+                              ) ==
+                              true ||
+                          (msg['message'] as String?)?.startsWith(
+                                'Оплата подтверждена',
+                              ) ==
+                              true;
+
+                      return isSystem
+                          ? _SystemMessage(message: msg)
+                          : _MessageBubble(
+                              message: msg,
+                              isMe: msg['sender_type'] == widget.senderType,
+                            );
+                    },
+                  ),
           ),
 
           // Quick replies
@@ -291,25 +319,38 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 12),
               child: ListView(
                 scrollDirection: Axis.horizontal,
-                children: _quickReplies.map((reply) =>
-                  Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ActionChip(
-                      label: Text(reply,
-                          style: const TextStyle(fontSize: 13, color: Colors.white70)),
-                      backgroundColor: AkJolTheme.primary.withValues(alpha: 0.15),
-                      side: BorderSide(color: AkJolTheme.primary.withValues(alpha: 0.3)),
-                      onPressed: () => _sendMessage(reply),
-                    ),
-                  ),
-                ).toList(),
+                children: _quickReplies
+                    .map(
+                      (reply) => Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ActionChip(
+                          label: Text(
+                            reply,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.white70,
+                            ),
+                          ),
+                          backgroundColor: AkJolTheme.primary.withValues(
+                            alpha: 0.15,
+                          ),
+                          side: BorderSide(
+                            color: AkJolTheme.primary.withValues(alpha: 0.3),
+                          ),
+                          onPressed: () => _sendMessage(reply),
+                        ),
+                      ),
+                    )
+                    .toList(),
               ),
             ),
 
           // Input
           Container(
             padding: EdgeInsets.fromLTRB(
-              12, 10, 12,
+              12,
+              10,
+              12,
               MediaQuery.of(context).padding.bottom + 10,
             ),
             decoration: BoxDecoration(
@@ -337,10 +378,14 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
                       minLines: 1,
                       decoration: InputDecoration(
                         hintText: 'Написать сообщение...',
-                        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.25)),
+                        hintStyle: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.25),
+                        ),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 18, vertical: 10),
+                          horizontal: 18,
+                          vertical: 10,
+                        ),
                       ),
                       textInputAction: TextInputAction.send,
                       onSubmitted: (_) => _sendMessage(),
@@ -352,7 +397,8 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
                   onTap: _sending ? null : _sendMessage,
                   child: AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    width: 46, height: 46,
+                    width: 46,
+                    height: 46,
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
@@ -373,10 +419,15 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
                         ? const Padding(
                             padding: EdgeInsets.all(13),
                             child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white),
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
-                        : const Icon(Icons.send_rounded,
-                            color: Colors.white, size: 20),
+                        : const Icon(
+                            Icons.send_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
                   ),
                 ),
               ],
@@ -415,19 +466,23 @@ class _SystemMessage extends StatelessWidget {
         ),
         child: Column(
           children: [
-            Text(text,
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                  color: AkJolTheme.primary.withValues(alpha: 0.9),
-                )),
+            Text(
+              text,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: AkJolTheme.primary.withValues(alpha: 0.9),
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(timeStr,
-                style: TextStyle(
-                  fontSize: 10,
-                  color: AkJolTheme.primary.withValues(alpha: 0.5),
-                )),
+            Text(
+              timeStr,
+              style: TextStyle(
+                fontSize: 10,
+                color: AkJolTheme.primary.withValues(alpha: 0.5),
+              ),
+            ),
           ],
         ),
       ),
@@ -466,19 +521,24 @@ class _MessageBubble extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
-        mainAxisAlignment:
-            isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isMe
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           if (!isMe) ...[
             Container(
-              width: 28, height: 28,
+              width: 28,
+              height: 28,
               decoration: BoxDecoration(
                 color: AkJolTheme.primary.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.person, size: 16,
-                  color: AkJolTheme.primary.withValues(alpha: 0.7)),
+              child: Icon(
+                Icons.person,
+                size: 16,
+                color: AkJolTheme.primary.withValues(alpha: 0.7),
+              ),
             ),
             const SizedBox(width: 6),
           ],
@@ -498,7 +558,13 @@ class _MessageBubble extends StatelessWidget {
                 bottomRight: Radius.circular(isMe ? 4 : 18),
               ),
               boxShadow: isMe
-                  ? [BoxShadow(color: AkJolTheme.primary.withValues(alpha: 0.2), blurRadius: 6, offset: const Offset(0, 2))]
+                  ? [
+                      BoxShadow(
+                        color: AkJolTheme.primary.withValues(alpha: 0.2),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ]
                   : null,
             ),
             child: Column(
@@ -514,7 +580,8 @@ class _MessageBubble extends StatelessWidget {
                       loadingBuilder: (_, child, progress) {
                         if (progress == null) return child;
                         return const SizedBox(
-                          width: 220, height: 150,
+                          width: 220,
+                          height: 150,
                           child: Center(
                             child: CircularProgressIndicator(
                               color: AkJolTheme.primary,
@@ -526,42 +593,54 @@ class _MessageBubble extends StatelessWidget {
                       errorBuilder: (_, __, ___) => Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.broken_image_rounded, size: 16,
-                              color: isMe ? Colors.white70 : Colors.grey),
+                          Icon(
+                            Icons.broken_image_rounded,
+                            size: 16,
+                            color: isMe ? Colors.white70 : Colors.grey,
+                          ),
                           const SizedBox(width: 4),
-                          Text('Изображение',
-                              style: TextStyle(
-                                color: isMe ? Colors.white70 : Colors.grey,
-                                fontSize: 13,
-                              )),
+                          Text(
+                            'Изображение',
+                            style: TextStyle(
+                              color: isMe ? Colors.white70 : Colors.grey,
+                              fontSize: 13,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   )
                 else
-                  Text(text,
-                      style: TextStyle(
-                        color: isMe
-                            ? Colors.white
-                            : Colors.white.withValues(alpha: 0.85),
-                        fontSize: 14,
-                        height: 1.3,
-                      )),
+                  Text(
+                    text,
+                    style: TextStyle(
+                      color: isMe
+                          ? Colors.white
+                          : Colors.white.withValues(alpha: 0.85),
+                      fontSize: 14,
+                      height: 1.3,
+                    ),
+                  ),
                 const SizedBox(height: 3),
                 Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(timeStr,
-                        style: TextStyle(
-                          color: isMe
-                              ? Colors.white.withValues(alpha: 0.6)
-                              : Colors.white.withValues(alpha: 0.3),
-                          fontSize: 10,
-                        )),
+                    Text(
+                      timeStr,
+                      style: TextStyle(
+                        color: isMe
+                            ? Colors.white.withValues(alpha: 0.6)
+                            : Colors.white.withValues(alpha: 0.3),
+                        fontSize: 10,
+                      ),
+                    ),
                     if (isMe) ...[
                       const SizedBox(width: 4),
-                      Icon(Icons.done_all, size: 14,
-                          color: Colors.white.withValues(alpha: 0.6)),
+                      Icon(
+                        Icons.done_all,
+                        size: 14,
+                        color: Colors.white.withValues(alpha: 0.6),
+                      ),
                     ],
                   ],
                 ),
