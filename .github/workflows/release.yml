@@ -142,12 +142,10 @@ jobs:
           if [ -n "$UPLOAD_KEYSTORE_BASE64" ]; then
             echo "$UPLOAD_KEYSTORE_BASE64" | base64 -d > upload-keystore.jks
             for app in warehouse courier customer; do
-              cat > apps/$app/android/key.properties <<EOF
-storePassword=$KEYSTORE_PASSWORD
-keyPassword=$KEY_PASSWORD
-keyAlias=$KEY_ALIAS
-storeFile=${{ github.workspace }}/upload-keystore.jks
-EOF
+              echo "storePassword=$KEYSTORE_PASSWORD" > apps/$app/android/key.properties
+              echo "keyPassword=$KEY_PASSWORD" >> apps/$app/android/key.properties
+              echo "keyAlias=$KEY_ALIAS" >> apps/$app/android/key.properties
+              echo "storeFile=${{ github.workspace }}/upload-keystore.jks" >> apps/$app/android/key.properties
             done
             echo "✅ Android signing configured"
           else
