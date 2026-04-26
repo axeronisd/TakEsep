@@ -360,6 +360,8 @@ jobs:
   upload-google-play:
     needs: [build-android-aabs, release]
     runs-on: ubuntu-latest
+    env:
+      GOOGLE_PLAY_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
     steps:
       - name: Download AABs
         uses: actions/download-artifact@v4
@@ -368,7 +370,7 @@ jobs:
           path: ./artifacts/android-aabs
 
       - name: Upload TakEsep to Google Play
-        if: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        if: ${{ env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' }}
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
@@ -377,7 +379,7 @@ jobs:
           track: internal
 
       - name: Upload AkJol to Google Play
-        if: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        if: ${{ env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' }}
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
@@ -386,7 +388,7 @@ jobs:
           track: internal
 
       - name: Upload AkJol Go to Google Play
-        if: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        if: ${{ env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' }}
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
@@ -400,6 +402,8 @@ jobs:
   upload-testflight:
     needs: [build-ios, release]
     runs-on: macos-latest
+    env:
+      APPSTORE_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
     steps:
       - name: Download iOS IPAs
         uses: actions/download-artifact@v4
@@ -408,7 +412,7 @@ jobs:
           path: ./artifacts/ios
 
       - name: Upload AkJol to TestFlight
-        if: ${{ secrets.APPSTORE_API_KEY_ID != '' }}
+        if: ${{ env.APPSTORE_API_KEY_ID != '' }}
         uses: apple-actions/upload-testflight-build@v1
         with:
           app-path: ./artifacts/ios/AkJol.ipa
@@ -417,7 +421,7 @@ jobs:
           api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
 
       - name: Upload AkJol Go to TestFlight
-        if: ${{ secrets.APPSTORE_API_KEY_ID != '' }}
+        if: ${{ env.APPSTORE_API_KEY_ID != '' }}
         uses: apple-actions/upload-testflight-build@v1
         with:
           app-path: ./artifacts/ios/AkJol_Go.ipa
