@@ -66,19 +66,19 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>NSLocationWhenInUseUsageDescription</key>\r
-	<string>Для определения вашего местоположения и навигации к точкам доставки</string>\r
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>\r
-	<string>Для отслеживания местоположения курьера во время активных доставок</string>\r
-	<key>NSCameraUsageDescription</key>\r
-	<string>Для фотографирования подтверждений доставки</string>\r
-	<key>NSPhotoLibraryUsageDescription</key>\r
-	<string>Для выбора фотографий из галереи</string>\r
-	<key>UIBackgroundModes</key>\r
-	<array>\r
-		<string>location</string>\r
-		<string>remote-notification</string>\r
-		<string>fetch</string>\r
-	</array>\r
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Для определения вашего местоположения и навигации к точкам доставки</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Для отслеживания местоположения курьера во время активных доставок</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Для фотографирования подтверждений доставки</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Для выбора фотографий из галереи</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>remote-notification</string>
+		<string>fetch</string>
+	</array>
 </dict>
 </plist>
