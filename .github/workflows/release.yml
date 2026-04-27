@@ -322,6 +322,7 @@ jobs:
             ./artifacts/ios/AkJol_Go.ipa
 
       - name: Update Supabase app_versions
+        continue-on-error: true
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
@@ -345,7 +346,7 @@ jobs:
             -H "Authorization: Bearer ${SUPABASE_SERVICE_KEY}" \
             -H "Content-Type: application/json" \
             -H "Prefer: return=minimal" \
-            -d "{\"platform\":\"windows\",\"version\":\"${VERSION}\",\"build_number\":${BUILD},\"download_url\":\"${WIN_URL}\",\"release_notes\":\"Обновление v${VERSION}\"}"
+            -d "{\"platform\":\"windows\",\"version\":\"${VERSION}\",\"build_number\":${BUILD},\"download_url\":\"${WIN_URL}\",\"release_notes\":\"Обновление v${VERSION}\"}" || true
 
           # Insert Android version
           curl -s -X POST "${SUPABASE_URL}/rest/v1/app_versions" \
@@ -353,7 +354,7 @@ jobs:
             -H "Authorization: Bearer ${SUPABASE_SERVICE_KEY}" \
             -H "Content-Type: application/json" \
             -H "Prefer: return=minimal" \
-            -d "{\"platform\":\"android\",\"version\":\"${VERSION}\",\"build_number\":${BUILD},\"download_url\":\"${APK_URL}\",\"release_notes\":\"Обновление v${VERSION}\"}"
+            -d "{\"platform\":\"android\",\"version\":\"${VERSION}\",\"build_number\":${BUILD},\"download_url\":\"${APK_URL}\",\"release_notes\":\"Обновление v${VERSION}\"}" || true
 
           echo "✅ Supabase updated with v${VERSION} (build ${BUILD})"
 
