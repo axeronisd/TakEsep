@@ -234,6 +234,18 @@ jobs:
           zip -r ../../ios-ipas/AkJol_Go.ipa Payload
           rm -rf Payload
 
+      # TakEsep Warehouse iOS
+      - name: Build TakEsep iOS
+        run: |
+          cd apps/warehouse
+          flutter pub get
+          flutter build ios --release --no-codesign
+          mkdir -p Payload
+          cp -r build/ios/iphoneos/Runner.app Payload/
+          mkdir -p ../../ios-ipas
+          zip -r ../../ios-ipas/TakEsep.ipa Payload
+          rm -rf Payload
+
       - name: Upload iOS IPAs
         uses: actions/upload-artifact@v4
         with:
@@ -318,6 +330,7 @@ jobs:
             ./artifacts/android-aabs/TakEsep.aab
             ./artifacts/android-aabs/AkJol_Go.aab
             ./artifacts/android-aabs/AkJol.aab
+            ./artifacts/ios/TakEsep.ipa
             ./artifacts/ios/AkJol.ipa
             ./artifacts/ios/AkJol_Go.ipa
 
