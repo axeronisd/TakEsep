@@ -1330,7 +1330,7 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
               children: [
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.akjol.courier',
+                  userAgentPackageName: 'com.akjolui.courier',
                 ),
                 if (hasStore && hasCust)
                   PolylineLayer(

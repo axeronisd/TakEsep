@@ -1,7 +1,7 @@
 // File generated manually to match courier Firebase config.
 // Project: akjol-f479a
 //
-// IMPORTANT: After adding com.akjol.customer in Firebase Console,
+// IMPORTANT: After adding com.akjolui.customer in Firebase Console,
 // run `flutterfire configure` to regenerate this file with correct appId.
 //
 // ignore_for_file: type=lint
@@ -33,7 +33,7 @@ class DefaultFirebaseOptions {
     }
   }
 
-  // TODO: Replace appId after adding com.akjol.customer in Firebase Console
+  // TODO: Replace appId after adding com.akjolui.customer in Firebase Console
   // and downloading google-services.json
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyBNl63a9xCTPa9RTcnZr7XuhxxaWHf-rgk',
@@ -59,7 +59,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '427394139285',
     projectId: 'akjol-f479a',
     storageBucket: 'akjol-f479a.firebasestorage.app',
-    iosBundleId: 'com.akjol.customer',
+    iosBundleId: 'com.akjolui.customer',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
@@ -68,6 +68,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '427394139285',
     projectId: 'akjol-f479a',
     storageBucket: 'akjol-f479a.firebasestorage.app',
-    iosBundleId: 'com.akjol.customer',
+    iosBundleId: 'com.akjolui.customer',
   );
 }

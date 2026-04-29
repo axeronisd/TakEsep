@@ -170,7 +170,7 @@ class _CourierMapScreenState extends ConsumerState<CourierMapScreen> {
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                userAgentPackageName: 'com.akjol.courier',
+                userAgentPackageName: 'com.akjolui.courier',
               ),
 
               // Courier position

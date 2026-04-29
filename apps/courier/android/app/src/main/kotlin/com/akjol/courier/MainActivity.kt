@@ -1,4 +1,4 @@
-package com.akjol.courier
+package com.akjolui.courier
 
 import io.flutter.embedding.android.FlutterActivity
 

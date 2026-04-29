@@ -211,7 +211,7 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
                 children: [
                   TileLayer(
                     urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                    userAgentPackageName: 'com.takesep.warehouse',
+                    userAgentPackageName: 'com.takesep.app',
                   ),
                   CircleLayer(circles: [
                     CircleMarker(

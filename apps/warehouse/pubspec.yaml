@@ -96,7 +96,7 @@ flutter_launcher_icons:
 msix_config:
   display_name: "TakEsep"
   publisher_display_name: "TakEsep"
-  identity_name: "com.takesep.warehouse"
+  identity_name: "com.takesep.app"
   msix_version: "1.0.0.0"
   logo_path: "C:\\Project TakEsep\\TakEsep\\apps\\warehouse\\assets\\images\\logo_square.png"
   bgr_color: "#1A1A3E"

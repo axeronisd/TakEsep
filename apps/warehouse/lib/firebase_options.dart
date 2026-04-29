@@ -58,7 +58,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '427394139285',
     projectId: 'akjol-f479a',
     storageBucket: 'akjol-f479a.firebasestorage.app',
-    iosBundleId: 'com.takesep.warehouse',
+    iosBundleId: 'com.takesep.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
@@ -67,6 +67,6 @@ class DefaultFirebaseOptions {
     messagingSenderId: '427394139285',
     projectId: 'akjol-f479a',
     storageBucket: 'akjol-f479a.firebasestorage.app',
-    iosBundleId: 'com.takesep.warehouse',
+    iosBundleId: 'com.takesep.app',
   );
 }

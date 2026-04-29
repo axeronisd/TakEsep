@@ -1,4 +1,4 @@
-package com.akjol.customer
+package com.akjolui.customer
 
 import io.flutter.embedding.android.FlutterActivity
 

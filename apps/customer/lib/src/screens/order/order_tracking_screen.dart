@@ -746,7 +746,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               children: [
                 TileLayer(
                   urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  userAgentPackageName: 'com.akjol.customer',
+                  userAgentPackageName: 'com.akjolui.customer',
                 ),
                 // Route line
                 if (polylinePoints.length >= 2)
