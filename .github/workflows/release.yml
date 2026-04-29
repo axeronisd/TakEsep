@@ -82,16 +82,16 @@ jobs:
         run: |
           cp apps/warehouse/build/app/outputs/flutter-apk/app-release.apk TakEsep.apk
 
-      # AkJol Go APK
-      - name: Build AkJol Go APK
+      # AkJol Pro APK
+      - name: Build AkJol Pro APK
         run: |
           cd apps/courier
           flutter pub get
           flutter build apk --release
 
-      - name: Rename AkJol Go APK
+      - name: Rename AkJol Pro APK
         run: |
-          cp apps/courier/build/app/outputs/flutter-apk/app-release.apk AkJol_Go.apk
+          cp apps/courier/build/app/outputs/flutter-apk/app-release.apk AkJol_Pro.apk
 
       # AkJol APK
       - name: Build AkJol APK
@@ -110,7 +110,7 @@ jobs:
           name: android-apks
           path: |
             TakEsep.apk
-            AkJol_Go.apk
+            AkJol_Pro.apk
             AkJol.apk
 
   # ═══════════════════════════════════════════════
@@ -163,16 +163,16 @@ jobs:
         run: |
           cp apps/warehouse/build/app/outputs/bundle/release/app-release.aab TakEsep.aab
 
-      # AkJol Go AAB
-      - name: Build AkJol Go AAB
+      # AkJol Pro AAB
+      - name: Build AkJol Pro AAB
         run: |
           cd apps/courier
           flutter pub get
           flutter build appbundle --release
 
-      - name: Rename AkJol Go AAB
+      - name: Rename AkJol Pro AAB
         run: |
-          cp apps/courier/build/app/outputs/bundle/release/app-release.aab AkJol_Go.aab
+          cp apps/courier/build/app/outputs/bundle/release/app-release.aab AkJol_Pro.aab
 
       # AkJol AAB
       - name: Build AkJol AAB
@@ -191,7 +191,7 @@ jobs:
           name: android-aabs
           path: |
             TakEsep.aab
-            AkJol_Go.aab
+            AkJol_Pro.aab
             AkJol.aab
 
   # ═══════════════════════════════════════════════
@@ -223,7 +223,7 @@ jobs:
           rm -rf Payload
 
       # AkJol Courier iOS
-      - name: Build AkJol Go iOS
+      - name: Build AkJol Pro iOS
         run: |
           cd apps/courier
           flutter pub get
@@ -231,7 +231,7 @@ jobs:
           mkdir -p Payload
           cp -r build/ios/iphoneos/Runner.app Payload/
           mkdir -p ../../ios-ipas
-          zip -r ../../ios-ipas/AkJol_Go.ipa Payload
+          zip -r ../../ios-ipas/AkJol_Pro.ipa Payload
           rm -rf Payload
 
       # TakEsep Warehouse iOS
@@ -307,7 +307,7 @@ jobs:
             ### 📦 Приложения
             - **TakEsep** — управление складом и продажами (Windows + Android)
             - **AkJol** — приложение для покупателей (Android + iOS)
-            - **AkJol Go** — приложение для курьеров (Android + iOS)
+            - **AkJol Pro** — приложение для курьеров (Android + iOS)
             - **Веб-админка** — [axeronisd.github.io/TakEsep/admin.html](https://axeronisd.github.io/TakEsep/admin.html)
 
             ### 📥 Скачать
@@ -318,21 +318,21 @@ jobs:
             | TakEsep | Android (AAB) | `TakEsep.aab` |
             | AkJol | Android (APK) | `AkJol.apk` |
             | AkJol | Android (AAB) | `AkJol.aab` |
-            | AkJol Go | Android (APK) | `AkJol_Go.apk` |
-            | AkJol Go | Android (AAB) | `AkJol_Go.aab` |
+            | AkJol Pro | Android (APK) | `AkJol_Pro.apk` |
+            | AkJol Pro | Android (AAB) | `AkJol_Pro.aab` |
             | AkJol | iOS | `AkJol.ipa` |
-            | AkJol Go | iOS | `AkJol_Go.ipa` |
+            | AkJol Pro | iOS | `AkJol_Pro.ipa` |
           files: |
             ./artifacts/windows/TakEsep_Setup.exe
             ./artifacts/android-apks/TakEsep.apk
-            ./artifacts/android-apks/AkJol_Go.apk
+            ./artifacts/android-apks/AkJol_Pro.apk
             ./artifacts/android-apks/AkJol.apk
             ./artifacts/android-aabs/TakEsep.aab
-            ./artifacts/android-aabs/AkJol_Go.aab
+            ./artifacts/android-aabs/AkJol_Pro.aab
             ./artifacts/android-aabs/AkJol.aab
             ./artifacts/ios/TakEsep.ipa
             ./artifacts/ios/AkJol.ipa
-            ./artifacts/ios/AkJol_Go.ipa
+            ./artifacts/ios/AkJol_Pro.ipa
 
       - name: Update Supabase app_versions
         continue-on-error: true
@@ -404,13 +404,13 @@ jobs:
           releaseFiles: ./artifacts/android-aabs/AkJol.aab
           track: internal
 
-      - name: Upload AkJol Go to Google Play
+      - name: Upload AkJol Pro to Google Play
         if: ${{ env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' }}
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.akjol.courier
-          releaseFiles: ./artifacts/android-aabs/AkJol_Go.aab
+          releaseFiles: ./artifacts/android-aabs/AkJol_Pro.aab
           track: internal
 
   # ═══════════════════════════════════════════════
@@ -437,11 +437,11 @@ jobs:
           api-key-id: ${{ secrets.APPSTORE_API_KEY_ID }}
           api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
 
-      - name: Upload AkJol Go to TestFlight
+      - name: Upload AkJol Pro to TestFlight
         if: ${{ env.APPSTORE_API_KEY_ID != '' }}
         uses: apple-actions/upload-testflight-build@v1
         with:
-          app-path: ./artifacts/ios/AkJol_Go.ipa
+          app-path: ./artifacts/ios/AkJol_Pro.ipa
           issuer-id: ${{ secrets.APPSTORE_ISSUER_ID }}
           api-key-id: ${{ secrets.APPSTORE_API_KEY_ID }}
           api-private-key: ${{ secrets.APPSTORE_API_PRIVATE_KEY }}
