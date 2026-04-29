@@ -394,7 +394,7 @@ jobs:
           packageName: com.takesep.app
           releaseFiles: ./artifacts/android-aabs/TakEsep.aab
           track: internal
-          releaseStatus: draft
+          status: draft
 
       - name: Upload AkJol to Google Play
         if: ${{ env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' }}
@@ -404,7 +404,7 @@ jobs:
           packageName: com.akjolui.customer
           releaseFiles: ./artifacts/android-aabs/AkJol.aab
           track: internal
-          releaseStatus: draft
+          status: draft
 
       - name: Upload AkJol Pro to Google Play
         if: ${{ env.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON != '' }}
@@ -414,7 +414,7 @@ jobs:
           packageName: com.akjolui.courier
           releaseFiles: ./artifacts/android-aabs/AkJol_Pro.aab
           track: internal
-          releaseStatus: draft
+          status: draft
 
   # ═══════════════════════════════════════════════
   # Upload to App Store Connect (TestFlight)
