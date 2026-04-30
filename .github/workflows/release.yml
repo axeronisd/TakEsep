@@ -275,7 +275,8 @@ jobs:
             echo "=== $(date) pod install ==="
             cd ios && pod install --verbose && cd ..
             echo "=== $(date) flutter build ipa ==="
-            flutter build ipa --release --export-options-plist=ios/export_options.plist --verbose --no-pub
+            export NSUnbufferedIO=YES
+            flutter build ipa --release --export-options-plist=ios/export_options.plist --no-pub
             echo "=== $(date) copy ipa ==="
             mkdir -p ../../ios-ipas
             cp build/ios/ipa/*.ipa ../../ios-ipas/AkJol.ipa
@@ -302,7 +303,8 @@ jobs:
             echo "=== $(date) pod install ==="
             cd ios && pod install --verbose && cd ..
             echo "=== $(date) flutter build ipa ==="
-            flutter build ipa --release --export-options-plist=ios/export_options.plist --verbose --no-pub
+            export NSUnbufferedIO=YES
+            flutter build ipa --release --export-options-plist=ios/export_options.plist --no-pub
             echo "=== $(date) copy ipa ==="
             mkdir -p ../../ios-ipas
             cp build/ios/ipa/*.ipa ../../ios-ipas/AkJol_Pro.ipa
@@ -329,7 +331,8 @@ jobs:
             echo "=== $(date) pod install ==="
             cd ios && pod install --verbose && cd ..
             echo "=== $(date) flutter build ipa ==="
-            flutter build ipa --release --export-options-plist=ios/export_options.plist --verbose --no-pub
+            export NSUnbufferedIO=YES
+            flutter build ipa --release --export-options-plist=ios/export_options.plist --no-pub
             echo "=== $(date) copy ipa ==="
             mkdir -p ../../ios-ipas
             cp build/ios/ipa/*.ipa ../../ios-ipas/TakEsep.ipa
