@@ -199,6 +199,8 @@ jobs:
   # ═══════════════════════════════════════════════
   build-ios:
     runs-on: macos-latest
+    env:
+      IOS_DISTRIBUTION_P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_P12_BASE64 }}
     steps:
       - uses: actions/checkout@v4
 
@@ -210,41 +212,96 @@ jobs:
       - name: Install CocoaPods
         run: sudo gem install cocoapods
 
+      - name: Import Distribution Certificate
+        if: ${{ env.IOS_DISTRIBUTION_P12_BASE64 != '' }}
+        run: |
+          echo "$IOS_DISTRIBUTION_P12_BASE64" | base64 --decode > ios_distribution.p12
+          security create-keychain -p "" build.keychain
+          security import ios_distribution.p12 -t agg -k ~/Library/Keychains/build.keychain -P "$IOS_DISTRIBUTION_P12_PASSWORD" -A
+          security list-keychains -s ~/Library/Keychains/build.keychain
+          security unlock-keychain -p "" ~/Library/Keychains/build.keychain
+          security set-keychain-settings -t 3600 -l ~/Library/Keychains/build.keychain
+
+      - name: Create Export Options
+        if: ${{ env.IOS_DISTRIBUTION_P12_BASE64 != '' }}
+        run: |
+          cat > export_options.plist << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>method</key>
+              <string>app-store-connect</string>
+              <key>teamID</key>
+              <string>V63B2H2DTP</string>
+              <key>uploadBitcode</key>
+              <false/>
+              <key>uploadSymbols</key>
+              <true/>
+              <key>stripSwiftSymbols</key>
+              <true/>
+              <key>provisioningProfiles</key>
+              <dict/>
+          </dict>
+          </plist>
+          EOF
+
       # AkJol Customer iOS
       - name: Build AkJol iOS
         run: |
           cd apps/customer
           flutter pub get
-          flutter build ios --release --no-codesign
-          mkdir -p Payload
-          cp -r build/ios/iphoneos/Runner.app Payload/
-          mkdir -p ../../ios-ipas
-          zip -r ../../ios-ipas/AkJol.ipa Payload
-          rm -rf Payload
+          if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
+            cp ../../export_options.plist ios/export_options.plist
+            flutter build ipa --release --export-options-plist=ios/export_options.plist
+            mkdir -p ../../ios-ipas
+            cp build/ios/ipa/*.ipa ../../ios-ipas/AkJol.ipa
+          else
+            flutter build ios --release --no-codesign
+            mkdir -p Payload
+            cp -r build/ios/iphoneos/Runner.app Payload/
+            mkdir -p ../../ios-ipas
+            zip -r ../../ios-ipas/AkJol.ipa Payload
+            rm -rf Payload
+          fi
 
       # AkJol Courier iOS
       - name: Build AkJol Pro iOS
         run: |
           cd apps/courier
           flutter pub get
-          flutter build ios --release --no-codesign
-          mkdir -p Payload
-          cp -r build/ios/iphoneos/Runner.app Payload/
-          mkdir -p ../../ios-ipas
-          zip -r ../../ios-ipas/AkJol_Pro.ipa Payload
-          rm -rf Payload
+          if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
+            cp ../../export_options.plist ios/export_options.plist
+            flutter build ipa --release --export-options-plist=ios/export_options.plist
+            mkdir -p ../../ios-ipas
+            cp build/ios/ipa/*.ipa ../../ios-ipas/AkJol_Pro.ipa
+          else
+            flutter build ios --release --no-codesign
+            mkdir -p Payload
+            cp -r build/ios/iphoneos/Runner.app Payload/
+            mkdir -p ../../ios-ipas
+            zip -r ../../ios-ipas/AkJol_Pro.ipa Payload
+            rm -rf Payload
+          fi
 
       # TakEsep Warehouse iOS
       - name: Build TakEsep iOS
         run: |
           cd apps/warehouse
           flutter pub get
-          flutter build ios --release --no-codesign
-          mkdir -p Payload
-          cp -r build/ios/iphoneos/Runner.app Payload/
-          mkdir -p ../../ios-ipas
-          zip -r ../../ios-ipas/TakEsep.ipa Payload
-          rm -rf Payload
+          if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
+            cp ../../export_options.plist ios/export_options.plist
+            flutter build ipa --release --export-options-plist=ios/export_options.plist
+            mkdir -p ../../ios-ipas
+            cp build/ios/ipa/*.ipa ../../ios-ipas/TakEsep.ipa
+          else
+            flutter build ios --release --no-codesign
+            mkdir -p Payload
+            cp -r build/ios/iphoneos/Runner.app Payload/
+            mkdir -p ../../ios-ipas
+            zip -r ../../ios-ipas/TakEsep.ipa Payload
+            rm -rf Payload
+          fi
 
       - name: Upload iOS IPAs
         uses: actions/upload-artifact@v4

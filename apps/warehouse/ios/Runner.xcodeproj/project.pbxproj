@@ -377,6 +377,7 @@
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
+			DEVELOPMENT_TEAM = V63B2H2DTP;
 			};
 			name = Profile;
 		};
@@ -557,6 +558,7 @@
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
+			DEVELOPMENT_TEAM = V63B2H2DTP;
 			};
 			name = Debug;
 		};
@@ -578,6 +580,7 @@
 				SWIFT_OBJC_BRIDGING_HEADER = "Runner/Runner-Bridging-Header.h";
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
+			DEVELOPMENT_TEAM = V63B2H2DTP;
 			};
 			name = Release;
 		};
