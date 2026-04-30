@@ -206,6 +206,8 @@ jobs:
       IOS_PROVISIONING_PROFILE_CUSTOMER_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_CUSTOMER_BASE64 }}
       IOS_PROVISIONING_PROFILE_COURIER_BASE64: ${{ secrets.COURIER_BASE64 }}
       IOS_PROVISIONING_PROFILE_WAREHOUSE_BASE64: ${{ secrets.WAREHOUSE_BASE64 }}
+    env:
+      COCOAPODS_DISABLE_STATS: true
     steps:
       - uses: actions/checkout@v4
 
@@ -265,11 +267,17 @@ jobs:
       - name: Build AkJol iOS
         timeout-minutes: 90
         run: |
+          echo "=== START AkJol iOS build at $(date) ==="
           cd apps/customer
+          echo "=== $(date) flutter pub get ==="
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             cp ../../ios_export_options/customer.plist ios/export_options.plist
-            flutter build ipa --release --export-options-plist=ios/export_options.plist --verbose
+            echo "=== $(date) pod install ==="
+            cd ios && pod install --verbose && cd ..
+            echo "=== $(date) flutter build ipa ==="
+            flutter build ipa --release --export-options-plist=ios/export_options.plist --verbose --no-pub
+            echo "=== $(date) copy ipa ==="
             mkdir -p ../../ios-ipas
             cp build/ios/ipa/*.ipa ../../ios-ipas/AkJol.ipa
           else
@@ -280,16 +288,23 @@ jobs:
             zip -r ../../ios-ipas/AkJol.ipa Payload
             rm -rf Payload
           fi
+          echo "=== DONE AkJol iOS at $(date) ==="
 
       # AkJol Courier iOS
       - name: Build AkJol Pro iOS
         timeout-minutes: 90
         run: |
+          echo "=== START AkJol Pro iOS build at $(date) ==="
           cd apps/courier
+          echo "=== $(date) flutter pub get ==="
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             cp ../../ios_export_options/courier.plist ios/export_options.plist
-            flutter build ipa --release --export-options-plist=ios/export_options.plist --verbose
+            echo "=== $(date) pod install ==="
+            cd ios && pod install --verbose && cd ..
+            echo "=== $(date) flutter build ipa ==="
+            flutter build ipa --release --export-options-plist=ios/export_options.plist --verbose --no-pub
+            echo "=== $(date) copy ipa ==="
             mkdir -p ../../ios-ipas
             cp build/ios/ipa/*.ipa ../../ios-ipas/AkJol_Pro.ipa
           else
@@ -300,16 +315,23 @@ jobs:
             zip -r ../../ios-ipas/AkJol_Pro.ipa Payload
             rm -rf Payload
           fi
+          echo "=== DONE AkJol Pro iOS at $(date) ==="
 
       # TakEsep Warehouse iOS
       - name: Build TakEsep iOS
         timeout-minutes: 90
         run: |
+          echo "=== START TakEsep iOS build at $(date) ==="
           cd apps/warehouse
+          echo "=== $(date) flutter pub get ==="
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             cp ../../ios_export_options/warehouse.plist ios/export_options.plist
-            flutter build ipa --release --export-options-plist=ios/export_options.plist --verbose
+            echo "=== $(date) pod install ==="
+            cd ios && pod install --verbose && cd ..
+            echo "=== $(date) flutter build ipa ==="
+            flutter build ipa --release --export-options-plist=ios/export_options.plist --verbose --no-pub
+            echo "=== $(date) copy ipa ==="
             mkdir -p ../../ios-ipas
             cp build/ios/ipa/*.ipa ../../ios-ipas/TakEsep.ipa
           else
@@ -320,6 +342,7 @@ jobs:
             zip -r ../../ios-ipas/TakEsep.ipa Payload
             rm -rf Payload
           fi
+          echo "=== DONE TakEsep iOS at $(date) ==="
 
       - name: Upload iOS IPAs
         uses: actions/upload-artifact@v4
