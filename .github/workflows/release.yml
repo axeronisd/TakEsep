@@ -201,6 +201,7 @@ jobs:
     runs-on: macos-latest
     env:
       IOS_DISTRIBUTION_P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_P12_BASE64 }}
+      IOS_DISTRIBUTION_P12_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_P12_PASSWORD }}
     steps:
       - uses: actions/checkout@v4
 
@@ -234,6 +235,8 @@ jobs:
               <string>app-store-connect</string>
               <key>teamID</key>
               <string>V63B2H2DTP</string>
+              <key>signingStyle</key>
+              <string>automatic</string>
               <key>uploadBitcode</key>
               <false/>
               <key>uploadSymbols</key>

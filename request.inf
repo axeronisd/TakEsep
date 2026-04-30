@@ -1,0 +1,5 @@
+[NewRequest]
+Subject="CN=Ilgis Uzbekov, C=KG"
+KeyLength=2048
+Exportable=TRUE
+RequestType=PKCS10
