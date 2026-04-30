@@ -241,31 +241,7 @@ jobs:
           cd apps/customer
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
-            cat > ios/export_options.plist << 'EOF'
-            <?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-            <plist version="1.0">
-            <dict>
-                <key>method</key>
-                <string>app-store-connect</string>
-                <key>teamID</key>
-                <string>V63B2H2DTP</string>
-                <key>signingStyle</key>
-                <string>manual</string>
-                <key>provisioningProfiles</key>
-                <dict>
-                    <key>com.akjolui.customer</key>
-                    <string>AkJolCustomer</string>
-                </dict>
-                <key>uploadBitcode</key>
-                <false/>
-                <key>uploadSymbols</key>
-                <true/>
-                <key>stripSwiftSymbols</key>
-                <true/>
-            </dict>
-            </plist>
-            EOF
+            cp ../../ios_export_options/customer.plist ios/export_options.plist
             flutter build ipa --release --export-options-plist=ios/export_options.plist
             mkdir -p ../../ios-ipas
             cp build/ios/ipa/*.ipa ../../ios-ipas/AkJol.ipa
@@ -284,31 +260,7 @@ jobs:
           cd apps/courier
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
-            cat > ios/export_options.plist << 'EOF'
-            <?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-            <plist version="1.0">
-            <dict>
-                <key>method</key>
-                <string>app-store-connect</string>
-                <key>teamID</key>
-                <string>V63B2H2DTP</string>
-                <key>signingStyle</key>
-                <string>manual</string>
-                <key>provisioningProfiles</key>
-                <dict>
-                    <key>com.akjolui.courier</key>
-                    <string>AkJolPro</string>
-                </dict>
-                <key>uploadBitcode</key>
-                <false/>
-                <key>uploadSymbols</key>
-                <true/>
-                <key>stripSwiftSymbols</key>
-                <true/>
-            </dict>
-            </plist>
-            EOF
+            cp ../../ios_export_options/courier.plist ios/export_options.plist
             flutter build ipa --release --export-options-plist=ios/export_options.plist
             mkdir -p ../../ios-ipas
             cp build/ios/ipa/*.ipa ../../ios-ipas/AkJol_Pro.ipa
@@ -327,31 +279,7 @@ jobs:
           cd apps/warehouse
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
-            cat > ios/export_options.plist << 'EOF'
-            <?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-            <plist version="1.0">
-            <dict>
-                <key>method</key>
-                <string>app-store-connect</string>
-                <key>teamID</key>
-                <string>V63B2H2DTP</string>
-                <key>signingStyle</key>
-                <string>manual</string>
-                <key>provisioningProfiles</key>
-                <dict>
-                    <key>com.takesep.app</key>
-                    <string>TakEsep</string>
-                </dict>
-                <key>uploadBitcode</key>
-                <false/>
-                <key>uploadSymbols</key>
-                <true/>
-                <key>stripSwiftSymbols</key>
-                <true/>
-            </dict>
-            </plist>
-            EOF
+            cp ../../ios_export_options/warehouse.plist ios/export_options.plist
             flutter build ipa --release --export-options-plist=ios/export_options.plist
             mkdir -p ../../ios-ipas
             cp build/ios/ipa/*.ipa ../../ios-ipas/TakEsep.ipa
