@@ -202,6 +202,9 @@ jobs:
     env:
       IOS_DISTRIBUTION_P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_P12_BASE64 }}
       IOS_DISTRIBUTION_P12_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_P12_PASSWORD }}
+      IOS_PROVISIONING_PROFILE_CUSTOMER_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_CUSTOMER_BASE64 }}
+      IOS_PROVISIONING_PROFILE_COURIER_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_COURIER_BASE64 }}
+      IOS_PROVISIONING_PROFILE_WAREHOUSE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_WAREHOUSE_BASE64 }}
     steps:
       - uses: actions/checkout@v4
 
@@ -223,31 +226,14 @@ jobs:
           security unlock-keychain -p "" ~/Library/Keychains/build.keychain
           security set-keychain-settings -t 3600 -l ~/Library/Keychains/build.keychain
 
-      - name: Create Export Options
-        if: ${{ env.IOS_DISTRIBUTION_P12_BASE64 != '' }}
+      - name: Import Provisioning Profiles
+        if: ${{ env.IOS_PROVISIONING_PROFILE_CUSTOMER_BASE64 != '' }}
         run: |
-          cat > export_options.plist << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>method</key>
-              <string>app-store-connect</string>
-              <key>teamID</key>
-              <string>V63B2H2DTP</string>
-              <key>signingStyle</key>
-              <string>automatic</string>
-              <key>uploadBitcode</key>
-              <false/>
-              <key>uploadSymbols</key>
-              <true/>
-              <key>stripSwiftSymbols</key>
-              <true/>
-              <key>provisioningProfiles</key>
-              <dict/>
-          </dict>
-          </plist>
-          EOF
+          mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+          echo "$IOS_PROVISIONING_PROFILE_CUSTOMER_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/AkJolCustomer.mobileprovision
+          echo "$IOS_PROVISIONING_PROFILE_COURIER_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/AkJolPro.mobileprovision
+          echo "$IOS_PROVISIONING_PROFILE_WAREHOUSE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/TakEsep.mobileprovision
+          echo "✅ Provisioning profiles imported"
 
       # AkJol Customer iOS
       - name: Build AkJol iOS
@@ -255,7 +241,31 @@ jobs:
           cd apps/customer
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
-            cp ../../export_options.plist ios/export_options.plist
+            cat > ios/export_options.plist << 'EOF'
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+                <key>method</key>
+                <string>app-store-connect</string>
+                <key>teamID</key>
+                <string>V63B2H2DTP</string>
+                <key>signingStyle</key>
+                <string>manual</string>
+                <key>provisioningProfiles</key>
+                <dict>
+                    <key>com.akjolui.customer</key>
+                    <string>AkJolCustomer</string>
+                </dict>
+                <key>uploadBitcode</key>
+                <false/>
+                <key>uploadSymbols</key>
+                <true/>
+                <key>stripSwiftSymbols</key>
+                <true/>
+            </dict>
+            </plist>
+            EOF
             flutter build ipa --release --export-options-plist=ios/export_options.plist
             mkdir -p ../../ios-ipas
             cp build/ios/ipa/*.ipa ../../ios-ipas/AkJol.ipa
@@ -274,7 +284,31 @@ jobs:
           cd apps/courier
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
-            cp ../../export_options.plist ios/export_options.plist
+            cat > ios/export_options.plist << 'EOF'
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+                <key>method</key>
+                <string>app-store-connect</string>
+                <key>teamID</key>
+                <string>V63B2H2DTP</string>
+                <key>signingStyle</key>
+                <string>manual</string>
+                <key>provisioningProfiles</key>
+                <dict>
+                    <key>com.akjolui.courier</key>
+                    <string>AkJolPro</string>
+                </dict>
+                <key>uploadBitcode</key>
+                <false/>
+                <key>uploadSymbols</key>
+                <true/>
+                <key>stripSwiftSymbols</key>
+                <true/>
+            </dict>
+            </plist>
+            EOF
             flutter build ipa --release --export-options-plist=ios/export_options.plist
             mkdir -p ../../ios-ipas
             cp build/ios/ipa/*.ipa ../../ios-ipas/AkJol_Pro.ipa
@@ -293,7 +327,31 @@ jobs:
           cd apps/warehouse
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
-            cp ../../export_options.plist ios/export_options.plist
+            cat > ios/export_options.plist << 'EOF'
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+                <key>method</key>
+                <string>app-store-connect</string>
+                <key>teamID</key>
+                <string>V63B2H2DTP</string>
+                <key>signingStyle</key>
+                <string>manual</string>
+                <key>provisioningProfiles</key>
+                <dict>
+                    <key>com.takesep.app</key>
+                    <string>TakEsep</string>
+                </dict>
+                <key>uploadBitcode</key>
+                <false/>
+                <key>uploadSymbols</key>
+                <true/>
+                <key>stripSwiftSymbols</key>
+                <true/>
+            </dict>
+            </plist>
+            EOF
             flutter build ipa --release --export-options-plist=ios/export_options.plist
             mkdir -p ../../ios-ipas
             cp build/ios/ipa/*.ipa ../../ios-ipas/TakEsep.ipa
