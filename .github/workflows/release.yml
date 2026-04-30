@@ -199,6 +199,7 @@ jobs:
   # ═══════════════════════════════════════════════
   build-ios:
     runs-on: macos-latest
+    timeout-minutes: 90
     env:
       IOS_DISTRIBUTION_P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_P12_BASE64 }}
       IOS_DISTRIBUTION_P12_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_P12_PASSWORD }}
@@ -237,12 +238,13 @@ jobs:
 
       # AkJol Customer iOS
       - name: Build AkJol iOS
+        timeout-minutes: 30
         run: |
           cd apps/customer
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             cp ../../ios_export_options/customer.plist ios/export_options.plist
-            flutter build ipa --release --export-options-plist=ios/export_options.plist
+            flutter build ipa --release --export-options-plist=ios/export_options.plist --verbose
             mkdir -p ../../ios-ipas
             cp build/ios/ipa/*.ipa ../../ios-ipas/AkJol.ipa
           else
@@ -256,12 +258,13 @@ jobs:
 
       # AkJol Courier iOS
       - name: Build AkJol Pro iOS
+        timeout-minutes: 30
         run: |
           cd apps/courier
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             cp ../../ios_export_options/courier.plist ios/export_options.plist
-            flutter build ipa --release --export-options-plist=ios/export_options.plist
+            flutter build ipa --release --export-options-plist=ios/export_options.plist --verbose
             mkdir -p ../../ios-ipas
             cp build/ios/ipa/*.ipa ../../ios-ipas/AkJol_Pro.ipa
           else
@@ -275,12 +278,13 @@ jobs:
 
       # TakEsep Warehouse iOS
       - name: Build TakEsep iOS
+        timeout-minutes: 30
         run: |
           cd apps/warehouse
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             cp ../../ios_export_options/warehouse.plist ios/export_options.plist
-            flutter build ipa --release --export-options-plist=ios/export_options.plist
+            flutter build ipa --release --export-options-plist=ios/export_options.plist --verbose
             mkdir -p ../../ios-ipas
             cp build/ios/ipa/*.ipa ../../ios-ipas/TakEsep.ipa
           else
