@@ -264,20 +264,16 @@ jobs:
 
       # AkJol Customer iOS
       - name: Build AkJol iOS
-        timeout-minutes: 90
+        timeout-minutes: 30
         run: |
-          echo "=== START AkJol iOS build at $(date) ==="
+          echo "=== START AkJol iOS at $(date) ==="
           cd apps/customer
-          echo "=== $(date) flutter pub get ==="
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             cp ../../ios_export_options/customer.plist ios/export_options.plist
-            echo "=== $(date) pod install ==="
-            cd ios && pod install --verbose && cd ..
+            cd ios && pod install && cd ..
             echo "=== $(date) flutter build ipa ==="
-            export NSUnbufferedIO=YES
-            flutter build ipa --release --export-options-plist=ios/export_options.plist --no-pub
-            echo "=== $(date) copy ipa ==="
+            flutter build ipa --release --export-options-plist=ios/export_options.plist
             mkdir -p ../../ios-ipas
             cp build/ios/ipa/*.ipa ../../ios-ipas/AkJol.ipa
           else
@@ -292,20 +288,16 @@ jobs:
 
       # AkJol Courier iOS
       - name: Build AkJol Pro iOS
-        timeout-minutes: 90
+        timeout-minutes: 30
         run: |
-          echo "=== START AkJol Pro iOS build at $(date) ==="
+          echo "=== START AkJol Pro iOS at $(date) ==="
           cd apps/courier
-          echo "=== $(date) flutter pub get ==="
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             cp ../../ios_export_options/courier.plist ios/export_options.plist
-            echo "=== $(date) pod install ==="
-            cd ios && pod install --verbose && cd ..
+            cd ios && pod install && cd ..
             echo "=== $(date) flutter build ipa ==="
-            export NSUnbufferedIO=YES
-            flutter build ipa --release --export-options-plist=ios/export_options.plist --no-pub
-            echo "=== $(date) copy ipa ==="
+            flutter build ipa --release --export-options-plist=ios/export_options.plist
             mkdir -p ../../ios-ipas
             cp build/ios/ipa/*.ipa ../../ios-ipas/AkJol_Pro.ipa
           else
@@ -320,20 +312,16 @@ jobs:
 
       # TakEsep Warehouse iOS
       - name: Build TakEsep iOS
-        timeout-minutes: 90
+        timeout-minutes: 30
         run: |
-          echo "=== START TakEsep iOS build at $(date) ==="
+          echo "=== START TakEsep iOS at $(date) ==="
           cd apps/warehouse
-          echo "=== $(date) flutter pub get ==="
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             cp ../../ios_export_options/warehouse.plist ios/export_options.plist
-            echo "=== $(date) pod install ==="
-            cd ios && pod install --verbose && cd ..
+            cd ios && pod install && cd ..
             echo "=== $(date) flutter build ipa ==="
-            export NSUnbufferedIO=YES
-            flutter build ipa --release --export-options-plist=ios/export_options.plist --no-pub
-            echo "=== $(date) copy ipa ==="
+            flutter build ipa --release --export-options-plist=ios/export_options.plist
             mkdir -p ../../ios-ipas
             cp build/ios/ipa/*.ipa ../../ios-ipas/TakEsep.ipa
           else
