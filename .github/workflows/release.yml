@@ -238,7 +238,7 @@ jobs:
 
       # AkJol Customer iOS
       - name: Build AkJol iOS
-        timeout-minutes: 30
+        timeout-minutes: 90
         run: |
           cd apps/customer
           flutter pub get
@@ -258,7 +258,7 @@ jobs:
 
       # AkJol Courier iOS
       - name: Build AkJol Pro iOS
-        timeout-minutes: 30
+        timeout-minutes: 90
         run: |
           cd apps/courier
           flutter pub get
@@ -278,7 +278,7 @@ jobs:
 
       # TakEsep Warehouse iOS
       - name: Build TakEsep iOS
-        timeout-minutes: 30
+        timeout-minutes: 90
         run: |
           cd apps/warehouse
           flutter pub get
