@@ -248,9 +248,11 @@ jobs:
         run: |
           echo "$IOS_DISTRIBUTION_P12_BASE64" | base64 --decode > ios_distribution.p12
           security create-keychain -p "" build.keychain
-          security import ios_distribution.p12 -t agg -k ~/Library/Keychains/build.keychain -P "$IOS_DISTRIBUTION_P12_PASSWORD" -A
-          security list-keychains -s ~/Library/Keychains/build.keychain
-          security unlock-keychain -p "" ~/Library/Keychains/build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "" build.keychain
+          security import ios_distribution.p12 -t agg -k ~/Library/Keychains/build.keychain -P "$IOS_DISTRIBUTION_P12_PASSWORD" -A -T /usr/bin/codesign -T /usr/bin/security
+          security list-keychains -s ~/Library/Keychains/build.keychain ~/Library/Keychains/login.keychain-db
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "" ~/Library/Keychains/build.keychain
           security set-keychain-settings -t 3600 -l ~/Library/Keychains/build.keychain
 
       - name: Import Provisioning Profiles
