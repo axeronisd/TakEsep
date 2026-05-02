@@ -264,19 +264,22 @@ jobs:
 
       # AkJol Customer iOS
       - name: Build AkJol iOS
-        timeout-minutes: 30
+        timeout-minutes: 15
         run: |
           cd apps/customer
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
-            cp ../../ios_export_options/customer.plist ios/export_options.plist
-            cd ios && pod install && cd ..
-            echo "=== $(date) Archive (no signing) ==="
-            xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -sdk iphoneos -configuration Release archive -archivePath build/ios/archive/Runner.xcarchive CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
-            echo "=== $(date) Export (manual signing) ==="
-            xcodebuild -exportArchive -archivePath build/ios/archive/Runner.xcarchive -exportPath build/ios/ipa -exportOptionsPlist ios/export_options.plist
+            flutter build ios --release --no-codesign
+            IDENTITY=$(security find-identity -v -p codesigning ~/Library/Keychains/build.keychain | grep "iPhone Distribution" | head -1 | awk -F'"' '{print $2}')
+            echo "Signing with: $IDENTITY"
+            cp ~/Library/MobileDevice/Provisioning\ Profiles/AkJolCustomer.mobileprovision build/ios/iphoneos/Runner.app/embedded.mobileprovision
+            codesign -s "$IDENTITY" -f build/ios/iphoneos/Runner.app
+            find build/ios/iphoneos/Runner.app/Frameworks -name "*.framework" -exec codesign -s "$IDENTITY" -f {} \;
+            mkdir -p Payload
+            cp -r build/ios/iphoneos/Runner.app Payload/
             mkdir -p ../../ios-ipas
-            cp build/ios/ipa/*.ipa ../../ios-ipas/AkJol.ipa
+            zip -r ../../ios-ipas/AkJol.ipa Payload
+            rm -rf Payload
           else
             flutter build ios --release --no-codesign
             mkdir -p Payload
@@ -288,19 +291,22 @@ jobs:
 
       # AkJol Courier iOS
       - name: Build AkJol Pro iOS
-        timeout-minutes: 30
+        timeout-minutes: 15
         run: |
           cd apps/courier
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
-            cp ../../ios_export_options/courier.plist ios/export_options.plist
-            cd ios && pod install && cd ..
-            echo "=== $(date) Archive (no signing) ==="
-            xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -sdk iphoneos -configuration Release archive -archivePath build/ios/archive/Runner.xcarchive CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
-            echo "=== $(date) Export (manual signing) ==="
-            xcodebuild -exportArchive -archivePath build/ios/archive/Runner.xcarchive -exportPath build/ios/ipa -exportOptionsPlist ios/export_options.plist
+            flutter build ios --release --no-codesign
+            IDENTITY=$(security find-identity -v -p codesigning ~/Library/Keychains/build.keychain | grep "iPhone Distribution" | head -1 | awk -F'"' '{print $2}')
+            echo "Signing with: $IDENTITY"
+            cp ~/Library/MobileDevice/Provisioning\ Profiles/AkJolPro.mobileprovision build/ios/iphoneos/Runner.app/embedded.mobileprovision
+            codesign -s "$IDENTITY" -f build/ios/iphoneos/Runner.app
+            find build/ios/iphoneos/Runner.app/Frameworks -name "*.framework" -exec codesign -s "$IDENTITY" -f {} \;
+            mkdir -p Payload
+            cp -r build/ios/iphoneos/Runner.app Payload/
             mkdir -p ../../ios-ipas
-            cp build/ios/ipa/*.ipa ../../ios-ipas/AkJol_Pro.ipa
+            zip -r ../../ios-ipas/AkJol_Pro.ipa Payload
+            rm -rf Payload
           else
             flutter build ios --release --no-codesign
             mkdir -p Payload
@@ -312,19 +318,22 @@ jobs:
 
       # TakEsep Warehouse iOS
       - name: Build TakEsep iOS
-        timeout-minutes: 30
+        timeout-minutes: 15
         run: |
           cd apps/warehouse
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
-            cp ../../ios_export_options/warehouse.plist ios/export_options.plist
-            cd ios && pod install && cd ..
-            echo "=== $(date) Archive (no signing) ==="
-            xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -sdk iphoneos -configuration Release archive -archivePath build/ios/archive/Runner.xcarchive CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
-            echo "=== $(date) Export (manual signing) ==="
-            xcodebuild -exportArchive -archivePath build/ios/archive/Runner.xcarchive -exportPath build/ios/ipa -exportOptionsPlist ios/export_options.plist
+            flutter build ios --release --no-codesign
+            IDENTITY=$(security find-identity -v -p codesigning ~/Library/Keychains/build.keychain | grep "iPhone Distribution" | head -1 | awk -F'"' '{print $2}')
+            echo "Signing with: $IDENTITY"
+            cp ~/Library/MobileDevice/Provisioning\ Profiles/TakEsep.mobileprovision build/ios/iphoneos/Runner.app/embedded.mobileprovision
+            codesign -s "$IDENTITY" -f build/ios/iphoneos/Runner.app
+            find build/ios/iphoneos/Runner.app/Frameworks -name "*.framework" -exec codesign -s "$IDENTITY" -f {} \;
+            mkdir -p Payload
+            cp -r build/ios/iphoneos/Runner.app Payload/
             mkdir -p ../../ios-ipas
-            cp build/ios/ipa/*.ipa ../../ios-ipas/TakEsep.ipa
+            zip -r ../../ios-ipas/TakEsep.ipa Payload
+            rm -rf Payload
           else
             flutter build ios --release --no-codesign
             mkdir -p Payload
