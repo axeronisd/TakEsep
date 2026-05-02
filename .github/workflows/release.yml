@@ -310,12 +310,43 @@ jobs:
             codesign --verify --verbose build/ios/iphoneos/Runner.app
             mkdir -p Payload
             cp -r build/ios/iphoneos/Runner.app Payload/
-            # Add SwiftSupport folder (required by App Store - ITMS-90426)
-            SWIFT_TOOLCHAIN_LIBS="$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"
+            # Add SwiftSupport folder (required by App Store)
             mkdir -p SwiftSupport/iphoneos
-            cp "$SWIFT_TOOLCHAIN_LIBS"/libswift*.dylib SwiftSupport/iphoneos/ 2>/dev/null || true
+            # Strategy 1: Use swift-stdlib-tool if available
+            if xcrun -find swift-stdlib-tool >/dev/null 2>&1; then
+              echo "Using swift-stdlib-tool"
+              xcrun swift-stdlib-tool --copy --platform iphoneos \
+                --scan-executable Payload/Runner.app/Runner \
+                --destination SwiftSupport/iphoneos/ 2>/dev/null || true
+            fi
+            # Strategy 2: Search known paths for Swift dylibs
+            if [ ! "$(ls -A SwiftSupport/iphoneos/ 2>/dev/null)" ]; then
+              echo "Searching for Swift libraries..."
+              for SWIFT_PATH in \
+                "$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
+                "$(xcode-select -p)/../Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
+                "/Applications/Xcode_26.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
+                "/Applications/Xcode_26.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"; do
+                if [ -d "$SWIFT_PATH" ] && [ "$(ls -A "$SWIFT_PATH"/libswift* 2>/dev/null)" ]; then
+                  echo "Found Swift libs at: $SWIFT_PATH"
+                  cp "$SWIFT_PATH"/libswift* SwiftSupport/iphoneos/ 2>/dev/null || true
+                  break
+                fi
+              done
+            fi
+            # Strategy 3: Find anywhere in Xcode
+            if [ ! "$(ls -A SwiftSupport/iphoneos/ 2>/dev/null)" ]; then
+              echo "Deep search in Xcode..."
+              find /Applications/Xcode* -path "*/iphoneos/libswift*" -type f 2>/dev/null | head -20 | while read f; do
+                echo "Copying: $f"
+                cp "$f" SwiftSupport/iphoneos/
+              done
+            fi
             echo "=== SwiftSupport contents ==="
-            ls -la SwiftSupport/iphoneos/ | head -20
+            ls -la SwiftSupport/iphoneos/ 2>/dev/null || echo "EMPTY!"
+            if [ ! "$(ls -A SwiftSupport/iphoneos/ 2>/dev/null)" ]; then
+              echo "WARNING: SwiftSupport is empty, App Store may reject"
+            fi
             mkdir -p ../../ios-ipas
             zip -r ../../ios-ipas/AkJol.ipa Payload SwiftSupport
             rm -rf Payload SwiftSupport
@@ -351,9 +382,29 @@ jobs:
             codesign --verify --verbose build/ios/iphoneos/Runner.app
             mkdir -p Payload
             cp -r build/ios/iphoneos/Runner.app Payload/
-            SWIFT_TOOLCHAIN_LIBS="$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"
             mkdir -p SwiftSupport/iphoneos
-            cp "$SWIFT_TOOLCHAIN_LIBS"/libswift*.dylib SwiftSupport/iphoneos/ 2>/dev/null || true
+            if xcrun -find swift-stdlib-tool >/dev/null 2>&1; then
+              xcrun swift-stdlib-tool --copy --platform iphoneos \
+                --scan-executable Payload/Runner.app/Runner \
+                --destination SwiftSupport/iphoneos/ 2>/dev/null || true
+            fi
+            if [ ! "$(ls -A SwiftSupport/iphoneos/ 2>/dev/null)" ]; then
+              for SWIFT_PATH in \
+                "$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
+                "$(xcode-select -p)/../Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
+                "/Applications/Xcode_26.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
+                "/Applications/Xcode_26.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"; do
+                if [ -d "$SWIFT_PATH" ] && [ "$(ls -A "$SWIFT_PATH"/libswift* 2>/dev/null)" ]; then
+                  cp "$SWIFT_PATH"/libswift* SwiftSupport/iphoneos/ 2>/dev/null || true
+                  break
+                fi
+              done
+            fi
+            if [ ! "$(ls -A SwiftSupport/iphoneos/ 2>/dev/null)" ]; then
+              find /Applications/Xcode* -path "*/iphoneos/libswift*" -type f 2>/dev/null | head -20 | while read f; do
+                cp "$f" SwiftSupport/iphoneos/
+              done
+            fi
             mkdir -p ../../ios-ipas
             zip -r ../../ios-ipas/AkJol_Pro.ipa Payload SwiftSupport
             rm -rf Payload SwiftSupport
@@ -389,9 +440,29 @@ jobs:
             codesign --verify --verbose build/ios/iphoneos/Runner.app
             mkdir -p Payload
             cp -r build/ios/iphoneos/Runner.app Payload/
-            SWIFT_TOOLCHAIN_LIBS="$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"
             mkdir -p SwiftSupport/iphoneos
-            cp "$SWIFT_TOOLCHAIN_LIBS"/libswift*.dylib SwiftSupport/iphoneos/ 2>/dev/null || true
+            if xcrun -find swift-stdlib-tool >/dev/null 2>&1; then
+              xcrun swift-stdlib-tool --copy --platform iphoneos \
+                --scan-executable Payload/Runner.app/Runner \
+                --destination SwiftSupport/iphoneos/ 2>/dev/null || true
+            fi
+            if [ ! "$(ls -A SwiftSupport/iphoneos/ 2>/dev/null)" ]; then
+              for SWIFT_PATH in \
+                "$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
+                "$(xcode-select -p)/../Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
+                "/Applications/Xcode_26.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
+                "/Applications/Xcode_26.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"; do
+                if [ -d "$SWIFT_PATH" ] && [ "$(ls -A "$SWIFT_PATH"/libswift* 2>/dev/null)" ]; then
+                  cp "$SWIFT_PATH"/libswift* SwiftSupport/iphoneos/ 2>/dev/null || true
+                  break
+                fi
+              done
+            fi
+            if [ ! "$(ls -A SwiftSupport/iphoneos/ 2>/dev/null)" ]; then
+              find /Applications/Xcode* -path "*/iphoneos/libswift*" -type f 2>/dev/null | head -20 | while read f; do
+                cp "$f" SwiftSupport/iphoneos/
+              done
+            fi
             mkdir -p ../../ios-ipas
             zip -r ../../ios-ipas/TakEsep.ipa Payload SwiftSupport
             rm -rf Payload SwiftSupport
