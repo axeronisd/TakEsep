@@ -198,7 +198,7 @@ jobs:
   # Build iOS IPAs (App Store Connect)
   # ═══════════════════════════════════════════════
   build-ios:
-    runs-on: macos-latest
+    runs-on: macos-26
     timeout-minutes: 90
     env:
       IOS_DISTRIBUTION_P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_P12_BASE64 }}
@@ -209,6 +209,17 @@ jobs:
       COCOAPODS_DISABLE_STATS: true
     steps:
       - uses: actions/checkout@v4
+
+      - name: Select Xcode 26
+        run: |
+          echo "=== Available Xcode versions ==="
+          ls /Applications/ | grep -i xcode || true
+          if [ -d "/Applications/Xcode_26.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_26.app/Contents/Developer
+          elif [ -d "/Applications/Xcode_26.0.app" ]; then
+            sudo xcode-select -s /Applications/Xcode_26.0.app/Contents/Developer
+          fi
+          xcodebuild -version
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
