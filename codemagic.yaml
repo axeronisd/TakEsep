@@ -1,0 +1,93 @@
+workflows:
+  ios-customer:
+    name: Build AkJol iOS
+    instance_type: mac_mini_m1
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      groups:
+        - ios_signing
+    cache:
+      cache_paths:
+        - $CM_BUILD_DIR/.pub-cache
+        - $CM_BUILD_DIR/apps/customer/ios/Pods
+    scripts:
+      - name: Setup signing
+        script: |
+          keychain initialize
+          keychain add-certificates
+          xcode-project use-profiles
+      - name: Get dependencies
+        script: |
+          cd apps/customer
+          flutter pub get
+      - name: Build IPA
+        script: |
+          cd apps/customer
+          flutter build ipa --release --export-options-plist=ios/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+
+  ios-courier:
+    name: Build AkJol Pro iOS
+    instance_type: mac_mini_m1
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      groups:
+        - ios_signing
+    cache:
+      cache_paths:
+        - $CM_BUILD_DIR/.pub-cache
+        - $CM_BUILD_DIR/apps/courier/ios/Pods
+    scripts:
+      - name: Setup signing
+        script: |
+          keychain initialize
+          keychain add-certificates
+          xcode-project use-profiles
+      - name: Get dependencies
+        script: |
+          cd apps/courier
+          flutter pub get
+      - name: Build IPA
+        script: |
+          cd apps/courier
+          flutter build ipa --release --export-options-plist=ios/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+
+  ios-warehouse:
+    name: Build TakEsep iOS
+    instance_type: mac_mini_m1
+    max_build_duration: 60
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+      groups:
+        - ios_signing
+    cache:
+      cache_paths:
+        - $CM_BUILD_DIR/.pub-cache
+        - $CM_BUILD_DIR/apps/warehouse/ios/Pods
+    scripts:
+      - name: Setup signing
+        script: |
+          keychain initialize
+          keychain add-certificates
+          xcode-project use-profiles
+      - name: Get dependencies
+        script: |
+          cd apps/warehouse
+          flutter pub get
+      - name: Build IPA
+        script: |
+          cd apps/warehouse
+          flutter build ipa --release --export-options-plist=ios/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
