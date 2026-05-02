@@ -278,8 +278,16 @@ jobs:
             IDENTITY=$(security find-identity -v -p codesigning ~/Library/Keychains/build.keychain | grep -E "Distribution|Developer" | head -1 | awk -F'"' '{print $2}')
             echo "Signing with: $IDENTITY"
             cp ~/Library/MobileDevice/Provisioning\ Profiles/AkJolCustomer.mobileprovision build/ios/iphoneos/Runner.app/embedded.mobileprovision
-            codesign -s "$IDENTITY" -f build/ios/iphoneos/Runner.app
-            find build/ios/iphoneos/Runner.app/Frameworks -name "*.framework" -exec codesign -s "$IDENTITY" -f {} \;
+            # Extract entitlements from provisioning profile
+            security cms -D -i build/ios/iphoneos/Runner.app/embedded.mobileprovision > /tmp/profile_customer.plist
+            /usr/libexec/PlistBuddy -x -c "Print :Entitlements" /tmp/profile_customer.plist > /tmp/entitlements_customer.plist
+            # Sign all frameworks first (deep)
+            find build/ios/iphoneos/Runner.app/Frameworks -name "*.framework" -o -name "*.dylib" | while read f; do
+              codesign --force --sign "$IDENTITY" --timestamp=none "$f"
+            done
+            # Sign the main app with entitlements
+            codesign --force --sign "$IDENTITY" --entitlements /tmp/entitlements_customer.plist --timestamp=none --options=runtime build/ios/iphoneos/Runner.app
+            codesign --verify --verbose build/ios/iphoneos/Runner.app
             mkdir -p Payload
             cp -r build/ios/iphoneos/Runner.app Payload/
             mkdir -p ../../ios-ipas
@@ -308,8 +316,13 @@ jobs:
             IDENTITY=$(security find-identity -v -p codesigning ~/Library/Keychains/build.keychain | grep -E "Distribution|Developer" | head -1 | awk -F'"' '{print $2}')
             echo "Signing with: $IDENTITY"
             cp ~/Library/MobileDevice/Provisioning\ Profiles/AkJolPro.mobileprovision build/ios/iphoneos/Runner.app/embedded.mobileprovision
-            codesign -s "$IDENTITY" -f build/ios/iphoneos/Runner.app
-            find build/ios/iphoneos/Runner.app/Frameworks -name "*.framework" -exec codesign -s "$IDENTITY" -f {} \;
+            security cms -D -i build/ios/iphoneos/Runner.app/embedded.mobileprovision > /tmp/profile_courier.plist
+            /usr/libexec/PlistBuddy -x -c "Print :Entitlements" /tmp/profile_courier.plist > /tmp/entitlements_courier.plist
+            find build/ios/iphoneos/Runner.app/Frameworks -name "*.framework" -o -name "*.dylib" | while read f; do
+              codesign --force --sign "$IDENTITY" --timestamp=none "$f"
+            done
+            codesign --force --sign "$IDENTITY" --entitlements /tmp/entitlements_courier.plist --timestamp=none --options=runtime build/ios/iphoneos/Runner.app
+            codesign --verify --verbose build/ios/iphoneos/Runner.app
             mkdir -p Payload
             cp -r build/ios/iphoneos/Runner.app Payload/
             mkdir -p ../../ios-ipas
@@ -338,8 +351,13 @@ jobs:
             IDENTITY=$(security find-identity -v -p codesigning ~/Library/Keychains/build.keychain | grep -E "Distribution|Developer" | head -1 | awk -F'"' '{print $2}')
             echo "Signing with: $IDENTITY"
             cp ~/Library/MobileDevice/Provisioning\ Profiles/TakEsep.mobileprovision build/ios/iphoneos/Runner.app/embedded.mobileprovision
-            codesign -s "$IDENTITY" -f build/ios/iphoneos/Runner.app
-            find build/ios/iphoneos/Runner.app/Frameworks -name "*.framework" -exec codesign -s "$IDENTITY" -f {} \;
+            security cms -D -i build/ios/iphoneos/Runner.app/embedded.mobileprovision > /tmp/profile_warehouse.plist
+            /usr/libexec/PlistBuddy -x -c "Print :Entitlements" /tmp/profile_warehouse.plist > /tmp/entitlements_warehouse.plist
+            find build/ios/iphoneos/Runner.app/Frameworks -name "*.framework" -o -name "*.dylib" | while read f; do
+              codesign --force --sign "$IDENTITY" --timestamp=none "$f"
+            done
+            codesign --force --sign "$IDENTITY" --entitlements /tmp/entitlements_warehouse.plist --timestamp=none --options=runtime build/ios/iphoneos/Runner.app
+            codesign --verify --verbose build/ios/iphoneos/Runner.app
             mkdir -p Payload
             cp -r build/ios/iphoneos/Runner.app Payload/
             mkdir -p ../../ios-ipas
