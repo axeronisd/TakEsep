@@ -268,9 +268,12 @@ jobs:
         run: |
           cd apps/customer
           flutter pub get
-          if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
+                    if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             flutter build ios --release --no-codesign
-            IDENTITY=$(security find-identity -v -p codesigning ~/Library/Keychains/build.keychain | grep "iPhone Distribution" | head -1 | awk -F'"' '{print $2}')
+            security unlock-keychain -p "" ~/Library/Keychains/build.keychain
+            echo "=== Available signing identities ==="
+            security find-identity -v -p codesigning ~/Library/Keychains/build.keychain
+            IDENTITY=$(security find-identity -v -p codesigning ~/Library/Keychains/build.keychain | grep -E "Distribution|Developer" | head -1 | awk -F'"' '{print $2}')
             echo "Signing with: $IDENTITY"
             cp ~/Library/MobileDevice/Provisioning\ Profiles/AkJolCustomer.mobileprovision build/ios/iphoneos/Runner.app/embedded.mobileprovision
             codesign -s "$IDENTITY" -f build/ios/iphoneos/Runner.app
@@ -295,9 +298,12 @@ jobs:
         run: |
           cd apps/courier
           flutter pub get
-          if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
+                    if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             flutter build ios --release --no-codesign
-            IDENTITY=$(security find-identity -v -p codesigning ~/Library/Keychains/build.keychain | grep "iPhone Distribution" | head -1 | awk -F'"' '{print $2}')
+            security unlock-keychain -p "" ~/Library/Keychains/build.keychain
+            echo "=== Available signing identities ==="
+            security find-identity -v -p codesigning ~/Library/Keychains/build.keychain
+            IDENTITY=$(security find-identity -v -p codesigning ~/Library/Keychains/build.keychain | grep -E "Distribution|Developer" | head -1 | awk -F'"' '{print $2}')
             echo "Signing with: $IDENTITY"
             cp ~/Library/MobileDevice/Provisioning\ Profiles/AkJolPro.mobileprovision build/ios/iphoneos/Runner.app/embedded.mobileprovision
             codesign -s "$IDENTITY" -f build/ios/iphoneos/Runner.app
@@ -322,9 +328,12 @@ jobs:
         run: |
           cd apps/warehouse
           flutter pub get
-          if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
+                    if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             flutter build ios --release --no-codesign
-            IDENTITY=$(security find-identity -v -p codesigning ~/Library/Keychains/build.keychain | grep "iPhone Distribution" | head -1 | awk -F'"' '{print $2}')
+            security unlock-keychain -p "" ~/Library/Keychains/build.keychain
+            echo "=== Available signing identities ==="
+            security find-identity -v -p codesigning ~/Library/Keychains/build.keychain
+            IDENTITY=$(security find-identity -v -p codesigning ~/Library/Keychains/build.keychain | grep -E "Distribution|Developer" | head -1 | awk -F'"' '{print $2}')
             echo "Signing with: $IDENTITY"
             cp ~/Library/MobileDevice/Provisioning\ Profiles/TakEsep.mobileprovision build/ios/iphoneos/Runner.app/embedded.mobileprovision
             codesign -s "$IDENTITY" -f build/ios/iphoneos/Runner.app
