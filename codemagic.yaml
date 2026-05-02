@@ -23,6 +23,10 @@ workflows:
         script: |
           cd apps/customer
           flutter pub get
+      - name: Copy export options
+        script: |
+          cd apps/customer
+          cp ../../ios_export_options/customer.plist ios/export_options.plist
       - name: Build IPA
         script: |
           cd apps/customer
@@ -54,6 +58,10 @@ workflows:
         script: |
           cd apps/courier
           flutter pub get
+      - name: Copy export options
+        script: |
+          cd apps/courier
+          cp ../../ios_export_options/courier.plist ios/export_options.plist
       - name: Build IPA
         script: |
           cd apps/courier
@@ -85,6 +93,10 @@ workflows:
         script: |
           cd apps/warehouse
           flutter pub get
+      - name: Copy export options
+        script: |
+          cd apps/warehouse
+          cp ../../ios_export_options/warehouse.plist ios/export_options.plist
       - name: Build IPA
         script: |
           cd apps/warehouse
