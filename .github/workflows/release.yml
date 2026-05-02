@@ -221,6 +221,15 @@ jobs:
           fi
           xcodebuild -version
 
+      - name: Install iOS 26 SDK
+        run: |
+          echo "=== Installed SDKs ==="
+          xcodebuild -showsdks | grep -i ios || true
+          echo "=== Downloading iOS platform (if needed) ==="
+          xcodebuild -downloadPlatform iOS || true
+          echo "=== SDKs after download ==="
+          xcodebuild -showsdks | grep -i ios || true
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
