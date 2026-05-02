@@ -264,13 +264,17 @@ jobs:
 
       # AkJol Customer iOS
       - name: Build AkJol iOS
-        timeout-minutes: 60
+        timeout-minutes: 30
         run: |
           cd apps/customer
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             cp ../../ios_export_options/customer.plist ios/export_options.plist
-            flutter build ipa --release --export-options-plist=ios/export_options.plist --verbose
+            cd ios && pod install && cd ..
+            echo "=== $(date) Archive (no signing) ==="
+            xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -sdk iphoneos -configuration Release archive -archivePath build/ios/archive/Runner.xcarchive CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+            echo "=== $(date) Export (manual signing) ==="
+            xcodebuild -exportArchive -archivePath build/ios/archive/Runner.xcarchive -exportPath build/ios/ipa -exportOptionsPlist ios/export_options.plist
             mkdir -p ../../ios-ipas
             cp build/ios/ipa/*.ipa ../../ios-ipas/AkJol.ipa
           else
@@ -284,13 +288,17 @@ jobs:
 
       # AkJol Courier iOS
       - name: Build AkJol Pro iOS
-        timeout-minutes: 60
+        timeout-minutes: 30
         run: |
           cd apps/courier
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             cp ../../ios_export_options/courier.plist ios/export_options.plist
-            flutter build ipa --release --export-options-plist=ios/export_options.plist --verbose
+            cd ios && pod install && cd ..
+            echo "=== $(date) Archive (no signing) ==="
+            xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -sdk iphoneos -configuration Release archive -archivePath build/ios/archive/Runner.xcarchive CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+            echo "=== $(date) Export (manual signing) ==="
+            xcodebuild -exportArchive -archivePath build/ios/archive/Runner.xcarchive -exportPath build/ios/ipa -exportOptionsPlist ios/export_options.plist
             mkdir -p ../../ios-ipas
             cp build/ios/ipa/*.ipa ../../ios-ipas/AkJol_Pro.ipa
           else
@@ -304,13 +312,17 @@ jobs:
 
       # TakEsep Warehouse iOS
       - name: Build TakEsep iOS
-        timeout-minutes: 60
+        timeout-minutes: 30
         run: |
           cd apps/warehouse
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             cp ../../ios_export_options/warehouse.plist ios/export_options.plist
-            flutter build ipa --release --export-options-plist=ios/export_options.plist --verbose
+            cd ios && pod install && cd ..
+            echo "=== $(date) Archive (no signing) ==="
+            xcodebuild -workspace ios/Runner.xcworkspace -scheme Runner -sdk iphoneos -configuration Release archive -archivePath build/ios/archive/Runner.xcarchive CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+            echo "=== $(date) Export (manual signing) ==="
+            xcodebuild -exportArchive -archivePath build/ios/archive/Runner.xcarchive -exportPath build/ios/ipa -exportOptionsPlist ios/export_options.plist
             mkdir -p ../../ios-ipas
             cp build/ios/ipa/*.ipa ../../ios-ipas/TakEsep.ipa
           else
