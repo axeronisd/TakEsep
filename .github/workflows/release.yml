@@ -310,9 +310,15 @@ jobs:
             codesign --verify --verbose build/ios/iphoneos/Runner.app
             mkdir -p Payload
             cp -r build/ios/iphoneos/Runner.app Payload/
+            # Add SwiftSupport folder (required by App Store - ITMS-90426)
+            SWIFT_TOOLCHAIN_LIBS="$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"
+            mkdir -p SwiftSupport/iphoneos
+            cp "$SWIFT_TOOLCHAIN_LIBS"/libswift*.dylib SwiftSupport/iphoneos/ 2>/dev/null || true
+            echo "=== SwiftSupport contents ==="
+            ls -la SwiftSupport/iphoneos/ | head -20
             mkdir -p ../../ios-ipas
-            zip -r ../../ios-ipas/AkJol.ipa Payload
-            rm -rf Payload
+            zip -r ../../ios-ipas/AkJol.ipa Payload SwiftSupport
+            rm -rf Payload SwiftSupport
           else
             flutter build ios --release --no-codesign
             mkdir -p Payload
@@ -345,9 +351,12 @@ jobs:
             codesign --verify --verbose build/ios/iphoneos/Runner.app
             mkdir -p Payload
             cp -r build/ios/iphoneos/Runner.app Payload/
+            SWIFT_TOOLCHAIN_LIBS="$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"
+            mkdir -p SwiftSupport/iphoneos
+            cp "$SWIFT_TOOLCHAIN_LIBS"/libswift*.dylib SwiftSupport/iphoneos/ 2>/dev/null || true
             mkdir -p ../../ios-ipas
-            zip -r ../../ios-ipas/AkJol_Pro.ipa Payload
-            rm -rf Payload
+            zip -r ../../ios-ipas/AkJol_Pro.ipa Payload SwiftSupport
+            rm -rf Payload SwiftSupport
           else
             flutter build ios --release --no-codesign
             mkdir -p Payload
@@ -380,9 +389,12 @@ jobs:
             codesign --verify --verbose build/ios/iphoneos/Runner.app
             mkdir -p Payload
             cp -r build/ios/iphoneos/Runner.app Payload/
+            SWIFT_TOOLCHAIN_LIBS="$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"
+            mkdir -p SwiftSupport/iphoneos
+            cp "$SWIFT_TOOLCHAIN_LIBS"/libswift*.dylib SwiftSupport/iphoneos/ 2>/dev/null || true
             mkdir -p ../../ios-ipas
-            zip -r ../../ios-ipas/TakEsep.ipa Payload
-            rm -rf Payload
+            zip -r ../../ios-ipas/TakEsep.ipa Payload SwiftSupport
+            rm -rf Payload SwiftSupport
           else
             flutter build ios --release --no-codesign
             mkdir -p Payload
