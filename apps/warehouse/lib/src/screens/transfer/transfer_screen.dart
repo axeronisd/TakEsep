@@ -303,7 +303,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen>
                 child: TextField(
                   controller: _searchController,
                   focusNode: _searchFocusNode,
-                  autofocus: true,
+                  autofocus: MediaQuery.of(context).size.width >= 900,
                   decoration: InputDecoration(
                     hintText: 'Поиск по названию или штрихкоду...',
                     hintStyle: AppTypography.bodyMedium.copyWith(
@@ -408,7 +408,9 @@ class _TransferScreenState extends ConsumerState<TransferScreen>
           ref.read(currentTransferProvider.notifier).addProduct(product);
       _searchController.clear();
       ref.read(transferSearchQueryProvider.notifier).state = '';
-      _searchFocusNode.requestFocus();
+      if (MediaQuery.of(context).size.width >= 900) {
+        _searchFocusNode.requestFocus();
+      }
 
       if (added) {
         showInfoSnackBar(context, ref, '"${product.name}" добавлен в перемещение', duration: const Duration(seconds: 1));
@@ -418,7 +420,9 @@ class _TransferScreenState extends ConsumerState<TransferScreen>
     } else {
       _searchController.clear();
       ref.read(transferSearchQueryProvider.notifier).state = '';
-      _searchFocusNode.requestFocus();
+      if (MediaQuery.of(context).size.width >= 900) {
+        _searchFocusNode.requestFocus();
+      }
 
       showErrorSnackBar(context, 'Позиция с этим штрих-кодом не существует');
     }

@@ -36,7 +36,7 @@ class _ArrivalScreenState extends ConsumerState<ArrivalScreen> {
           },
         },
         child: Focus(
-          autofocus: true,
+          autofocus: MediaQuery.of(context).size.width >= 900,
           child: SafeArea(
             child: isDesktop ? _buildDesktopLayout() : _buildMobileLayout(),
           ),

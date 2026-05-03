@@ -29,7 +29,11 @@ class _ArrivalCatalogPaneState extends ConsumerState<ArrivalCatalogPane> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _searchFocusNode.requestFocus();
+      if (!mounted) return;
+      // Autofocus only on desktop — on mobile, avoid auto-popping the keyboard
+      if (MediaQuery.of(context).size.width >= 900) {
+        _searchFocusNode.requestFocus();
+      }
     });
   }
 
@@ -49,7 +53,9 @@ class _ArrivalCatalogPaneState extends ConsumerState<ArrivalCatalogPane> {
       ref.read(currentArrivalProvider.notifier).addItem(exactMatch.first);
       _searchController.clear();
       ref.read(arrivalSearchQueryProvider.notifier).state = '';
-      _searchFocusNode.requestFocus();
+      if (MediaQuery.of(context).size.width >= 900) {
+        _searchFocusNode.requestFocus();
+      }
       return;
     }
 
@@ -65,7 +71,9 @@ class _ArrivalCatalogPaneState extends ConsumerState<ArrivalCatalogPane> {
           .addItem(result.product, quantity: result.quantity);
       _searchController.clear();
       ref.read(arrivalSearchQueryProvider.notifier).state = '';
-      _searchFocusNode.requestFocus();
+      if (MediaQuery.of(context).size.width >= 900) {
+        _searchFocusNode.requestFocus();
+      }
     }
   }
 

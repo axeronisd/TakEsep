@@ -30,7 +30,10 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _searchFocusNode.requestFocus();
+      // Autofocus only on desktop — on mobile, avoid auto-popping the keyboard
+      if (mounted && MediaQuery.of(context).size.width >= 900) {
+        _searchFocusNode.requestFocus();
+      }
     });
   }
 
@@ -51,12 +54,13 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
       final product =
           allProducts.where((p) => p.barcode == value.trim()).firstOrNull;
 
+      final isDesktop = MediaQuery.of(context).size.width >= 900;
+
       if (product != null) {
-        // Add to cart (or +1 if already there)
         final added = ref.read(cartProvider.notifier).addProduct(product);
         _searchController.clear();
         ref.read(salesSearchQueryProvider.notifier).state = '';
-        _searchFocusNode.requestFocus();
+        if (isDesktop) _searchFocusNode.requestFocus();
 
         if (added) {
           showInfoSnackBar(context, ref, '"${product.name}" добавлен в чек',
@@ -73,7 +77,7 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
       // If barcode not found, show message
       _searchController.clear();
       ref.read(salesSearchQueryProvider.notifier).state = '';
-      _searchFocusNode.requestFocus();
+      if (isDesktop) _searchFocusNode.requestFocus();
 
       showErrorSnackBar(context, 'Позиция с этим штрих-кодом не существует',
           margin: const EdgeInsets.only(bottom: 80, left: 16, right: 16),
@@ -591,16 +595,22 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.8,
-        maxChildSize: 0.95,
-        builder: (_, scrollController) => const SalesCartPane(),
-      ),
+      builder: (ctx) {
+        final height = MediaQuery.of(ctx).size.height;
+        final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
+        return Padding(
+          padding: EdgeInsets.only(bottom: bottomInset),
+          child: SizedBox(
+            height: height * 0.9,
+            child: const SalesCartPane(),
+          ),
+        );
+      },
     );
   }
 

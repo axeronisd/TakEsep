@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../providers/inventory_providers.dart';
 import '../providers/sales_providers.dart';
 import '../providers/arrival_providers.dart';
+import '../providers/transfer_providers.dart';
 import '../screens/arrival/widgets/quick_create_product_dialog.dart';
 import '../utils/snackbar_helper.dart';
 
@@ -99,8 +100,35 @@ class _GlobalBarcodeScannerState extends ConsumerState<GlobalBarcodeScanner> {
       _handleSalesBarcode(barcode);
     } else if (path.contains('/income')) {
       _handleArrivalBarcode(barcode);
+    } else if (path.contains('/transfer')) {
+      _handleTransferBarcode(barcode);
     } else if (path.contains('/inventory')) {
       _handleInventoryBarcode(barcode);
+    }
+  }
+
+  void _handleTransferBarcode(String barcode) {
+    final productsAsync = ref.read(inventoryProvider);
+    final allProducts = productsAsync.value ?? [];
+    final product =
+        allProducts.where((p) => p.barcode == barcode).firstOrNull;
+
+    if (product != null) {
+      final added =
+          ref.read(currentTransferProvider.notifier).addProduct(product);
+      if (mounted) {
+        if (added) {
+          showInfoSnackBar(context, ref,
+              '"${product.name}" добавлен в перемещение',
+              duration: const Duration(seconds: 1));
+        } else {
+          showErrorSnackBar(context, '"${product.name}" — нет в наличии');
+        }
+      }
+    } else {
+      if (mounted) {
+        showErrorSnackBar(context, 'Позиция с этим штрих-кодом не найдена');
+      }
     }
   }
 
