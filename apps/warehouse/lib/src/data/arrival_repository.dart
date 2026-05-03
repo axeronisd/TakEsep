@@ -104,6 +104,18 @@ class ArrivalRepository {
           'UPDATE products SET quantity = quantity + ?, updated_at = ? WHERE id = ?',
           [item.quantity, now, item.productId],
         );
+
+        // Sync updated product quantity to Supabase
+        final updatedProduct = await _db.getOptional(
+          'SELECT quantity FROM products WHERE id = ?',
+          [item.productId],
+        );
+        if (updatedProduct != null) {
+          await SupabaseSync.update('products', item.productId, {
+            'quantity': updatedProduct['quantity'],
+            'updated_at': now,
+          });
+        }
       }
 
       // Sync to Supabase

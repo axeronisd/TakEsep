@@ -176,14 +176,20 @@ class AuditRepository {
 
       // Apply corrections
       for (final item in items) {
+        final productId = item['product_id'] as String;
+        final actualQty = item['actual_quantity'] as int;
+        final now = DateTime.now().toIso8601String();
+
         await _db.execute(
           'UPDATE products SET quantity = ?, updated_at = ? WHERE id = ?',
-          [
-            item['actual_quantity'],
-            DateTime.now().toIso8601String(),
-            item['product_id'],
-          ],
+          [actualQty, now, productId],
         );
+
+        // Sync updated product to Supabase
+        await SupabaseSync.update('products', productId, {
+          'quantity': actualQty,
+          'updated_at': now,
+        });
       }
 
       // Update audit status

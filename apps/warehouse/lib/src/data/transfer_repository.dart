@@ -195,6 +195,18 @@ class TransferRepository {
           'UPDATE products SET quantity = quantity - ?, updated_at = ? WHERE id = ?',
           [item.quantitySent, now, item.productId],
         );
+
+        // Sync updated product to Supabase
+        final updatedProduct = await _db.getOptional(
+          'SELECT quantity FROM products WHERE id = ?',
+          [item.productId],
+        );
+        if (updatedProduct != null) {
+          await SupabaseSync.update('products', item.productId, {
+            'quantity': updatedProduct['quantity'],
+            'updated_at': now,
+          });
+        }
       }
 
       // Sync to Supabase
@@ -273,6 +285,18 @@ class TransferRepository {
               'UPDATE products SET quantity = quantity + ?, updated_at = ? WHERE id = ?',
               [quantityReceived, now, destProduct['id']],
             );
+
+            // Sync updated product to Supabase
+            final updatedDest = await _db.getOptional(
+              'SELECT quantity FROM products WHERE id = ?',
+              [destProduct['id']],
+            );
+            if (updatedDest != null) {
+              await SupabaseSync.update('products', destProduct['id'], {
+                'quantity': updatedDest['quantity'],
+                'updated_at': now,
+              });
+            }
           }
         }
 
@@ -284,6 +308,18 @@ class TransferRepository {
             'UPDATE products SET quantity = quantity + ?, updated_at = ? WHERE id = ?',
             [returnQty, now, sourceProductId],
           );
+
+          // Sync updated product to Supabase
+          final updatedSource = await _db.getOptional(
+            'SELECT quantity FROM products WHERE id = ?',
+            [sourceProductId],
+          );
+          if (updatedSource != null) {
+            await SupabaseSync.update('products', sourceProductId, {
+              'quantity': updatedSource['quantity'],
+              'updated_at': now,
+            });
+          }
         }
       }
 
@@ -344,6 +380,18 @@ class TransferRepository {
           'UPDATE products SET quantity = quantity + ?, updated_at = ? WHERE id = ?',
           [quantitySent, now, sourceProductId],
         );
+
+        // Sync updated product to Supabase
+        final updatedSource = await _db.getOptional(
+          'SELECT quantity FROM products WHERE id = ?',
+          [sourceProductId],
+        );
+        if (updatedSource != null) {
+          await SupabaseSync.update('products', sourceProductId, {
+            'quantity': updatedSource['quantity'],
+            'updated_at': now,
+          });
+        }
 
         await _db.execute(
           'UPDATE transfer_items SET quantity_received = 0 WHERE id = ?',

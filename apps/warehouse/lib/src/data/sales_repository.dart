@@ -95,6 +95,19 @@ class SalesRepository {
                WHERE id = ?''',
           [item.quantity, item.quantity, now, item.productId],
         );
+
+        // Sync updated product to Supabase
+        final updatedProduct = await _db.getOptional(
+          'SELECT quantity, sold_last_30_days FROM products WHERE id = ?',
+          [item.productId],
+        );
+        if (updatedProduct != null) {
+          await SupabaseSync.update('products', item.productId, {
+            'quantity': updatedProduct['quantity'],
+            'sold_last_30_days': updatedProduct['sold_last_30_days'],
+            'updated_at': now,
+          });
+        }
       }
     }
 
