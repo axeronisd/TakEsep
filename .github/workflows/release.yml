@@ -25,7 +25,7 @@ jobs:
       - name: Get dependencies
         run: |
           cd apps/warehouse
-          flutter pub get
+          flutter pub get || flutter pub get
 
       - name: Build Windows
         run: |
@@ -75,7 +75,7 @@ jobs:
       - name: Build TakEsep APK
         run: |
           cd apps/warehouse
-          flutter pub get
+          flutter pub get || flutter pub get
           flutter build apk --release
 
       - name: Rename TakEsep APK
@@ -86,7 +86,7 @@ jobs:
       - name: Build AkJol Pro APK
         run: |
           cd apps/courier
-          flutter pub get
+          flutter pub get || flutter pub get
           flutter build apk --release
 
       - name: Rename AkJol Pro APK
@@ -97,7 +97,7 @@ jobs:
       - name: Build AkJol APK
         run: |
           cd apps/customer
-          flutter pub get
+          flutter pub get || flutter pub get
           flutter build apk --release
 
       - name: Rename AkJol APK
@@ -156,7 +156,7 @@ jobs:
       - name: Build TakEsep AAB
         run: |
           cd apps/warehouse
-          flutter pub get
+          flutter pub get || flutter pub get
           flutter build appbundle --release
 
       - name: Rename TakEsep AAB
@@ -167,7 +167,7 @@ jobs:
       - name: Build AkJol Pro AAB
         run: |
           cd apps/courier
-          flutter pub get
+          flutter pub get || flutter pub get
           flutter build appbundle --release
 
       - name: Rename AkJol Pro AAB
@@ -178,7 +178,7 @@ jobs:
       - name: Build AkJol AAB
         run: |
           cd apps/customer
-          flutter pub get
+          flutter pub get || flutter pub get
           flutter build appbundle --release
 
       - name: Rename AkJol AAB
@@ -289,7 +289,7 @@ jobs:
         timeout-minutes: 45
         run: |
           cd apps/customer
-          flutter pub get
+          flutter pub get || flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             security unlock-keychain -p "" ~/Library/Keychains/build.keychain
             python3 -c "import plistlib; plistlib.dump({'method':'app-store','teamID':'V63B2H2DTP','signingStyle':'manual','provisioningProfiles':{'com.akjol.customer':'AkJolCustomer'}}, open('ios/ExportOptions.plist','wb'), fmt=plistlib.FMT_XML)"
@@ -321,7 +321,7 @@ jobs:
         timeout-minutes: 45
         run: |
           cd apps/courier
-          flutter pub get
+          flutter pub get || flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             security unlock-keychain -p "" ~/Library/Keychains/build.keychain
             python3 -c "import plistlib; plistlib.dump({'method':'app-store','teamID':'V63B2H2DTP','signingStyle':'manual','provisioningProfiles':{'com.akjol.courier':'AkJolPro'}}, open('ios/ExportOptions.plist','wb'), fmt=plistlib.FMT_XML)"
@@ -353,7 +353,7 @@ jobs:
         timeout-minutes: 45
         run: |
           cd apps/warehouse
-          flutter pub get
+          flutter pub get || flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             security unlock-keychain -p "" ~/Library/Keychains/build.keychain
             python3 -c "import plistlib; plistlib.dump({'method':'app-store','teamID':'V63B2H2DTP','signingStyle':'manual','provisioningProfiles':{'com.takesep.warehouse':'TakEsep'}}, open('ios/ExportOptions.plist','wb'), fmt=plistlib.FMT_XML)"
