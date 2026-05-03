@@ -72,7 +72,7 @@ Future<void> _bootstrapApp() async {
     return;
   }
 
-  // Initialize Firebase & Push Notifications
+  // Initialize Firebase
   bool firebaseOk = false;
   try {
     await Firebase.initializeApp(
@@ -86,26 +86,31 @@ Future<void> _bootstrapApp() async {
     // Firebase is optional — continue without it
   }
 
-  if (firebaseOk) {
-    try {
-      await NotificationService().initialize();
-      await FirebasePushBootstrap.initialize();
-      debugPrint('[TakEsep] Push notifications initialized ✅');
-    } catch (e, st) {
-      debugPrint('[TakEsep] Push init FAILED (non-fatal): $e');
-    }
-  }
-
   final prefs = await SharedPreferences.getInstance();
 
-  debugPrint('[TakEsep] Warehouse app — fully initialized ✅');
-
+  // ─── Show app UI IMMEDIATELY ───
   runApp(ProviderScope(
     overrides: [
       sharedPreferencesProvider.overrideWithValue(prefs),
     ],
     child: const TakEsepWarehouseApp(),
   ));
+
+  // ─── Initialize Push Notifications IN BACKGROUND ───
+  if (firebaseOk) {
+    unawaited(_initPushInBackground());
+  }
+}
+
+/// Runs push init in the background so it never blocks the UI.
+Future<void> _initPushInBackground() async {
+  try {
+    await NotificationService().initialize();
+    await FirebasePushBootstrap.initialize();
+    debugPrint('[TakEsep] Push notifications initialized ✅');
+  } catch (e, st) {
+    debugPrint('[TakEsep] Push init FAILED (non-fatal): $e');
+  }
 }
 
 void _showErrorOnScreen(String message, String? stack) {

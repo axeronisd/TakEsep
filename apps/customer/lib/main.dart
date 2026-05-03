@@ -57,7 +57,7 @@ Future<void> _bootstrapApp() async {
     return; // Don't continue — Supabase is required
   }
 
-  // ─── Initialize Firebase & Push Notifications ───
+  // ─── Initialize Firebase ───
   bool firebaseOk = false;
   try {
     await Firebase.initializeApp(
@@ -69,11 +69,23 @@ Future<void> _bootstrapApp() async {
   } catch (e, st) {
     debugPrint('[AkJol] Firebase init FAILED: $e');
     // Don't crash — Firebase is optional for basic functionality
-    // Show error briefly but continue
     _showErrorOnScreen('Firebase init failed: $e', st.toString());
     return;
   }
 
+  // ─── Show app UI IMMEDIATELY ───
+  // runApp() MUST be called before any potentially-hanging operations
+  // (like Firebase messaging.getToken() which can hang on iOS APNs)
+  runApp(const ProviderScope(child: AkJolCustomerApp()));
+
+  // ─── Initialize Push Notifications IN BACKGROUND ───
+  if (firebaseOk) {
+    unawaited(_initPushInBackground());
+  }
+}
+
+/// Runs push init in the background so it never blocks the UI.
+Future<void> _initPushInBackground() async {
   try {
     await NotificationService().initialize();
     await FirebasePushBootstrap.initialize();
@@ -81,9 +93,6 @@ Future<void> _bootstrapApp() async {
   } catch (e, st) {
     debugPrint('[AkJol] Push init FAILED (non-fatal): $e');
   }
-
-  debugPrint('[AkJol] Customer App — fully initialized ✅');
-  runApp(const ProviderScope(child: AkJolCustomerApp()));
 }
 
 void _showErrorOnScreen(String message, String? stack) {

@@ -57,12 +57,14 @@ Future<void> _bootstrapApp() async {
     return;
   }
 
-  // ─── Initialize Firebase & Push Notifications ───
+  // ─── Initialize Firebase ───
+  bool firebaseOk = false;
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
     await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
+    firebaseOk = true;
     debugPrint('[AkJol Pro] Firebase initialized ✅');
   } catch (e, st) {
     debugPrint('[AkJol Pro] Firebase init FAILED: $e');
@@ -70,6 +72,17 @@ Future<void> _bootstrapApp() async {
     return;
   }
 
+  // ─── Show app UI IMMEDIATELY ───
+  runApp(const ProviderScope(child: AkJolCourierApp()));
+
+  // ─── Initialize Push Notifications IN BACKGROUND ───
+  if (firebaseOk) {
+    unawaited(_initPushInBackground());
+  }
+}
+
+/// Runs push init in the background so it never blocks the UI.
+Future<void> _initPushInBackground() async {
   try {
     await NotificationService().initialize();
     await FirebasePushBootstrap.initialize();
@@ -77,9 +90,6 @@ Future<void> _bootstrapApp() async {
   } catch (e, st) {
     debugPrint('[AkJol Pro] Push init FAILED (non-fatal): $e');
   }
-
-  debugPrint('[AkJol Pro] App — fully initialized ✅');
-  runApp(const ProviderScope(child: AkJolCourierApp()));
 }
 
 void _showErrorOnScreen(String message, String? stack) {
