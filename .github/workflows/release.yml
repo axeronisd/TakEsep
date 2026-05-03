@@ -292,27 +292,7 @@ jobs:
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             security unlock-keychain -p "" ~/Library/Keychains/build.keychain
-            # Create ExportOptions.plist
-            cat > ios/ExportOptions.plist << 'EOF'
-            <?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-            <plist version="1.0">
-            <dict>
-                <key>method</key>
-                <string>app-store</string>
-                <key>teamID</key>
-                <string>V63B2H2DTP</string>
-                <key>signingStyle</key>
-                <string>manual</string>
-                <key>provisioningProfiles</key>
-                <dict>
-                    <key>com.akjol.customer</key>
-                    <string>AkJolCustomer</string>
-                </dict>
-            </dict>
-            </plist>
-            EOF
-            # Build archive with xcodebuild (handles signing + SwiftSupport automatically)
+            python3 -c "import plistlib; plistlib.dump({'method':'app-store','teamID':'V63B2H2DTP','signingStyle':'manual','provisioningProfiles':{'com.akjol.customer':'AkJolCustomer'}}, open('ios/ExportOptions.plist','wb'), fmt=plistlib.FMT_XML)"
             cd ios
             xcodebuild -workspace Runner.xcworkspace -scheme Runner \
               -configuration Release -sdk iphoneos \
@@ -321,7 +301,6 @@ jobs:
               CODE_SIGN_IDENTITY="Apple Distribution: Ilgis Uzbekov (V63B2H2DTP)" \
               PROVISIONING_PROFILE_SPECIFIER="AkJolCustomer" \
               archive
-            # Export IPA
             xcodebuild -exportArchive \
               -archivePath ../build/ios/archive/Runner.xcarchive \
               -exportPath ../build/ios/ipa \
@@ -345,25 +324,7 @@ jobs:
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             security unlock-keychain -p "" ~/Library/Keychains/build.keychain
-            cat > ios/ExportOptions.plist << 'EOF'
-            <?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-            <plist version="1.0">
-            <dict>
-                <key>method</key>
-                <string>app-store</string>
-                <key>teamID</key>
-                <string>V63B2H2DTP</string>
-                <key>signingStyle</key>
-                <string>manual</string>
-                <key>provisioningProfiles</key>
-                <dict>
-                    <key>com.akjol.courier</key>
-                    <string>AkJolPro</string>
-                </dict>
-            </dict>
-            </plist>
-            EOF
+            python3 -c "import plistlib; plistlib.dump({'method':'app-store','teamID':'V63B2H2DTP','signingStyle':'manual','provisioningProfiles':{'com.akjol.courier':'AkJolPro'}}, open('ios/ExportOptions.plist','wb'), fmt=plistlib.FMT_XML)"
             cd ios
             xcodebuild -workspace Runner.xcworkspace -scheme Runner \
               -configuration Release -sdk iphoneos \
@@ -395,25 +356,7 @@ jobs:
           flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             security unlock-keychain -p "" ~/Library/Keychains/build.keychain
-            cat > ios/ExportOptions.plist << 'EOF'
-            <?xml version="1.0" encoding="UTF-8"?>
-            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-            <plist version="1.0">
-            <dict>
-                <key>method</key>
-                <string>app-store</string>
-                <key>teamID</key>
-                <string>V63B2H2DTP</string>
-                <key>signingStyle</key>
-                <string>manual</string>
-                <key>provisioningProfiles</key>
-                <dict>
-                    <key>com.takesep.warehouse</key>
-                    <string>TakEsep</string>
-                </dict>
-            </dict>
-            </plist>
-            EOF
+            python3 -c "import plistlib; plistlib.dump({'method':'app-store','teamID':'V63B2H2DTP','signingStyle':'manual','provisioningProfiles':{'com.takesep.warehouse':'TakEsep'}}, open('ios/ExportOptions.plist','wb'), fmt=plistlib.FMT_XML)"
             cd ios
             xcodebuild -workspace Runner.xcworkspace -scheme Runner \
               -configuration Release -sdk iphoneos \
