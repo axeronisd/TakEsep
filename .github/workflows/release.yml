@@ -294,6 +294,7 @@ jobs:
             security unlock-keychain -p "" ~/Library/Keychains/build.keychain
             python3 -c "import plistlib; plistlib.dump({'method':'app-store','teamID':'V63B2H2DTP','signingStyle':'manual','provisioningProfiles':{'com.akjol.customer':'AkJolCustomer'}}, open('ios/ExportOptions.plist','wb'), fmt=plistlib.FMT_XML)"
             cd ios
+            pod install
             xcodebuild -workspace Runner.xcworkspace -scheme Runner \
               -configuration Release -sdk iphoneos \
               -archivePath ../build/ios/archive/Runner.xcarchive \
@@ -326,6 +327,7 @@ jobs:
             security unlock-keychain -p "" ~/Library/Keychains/build.keychain
             python3 -c "import plistlib; plistlib.dump({'method':'app-store','teamID':'V63B2H2DTP','signingStyle':'manual','provisioningProfiles':{'com.akjol.courier':'AkJolPro'}}, open('ios/ExportOptions.plist','wb'), fmt=plistlib.FMT_XML)"
             cd ios
+            pod install
             xcodebuild -workspace Runner.xcworkspace -scheme Runner \
               -configuration Release -sdk iphoneos \
               -archivePath ../build/ios/archive/Runner.xcarchive \
@@ -358,6 +360,7 @@ jobs:
             security unlock-keychain -p "" ~/Library/Keychains/build.keychain
             python3 -c "import plistlib; plistlib.dump({'method':'app-store','teamID':'V63B2H2DTP','signingStyle':'manual','provisioningProfiles':{'com.takesep.warehouse':'TakEsep'}}, open('ios/ExportOptions.plist','wb'), fmt=plistlib.FMT_XML)"
             cd ios
+            pod install
             xcodebuild -workspace Runner.xcworkspace -scheme Runner \
               -configuration Release -sdk iphoneos \
               -archivePath ../build/ios/archive/Runner.xcarchive \
