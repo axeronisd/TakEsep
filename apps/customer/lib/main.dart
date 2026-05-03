@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'firebase_options.dart';
 import 'src/theme/akjol_theme.dart';
 import 'src/routing/app_router.dart';
@@ -26,25 +27,12 @@ void main() {
     // ═══════════════════════════════════════════════════════════
     FlutterError.onError = (FlutterErrorDetails details) {
       FlutterError.presentError(details);
-      debugPrint('');
-      debugPrint('╔══════════════════════════════════════════════════════');
-      debugPrint('║ 🔴 FLUTTER FRAMEWORK CRASH');
-      debugPrint('╠══════════════════════════════════════════════════════');
-      debugPrint('║ Exception: ${details.exceptionAsString()}');
-      debugPrint('║ Library:   ${details.library}');
-      debugPrint('║ Context:   ${details.context?.toDescription() ?? 'неизвестно'}');
-      if (details.informationCollector != null) {
-        for (final info in details.informationCollector!()) {
-          debugPrint('║ Info:      ${info.toDescription()}');
-        }
-      }
-      debugPrint('║ Stack:');
-      final lines = details.stack.toString().split('\n');
-      for (int i = 0; i < lines.length && i < 20; i++) {
-        debugPrint('║   ${lines[i]}');
-      }
-      debugPrint('╚══════════════════════════════════════════════════════');
-      debugPrint('');
+      FirebaseCrashlytics.instance.recordError(
+        details.exception,
+        details.stack,
+        reason: details.context?.toString(),
+        fatal: true,
+      );
     };
 
     // ═══════════════════════════════════════════════════════════
@@ -52,19 +40,7 @@ void main() {
     //  Catches platform errors (native, codec, channel)
     // ═══════════════════════════════════════════════════════════
     PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
-      debugPrint('');
-      debugPrint('╔══════════════════════════════════════════════════════');
-      debugPrint('║ 🟠 PLATFORM ERROR');
-      debugPrint('╠══════════════════════════════════════════════════════');
-      debugPrint('║ Error: $error');
-      debugPrint('║ Type:  ${error.runtimeType}');
-      debugPrint('║ Stack:');
-      final lines = stack.toString().split('\n');
-      for (int i = 0; i < lines.length && i < 20; i++) {
-        debugPrint('║   ${lines[i]}');
-      }
-      debugPrint('╚══════════════════════════════════════════════════════');
-      debugPrint('');
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
       return true; // handled — don't crash
     };
 
@@ -120,9 +96,10 @@ void main() {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
+      await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
       await NotificationService().initialize();
       await FirebasePushBootstrap.initialize();
-      debugPrint('[AkJol] Firebase + Push initialized ✅');
+      debugPrint('[AkJol] Firebase + Push + Crashlytics initialized ✅');
     } catch (e) {
       debugPrint('[AkJol] Firebase init error (non-fatal): $e');
     }
@@ -135,19 +112,7 @@ void main() {
 
     runApp(const ProviderScope(child: AkJolCustomerApp()));
   }, (Object error, StackTrace stack) {
-    debugPrint('');
-    debugPrint('╔══════════════════════════════════════════════════════');
-    debugPrint('║ 🔴 UNHANDLED DART EXCEPTION');
-    debugPrint('╠══════════════════════════════════════════════════════');
-    debugPrint('║ Error: $error');
-    debugPrint('║ Type:  ${error.runtimeType}');
-    debugPrint('║ Stack:');
-    final lines = stack.toString().split('\n');
-    for (int i = 0; i < lines.length && i < 25; i++) {
-      debugPrint('║   ${lines[i]}');
-    }
-    debugPrint('╚══════════════════════════════════════════════════════');
-    debugPrint('');
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
   });
 }
 

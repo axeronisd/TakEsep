@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'firebase_options.dart';
 import 'src/theme/akjol_theme.dart';
 import 'src/routing/app_router.dart';
@@ -18,12 +19,17 @@ void main() {
     // Catch Flutter framework errors
     FlutterError.onError = (FlutterErrorDetails details) {
       FlutterError.presentError(details);
-      debugPrint('[AkJol Pro] Flutter error: ${details.exceptionAsString()}');
+      FirebaseCrashlytics.instance.recordError(
+        details.exception,
+        details.stack,
+        reason: details.context?.toString(),
+        fatal: true,
+      );
     };
 
     // Catch platform errors
     PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
-      debugPrint('[AkJol Pro] Platform error: $error');
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
       return true;
     };
 
@@ -69,6 +75,7 @@ void main() {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
+      await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
       // Initialize local notification channels
       await NotificationService().initialize();
       // Push Notifications
@@ -81,7 +88,7 @@ void main() {
 
     runApp(const ProviderScope(child: AkJolCourierApp()));
   }, (Object error, StackTrace stack) {
-    debugPrint('[AkJol Pro] Unhandled exception: $error');
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
   });
 }
 

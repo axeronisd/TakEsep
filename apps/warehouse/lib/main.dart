@@ -11,6 +11,7 @@ import 'src/providers/theme_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'firebase_options.dart';
 import 'src/providers/auth_providers.dart';
 import 'src/data/powersync_db.dart';
@@ -24,12 +25,17 @@ void main() {
     // Catch Flutter framework errors
     FlutterError.onError = (FlutterErrorDetails details) {
       FlutterError.presentError(details);
-      debugPrint('[TakEsep] Flutter error: ${details.exceptionAsString()}');
+      FirebaseCrashlytics.instance.recordError(
+        details.exception,
+        details.stack,
+        reason: details.context?.toString(),
+        fatal: true,
+      );
     };
 
     // Catch platform errors
     PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
-      debugPrint('[TakEsep] Platform error: $error');
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
       return true; // handled
     };
 
@@ -84,9 +90,11 @@ void main() {
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
+      // Enable Crashlytics collection
+      await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
       await NotificationService().initialize();
       await FirebasePushBootstrap.initialize();
-      debugPrint('[TakEsep] Firebase + Push initialized ✅');
+      debugPrint('[TakEsep] Firebase + Push + Crashlytics initialized ✅');
     } catch (e) {
       debugPrint('[TakEsep] Firebase init error (non-fatal): $e');
     }
@@ -102,7 +110,7 @@ void main() {
       child: const TakEsepWarehouseApp(),
     ));
   }, (Object error, StackTrace stack) {
-    debugPrint('[TakEsep] Unhandled exception: $error');
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
   });
 }
 
