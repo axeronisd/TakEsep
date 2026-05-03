@@ -18,9 +18,6 @@ import 'src/data/powersync_db.dart';
 import 'src/services/firebase_push_bootstrap.dart';
 import 'src/services/notification_service.dart';
 
-/// Global key to show error screen from anywhere
-final _errorKey = GlobalKey<NavigatorState>();
-
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -117,26 +114,17 @@ void _showErrorOnScreen(String message, String? stack) {
   if (stack != null) debugPrint('Stack: ${stack.substring(0, stack.length > 500 ? 500 : stack.length)}');
   debugPrint('═══════════════════════════════════════');
 
-  // If the app is already running, replace with error screen
-  final context = _errorKey.currentContext;
-  if (context != null && context.mounted) {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => _CrashScreen(message: message, stack: stack)),
-    );
-    return;
+  try {
+    runApp(_ErrorApp(message: message, stack: stack));
+  } catch (e) {
+    debugPrint('[TakEsep] Even error screen failed: $e');
   }
-
-  // Otherwise, start the app with error screen
-  runApp(MaterialApp(
-    navigatorKey: _errorKey,
-    home: _CrashScreen(message: message, stack: stack),
-  ));
 }
 
-class _CrashScreen extends StatelessWidget {
+class _ErrorApp extends StatelessWidget {
   final String message;
   final String? stack;
-  const _CrashScreen({required this.message, this.stack});
+  const _ErrorApp({required this.message, this.stack});
 
   @override
   Widget build(BuildContext context) {
