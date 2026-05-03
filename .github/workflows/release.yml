@@ -301,6 +301,22 @@ jobs:
             # Extract entitlements from provisioning profile
             security cms -D -i build/ios/iphoneos/Runner.app/embedded.mobileprovision > /tmp/profile_customer.plist
             /usr/libexec/PlistBuddy -x -c "Print :Entitlements" /tmp/profile_customer.plist > /tmp/entitlements_customer.plist
+            # Copy Swift dylibs to Frameworks (required by App Store for Xcode 26)
+            SWIFT_DYLIB_PATH=""
+            for p in "$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
+                     "$(xcode-select -p)/../Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
+                     "/Applications/Xcode_26.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
+                     "/Applications/Xcode_26.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"; do
+              if [ -d "$p" ] && [ "$(ls -A "$p"/libswift*.dylib 2>/dev/null)" ]; then
+                SWIFT_DYLIB_PATH="$p"
+                break
+              fi
+            done
+            if [ -n "$SWIFT_DYLIB_PATH" ]; then
+              mkdir -p build/ios/iphoneos/Runner.app/Frameworks
+              cp "$SWIFT_DYLIB_PATH"/libswift*.dylib build/ios/iphoneos/Runner.app/Frameworks/
+              echo "Copied Swift dylibs to Frameworks"
+            fi
             # Sign all frameworks first (deep)
             find build/ios/iphoneos/Runner.app/Frameworks -name "*.framework" -o -name "*.dylib" | while read f; do
               codesign --force --sign "$IDENTITY" --timestamp=none "$f"
@@ -375,6 +391,22 @@ jobs:
             cp ~/Library/MobileDevice/Provisioning\ Profiles/AkJolPro.mobileprovision build/ios/iphoneos/Runner.app/embedded.mobileprovision
             security cms -D -i build/ios/iphoneos/Runner.app/embedded.mobileprovision > /tmp/profile_courier.plist
             /usr/libexec/PlistBuddy -x -c "Print :Entitlements" /tmp/profile_courier.plist > /tmp/entitlements_courier.plist
+            # Copy Swift dylibs to Frameworks (required by App Store for Xcode 26)
+            SWIFT_DYLIB_PATH=""
+            for p in "$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
+                     "$(xcode-select -p)/../Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
+                     "/Applications/Xcode_26.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
+                     "/Applications/Xcode_26.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"; do
+              if [ -d "$p" ] && [ "$(ls -A "$p"/libswift*.dylib 2>/dev/null)" ]; then
+                SWIFT_DYLIB_PATH="$p"
+                break
+              fi
+            done
+            if [ -n "$SWIFT_DYLIB_PATH" ]; then
+              mkdir -p build/ios/iphoneos/Runner.app/Frameworks
+              cp "$SWIFT_DYLIB_PATH"/libswift*.dylib build/ios/iphoneos/Runner.app/Frameworks/
+              echo "Copied Swift dylibs to Frameworks"
+            fi
             find build/ios/iphoneos/Runner.app/Frameworks -name "*.framework" -o -name "*.dylib" | while read f; do
               codesign --force --sign "$IDENTITY" --timestamp=none "$f"
             done
@@ -433,6 +465,22 @@ jobs:
             cp ~/Library/MobileDevice/Provisioning\ Profiles/TakEsep.mobileprovision build/ios/iphoneos/Runner.app/embedded.mobileprovision
             security cms -D -i build/ios/iphoneos/Runner.app/embedded.mobileprovision > /tmp/profile_warehouse.plist
             /usr/libexec/PlistBuddy -x -c "Print :Entitlements" /tmp/profile_warehouse.plist > /tmp/entitlements_warehouse.plist
+            # Copy Swift dylibs to Frameworks (required by App Store for Xcode 26)
+            SWIFT_DYLIB_PATH=""
+            for p in "$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
+                     "$(xcode-select -p)/../Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
+                     "/Applications/Xcode_26.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
+                     "/Applications/Xcode_26.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"; do
+              if [ -d "$p" ] && [ "$(ls -A "$p"/libswift*.dylib 2>/dev/null)" ]; then
+                SWIFT_DYLIB_PATH="$p"
+                break
+              fi
+            done
+            if [ -n "$SWIFT_DYLIB_PATH" ]; then
+              mkdir -p build/ios/iphoneos/Runner.app/Frameworks
+              cp "$SWIFT_DYLIB_PATH"/libswift*.dylib build/ios/iphoneos/Runner.app/Frameworks/
+              echo "Copied Swift dylibs to Frameworks"
+            fi
             find build/ios/iphoneos/Runner.app/Frameworks -name "*.framework" -o -name "*.dylib" | while read f; do
               codesign --force --sign "$IDENTITY" --timestamp=none "$f"
             done
