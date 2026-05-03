@@ -111,7 +111,9 @@ Future<void> _bootstrapApp() async {
 void _showErrorOnScreen(String message, String? stack) {
   debugPrint('═══════════════════════════════════════');
   debugPrint('🔴 ERROR: $message');
-  if (stack != null) debugPrint('Stack: ${stack.substring(0, stack.length > 500 ? 500 : stack.length)}');
+  if (stack != null)
+    debugPrint(
+        'Stack: ${stack.substring(0, stack.length > 500 ? 500 : stack.length)}');
   debugPrint('═══════════════════════════════════════');
 
   try {
@@ -137,10 +139,14 @@ class _ErrorApp extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.error_outline, color: Colors.redAccent, size: 48),
+                const Icon(Icons.error_outline,
+                    color: Colors.redAccent, size: 48),
                 const SizedBox(height: 16),
                 const Text('TakEsep — Ошибка',
-                    style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold)),
                 const SizedBox(height: 16),
                 Container(
                   width: double.infinity,
@@ -152,7 +158,10 @@ class _ErrorApp extends StatelessWidget {
                   ),
                   child: SelectableText(
                     message,
-                    style: const TextStyle(color: Colors.redAccent, fontSize: 13, fontFamily: 'monospace'),
+                    style: const TextStyle(
+                        color: Colors.redAccent,
+                        fontSize: 13,
+                        fontFamily: 'monospace'),
                   ),
                 ),
                 if (stack != null) ...[
@@ -169,7 +178,10 @@ class _ErrorApp extends StatelessWidget {
                     ),
                     child: SelectableText(
                       stack!.length > 2000 ? stack!.substring(0, 2000) : stack!,
-                      style: const TextStyle(color: Colors.white70, fontSize: 10, fontFamily: 'monospace'),
+                      style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 10,
+                          fontFamily: 'monospace'),
                     ),
                   ),
                 ],

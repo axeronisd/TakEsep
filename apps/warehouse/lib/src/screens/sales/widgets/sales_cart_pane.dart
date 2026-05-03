@@ -654,6 +654,14 @@ class SalesCartPane extends ConsumerWidget {
       ref.invalidate(stockAlertsProvider);
 
       if (context.mounted) {
+        // Capture all ref data BEFORE closing bottom sheet
+        final receiptConfig = ref.read(receiptConfigProvider);
+        final receiptAuth = ref.read(authProvider);
+        final receiptCur = ref.read(currencyProvider).symbol;
+        final receiptWarehouseId = ref.read(selectedWarehouseIdProvider);
+        final receiptPrinterService = ref.read(printerServiceProvider);
+        final receiptPrinterName = ref.read(defaultPrinterNameProvider);
+
         // Close bottom sheet on mobile/tablet
         if (!isDesktop && Navigator.of(context).canPop()) {
           Navigator.of(context).pop();
@@ -680,6 +688,12 @@ class SalesCartPane extends ConsumerWidget {
               summary.itemsDiscountTotal + summary.globalDiscountAmount,
           paymentMethod: pmName,
           receiptNumber: receiptNum,
+          preloadedConfig: receiptConfig,
+          preloadedAuth: receiptAuth,
+          preloadedCur: receiptCur,
+          preloadedWarehouseId: receiptWarehouseId,
+          preloadedPrinterService: receiptPrinterService,
+          preloadedPrinterName: receiptPrinterName,
         );
       }
     } catch (e) {
@@ -697,10 +711,16 @@ class SalesCartPane extends ConsumerWidget {
     required double discountAmount,
     required String paymentMethod,
     required String receiptNumber,
+    required ReceiptConfig preloadedConfig,
+    required AuthState preloadedAuth,
+    required String preloadedCur,
+    required String? preloadedWarehouseId,
+    required PrinterService preloadedPrinterService,
+    required String? preloadedPrinterName,
   }) {
-    final config = ref.read(receiptConfigProvider);
-    final auth = ref.read(authProvider);
-    final cur = ref.read(currencyProvider).symbol;
+    final config = preloadedConfig;
+    final auth = preloadedAuth;
+    final cur = preloadedCur;
     final cs = Theme.of(context).colorScheme;
     final now = DateTime.now();
     final dateStr =
@@ -753,7 +773,7 @@ class SalesCartPane extends ConsumerWidget {
                         auth.availableWarehouses
                                 .where((w) =>
                                     w.id ==
-                                    ref.read(selectedWarehouseIdProvider))
+                                    preloadedWarehouseId)
                                 .firstOrNull
                                 ?.address ??
                             'г. Бишкек',
@@ -829,8 +849,7 @@ class SalesCartPane extends ConsumerWidget {
             FilledButton.icon(
               onPressed: () async {
                 Navigator.pop(ctx);
-                final printerService = ref.read(printerServiceProvider);
-                final warehouseId = ref.read(selectedWarehouseIdProvider);
+                final warehouseId = preloadedWarehouseId;
                 final activeW = auth.availableWarehouses
                     .where((w) => w.id == warehouseId)
                     .firstOrNull;
@@ -859,10 +878,9 @@ class SalesCartPane extends ConsumerWidget {
                   footerText: config.footerText,
                   currencySymbol: cur,
                 );
-                final printerName = ref.read(defaultPrinterNameProvider);
-                final success = await printerService.printReceipt(
+                final success = await preloadedPrinterService.printReceipt(
                     receiptData, config,
-                    printerName: printerName);
+                    printerName: preloadedPrinterName);
                 if (context.mounted) {
                   if (success) {
                     showInfoSnackBar(context, ref, 'Чек отправлен на печать');
