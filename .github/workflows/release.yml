@@ -312,14 +312,14 @@ jobs:
               -archivePath ../build/ios/archive/Runner.xcarchive \
               -exportPath ../build/ios/ipa \
               -exportOptionsPlist ExportOptions.plist
-            mkdir -p ../../ios-ipas
-            cp ../build/ios/ipa/*.ipa ../../ios-ipas/AkJol.ipa
+            mkdir -p $GITHUB_WORKSPACE/ios-ipas
+            cp ../build/ios/ipa/*.ipa $GITHUB_WORKSPACE/ios-ipas/AkJol.ipa
           else
             flutter build ios --release --no-codesign
             mkdir -p Payload
             cp -r build/ios/iphoneos/Runner.app Payload/
-            mkdir -p ../../ios-ipas
-            zip -r ../../ios-ipas/AkJol.ipa Payload
+            mkdir -p $GITHUB_WORKSPACE/ios-ipas
+            zip -r $GITHUB_WORKSPACE/ios-ipas/AkJol.ipa Payload
             rm -rf Payload
           fi
 
@@ -343,14 +343,14 @@ jobs:
               -archivePath ../build/ios/archive/Runner.xcarchive \
               -exportPath ../build/ios/ipa \
               -exportOptionsPlist ExportOptions.plist
-            mkdir -p ../../ios-ipas
-            cp ../build/ios/ipa/*.ipa ../../ios-ipas/AkJol_Pro.ipa
+            mkdir -p $GITHUB_WORKSPACE/ios-ipas
+            cp ../build/ios/ipa/*.ipa $GITHUB_WORKSPACE/ios-ipas/AkJol_Pro.ipa
           else
             flutter build ios --release --no-codesign
             mkdir -p Payload
             cp -r build/ios/iphoneos/Runner.app Payload/
-            mkdir -p ../../ios-ipas
-            zip -r ../../ios-ipas/AkJol_Pro.ipa Payload
+            mkdir -p $GITHUB_WORKSPACE/ios-ipas
+            zip -r $GITHUB_WORKSPACE/ios-ipas/AkJol_Pro.ipa Payload
             rm -rf Payload
           fi
 
@@ -374,14 +374,14 @@ jobs:
               -archivePath ../build/ios/archive/Runner.xcarchive \
               -exportPath ../build/ios/ipa \
               -exportOptionsPlist ExportOptions.plist
-            mkdir -p ../../ios-ipas
-            cp ../build/ios/ipa/*.ipa ../../ios-ipas/TakEsep.ipa
+            mkdir -p $GITHUB_WORKSPACE/ios-ipas
+            cp ../build/ios/ipa/*.ipa $GITHUB_WORKSPACE/ios-ipas/TakEsep.ipa
           else
             flutter build ios --release --no-codesign
             mkdir -p Payload
             cp -r build/ios/iphoneos/Runner.app Payload/
-            mkdir -p ../../ios-ipas
-            zip -r ../../ios-ipas/TakEsep.ipa Payload
+            mkdir -p $GITHUB_WORKSPACE/ios-ipas
+            zip -r $GITHUB_WORKSPACE/ios-ipas/TakEsep.ipa Payload
             rm -rf Payload
           fi
 
