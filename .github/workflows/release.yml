@@ -343,7 +343,8 @@ jobs:
             pod install
             ruby -e "require 'xcodeproj'; p=Xcodeproj::Project.open('Runner.xcodeproj'); p.targets.each{|t|next unless t.name=='Runner'; t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Manual'; c.build_settings['CODE_SIGN_IDENTITY']='Apple Distribution: Ilgis Uzbekov (V63B2H2DTP)'; c.build_settings['PROVISIONING_PROFILE_SPECIFIER']='AkJolCustomer'}}; p.save; pp=Xcodeproj::Project.open('Pods/Pods.xcodeproj'); pp.targets.each{|t|t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Automatic'; c.build_settings['CODE_SIGNING_ALLOWED']='NO'}}; pp.save"
             xcodebuild -workspace Runner.xcworkspace -scheme Runner \
-              -configuration Release -sdk iphoneos \
+              -configuration Release \
+              -destination 'generic/platform=iOS' \
               -archivePath ../build/ios/archive/Runner.xcarchive \
               archive
             echo "=== Archive embedded.mobileprovision diagnostic ==="
@@ -376,7 +377,8 @@ jobs:
             pod install
             ruby -e "require 'xcodeproj'; p=Xcodeproj::Project.open('Runner.xcodeproj'); p.targets.each{|t|next unless t.name=='Runner'; t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Manual'; c.build_settings['CODE_SIGN_IDENTITY']='Apple Distribution: Ilgis Uzbekov (V63B2H2DTP)'; c.build_settings['PROVISIONING_PROFILE_SPECIFIER']='AkJolPro'}}; p.save; pp=Xcodeproj::Project.open('Pods/Pods.xcodeproj'); pp.targets.each{|t|t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Automatic'; c.build_settings['CODE_SIGNING_ALLOWED']='NO'}}; pp.save"
             xcodebuild -workspace Runner.xcworkspace -scheme Runner \
-              -configuration Release -sdk iphoneos \
+              -configuration Release \
+              -destination 'generic/platform=iOS' \
               -archivePath ../build/ios/archive/Runner.xcarchive \
               archive
             xcodebuild -exportArchive \
@@ -407,7 +409,8 @@ jobs:
             pod install
             ruby -e "require 'xcodeproj'; p=Xcodeproj::Project.open('Runner.xcodeproj'); p.targets.each{|t|next unless t.name=='Runner'; t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Manual'; c.build_settings['CODE_SIGN_IDENTITY']='Apple Distribution: Ilgis Uzbekov (V63B2H2DTP)'; c.build_settings['PROVISIONING_PROFILE_SPECIFIER']='TakEsep'}}; p.save; pp=Xcodeproj::Project.open('Pods/Pods.xcodeproj'); pp.targets.each{|t|t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Automatic'; c.build_settings['CODE_SIGNING_ALLOWED']='NO'}}; pp.save"
             xcodebuild -workspace Runner.xcworkspace -scheme Runner \
-              -configuration Release -sdk iphoneos \
+              -configuration Release \
+              -destination 'generic/platform=iOS' \
               -archivePath ../build/ios/archive/Runner.xcarchive \
               archive
             xcodebuild -exportArchive \
