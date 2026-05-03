@@ -63,20 +63,20 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyA8VRtlitN06WcDlGzFg_RvqtickZiPkIE',
-    appId: '1:427394139285:ios:18abb686d6c39a42ec079c',
+    appId: '1:427394139285:ios:3ef852d58c04d2caec079c',
     messagingSenderId: '427394139285',
     projectId: 'akjol-f479a',
     storageBucket: 'akjol-f479a.firebasestorage.app',
-    iosBundleId: 'y',
+    iosBundleId: 'com.akjolui.courier',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyA8VRtlitN06WcDlGzFg_RvqtickZiPkIE',
-    appId: '1:427394139285:ios:18abb686d6c39a42ec079c',
+    appId: '1:427394139285:ios:3ef852d58c04d2caec079c',
     messagingSenderId: '427394139285',
     projectId: 'akjol-f479a',
     storageBucket: 'akjol-f479a.firebasestorage.app',
-    iosBundleId: 'y',
+    iosBundleId: 'com.akjolui.courier',
   );
 
 }

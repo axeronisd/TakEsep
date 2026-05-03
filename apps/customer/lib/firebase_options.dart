@@ -33,11 +33,9 @@ class DefaultFirebaseOptions {
     }
   }
 
-  // TODO: Replace appId after adding com.akjolui.customer in Firebase Console
-  // and downloading google-services.json
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyBNl63a9xCTPa9RTcnZr7XuhxxaWHf-rgk',
-    appId: '1:427394139285:android:REPLACE_WITH_CUSTOMER_APP_ID',
+    appId: '1:427394139285:android:30f43487c480d0f9ec079c',
     messagingSenderId: '427394139285',
     projectId: 'akjol-f479a',
     storageBucket: 'akjol-f479a.firebasestorage.app',
@@ -55,7 +53,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyA8VRtlitN06WcDlGzFg_RvqtickZiPkIE',
-    appId: '1:427394139285:ios:REPLACE_WITH_CUSTOMER_IOS_APP_ID',
+    appId: '1:427394139285:ios:64d9196ddaf2d396ec079c',
     messagingSenderId: '427394139285',
     projectId: 'akjol-f479a',
     storageBucket: 'akjol-f479a.firebasestorage.app',
@@ -64,7 +62,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyA8VRtlitN06WcDlGzFg_RvqtickZiPkIE',
-    appId: '1:427394139285:ios:REPLACE_WITH_CUSTOMER_IOS_APP_ID',
+    appId: '1:427394139285:ios:64d9196ddaf2d396ec079c',
     messagingSenderId: '427394139285',
     projectId: 'akjol-f479a',
     storageBucket: 'akjol-f479a.firebasestorage.app',

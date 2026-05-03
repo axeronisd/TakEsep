@@ -597,22 +597,17 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
-        final height = MediaQuery.of(ctx).size.height;
-        final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
-        return Padding(
-          padding: EdgeInsets.only(bottom: bottomInset),
-          child: SafeArea(
-            top: false,
-            child: Container(
-              height: height * 0.75,
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surface,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              child: const ClipRRect(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-                child: SalesCartPane(),
-              ),
+        return SafeArea(
+          top: false,
+          child: Container(
+            height: MediaQuery.of(ctx).size.height * 0.75,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surface,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            ),
+            child: const ClipRRect(
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              child: SalesCartPane(),
             ),
           ),
         );
