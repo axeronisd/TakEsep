@@ -595,19 +595,25 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (ctx) {
         final height = MediaQuery.of(ctx).size.height;
         final bottomInset = MediaQuery.of(ctx).viewInsets.bottom;
         return Padding(
           padding: EdgeInsets.only(bottom: bottomInset),
-          child: SizedBox(
-            height: height * 0.9,
-            child: const SalesCartPane(),
+          child: SafeArea(
+            top: false,
+            child: Container(
+              height: height * 0.75,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: const ClipRRect(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                child: SalesCartPane(),
+              ),
+            ),
           ),
         );
       },

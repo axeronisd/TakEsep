@@ -110,7 +110,7 @@ class _CourierLoginScreenState extends ConsumerState<CourierLoginScreen>
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text('AkJol Go',
+                const Text('AkJol Pro',
                     style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white)),
                 const SizedBox(height: 16),
                 const SizedBox(
@@ -178,7 +178,7 @@ class _CourierLoginScreenState extends ConsumerState<CourierLoginScreen>
                     const SizedBox(height: 24),
 
                     const Text(
-                      'AkJol Go',
+                      'AkJol Pro',
                       style: TextStyle(
                         fontSize: 32,
                         fontWeight: FontWeight.w900,

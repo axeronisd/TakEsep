@@ -74,7 +74,7 @@ class FirebasePushBootstrap {
         final soundName = _inferSound(type, data['status']);
 
         _notifService.show(
-          title: notification.title ?? 'AkJol Go',
+          title: notification.title ?? 'AkJol Pro',
           body: notification.body ?? '',
           channelId: channelId,
           soundName: soundName,

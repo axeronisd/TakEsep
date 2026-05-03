@@ -98,7 +98,7 @@ class SalesCartPane extends ConsumerWidget {
         const Divider(height: 1),
 
         // ── Scrollable content (comment + items + subtotal + payment) ──
-        Expanded(
+        Flexible(
           child: cart.isEmpty
               ? Center(
                   child: Column(

@@ -18,12 +18,12 @@ void main() {
     // Catch Flutter framework errors
     FlutterError.onError = (FlutterErrorDetails details) {
       FlutterError.presentError(details);
-      debugPrint('[AkJol Go] Flutter error: ${details.exceptionAsString()}');
+      debugPrint('[AkJol Pro] Flutter error: ${details.exceptionAsString()}');
     };
 
     // Catch platform errors
     PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
-      debugPrint('[AkJol Go] Platform error: $error');
+      debugPrint('[AkJol Pro] Platform error: $error');
       return true;
     };
 
@@ -77,11 +77,11 @@ void main() {
       debugPrint('⚠️ Firebase init skipped: $e');
     }
 
-    debugPrint('[AkJol Go] App initialized — crash handlers ACTIVE');
+    debugPrint('[AkJol Pro] App initialized — crash handlers ACTIVE');
 
     runApp(const ProviderScope(child: AkJolCourierApp()));
   }, (Object error, StackTrace stack) {
-    debugPrint('[AkJol Go] Unhandled exception: $error');
+    debugPrint('[AkJol Pro] Unhandled exception: $error');
   });
 }
 
@@ -93,7 +93,7 @@ class AkJolCourierApp extends ConsumerWidget {
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
-      title: 'AkJol Go',
+      title: 'AkJol Pro',
       debugShowCheckedModeBanner: false,
       theme: AkJolTheme.lightTheme,
       darkTheme: AkJolTheme.darkTheme,
