@@ -27,8 +27,9 @@ class _ArrivalScreenState extends ConsumerState<ArrivalScreen> {
         bindings: <ShortcutActivator, VoidCallback>{
           const SingleActivator(LogicalKeyboardKey.f2): () async {
             if (ref.read(currentArrivalProvider).items.isNotEmpty) {
-              final success =
-                  await ref.read(currentArrivalProvider.notifier).saveArrival(ref);
+              final success = await ref
+                  .read(currentArrivalProvider.notifier)
+                  .saveArrival(ref);
               if (success && context.mounted) {
                 showInfoSnackBar(context, ref, 'Приход успешно сохранен! (F2)');
               }
@@ -53,8 +54,7 @@ class _ArrivalScreenState extends ConsumerState<ArrivalScreen> {
           flex: 3,
           child: ref.watch(arrivalAllProductsProvider).when(
                 data: (products) => ArrivalCatalogPane(allProducts: products),
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
+                loading: () => const Center(child: CircularProgressIndicator()),
                 error: (err, stack) => Center(
                   child: Text('Ошибка загрузки: $err',
                       style: AppTypography.bodyMedium.copyWith(
@@ -89,8 +89,7 @@ class _ArrivalScreenState extends ConsumerState<ArrivalScreen> {
         Expanded(
           child: ref.watch(arrivalAllProductsProvider).when(
                 data: (products) => ArrivalCatalogPane(allProducts: products),
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
+                loading: () => const Center(child: CircularProgressIndicator()),
                 error: (err, stack) => Center(
                   child: Text('Ошибка загрузки: $err'),
                 ),
@@ -137,9 +136,7 @@ class _ArrivalScreenState extends ConsumerState<ArrivalScreen> {
                         Text(
                           'Накладная',
                           style: AppTypography.labelMedium.copyWith(
-                              color: Theme.of(context)
-                                  .colorScheme
-                                  .onSurface),
+                              color: Theme.of(context).colorScheme.onSurface),
                         ),
                         Text(
                           '${ref.watch(currencyProvider).symbol} ${_formatNumber(arrival.calculatedTotalAmount.toInt())}',

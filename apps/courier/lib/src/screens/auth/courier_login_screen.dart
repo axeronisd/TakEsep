@@ -36,10 +36,10 @@ class _CourierLoginScreenState extends ConsumerState<CourierLoginScreen>
       duration: const Duration(milliseconds: 900),
     );
     _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
-    _slideAnim = Tween<Offset>(
-      begin: const Offset(0, 0.15),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic));
+    _slideAnim = Tween<Offset>(begin: const Offset(0, 0.15), end: Offset.zero)
+        .animate(
+          CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
+        );
 
     _tryAutoLogin();
   }
@@ -98,24 +98,40 @@ class _CourierLoginScreenState extends ConsumerState<CourierLoginScreen>
                   borderRadius: BorderRadius.circular(28),
                   child: Image.asset(
                     'assets/images/akjol_logo.png',
-                    width: 100, height: 100,
+                    width: 100,
+                    height: 100,
                     errorBuilder: (_, __, ___) => Container(
-                      width: 100, height: 100,
+                      width: 100,
+                      height: 100,
                       decoration: BoxDecoration(
                         color: AkJolTheme.primary,
                         borderRadius: BorderRadius.circular(28),
                       ),
-                      child: const Icon(Icons.delivery_dining, color: Colors.white, size: 48),
+                      child: const Icon(
+                        Icons.delivery_dining,
+                        color: Colors.white,
+                        size: 48,
+                      ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 24),
-                const Text('AkJol Pro',
-                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Colors.white)),
+                const Text(
+                  'AkJol Pro',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
+                  ),
+                ),
                 const SizedBox(height: 16),
                 const SizedBox(
-                  width: 24, height: 24,
-                  child: CircularProgressIndicator(color: AkJolTheme.primary, strokeWidth: 2.5),
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    color: AkJolTheme.primary,
+                    strokeWidth: 2.5,
+                  ),
                 ),
               ],
             ),
@@ -168,8 +184,11 @@ class _CourierLoginScreenState extends ConsumerState<CourierLoginScreen>
                             height: 100,
                             errorBuilder: (_, __, ___) => Container(
                               color: AkJolTheme.primary,
-                              child: const Icon(Icons.delivery_dining,
-                                  color: Colors.white, size: 48),
+                              child: const Icon(
+                                Icons.delivery_dining,
+                                color: Colors.white,
+                                size: 48,
+                              ),
                             ),
                           ),
                         ),
@@ -212,7 +231,9 @@ class _CourierLoginScreenState extends ConsumerState<CourierLoginScreen>
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 16),
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
                             decoration: BoxDecoration(
                               border: Border(
                                 right: BorderSide(
@@ -225,11 +246,14 @@ class _CourierLoginScreenState extends ConsumerState<CourierLoginScreen>
                               children: [
                                 Text('🇰🇬', style: TextStyle(fontSize: 22)),
                                 SizedBox(width: 6),
-                                Text('+996',
-                                    style: TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.w600,
-                                        color: Colors.white70)),
+                                Text(
+                                  '+996',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white70,
+                                  ),
+                                ),
                               ],
                             ),
                           ),
@@ -242,17 +266,21 @@ class _CourierLoginScreenState extends ConsumerState<CourierLoginScreen>
                                 LengthLimitingTextInputFormatter(9),
                               ],
                               style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w500,
-                                  letterSpacing: 1,
-                                  color: Colors.white),
+                                fontSize: 18,
+                                fontWeight: FontWeight.w500,
+                                letterSpacing: 1,
+                                color: Colors.white,
+                              ),
                               decoration: InputDecoration(
                                 hintText: '700 123 456',
                                 hintStyle: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.25)),
+                                  color: Colors.white.withValues(alpha: 0.25),
+                                ),
                                 border: InputBorder.none,
                                 contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 16),
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
                                 filled: false,
                               ),
                             ),
@@ -275,7 +303,9 @@ class _CourierLoginScreenState extends ConsumerState<CourierLoginScreen>
                         children: [
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 16),
+                              horizontal: 16,
+                              vertical: 16,
+                            ),
                             decoration: BoxDecoration(
                               border: Border(
                                 right: BorderSide(
@@ -283,9 +313,11 @@ class _CourierLoginScreenState extends ConsumerState<CourierLoginScreen>
                                 ),
                               ),
                             ),
-                            child: Icon(Icons.vpn_key_rounded,
-                                color: AkJolTheme.primary.withValues(alpha: 0.7),
-                                size: 22),
+                            child: Icon(
+                              Icons.vpn_key_rounded,
+                              color: AkJolTheme.primary.withValues(alpha: 0.7),
+                              size: 22,
+                            ),
                           ),
                           Expanded(
                             child: TextField(
@@ -311,7 +343,9 @@ class _CourierLoginScreenState extends ConsumerState<CourierLoginScreen>
                                 ),
                                 border: InputBorder.none,
                                 contentPadding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 16),
+                                  horizontal: 16,
+                                  vertical: 16,
+                                ),
                                 filled: false,
                               ),
                             ),
@@ -339,7 +373,8 @@ class _CourierLoginScreenState extends ConsumerState<CourierLoginScreen>
                           backgroundColor: AkJolTheme.primary,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16)),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                           elevation: 0,
                         ),
                         child: _loading
@@ -347,16 +382,22 @@ class _CourierLoginScreenState extends ConsumerState<CourierLoginScreen>
                                 width: 22,
                                 height: 22,
                                 child: CircularProgressIndicator(
-                                    color: Colors.white, strokeWidth: 2.5))
+                                  color: Colors.white,
+                                  strokeWidth: 2.5,
+                                ),
+                              )
                             : const Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(Icons.login_rounded, size: 20),
                                   SizedBox(width: 10),
-                                  Text('Войти',
-                                      style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w700)),
+                                  Text(
+                                    'Войти',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
                                 ],
                               ),
                       ),
@@ -387,8 +428,10 @@ class _CourierLoginScreenState extends ConsumerState<CourierLoginScreen>
           const Icon(Icons.error_outline, color: AkJolTheme.error, size: 18),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(_error!,
-                style: const TextStyle(color: AkJolTheme.error, fontSize: 13)),
+            child: Text(
+              _error!,
+              style: const TextStyle(color: AkJolTheme.error, fontSize: 13),
+            ),
           ),
           GestureDetector(
             onTap: () => setState(() => _error = null),

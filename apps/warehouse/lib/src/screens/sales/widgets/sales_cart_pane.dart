@@ -29,10 +29,14 @@ class SalesCartPane extends ConsumerWidget {
     final photos = ref.watch(orderPhotosProvider);
     final paymentMethod = ref.watch(paymentMethodProvider);
     final methodsAsync = ref.watch(paymentMethodsProvider);
-    final activeMethods = methodsAsync.valueOrNull?.where((m) => m.isActive).toList() ?? [
-      PaymentMethod(id: 'cash', companyId: '', name: 'Наличные', isActive: true),
-      PaymentMethod(id: 'card', companyId: '', name: 'Карта', isActive: true),
-    ];
+    final activeMethods =
+        methodsAsync.valueOrNull?.where((m) => m.isActive).toList() ??
+            [
+              PaymentMethod(
+                  id: 'cash', companyId: '', name: 'Наличные', isActive: true),
+              PaymentMethod(
+                  id: 'card', companyId: '', name: 'Карта', isActive: true),
+            ];
     final cur = ref.watch(currencyProvider).symbol;
     final isMobile = MediaQuery.of(context).size.width < 600;
     final pad = isMobile ? AppSpacing.sm : AppSpacing.lg;
@@ -41,14 +45,18 @@ class SalesCartPane extends ConsumerWidget {
       children: [
         // ── Header ──
         Padding(
-          padding: EdgeInsets.symmetric(horizontal: pad, vertical: isMobile ? 8 : AppSpacing.lg),
+          padding: EdgeInsets.symmetric(
+              horizontal: pad, vertical: isMobile ? 8 : AppSpacing.lg),
           child: Row(
             children: [
               const Icon(Icons.shopping_cart_rounded,
                   color: AppColors.primary, size: 20),
               const SizedBox(width: 6),
               Text('Чек',
-                  style: (isMobile ? AppTypography.headlineSmall : AppTypography.headlineMedium).copyWith(
+                  style: (isMobile
+                          ? AppTypography.headlineSmall
+                          : AppTypography.headlineMedium)
+                      .copyWith(
                     color: Theme.of(context).colorScheme.onSurface,
                   )),
               const Spacer(),
@@ -75,7 +83,9 @@ class SalesCartPane extends ConsumerWidget {
                       .onSurface
                       .withValues(alpha: 0.5),
                   onPressed: () {
-                    showInfoSnackBar(context, ref, 'Сохранение черновиков — скоро', duration: const Duration(seconds: 1));
+                    showInfoSnackBar(
+                        context, ref, 'Сохранение черновиков — скоро',
+                        duration: const Duration(seconds: 1));
                   },
                 ),
                 IconButton(
@@ -127,17 +137,18 @@ class SalesCartPane extends ConsumerWidget {
                     // Client selector
                     _ClientSelector(pad: pad),
                     const Divider(height: 1),
-                    
+
                     // Comment + photo
                     Padding(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: pad, vertical: 4),
+                      padding:
+                          EdgeInsets.symmetric(horizontal: pad, vertical: 4),
                       child: Row(
                         children: [
                           Expanded(
                             child: TextField(
-                              onChanged: (v) =>
-                                  ref.read(orderCommentProvider.notifier).state = v,
+                              onChanged: (v) => ref
+                                  .read(orderCommentProvider.notifier)
+                                  .state = v,
                               decoration: InputDecoration(
                                 hintText: 'Комментарий...',
                                 hintStyle: AppTypography.bodySmall.copyWith(
@@ -166,7 +177,8 @@ class SalesCartPane extends ConsumerWidget {
                           const SizedBox(width: 4),
                           IconButton(
                             onPressed: () async {
-                              final result = await FilePicker.platform.pickFiles(
+                              final result =
+                                  await FilePicker.platform.pickFiles(
                                 type: FileType.image,
                                 allowMultiple: true,
                               );
@@ -226,16 +238,20 @@ class SalesCartPane extends ConsumerWidget {
                                           .colorScheme
                                           .onSurface
                                           .withValues(alpha: 0.7))),
-                              Text('$cur ${_fmtNum(summary.itemsSubtotal.toInt())}',
+                              Text(
+                                  '$cur ${_fmtNum(summary.itemsSubtotal.toInt())}',
                                   style: AppTypography.bodyMedium.copyWith(
-                                      color: Theme.of(context).colorScheme.onSurface)),
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface)),
                             ],
                           ),
                           if (summary.itemsDiscountTotal > 0)
                             Padding(
                               padding: const EdgeInsets.only(top: 4.0),
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text('Скидки на товары:',
                                       style: AppTypography.bodySmall
@@ -252,8 +268,10 @@ class SalesCartPane extends ConsumerWidget {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               TextButton.icon(
-                                onPressed: () => _showDiscountDialog(context, ref),
-                                icon: const Icon(Icons.percent_rounded, size: 14),
+                                onPressed: () =>
+                                    _showDiscountDialog(context, ref),
+                                icon:
+                                    const Icon(Icons.percent_rounded, size: 14),
                                 label: Text(
                                     summary.globalDiscount != null
                                         ? 'Скидка применена'
@@ -262,7 +280,8 @@ class SalesCartPane extends ConsumerWidget {
                                 style: TextButton.styleFrom(
                                   padding: EdgeInsets.zero,
                                   minimumSize: Size.zero,
-                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
                                 ),
                               ),
                               if (summary.globalDiscountAmount > 0)
@@ -279,7 +298,9 @@ class SalesCartPane extends ConsumerWidget {
 
                     // Payment methods
                     Padding(
-                      padding: EdgeInsets.symmetric(horizontal: pad, vertical: isMobile ? 8 : AppSpacing.lg),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: pad,
+                          vertical: isMobile ? 8 : AppSpacing.lg),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -287,17 +308,26 @@ class SalesCartPane extends ConsumerWidget {
                             scrollDirection: Axis.horizontal,
                             child: Row(
                               children: activeMethods.map((m) {
-                                final isSelected = paymentMethod == m.id || (paymentMethod.isEmpty && m.id == 'cash');
+                                final isSelected = paymentMethod == m.id ||
+                                    (paymentMethod.isEmpty && m.id == 'cash');
                                 return Padding(
-                                  padding: const EdgeInsets.only(right: AppSpacing.sm),
+                                  padding: const EdgeInsets.only(
+                                      right: AppSpacing.sm),
                                   child: _PayChip(
                                     label: m.name,
-                                    icon: m.qrImageUrl != null ? Icons.qr_code_2_rounded : Icons.payment_rounded,
+                                    icon: m.qrImageUrl != null
+                                        ? Icons.qr_code_2_rounded
+                                        : Icons.payment_rounded,
                                     selected: isSelected,
                                     onTap: () {
-                                      ref.read(paymentMethodProvider.notifier).state = m.id;
-                                      if (m.name.toLowerCase() != 'наличные' && m.id != 'cash') {
-                                        ref.read(cashReceivedProvider.notifier).state = null;
+                                      ref
+                                          .read(paymentMethodProvider.notifier)
+                                          .state = m.id;
+                                      if (m.name.toLowerCase() != 'наличные' &&
+                                          m.id != 'cash') {
+                                        ref
+                                            .read(cashReceivedProvider.notifier)
+                                            .state = null;
                                       }
                                       if (m.qrImageUrl != null) {
                                         _showQrDialog(context, m);
@@ -309,28 +339,39 @@ class SalesCartPane extends ConsumerWidget {
                             ),
                           ),
                           // Cash change calculator
-                          if (activeMethods.any((m) => m.id == paymentMethod && (m.id == 'cash' || m.name.toLowerCase().contains('наличные')))) ...[
+                          if (activeMethods.any((m) =>
+                              m.id == paymentMethod &&
+                              (m.id == 'cash' ||
+                                  m.name
+                                      .toLowerCase()
+                                      .contains('наличные')))) ...[
                             const SizedBox(height: 8),
                             Row(
                               children: [
                                 Expanded(
                                   child: TextField(
-                                    keyboardType: const TextInputType.numberWithOptions(
-                                        decimal: true),
+                                    keyboardType:
+                                        const TextInputType.numberWithOptions(
+                                            decimal: true),
                                     onChanged: (val) {
                                       final parsed = double.tryParse(val);
-                                      ref.read(cashReceivedProvider.notifier).state =
-                                          parsed;
+                                      ref
+                                          .read(cashReceivedProvider.notifier)
+                                          .state = parsed;
                                     },
                                     decoration: InputDecoration(
                                       labelText: 'Получено ($cur)',
                                       isDense: true,
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+                                      contentPadding:
+                                          const EdgeInsets.symmetric(
+                                              horizontal: 10, vertical: 10),
                                       border: OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(AppSpacing.radiusMd),
+                                        borderRadius: BorderRadius.circular(
+                                            AppSpacing.radiusMd),
                                         borderSide: BorderSide(
-                                            color: Theme.of(context).colorScheme.outline),
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .outline),
                                       ),
                                     ),
                                   ),
@@ -340,17 +381,20 @@ class SalesCartPane extends ConsumerWidget {
                                   child: Consumer(
                                     builder: (context, ref, _) {
                                       final received =
-                                          ref.watch(cashReceivedProvider) ?? 0.0;
+                                          ref.watch(cashReceivedProvider) ??
+                                              0.0;
                                       final total = summary.finalTotal;
-                                      final change =
-                                          received > total ? received - total : 0.0;
+                                      final change = received > total
+                                          ? received - total
+                                          : 0.0;
 
                                       return Container(
                                         padding: const EdgeInsets.symmetric(
                                             vertical: 8, horizontal: 10),
                                         decoration: BoxDecoration(
                                           color: change > 0
-                                              ? AppColors.primary.withValues(alpha: 0.1)
+                                              ? AppColors.primary
+                                                  .withValues(alpha: 0.1)
                                               : Theme.of(context)
                                                   .colorScheme
                                                   .surfaceContainerHighest
@@ -366,23 +410,39 @@ class SalesCartPane extends ConsumerWidget {
                                                       .withValues(alpha: 0.5)),
                                         ),
                                         child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
                                           children: [
                                             Text(
-                                              change > 0 
-                                                ? 'Сдача' 
-                                                : (received < total && received > 0 ? 'В долг' : 'Сдача'),
-                                                style: AppTypography.labelSmall.copyWith(
-                                                  color: received < total && received > 0 
-                                                      ? AppColors.error 
-                                                      : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
+                                                change > 0
+                                                    ? 'Сдача'
+                                                    : (received < total &&
+                                                            received > 0
+                                                        ? 'В долг'
+                                                        : 'Сдача'),
+                                                style: AppTypography.labelSmall
+                                                    .copyWith(
+                                                  color: received < total &&
+                                                          received > 0
+                                                      ? AppColors.error
+                                                      : Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurface
+                                                          .withValues(
+                                                              alpha: 0.7),
                                                 )),
                                             Text(
                                               '$cur ${_fmtNum(change > 0 ? change.toInt() : (received < total && received > 0 ? (total - received).toInt() : 0))}',
-                                              style: AppTypography.labelLarge.copyWith(
+                                              style: AppTypography.labelLarge
+                                                  .copyWith(
                                                 color: change > 0
                                                     ? AppColors.primary
-                                                    : (received < total && received > 0 ? AppColors.error : Theme.of(context).colorScheme.onSurface),
+                                                    : (received < total &&
+                                                            received > 0
+                                                        ? AppColors.error
+                                                        : Theme.of(context)
+                                                            .colorScheme
+                                                            .onSurface),
                                                 fontWeight: FontWeight.w700,
                                               ),
                                             ),
@@ -420,11 +480,17 @@ class SalesCartPane extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('Итого к оплате',
-                          style: (isMobile ? AppTypography.labelLarge : AppTypography.headlineSmall).copyWith(
+                          style: (isMobile
+                                  ? AppTypography.labelLarge
+                                  : AppTypography.headlineSmall)
+                              .copyWith(
                             color: Theme.of(context).colorScheme.onSurface,
                           )),
                       Text('$cur ${_fmtNum(summary.finalTotal.toInt())}',
-                          style: (isMobile ? AppTypography.headlineSmall : AppTypography.displaySmall).copyWith(
+                          style: (isMobile
+                                  ? AppTypography.headlineSmall
+                                  : AppTypography.displaySmall)
+                              .copyWith(
                             color: AppColors.primary,
                           )),
                     ],
@@ -436,7 +502,9 @@ class SalesCartPane extends ConsumerWidget {
                     child: ElevatedButton.icon(
                       onPressed: () => _completeSale(context, ref),
                       icon: const Icon(Icons.check_circle_rounded, size: 20),
-                      label: const Text('Оплатить', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                      label: const Text('Оплатить',
+                          style: TextStyle(
+                              fontSize: 15, fontWeight: FontWeight.w600)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.success,
                         foregroundColor: Colors.white,
@@ -475,8 +543,7 @@ class SalesCartPane extends ConsumerWidget {
                       value: DiscountType.fixedAmount, label: Text('Сумма')),
                 ],
                 selected: {type},
-                onSelectionChanged: (s) =>
-                    setDialogState(() => type = s.first),
+                onSelectionChanged: (s) => setDialogState(() => type = s.first),
               ),
               const SizedBox(height: 12),
               TextField(
@@ -524,10 +591,14 @@ class SalesCartPane extends ConsumerWidget {
     final paymentMethod = ref.read(paymentMethodProvider);
     final isDesktop = MediaQuery.of(context).size.width >= 900;
     final methodsAsync = ref.read(paymentMethodsProvider);
-    final activeMethods = methodsAsync.valueOrNull?.where((m) => m.isActive).toList() ?? [
-      PaymentMethod(id: 'cash', companyId: '', name: 'Наличные', isActive: true),
-      PaymentMethod(id: 'card', companyId: '', name: 'Карта', isActive: true),
-    ];
+    final activeMethods =
+        methodsAsync.valueOrNull?.where((m) => m.isActive).toList() ??
+            [
+              PaymentMethod(
+                  id: 'cash', companyId: '', name: 'Наличные', isActive: true),
+              PaymentMethod(
+                  id: 'card', companyId: '', name: 'Карта', isActive: true),
+            ];
 
     if (companyId == null) return;
 
@@ -591,14 +662,22 @@ class SalesCartPane extends ConsumerWidget {
         showInfoSnackBar(context, ref, 'Покупка успешно завершена!');
 
         // Show receipt print dialog
-        final pmName = activeMethods.firstWhere((m) => m.id == paymentMethod, orElse: () => PaymentMethod(id: 'cash', companyId: '', name: 'Наличные', isActive: true)).name;
+        final pmName = activeMethods
+            .firstWhere((m) => m.id == paymentMethod,
+                orElse: () => PaymentMethod(
+                    id: 'cash',
+                    companyId: '',
+                    name: 'Наличные',
+                    isActive: true))
+            .name;
         final receiptNum = newSaleId.hashCode.abs().toString().padLeft(5, '0');
         _showReceiptDialog(
           context,
           ref,
           receiptItems: saleItems,
           totalAmount: summary.finalTotal,
-          discountAmount: summary.itemsDiscountTotal + summary.globalDiscountAmount,
+          discountAmount:
+              summary.itemsDiscountTotal + summary.globalDiscountAmount,
           paymentMethod: pmName,
           receiptNumber: receiptNum,
         );
@@ -624,8 +703,10 @@ class SalesCartPane extends ConsumerWidget {
     final cur = ref.read(currencyProvider).symbol;
     final cs = Theme.of(context).colorScheme;
     final now = DateTime.now();
-    final dateStr = '${now.day.toString().padLeft(2, '0')}.${now.month.toString().padLeft(2, '0')}.${now.year}';
-    final timeStr = '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+    final dateStr =
+        '${now.day.toString().padLeft(2, '0')}.${now.month.toString().padLeft(2, '0')}.${now.year}';
+    final timeStr =
+        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
     showDialog(
       context: context,
@@ -668,18 +749,23 @@ class SalesCartPane extends ConsumerWidget {
                             fontWeight: FontWeight.bold, fontSize: 14),
                         textAlign: TextAlign.center),
                   if (config.showAddress)
-                    Text(auth.availableWarehouses.where((w) => w.id == ref.read(selectedWarehouseIdProvider)).firstOrNull?.address ?? 'г. Бишкек',
+                    Text(
+                        auth.availableWarehouses
+                                .where((w) =>
+                                    w.id ==
+                                    ref.read(selectedWarehouseIdProvider))
+                                .firstOrNull
+                                ?.address ??
+                            'г. Бишкек',
                         style: receiptText.copyWith(fontSize: 10),
                         textAlign: TextAlign.center),
                   divider,
                   if (config.showReceiptNumber)
-                    Text('Чек №: $receiptNumber',
-                        style: receiptText),
+                    Text('Чек №: $receiptNumber', style: receiptText),
                   if (config.showDateTime)
                     Text('$dateStr  $timeStr', style: receiptText),
                   if (config.showCashier)
-                    Text(
-                        'Кассир: ${auth.currentEmployee?.name ?? 'Не указан'}',
+                    Text('Кассир: ${auth.currentEmployee?.name ?? 'Не указан'}',
                         style: receiptText),
                   divider,
                   ...receiptItems.map((item) => Padding(
@@ -698,15 +784,14 @@ class SalesCartPane extends ConsumerWidget {
                           ],
                         ),
                       )),
-                  if (discountAmount > 0) ...[  
+                  if (discountAmount > 0) ...[
                     divider,
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text('Скидка:', style: receiptText),
                         Text('-$cur ${_fmtNum(discountAmount.toInt())}',
-                            style: receiptText.copyWith(
-                                color: Colors.red)),
+                            style: receiptText.copyWith(color: Colors.red)),
                       ],
                     ),
                   ],
@@ -715,16 +800,15 @@ class SalesCartPane extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text('ИТОГО:',
-                          style:
-                              receiptText.copyWith(fontWeight: FontWeight.bold)),
+                          style: receiptText.copyWith(
+                              fontWeight: FontWeight.bold)),
                       Text('$cur ${_fmtNum(totalAmount.toInt())}',
-                          style:
-                              receiptText.copyWith(fontWeight: FontWeight.bold)),
+                          style: receiptText.copyWith(
+                              fontWeight: FontWeight.bold)),
                     ],
                   ),
                   if (config.showPaymentMethod)
-                    Text(
-                        'Оплата: ${_paymentLabel(paymentMethod)}',
+                    Text('Оплата: ${_paymentLabel(paymentMethod)}',
                         style: receiptText),
                   divider,
                   Text(
@@ -747,8 +831,12 @@ class SalesCartPane extends ConsumerWidget {
                 Navigator.pop(ctx);
                 final printerService = ref.read(printerServiceProvider);
                 final warehouseId = ref.read(selectedWarehouseIdProvider);
-                final activeW = auth.availableWarehouses.where((w) => w.id == warehouseId).firstOrNull;
-                final addressStr = (activeW?.address?.isNotEmpty == true) ? activeW!.address! : 'г. Бишкек';
+                final activeW = auth.availableWarehouses
+                    .where((w) => w.id == warehouseId)
+                    .firstOrNull;
+                final addressStr = (activeW?.address?.isNotEmpty == true)
+                    ? activeW!.address!
+                    : 'г. Бишкек';
                 final cashierName = auth.currentEmployee?.name ?? 'Владелец';
 
                 final receiptData = ReceiptData(
@@ -757,12 +845,14 @@ class SalesCartPane extends ConsumerWidget {
                   cashierName: cashierName,
                   receiptNumber: receiptNumber,
                   dateTime: now,
-                  items: receiptItems.map((item) => ReceiptLineItem(
-                    name: item.productName,
-                    quantity: item.quantity,
-                    price: item.sellingPrice,
-                    total: item.sellingPrice * item.quantity,
-                  )).toList(),
+                  items: receiptItems
+                      .map((item) => ReceiptLineItem(
+                            name: item.productName,
+                            quantity: item.quantity,
+                            price: item.sellingPrice,
+                            total: item.sellingPrice * item.quantity,
+                          ))
+                      .toList(),
                   totalAmount: totalAmount,
                   discountAmount: discountAmount,
                   paymentMethod: paymentMethod,
@@ -770,7 +860,9 @@ class SalesCartPane extends ConsumerWidget {
                   currencySymbol: cur,
                 );
                 final printerName = ref.read(defaultPrinterNameProvider);
-                final success = await printerService.printReceipt(receiptData, config, printerName: printerName);
+                final success = await printerService.printReceipt(
+                    receiptData, config,
+                    printerName: printerName);
                 if (context.mounted) {
                   if (success) {
                     showInfoSnackBar(context, ref, 'Чек отправлен на печать');
@@ -867,15 +959,17 @@ class _CartItemTile extends ConsumerWidget {
                       const SizedBox(height: 2),
                       Row(
                         children: [
-                          Icon(Icons.person_outline, size: 12, color: AppColors.secondary),
+                          Icon(Icons.person_outline,
+                              size: 12, color: AppColors.secondary),
                           const SizedBox(width: 4),
-                          Text(item.executorName!, style: AppTypography.labelSmall.copyWith(color: AppColors.secondary)),
+                          Text(item.executorName!,
+                              style: AppTypography.labelSmall
+                                  .copyWith(color: AppColors.secondary)),
                         ],
                       ),
                     ],
                     const SizedBox(height: 4),
-                    Text(
-                        '$currencySymbol ${_fmtNum(item.basePrice.toInt())}',
+                    Text('$currencySymbol ${_fmtNum(item.basePrice.toInt())}',
                         style: AppTypography.bodySmall.copyWith(
                             color: Theme.of(context)
                                 .colorScheme
@@ -888,10 +982,9 @@ class _CartItemTile extends ConsumerWidget {
               // Qty controls
               Container(
                 decoration: BoxDecoration(
-                  border: Border.all(
-                      color: Theme.of(context).colorScheme.outline),
-                  borderRadius:
-                      BorderRadius.circular(AppSpacing.radiusSm),
+                  border:
+                      Border.all(color: Theme.of(context).colorScheme.outline),
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -900,23 +993,20 @@ class _CartItemTile extends ConsumerWidget {
                         icon: Icons.remove,
                         onTap: () => ref
                             .read(cartProvider.notifier)
-                            .updateQuantity(
-                                item.id, item.qty - 1)),
+                            .updateQuantity(item.id, item.qty - 1)),
                     Container(
                       constraints: const BoxConstraints(minWidth: 32),
                       alignment: Alignment.center,
                       child: Text('${item.qty}',
                           style: AppTypography.labelLarge.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurface,
+                            color: Theme.of(context).colorScheme.onSurface,
                           )),
                     ),
                     _QtyBtn(
                         icon: Icons.add,
                         onTap: () => ref
                             .read(cartProvider.notifier)
-                            .updateQuantity(
-                                item.id, item.qty + 1)),
+                            .updateQuantity(item.id, item.qty + 1)),
                   ],
                 ),
               ),
@@ -930,18 +1020,15 @@ class _CartItemTile extends ConsumerWidget {
                 icon: const Icon(Icons.delete_outline_rounded, size: 20),
                 color: AppColors.error,
                 padding: EdgeInsets.zero,
-                constraints:
-                    const BoxConstraints(minWidth: 32, minHeight: 32),
-                onPressed: () => ref
-                    .read(cartProvider.notifier)
-                    .removeProduct(item.id),
+                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                onPressed: () =>
+                    ref.read(cartProvider.notifier).removeProduct(item.id),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   if (hasDiscount)
-                    Text(
-                        '$currencySymbol ${_fmtNum(item.subtotal.toInt())}',
+                    Text('$currencySymbol ${_fmtNum(item.subtotal.toInt())}',
                         style: AppTypography.labelSmall.copyWith(
                           decoration: TextDecoration.lineThrough,
                           color: Theme.of(context)
@@ -949,8 +1036,7 @@ class _CartItemTile extends ConsumerWidget {
                               .onSurface
                               .withValues(alpha: 0.5),
                         )),
-                  Text(
-                      '$currencySymbol ${_fmtNum(item.total.toInt())}',
+                  Text('$currencySymbol ${_fmtNum(item.total.toInt())}',
                       style: AppTypography.labelLarge.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                         fontWeight: FontWeight.w700,
@@ -1079,13 +1165,19 @@ class _ClientSelector extends ConsumerWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: client != null ? AppColors.primary.withValues(alpha: 0.1) : cs.surfaceContainerHighest,
+                color: client != null
+                    ? AppColors.primary.withValues(alpha: 0.1)
+                    : cs.surfaceContainerHighest,
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                client != null ? Icons.person_rounded : Icons.person_add_alt_1_rounded,
+                client != null
+                    ? Icons.person_rounded
+                    : Icons.person_add_alt_1_rounded,
                 size: 20,
-                color: client != null ? AppColors.primary : cs.onSurface.withValues(alpha: 0.5),
+                color: client != null
+                    ? AppColors.primary
+                    : cs.onSurface.withValues(alpha: 0.5),
               ),
             ),
             const SizedBox(width: AppSpacing.md),
@@ -1096,8 +1188,11 @@ class _ClientSelector extends ConsumerWidget {
                   Text(
                     client != null ? client.name : 'Выбрать клиента',
                     style: AppTypography.bodyMedium.copyWith(
-                      color: client != null ? cs.onSurface : cs.onSurface.withValues(alpha: 0.5),
-                      fontWeight: client != null ? FontWeight.w600 : FontWeight.normal,
+                      color: client != null
+                          ? cs.onSurface
+                          : cs.onSurface.withValues(alpha: 0.5),
+                      fontWeight:
+                          client != null ? FontWeight.w600 : FontWeight.normal,
                     ),
                   ),
                   if (client != null && client.typeLabel.isNotEmpty)
@@ -1114,11 +1209,13 @@ class _ClientSelector extends ConsumerWidget {
               IconButton(
                 icon: const Icon(Icons.close_rounded, size: 20),
                 color: cs.onSurface.withValues(alpha: 0.4),
-                onPressed: () => ref.read(selectedClientProvider.notifier).state = null,
+                onPressed: () =>
+                    ref.read(selectedClientProvider.notifier).state = null,
                 visualDensity: VisualDensity.compact,
               )
             else
-              Icon(Icons.chevron_right_rounded, color: cs.onSurface.withValues(alpha: 0.3)),
+              Icon(Icons.chevron_right_rounded,
+                  color: cs.onSurface.withValues(alpha: 0.3)),
           ],
         ),
       ),
@@ -1147,7 +1244,9 @@ class _ClientPickerSheetState extends ConsumerState<_ClientPickerSheet> {
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Row(
             children: [
-              Text('Выберите клиента', style: AppTypography.headlineMedium.copyWith(color: cs.onSurface)),
+              Text('Выберите клиента',
+                  style: AppTypography.headlineMedium
+                      .copyWith(color: cs.onSurface)),
               const Spacer(),
               IconButton(
                 icon: const Icon(Icons.close_rounded),
@@ -1162,7 +1261,8 @@ class _ClientPickerSheetState extends ConsumerState<_ClientPickerSheet> {
             onChanged: (v) => setState(() => _search = v.toLowerCase()),
             decoration: InputDecoration(
               hintText: 'Поиск по имени или телефону...',
-              prefixIcon: Icon(Icons.search_rounded, color: cs.onSurface.withValues(alpha: 0.5)),
+              prefixIcon: Icon(Icons.search_rounded,
+                  color: cs.onSurface.withValues(alpha: 0.5)),
             ),
           ),
         ),
@@ -1178,7 +1278,9 @@ class _ClientPickerSheetState extends ConsumerState<_ClientPickerSheet> {
 
               if (filtered.isEmpty) {
                 return Center(
-                  child: Text('Клиенты не найдены', style: AppTypography.bodyMedium.copyWith(color: cs.onSurface.withValues(alpha: 0.5))),
+                  child: Text('Клиенты не найдены',
+                      style: AppTypography.bodyMedium.copyWith(
+                          color: cs.onSurface.withValues(alpha: 0.5))),
                 );
               }
 
@@ -1189,12 +1291,16 @@ class _ClientPickerSheetState extends ConsumerState<_ClientPickerSheet> {
                   return ListTile(
                     leading: CircleAvatar(
                       backgroundColor: cs.surfaceContainerHighest,
-                      child: Text(c.name[0], style: const TextStyle(color: AppColors.primary)),
+                      child: Text(c.name[0],
+                          style: const TextStyle(color: AppColors.primary)),
                     ),
-                    title: Text(c.name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                    title: Text(c.name,
+                        style: const TextStyle(fontWeight: FontWeight.w500)),
                     subtitle: c.phone != null ? Text(c.phone!) : null,
-                    trailing: c.debt > 0 
-                        ? Text('Долг: ${c.debt}', style: const TextStyle(color: AppColors.error, fontSize: 12)) 
+                    trailing: c.debt > 0
+                        ? Text('Долг: ${c.debt}',
+                            style: const TextStyle(
+                                color: AppColors.error, fontSize: 12))
                         : null,
                     onTap: () {
                       ref.read(selectedClientProvider.notifier).state = c;

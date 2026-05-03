@@ -14,7 +14,8 @@ import 'notification_service.dart';
 // ═══════════════════════════════════════════════════════════════
 
 // Global navigator key for push navigation (set in app_router.dart)
-final GlobalKey<NavigatorState> courierNavigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> courierNavigatorKey =
+    GlobalKey<NavigatorState>();
 
 // Background message handler — must be top-level function
 @pragma('vm:entry-point')
@@ -109,7 +110,8 @@ class FirebasePushBootstrap {
 
   /// Infer sound name from type
   static String _inferSound(String type, String? status) {
-    if (type == 'new_order' || type == 'order_assigned') return 'new_order_alert';
+    if (type == 'new_order' || type == 'order_assigned')
+      return 'new_order_alert';
     if (type == 'chat_message') return 'chat_message';
     if (type == 'order_cancelled') return 'order_cancelled';
     return 'order_accepted';
@@ -123,7 +125,9 @@ class FirebasePushBootstrap {
     final type = data['type'] ?? '';
     final orderId = data['order_id'];
 
-    if (type == 'new_order' || type == 'order_assigned' || type == 'order_status') {
+    if (type == 'new_order' ||
+        type == 'order_assigned' ||
+        type == 'order_status') {
       if (orderId != null) {
         context.go('/delivery/$orderId');
       } else {

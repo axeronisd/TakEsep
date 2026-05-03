@@ -63,8 +63,7 @@ class _ArrivalCatalogPaneState extends ConsumerState<ArrivalCatalogPane> {
   }
 
   Future<void> _openCreateDialog(String initialBarcode) async {
-    final result =
-        await showQuickCreateProductDialog(context, initialBarcode);
+    final result = await showQuickCreateProductDialog(context, initialBarcode);
     if (result != null && mounted) {
       ref
           .read(currentArrivalProvider.notifier)
@@ -116,7 +115,10 @@ class _ArrivalCatalogPaneState extends ConsumerState<ArrivalCatalogPane> {
             return Row(
               children: [
                 Text('Приход',
-                    style: (isMobile ? AppTypography.headlineMedium : AppTypography.displaySmall).copyWith(
+                    style: (isMobile
+                            ? AppTypography.headlineMedium
+                            : AppTypography.displaySmall)
+                        .copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
                     )),
                 const Spacer(),
@@ -130,7 +132,8 @@ class _ArrivalCatalogPaneState extends ConsumerState<ArrivalCatalogPane> {
                     foregroundColor: AppColors.primary,
                     side: const BorderSide(color: AppColors.primary),
                     padding: EdgeInsets.symmetric(
-                        horizontal: isMobile ? 8 : AppSpacing.md, vertical: isMobile ? 4 : 8),
+                        horizontal: isMobile ? 8 : AppSpacing.md,
+                        vertical: isMobile ? 4 : 8),
                     minimumSize: Size.zero,
                     shape: RoundedRectangleBorder(
                         borderRadius:
@@ -150,13 +153,15 @@ class _ArrivalCatalogPaneState extends ConsumerState<ArrivalCatalogPane> {
                   position: PopupMenuPosition.under,
                   child: Container(
                     padding: EdgeInsets.symmetric(
-                        horizontal: isMobile ? 6 : AppSpacing.md, vertical: isMobile ? 4 : 8),
+                        horizontal: isMobile ? 6 : AppSpacing.md,
+                        vertical: isMobile ? 4 : 8),
                     decoration: BoxDecoration(
                       color: Theme.of(context)
                           .colorScheme
                           .surfaceContainerHighest
                           .withValues(alpha: 0.3),
-                      borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+                      borderRadius:
+                          BorderRadius.circular(AppSpacing.radiusFull),
                       border: Border.all(
                           color: Theme.of(context)
                               .colorScheme
@@ -242,7 +247,9 @@ class _ArrivalCatalogPaneState extends ConsumerState<ArrivalCatalogPane> {
                                   .withValues(alpha: 0.5)),
                           onPressed: () {
                             _searchController.clear();
-                            ref.read(arrivalSearchQueryProvider.notifier).state = '';
+                            ref
+                                .read(arrivalSearchQueryProvider.notifier)
+                                .state = '';
                             _searchFocusNode.requestFocus();
                           },
                         )
@@ -354,9 +361,7 @@ class _ArrivalCatalogPaneState extends ConsumerState<ArrivalCatalogPane> {
                         product: p,
                         currencySymbol: ref.watch(currencyProvider).symbol,
                         onTap: () {
-                          ref
-                              .read(currentArrivalProvider.notifier)
-                              .addItem(p);
+                          ref.read(currentArrivalProvider.notifier).addItem(p);
                           _searchFocusNode.requestFocus();
                         },
                       );
@@ -373,7 +378,10 @@ class _ArrivalProductTile extends StatelessWidget {
   final Product product;
   final String currencySymbol;
   final VoidCallback onTap;
-  const _ArrivalProductTile({required this.product, required this.currencySymbol, required this.onTap});
+  const _ArrivalProductTile(
+      {required this.product,
+      required this.currencySymbol,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -401,7 +409,8 @@ class _ArrivalProductTile extends StatelessWidget {
                     borderRadius: const BorderRadius.vertical(
                         top: Radius.circular(AppSpacing.radiusMd)),
                   ),
-                  child: product.imageUrl != null && product.imageUrl!.isNotEmpty
+                  child: product.imageUrl != null &&
+                          product.imageUrl!.isNotEmpty
                       ? ClipRRect(
                           borderRadius: const BorderRadius.vertical(
                               top: Radius.circular(AppSpacing.radiusMd)),
@@ -411,10 +420,13 @@ class _ArrivalProductTile extends StatelessWidget {
                                   fit: BoxFit.cover,
                                 )
                               : Image.file(java_io.File(product.imageUrl!),
-                                  fit: BoxFit.cover, width: double.infinity,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
                                   errorBuilder: (_, __, ___) => Icon(
                                       Icons.inventory_2_outlined,
-                                      color: cs.onSurface.withValues(alpha: 0.2), size: 32)),
+                                      color:
+                                          cs.onSurface.withValues(alpha: 0.2),
+                                      size: 32)),
                         )
                       : Icon(Icons.inventory_2_outlined,
                           color: cs.onSurface.withValues(alpha: 0.2), size: 32),
@@ -438,8 +450,9 @@ class _ArrivalProductTile extends StatelessWidget {
                       children: [
                         Text(
                             '$currencySymbol ${_fmtNum((product.costPrice ?? 0).toInt())}',
-                            style: AppTypography.bodySmall
-                                .copyWith(color: AppColors.primary, fontWeight: FontWeight.w700)),
+                            style: AppTypography.bodySmall.copyWith(
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w700)),
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 5, vertical: 1),
@@ -448,7 +461,8 @@ class _ArrivalProductTile extends StatelessWidget {
                                 product.quantity <= product.effectiveCriticalMin
                                     ? AppColors.error.withValues(alpha: 0.15)
                                     : AppColors.success.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                            borderRadius:
+                                BorderRadius.circular(AppSpacing.radiusSm),
                           ),
                           child: Text('${product.quantity} шт',
                               style: TextStyle(

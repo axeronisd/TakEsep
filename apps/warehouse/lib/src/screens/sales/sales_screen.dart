@@ -592,27 +592,41 @@ class _SalesScreenState extends ConsumerState<SalesScreen> {
   }
 
   void _showCartSheet() {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) {
-        return SafeArea(
-          top: false,
-          child: Container(
-            height: MediaQuery.of(ctx).size.height * 0.75,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+    try {
+      showModalBottomSheet(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) {
+          return SafeArea(
+            top: false,
+            child: Container(
+              height: MediaQuery.of(ctx).size.height * 0.75,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surface,
+                borderRadius:
+                    const BorderRadius.vertical(top: Radius.circular(20)),
+              ),
+              child: const ClipRRect(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                child: SalesCartPane(),
+              ),
             ),
-            child: const ClipRRect(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              child: SalesCartPane(),
-            ),
+          );
+        },
+      );
+    } catch (e, st) {
+      debugPrint('[_showCartSheet] FATAL: $e\n$st');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка корзины: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 10),
           ),
         );
-      },
-    );
+      }
+    }
   }
 
   String _getSortLabel(SortType type) {

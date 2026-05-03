@@ -44,7 +44,8 @@ class _TransferScreenState extends ConsumerState<TransferScreen>
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.of(context).size.width >= 900;
     final pendingCount = ref.watch(pendingTransferCountProvider).value ?? 0;
-    final outgoingCount = ref.watch(pendingOutgoingTransfersProvider).value?.length ?? 0;
+    final outgoingCount =
+        ref.watch(pendingOutgoingTransfersProvider).value?.length ?? 0;
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -75,7 +76,8 @@ class _TransferScreenState extends ConsumerState<TransferScreen>
     );
   }
 
-  Widget _buildTopBar(BuildContext context, int pendingCount, int outgoingCount) {
+  Widget _buildTopBar(
+      BuildContext context, int pendingCount, int outgoingCount) {
     final cs = Theme.of(context).colorScheme;
 
     return Container(
@@ -314,8 +316,7 @@ class _TransferScreenState extends ConsumerState<TransferScreen>
                     fillColor:
                         cs.surfaceContainerHighest.withValues(alpha: 0.4),
                     border: OutlineInputBorder(
-                      borderRadius:
-                          BorderRadius.circular(AppSpacing.radiusMd),
+                      borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
                       borderSide: BorderSide.none,
                     ),
                     contentPadding: const EdgeInsets.symmetric(
@@ -325,9 +326,8 @@ class _TransferScreenState extends ConsumerState<TransferScreen>
                     isDense: true,
                   ),
                   style: AppTypography.bodyMedium,
-                  onChanged: (v) => ref
-                      .read(transferSearchQueryProvider.notifier)
-                      .state = v,
+                  onChanged: (v) =>
+                      ref.read(transferSearchQueryProvider.notifier).state = v,
                   onSubmitted: _handleScanOrSearch,
                 ),
               ),
@@ -374,7 +374,8 @@ class _TransferScreenState extends ConsumerState<TransferScreen>
                                 .read(currentTransferProvider.notifier)
                                 .addProduct(p);
                             if (!added && mounted) {
-                              showErrorSnackBar(context, '"${p.name}" — нет в наличии');
+                              showErrorSnackBar(
+                                  context, '"${p.name}" — нет в наличии');
                             }
                           },
                         );
@@ -413,7 +414,9 @@ class _TransferScreenState extends ConsumerState<TransferScreen>
       }
 
       if (added) {
-        showInfoSnackBar(context, ref, '"${product.name}" добавлен в перемещение', duration: const Duration(seconds: 1));
+        showInfoSnackBar(
+            context, ref, '"${product.name}" добавлен в перемещение',
+            duration: const Duration(seconds: 1));
       } else {
         showErrorSnackBar(context, '"${product.name}" — нет в наличии');
       }
@@ -468,89 +471,90 @@ class _ProductTile extends StatelessWidget {
             children: [
               // Image placeholder
               Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
-                  borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(AppSpacing.radiusMd)),
-                ),
-                child: product.imageUrl != null &&
-                        product.imageUrl!.isNotEmpty
-                    ? ClipRRect(
-                        borderRadius: const BorderRadius.vertical(
-                            top: Radius.circular(AppSpacing.radiusMd)),
-                        child: product.imageUrl!.startsWith('http')
-                            ? CachedImageWidget(
-                                imageUrl: product.imageUrl!,
-                                width: double.infinity,
-                                height: double.infinity,
-                                fit: BoxFit.cover,
-                                borderRadius: const BorderRadius.vertical(
-                                    top: Radius.circular(AppSpacing.radiusMd)),
-                              )
-                            : Image.file(
-                                java_io.File(product.imageUrl!),
-                                fit: BoxFit.cover,
-                                errorBuilder: (_, __, ___) => Icon(
-                                    Icons.inventory_2_outlined,
-                                    size: 32,
-                                    color: cs.onSurface.withValues(alpha: 0.2)),
-                              ),
-                      )
-                    : Icon(Icons.inventory_2_outlined,
-                        size: 32,
-                        color: cs.onSurface.withValues(alpha: 0.2)),
-              ),
-            ),
-            // Info
-            Padding(
-              padding: const EdgeInsets.all(AppSpacing.sm),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    product.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTypography.bodySmall.copyWith(
-                      color: cs.onSurface,
-                      fontWeight: FontWeight.w600,
-                    ),
+                child: Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                    borderRadius: const BorderRadius.vertical(
+                        top: Radius.circular(AppSpacing.radiusMd)),
                   ),
-                  const SizedBox(height: 2),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        '$currency ${_formatNumber(product.price.toInt())}',
-                        style: AppTypography.bodySmall.copyWith(
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w700,
-                        ),
+                  child: product.imageUrl != null &&
+                          product.imageUrl!.isNotEmpty
+                      ? ClipRRect(
+                          borderRadius: const BorderRadius.vertical(
+                              top: Radius.circular(AppSpacing.radiusMd)),
+                          child: product.imageUrl!.startsWith('http')
+                              ? CachedImageWidget(
+                                  imageUrl: product.imageUrl!,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  fit: BoxFit.cover,
+                                  borderRadius: const BorderRadius.vertical(
+                                      top:
+                                          Radius.circular(AppSpacing.radiusMd)),
+                                )
+                              : Image.file(
+                                  java_io.File(product.imageUrl!),
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Icon(
+                                      Icons.inventory_2_outlined,
+                                      size: 32,
+                                      color:
+                                          cs.onSurface.withValues(alpha: 0.2)),
+                                ),
+                        )
+                      : Icon(Icons.inventory_2_outlined,
+                          size: 32, color: cs.onSurface.withValues(alpha: 0.2)),
+                ),
+              ),
+              // Info
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTypography.bodySmall.copyWith(
+                        color: cs.onSurface,
+                        fontWeight: FontWeight.w600,
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 5, vertical: 1),
-                        decoration: BoxDecoration(
-                          color: AppColors.success.withValues(alpha: 0.15),
-                          borderRadius:
-                              BorderRadius.circular(AppSpacing.radiusSm),
-                        ),
-                        child: Text(
-                          '${product.quantity} шт',
-                          style: const TextStyle(
-                            color: AppColors.success,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '$currency ${_formatNumber(product.price.toInt())}',
+                          style: AppTypography.bodySmall.copyWith(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ],
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 5, vertical: 1),
+                          decoration: BoxDecoration(
+                            color: AppColors.success.withValues(alpha: 0.15),
+                            borderRadius:
+                                BorderRadius.circular(AppSpacing.radiusSm),
+                          ),
+                          child: Text(
+                            '${product.quantity} шт',
+                            style: const TextStyle(
+                              color: AppColors.success,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-            ),
             ],
           ),
         ),

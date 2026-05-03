@@ -49,10 +49,19 @@ class AuditRepository {
          started_at, created_at, updated_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
       [
-        auditId, companyId, warehouseId, warehouseName,
-        employeeId, employeeName, type.name, AuditStatus.inProgress.name,
-        categoryId, categoryName,
-        now.toIso8601String(), now.toIso8601String(), now.toIso8601String(),
+        auditId,
+        companyId,
+        warehouseId,
+        warehouseName,
+        employeeId,
+        employeeName,
+        type.name,
+        AuditStatus.inProgress.name,
+        categoryId,
+        categoryName,
+        now.toIso8601String(),
+        now.toIso8601String(),
+        now.toIso8601String(),
       ],
     );
 
@@ -71,9 +80,19 @@ class AuditRepository {
            actual_quantity, cost_price, is_checked, created_at)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
         [
-          itemId, auditId, row['id'], row['name'],
-          row['sku'], row['barcode'], imageUrl, qty, 0,
-          null, costPrice, 0, now.toIso8601String(),
+          itemId,
+          auditId,
+          row['id'],
+          row['name'],
+          row['sku'],
+          row['barcode'],
+          imageUrl,
+          qty,
+          0,
+          null,
+          costPrice,
+          0,
+          now.toIso8601String(),
         ],
       );
 
@@ -92,12 +111,19 @@ class AuditRepository {
 
     // Sync audit to Supabase
     await SupabaseSync.upsert('audits', {
-      'id': auditId, 'company_id': companyId, 'warehouse_id': warehouseId,
-      'warehouse_name': warehouseName, 'employee_id': employeeId,
-      'employee_name': employeeName, 'type': type.name,
-      'status': AuditStatus.inProgress.name, 'category_id': categoryId,
-      'category_name': categoryName, 'started_at': now.toIso8601String(),
-      'created_at': now.toIso8601String(), 'updated_at': now.toIso8601String(),
+      'id': auditId,
+      'company_id': companyId,
+      'warehouse_id': warehouseId,
+      'warehouse_name': warehouseName,
+      'employee_id': employeeId,
+      'employee_name': employeeName,
+      'type': type.name,
+      'status': AuditStatus.inProgress.name,
+      'category_id': categoryId,
+      'category_name': categoryName,
+      'started_at': now.toIso8601String(),
+      'created_at': now.toIso8601String(),
+      'updated_at': now.toIso8601String(),
     });
 
     return Audit(
@@ -201,7 +227,9 @@ class AuditRepository {
 
       // Sync status
       await SupabaseSync.update('audits', auditId, {
-        'status': AuditStatus.completed.name, 'completed_at': now, 'updated_at': now,
+        'status': AuditStatus.completed.name,
+        'completed_at': now,
+        'updated_at': now,
       });
 
       return true;
@@ -227,7 +255,8 @@ class AuditRepository {
       [AuditStatus.cancelled.name, now, auditId],
     );
     await SupabaseSync.update('audits', auditId, {
-      'status': AuditStatus.cancelled.name, 'updated_at': now,
+      'status': AuditStatus.cancelled.name,
+      'updated_at': now,
     });
   }
 
@@ -295,8 +324,8 @@ class AuditRepository {
   /// Recalculate movements that occurred during the audit for each item.
   /// This checks sales, arrivals, and transfers since the audit started.
   Future<void> recalcMovements(String auditId) async {
-    final auditRows =
-        await _db.getAll('SELECT started_at FROM audits WHERE id = ?', [auditId]);
+    final auditRows = await _db
+        .getAll('SELECT started_at FROM audits WHERE id = ?', [auditId]);
     if (auditRows.isEmpty) return;
     final startedAt = auditRows.first['started_at'] as String;
 

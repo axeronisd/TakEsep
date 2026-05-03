@@ -77,7 +77,7 @@ class _GlobalBarcodeScannerState extends ConsumerState<GlobalBarcodeScanner> {
         final primaryFocus = FocusManager.instance.primaryFocus;
         final isTextFieldFocused = primaryFocus?.context != null &&
             primaryFocus!.context!
-                .findAncestorWidgetOfExactType<EditableText>() !=
+                    .findAncestorWidgetOfExactType<EditableText>() !=
                 null;
         if (!isTextFieldFocused) {
           _handleBarcode(barcode);
@@ -110,16 +110,15 @@ class _GlobalBarcodeScannerState extends ConsumerState<GlobalBarcodeScanner> {
   void _handleTransferBarcode(String barcode) {
     final productsAsync = ref.read(inventoryProvider);
     final allProducts = productsAsync.value ?? [];
-    final product =
-        allProducts.where((p) => p.barcode == barcode).firstOrNull;
+    final product = allProducts.where((p) => p.barcode == barcode).firstOrNull;
 
     if (product != null) {
       final added =
           ref.read(currentTransferProvider.notifier).addProduct(product);
       if (mounted) {
         if (added) {
-          showInfoSnackBar(context, ref,
-              '"${product.name}" добавлен в перемещение',
+          showInfoSnackBar(
+              context, ref, '"${product.name}" добавлен в перемещение',
               duration: const Duration(seconds: 1));
         } else {
           showErrorSnackBar(context, '"${product.name}" — нет в наличии');
@@ -135,8 +134,7 @@ class _GlobalBarcodeScannerState extends ConsumerState<GlobalBarcodeScanner> {
   void _handleInventoryBarcode(String barcode) {
     final productsAsync = ref.read(inventoryProvider);
     final allProducts = productsAsync.value ?? [];
-    final product =
-        allProducts.where((p) => p.barcode == barcode).firstOrNull;
+    final product = allProducts.where((p) => p.barcode == barcode).firstOrNull;
 
     if (product != null) {
       // Navigate to product — set search query to highlight it
@@ -154,13 +152,13 @@ class _GlobalBarcodeScannerState extends ConsumerState<GlobalBarcodeScanner> {
   void _handleSalesBarcode(String barcode) {
     final productsAsync = ref.read(inventoryProvider);
     final allProducts = productsAsync.value ?? [];
-    final product =
-        allProducts.where((p) => p.barcode == barcode).firstOrNull;
+    final product = allProducts.where((p) => p.barcode == barcode).firstOrNull;
 
     if (product != null) {
       ref.read(cartProvider.notifier).addProduct(product);
       if (mounted) {
-        showInfoSnackBar(context, ref, '"${product.name}" добавлен в чек', duration: const Duration(seconds: 1));
+        showInfoSnackBar(context, ref, '"${product.name}" добавлен в чек',
+            duration: const Duration(seconds: 1));
       }
     } else {
       if (mounted) {
@@ -172,13 +170,13 @@ class _GlobalBarcodeScannerState extends ConsumerState<GlobalBarcodeScanner> {
   void _handleArrivalBarcode(String barcode) {
     final productsAsync = ref.read(arrivalAllProductsProvider);
     final allProducts = productsAsync.value ?? [];
-    final product =
-        allProducts.where((p) => p.barcode == barcode).firstOrNull;
+    final product = allProducts.where((p) => p.barcode == barcode).firstOrNull;
 
     if (product != null) {
       ref.read(currentArrivalProvider.notifier).addItem(product);
       if (mounted) {
-        showInfoSnackBar(context, ref, '"${product.name}" добавлен в накладную', duration: const Duration(seconds: 1));
+        showInfoSnackBar(context, ref, '"${product.name}" добавлен в накладную',
+            duration: const Duration(seconds: 1));
       }
     } else {
       // Offer to create new product
@@ -191,7 +189,8 @@ class _GlobalBarcodeScannerState extends ConsumerState<GlobalBarcodeScanner> {
   Future<void> _offerCreateProduct(String barcode) async {
     final result = await showQuickCreateProductDialog(context, barcode);
     if (result != null && mounted) {
-      ref.read(currentArrivalProvider.notifier)
+      ref
+          .read(currentArrivalProvider.notifier)
           .addItem(result.product, quantity: result.quantity);
       ref.invalidate(arrivalAllProductsProvider);
     }

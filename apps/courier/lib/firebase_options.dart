@@ -78,5 +78,4 @@ class DefaultFirebaseOptions {
     storageBucket: 'akjol-f479a.firebasestorage.app',
     iosBundleId: 'com.akjolui.courier',
   );
-
 }

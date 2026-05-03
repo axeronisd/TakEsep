@@ -10,7 +10,11 @@ class ArrivalRepository {
   PowerSyncDatabase get _db => powerSyncDb;
 
   /// Fetch list of arrivals
-  Future<List<Arrival>> getArrivals({required String companyId, String? warehouseId, int page = 1, int limit = 20}) async {
+  Future<List<Arrival>> getArrivals(
+      {required String companyId,
+      String? warehouseId,
+      int page = 1,
+      int limit = 20}) async {
     try {
       final offset = (page - 1) * limit;
       final whFilter = warehouseId != null ? ' AND warehouse_id = ?' : '';
@@ -120,19 +124,27 @@ class ArrivalRepository {
 
       // Sync to Supabase
       await SupabaseSync.upsert('arrivals', {
-        'id': arrivalId, 'company_id': arrival.companyId,
-        'employee_id': arrival.employeeId, 'warehouse_id': arrival.warehouseId,
-        'supplier': arrival.supplierName, 'status': arrival.status.name,
-        'total_amount': arrival.totalAmount, 'notes': arrival.notes,
-        'created_at': now, 'updated_at': now,
+        'id': arrivalId,
+        'company_id': arrival.companyId,
+        'employee_id': arrival.employeeId,
+        'warehouse_id': arrival.warehouseId,
+        'supplier': arrival.supplierName,
+        'status': arrival.status.name,
+        'total_amount': arrival.totalAmount,
+        'notes': arrival.notes,
+        'created_at': now,
+        'updated_at': now,
       });
       final arrivalItemsSync = <Map<String, dynamic>>[];
       for (final item in arrival.items) {
         arrivalItemsSync.add({
           'id': item.id.isEmpty ? const Uuid().v4() : item.id,
-          'arrival_id': arrivalId, 'product_id': item.productId,
-          'product_name': item.productName, 'quantity': item.quantity,
-          'cost_price': item.costPrice, 'selling_price': item.sellingPrice,
+          'arrival_id': arrivalId,
+          'product_id': item.productId,
+          'product_name': item.productName,
+          'quantity': item.quantity,
+          'cost_price': item.costPrice,
+          'selling_price': item.sellingPrice,
           'created_at': now,
         });
       }
@@ -154,7 +166,8 @@ class ArrivalRepository {
   }
 
   /// Search products in the local database
-  Future<List<Product>> searchProducts({required String companyId, String? warehouseId, String? query}) async {
+  Future<List<Product>> searchProducts(
+      {required String companyId, String? warehouseId, String? query}) async {
     try {
       final whFilter = warehouseId != null ? ' AND warehouse_id = ?' : '';
       final whParam = warehouseId != null ? [warehouseId] : <String>[];
@@ -179,7 +192,8 @@ class ArrivalRepository {
   }
 
   /// Check if barcode is unique within the specific warehouse
-  Future<bool> isBarcodeUnique(String barcode, String companyId, {String? warehouseId}) async {
+  Future<bool> isBarcodeUnique(String barcode, String companyId,
+      {String? warehouseId}) async {
     try {
       final whFilter = warehouseId != null ? ' AND warehouse_id = ?' : '';
       final whParam = warehouseId != null ? [warehouseId] : <String>[];
@@ -196,7 +210,8 @@ class ArrivalRepository {
 
   /// Find an existing product by barcode in ANY warehouse of the company.
   /// Used to copy product data when creating on a new warehouse.
-  Future<Product?> findProductByBarcode(String barcode, String companyId) async {
+  Future<Product?> findProductByBarcode(
+      String barcode, String companyId) async {
     try {
       final result = await _db.getOptional(
         'SELECT * FROM products WHERE barcode = ? AND company_id = ? LIMIT 1',
@@ -214,7 +229,8 @@ class ArrivalRepository {
   Future<bool> createProduct(Product product) async {
     try {
       final now = DateTime.now().toIso8601String();
-      print('createProduct: id=${product.id}, name=${product.name}, barcode=${product.barcode}, warehouseId=${product.warehouseId}');
+      print(
+          'createProduct: id=${product.id}, name=${product.name}, barcode=${product.barcode}, warehouseId=${product.warehouseId}');
 
       await _insertProduct(product, now);
 
@@ -262,19 +278,31 @@ class ArrivalRepository {
 
     // Sync product to Supabase
     await SupabaseSync.upsert('products', {
-      'id': product.id, 'company_id': product.companyId,
-      'warehouse_id': product.warehouseId, 'category_id': product.categoryId,
-      'name': product.name, 'sku': product.sku, 'barcode': product.barcode,
-      'description': product.description, 'cost_price': product.costPrice ?? 0.0,
-      'price': product.price, 'selling_price': product.price, 'quantity': product.quantity,
-      'min_stock': product.minQuantity, 'max_stock': product.maxQuantity ?? 0,
-      'stock_zone': product.stockZone.name, 'image_url': product.imageUrl,
-      'is_public': product.isPublic, 'created_at': now, 'updated_at': now,
+      'id': product.id,
+      'company_id': product.companyId,
+      'warehouse_id': product.warehouseId,
+      'category_id': product.categoryId,
+      'name': product.name,
+      'sku': product.sku,
+      'barcode': product.barcode,
+      'description': product.description,
+      'cost_price': product.costPrice ?? 0.0,
+      'price': product.price,
+      'selling_price': product.price,
+      'quantity': product.quantity,
+      'min_stock': product.minQuantity,
+      'max_stock': product.maxQuantity ?? 0,
+      'stock_zone': product.stockZone.name,
+      'image_url': product.imageUrl,
+      'is_public': product.isPublic,
+      'created_at': now,
+      'updated_at': now,
     });
   }
 
   /// Find sibling warehouses in the same group and create product copies with qty=0.
-  Future<void> _autoCreateInSiblingWarehouses(Product product, String now) async {
+  Future<void> _autoCreateInSiblingWarehouses(
+      Product product, String now) async {
     if (product.warehouseId.isEmpty) return;
 
     try {

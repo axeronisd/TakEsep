@@ -129,8 +129,7 @@ class TransferRepository {
   /// Deducts stock from the source warehouse immediately.
   Future<Transfer> createTransfer(Transfer transfer) async {
     try {
-      final transferId =
-          transfer.id.isEmpty ? const Uuid().v4() : transfer.id;
+      final transferId = transfer.id.isEmpty ? const Uuid().v4() : transfer.id;
       final now = DateTime.now().toIso8601String();
 
       // Use cost-based total
@@ -211,13 +210,21 @@ class TransferRepository {
 
       // Sync to Supabase
       await SupabaseSync.upsert('transfers', {
-        'id': transferId, 'company_id': transfer.companyId,
-        'from_warehouse_id': transfer.fromWarehouseId, 'to_warehouse_id': transfer.toWarehouseId,
-        'from_warehouse_name': transfer.fromWarehouseName, 'to_warehouse_name': transfer.toWarehouseName,
-        'sender_employee_id': transfer.senderEmployeeId, 'sender_employee_name': transfer.senderEmployeeName,
-        'status': 'pending', 'total_amount': costTotal,
-        'sender_notes': transfer.senderNotes, 'sender_photos': transfer.senderPhotos.join(','),
-        'pricing_mode': transfer.pricingMode, 'created_at': now, 'updated_at': now,
+        'id': transferId,
+        'company_id': transfer.companyId,
+        'from_warehouse_id': transfer.fromWarehouseId,
+        'to_warehouse_id': transfer.toWarehouseId,
+        'from_warehouse_name': transfer.fromWarehouseName,
+        'to_warehouse_name': transfer.toWarehouseName,
+        'sender_employee_id': transfer.senderEmployeeId,
+        'sender_employee_name': transfer.senderEmployeeName,
+        'status': 'pending',
+        'total_amount': costTotal,
+        'sender_notes': transfer.senderNotes,
+        'sender_photos': transfer.senderPhotos.join(','),
+        'pricing_mode': transfer.pricingMode,
+        'created_at': now,
+        'updated_at': now,
       });
 
       return transfer.copyWith(
@@ -263,7 +270,8 @@ class TransferRepository {
         final sourceProductId = item['product_id'] as String;
         final barcode = item['product_barcode'] as String?;
         final quantitySent = item['quantity_sent'] as int;
-        final quantityReceived = receivedQuantities[sourceProductId] ?? quantitySent;
+        final quantityReceived =
+            receivedQuantities[sourceProductId] ?? quantitySent;
 
         if (quantityReceived != quantitySent) {
           isFullyAccepted = false;
@@ -343,9 +351,11 @@ class TransferRepository {
 
       // Sync transfer status to Supabase
       await SupabaseSync.update('transfers', transferId, {
-        'status': newStatus, 'receiver_employee_id': receiverEmployeeId,
+        'status': newStatus,
+        'receiver_employee_id': receiverEmployeeId,
         'receiver_employee_name': receiverEmployeeName,
-        'receiver_notes': receiverNotes, 'receiver_photos': receiverPhotos.join(','),
+        'receiver_notes': receiverNotes,
+        'receiver_photos': receiverPhotos.join(','),
         'updated_at': now,
       });
 
@@ -416,7 +426,8 @@ class TransferRepository {
         'status': TransferStatus.rejected.name,
         'receiver_employee_id': receiverEmployeeId,
         'receiver_employee_name': receiverEmployeeName,
-        'receiver_notes': reason, 'updated_at': now,
+        'receiver_notes': reason,
+        'updated_at': now,
       });
 
       return true;
@@ -451,7 +462,8 @@ class TransferRepository {
       );
 
       await SupabaseSync.update('transfers', transferId, {
-        'status': TransferStatus.cancelled.name, 'updated_at': now,
+        'status': TransferStatus.cancelled.name,
+        'updated_at': now,
       });
 
       return true;
