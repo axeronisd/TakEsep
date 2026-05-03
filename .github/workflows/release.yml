@@ -284,11 +284,11 @@ jobs:
           echo "$IOS_PROVISIONING_PROFILE_WAREHOUSE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/TakEsep.mobileprovision
           echo "✅ Provisioning profiles imported"
           echo "=== AkJolCustomer profile diagnostic ==="
-          security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/AkJolCustomer.mobileprovision | grep -E 'Name|aps-environment|UUID|TeamIdentifier' | head -20
+          security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/AkJolCustomer.mobileprovision | grep -A1 -E 'Name|aps-environment|UUID|TeamIdentifier' | head -40
           echo "=== AkJolPro profile diagnostic ==="
-          security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/AkJolPro.mobileprovision | grep -E 'Name|aps-environment|UUID|TeamIdentifier' | head -20
+          security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/AkJolPro.mobileprovision | grep -A1 -E 'Name|aps-environment|UUID|TeamIdentifier' | head -40
           echo "=== TakEsep profile diagnostic ==="
-          security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/TakEsep.mobileprovision | grep -E 'Name|aps-environment|UUID|TeamIdentifier' | head -20
+          security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/TakEsep.mobileprovision | grep -A1 -E 'Name|aps-environment|UUID|TeamIdentifier' | head -40
 
       # AkJol Customer iOS
       - name: Build AkJol iOS
