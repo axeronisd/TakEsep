@@ -298,7 +298,7 @@ jobs:
           flutter pub get || flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             security unlock-keychain -p "" ~/Library/Keychains/build.keychain
-            python3 -c "import plistlib; plistlib.dump({'method':'app-store','teamID':'V63B2H2DTP','signingStyle':'manual','provisioningProfiles':{'com.akjol.customer':'AkJolCustomer'}}, open('ios/ExportOptions.plist','wb'), fmt=plistlib.FMT_XML)"
+            python3 -c "import plistlib; plistlib.dump({'method':'app-store','teamID':'V63B2H2DTP','signingStyle':'manual','provisioningProfiles':{'com.akjolui.customer':'AkJolCustomer'}}, open('ios/ExportOptions.plist','wb'), fmt=plistlib.FMT_XML)"
             cd ios
             pod install
             ruby -e "require 'xcodeproj'; p=Xcodeproj::Project.open('Runner.xcodeproj'); p.targets.each{|t|next unless t.name=='Runner'; t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Manual'; c.build_settings['CODE_SIGN_IDENTITY']='Apple Distribution: Ilgis Uzbekov (V63B2H2DTP)'; c.build_settings['PROVISIONING_PROFILE_SPECIFIER']='AkJolCustomer'}}; p.save; pp=Xcodeproj::Project.open('Pods/Pods.xcodeproj'); pp.targets.each{|t|t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Automatic'; c.build_settings['CODE_SIGNING_ALLOWED']='NO'}}; pp.save"
@@ -331,7 +331,7 @@ jobs:
           flutter pub get || flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             security unlock-keychain -p "" ~/Library/Keychains/build.keychain
-            python3 -c "import plistlib; plistlib.dump({'method':'app-store','teamID':'V63B2H2DTP','signingStyle':'manual','provisioningProfiles':{'com.akjol.courier':'AkJolPro'}}, open('ios/ExportOptions.plist','wb'), fmt=plistlib.FMT_XML)"
+            python3 -c "import plistlib; plistlib.dump({'method':'app-store','teamID':'V63B2H2DTP','signingStyle':'manual','provisioningProfiles':{'com.akjolui.courier':'AkJolPro'}}, open('ios/ExportOptions.plist','wb'), fmt=plistlib.FMT_XML)"
             cd ios
             pod install
             ruby -e "require 'xcodeproj'; p=Xcodeproj::Project.open('Runner.xcodeproj'); p.targets.each{|t|next unless t.name=='Runner'; t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Manual'; c.build_settings['CODE_SIGN_IDENTITY']='Apple Distribution: Ilgis Uzbekov (V63B2H2DTP)'; c.build_settings['PROVISIONING_PROFILE_SPECIFIER']='AkJolPro'}}; p.save; pp=Xcodeproj::Project.open('Pods/Pods.xcodeproj'); pp.targets.each{|t|t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Automatic'; c.build_settings['CODE_SIGNING_ALLOWED']='NO'}}; pp.save"
@@ -362,7 +362,7 @@ jobs:
           flutter pub get || flutter pub get
           if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             security unlock-keychain -p "" ~/Library/Keychains/build.keychain
-            python3 -c "import plistlib; plistlib.dump({'method':'app-store','teamID':'V63B2H2DTP','signingStyle':'manual','provisioningProfiles':{'com.takesep.warehouse':'TakEsep'}}, open('ios/ExportOptions.plist','wb'), fmt=plistlib.FMT_XML)"
+            python3 -c "import plistlib; plistlib.dump({'method':'app-store','teamID':'V63B2H2DTP','signingStyle':'manual','provisioningProfiles':{'com.takesep.app':'TakEsep'}}, open('ios/ExportOptions.plist','wb'), fmt=plistlib.FMT_XML)"
             cd ios
             pod install
             ruby -e "require 'xcodeproj'; p=Xcodeproj::Project.open('Runner.xcodeproj'); p.targets.each{|t|next unless t.name=='Runner'; t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Manual'; c.build_settings['CODE_SIGN_IDENTITY']='Apple Distribution: Ilgis Uzbekov (V63B2H2DTP)'; c.build_settings['PROVISIONING_PROFILE_SPECIFIER']='TakEsep'}}; p.save; pp=Xcodeproj::Project.open('Pods/Pods.xcodeproj'); pp.targets.each{|t|t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Automatic'; c.build_settings['CODE_SIGNING_ALLOWED']='NO'}}; pp.save"
