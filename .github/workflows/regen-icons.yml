@@ -1,0 +1,69 @@
+name: Regenerate Launcher Icons
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: regen-icons
+  cancel-in-progress: false
+
+jobs:
+  regen:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generate icons for customer (AkJol)
+        working-directory: apps/customer
+        run: |
+          flutter pub get || flutter pub get
+          dart run flutter_launcher_icons
+
+      - name: Generate icons for courier (AkJol Pro)
+        working-directory: apps/courier
+        run: |
+          flutter pub get || flutter pub get
+          dart run flutter_launcher_icons
+
+      - name: Generate icons for warehouse (TakEsep)
+        working-directory: apps/warehouse
+        run: |
+          flutter pub get || flutter pub get
+          dart run flutter_launcher_icons
+
+      - name: Show changed files
+        run: |
+          git status --short
+          echo "--- Diff summary ---"
+          git diff --stat || true
+
+      - name: Commit & push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A apps/customer/ios/Runner/Assets.xcassets/AppIcon.appiconset \
+                     apps/courier/ios/Runner/Assets.xcassets/AppIcon.appiconset \
+                     apps/warehouse/ios/Runner/Assets.xcassets/AppIcon.appiconset \
+                     apps/customer/android/app/src/main/res \
+                     apps/courier/android/app/src/main/res \
+                     apps/warehouse/android/app/src/main/res
+          if git diff --cached --quiet; then
+            echo "No icon changes to commit."
+            exit 0
+          fi
+          TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M UTC")
+          git commit -m "🎨 Regenerate launcher icons — ${TIMESTAMP}"
+          git push

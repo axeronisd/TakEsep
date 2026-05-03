@@ -1,7 +1,7 @@
 name: customer
 description: "AkJol Customer — заказ и доставка"
 publish_to: 'none'
-version: 2.1.7+37
+version: 2.1.8+38
 
 environment:
   sdk: ^3.11.1
@@ -56,7 +56,8 @@ dev_dependencies:
 
 flutter_launcher_icons:
   android: "launcher_icon"
-  ios: false
+  ios: true
+  remove_alpha_ios: true
   image_path: "assets/images/akjol_logo.png"
   windows:
     generate: true

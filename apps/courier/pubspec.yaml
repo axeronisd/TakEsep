@@ -1,7 +1,7 @@
 name: courier
 description: "AkJol Courier — доставка заказов"
 publish_to: 'none'
-version: 2.1.7+37
+version: 2.1.8+38
 
 environment:
   sdk: ^3.11.1
@@ -55,7 +55,8 @@ dev_dependencies:
 
 flutter_launcher_icons:
   android: "launcher_icon"
-  ios: false
+  ios: true
+  remove_alpha_ios: true
   image_path: "assets/icon.png"
   windows:
     generate: true
