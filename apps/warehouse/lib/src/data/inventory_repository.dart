@@ -268,8 +268,11 @@ class InventoryRepository {
           .select()
           .eq('company_id', companyId);
       for (final p in products) {
+        // Use INSERT OR IGNORE so locally-modified stock quantities
+        // (arrivals, sales, transfers, audits) are never overwritten
+        // by stale Supabase data on re-login.
         await _db.execute(
-          '''INSERT OR REPLACE INTO products (
+          '''INSERT OR IGNORE INTO products (
             id, company_id, warehouse_id, category_id, name, sku, barcode,
             description, cost_price, selling_price, quantity, unit,
             min_stock, max_stock, sold_last_30_days, days_of_stock_left,

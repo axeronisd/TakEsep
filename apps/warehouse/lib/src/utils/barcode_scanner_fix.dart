@@ -74,6 +74,38 @@ class _ScannerScreenState extends State<_ScannerScreen> {
             controller: _controller,
             onDetect: _onDetect,
             fit: BoxFit.cover,
+            errorBuilder: (context, error) {
+              String msg;
+              switch (error.errorCode) {
+                case MobileScannerErrorCode.permissionDenied:
+                  msg = 'Разрешение на использование камеры отклонено.\n\nОткройте Настройки → Приложения → TakEsep → Камера → Разрешить';
+                  break;
+                case MobileScannerErrorCode.unsupported:
+                  msg = 'Камера не поддерживается на этом устройстве';
+                  break;
+                default:
+                  msg = 'Ошибка камеры: ${error.errorDetails?.message ?? error.errorCode.name}';
+              }
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.camera_alt_outlined, color: Colors.white54, size: 64),
+                      const SizedBox(height: 16),
+                      Text(msg, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 16)),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.arrow_back),
+                        label: const Text('Назад'),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
           ),
 
           // ─── Dark overlay with cutout ───
