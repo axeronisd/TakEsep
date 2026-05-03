@@ -306,6 +306,8 @@ jobs:
               -configuration Release -sdk iphoneos \
               -archivePath ../build/ios/archive/Runner.xcarchive \
               archive
+            echo "=== Archive embedded.mobileprovision diagnostic ==="
+            security cms -D -i ../build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app/embedded.mobileprovision | grep -A1 -E 'Name|aps-environment|UUID' | head -20 || echo "NO embedded profile found"
             xcodebuild -exportArchive \
               -archivePath ../build/ios/archive/Runner.xcarchive \
               -exportPath ../build/ios/ipa \
