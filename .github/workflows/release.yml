@@ -262,13 +262,16 @@ jobs:
           xcodebuild -version
 
       - name: Install iOS 26 SDK
+        timeout-minutes: 30
         run: |
-          echo "=== Installed SDKs ==="
+          echo "=== Installed SDKs before download ==="
           xcodebuild -showsdks | grep -i ios || true
-          echo "=== Downloading iOS platform (if needed) ==="
-          xcodebuild -downloadPlatform iOS || true
-          echo "=== SDKs after download ==="
-          xcodebuild -showsdks | grep -i ios || true
+          echo "=== Downloading iOS platform ==="
+          xcodebuild -downloadPlatform iOS
+          echo "=== Installed SDKs after download ==="
+          xcodebuild -showsdks | grep -i ios
+          echo "=== Verifying iOS SDK exists ==="
+          ls -la $(xcode-select -p)/Platforms/iPhoneOS.platform/ 2>/dev/null || echo "WARNING: iPhoneOS platform not found!"
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2

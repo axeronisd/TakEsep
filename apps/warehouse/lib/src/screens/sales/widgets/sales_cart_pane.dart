@@ -771,9 +771,7 @@ class SalesCartPane extends ConsumerWidget {
                   if (config.showAddress)
                     Text(
                         auth.availableWarehouses
-                                .where((w) =>
-                                    w.id ==
-                                    preloadedWarehouseId)
+                                .where((w) => w.id == preloadedWarehouseId)
                                 .firstOrNull
                                 ?.address ??
                             'г. Бишкек',
