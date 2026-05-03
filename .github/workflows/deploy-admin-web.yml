@@ -1,0 +1,65 @@
+name: Deploy Admin Web
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'apps/admin/**'
+      - 'packages/**'
+      - '.github/workflows/deploy-admin-web.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: deploy-admin-web
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Get dependencies
+        working-directory: apps/admin
+        run: |
+          flutter pub get || flutter pub get
+
+      - name: Build Flutter Web (release)
+        working-directory: apps/admin
+        run: |
+          flutter build web --release --base-href "/TakEsep/app/"
+
+      - name: Deploy to docs/app
+        run: |
+          rm -rf docs/app
+          mkdir -p docs/app
+          cp -r apps/admin/build/web/. docs/app/
+          echo "Deployed files:"
+          ls -la docs/app/
+
+      - name: Commit & push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/app
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+          TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M UTC")
+          git commit -m "🚀 Deploy Admin Web — ${TIMESTAMP}"
+          git push
