@@ -295,12 +295,10 @@ jobs:
             python3 -c "import plistlib; plistlib.dump({'method':'app-store','teamID':'V63B2H2DTP','signingStyle':'manual','provisioningProfiles':{'com.akjol.customer':'AkJolCustomer'}}, open('ios/ExportOptions.plist','wb'), fmt=plistlib.FMT_XML)"
             cd ios
             pod install
+            ruby -e "require 'xcodeproj'; p=Xcodeproj::Project.open('Runner.xcodeproj'); p.targets.each{|t|next unless t.name=='Runner'; t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Manual'; c.build_settings['CODE_SIGN_IDENTITY']='Apple Distribution: Ilgis Uzbekov (V63B2H2DTP)'; c.build_settings['PROVISIONING_PROFILE_SPECIFIER']='AkJolCustomer'}}; p.save; pp=Xcodeproj::Project.open('Pods/Pods.xcodeproj'); pp.targets.each{|t|t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Automatic'; c.build_settings['CODE_SIGNING_ALLOWED']='NO'}}; pp.save"
             xcodebuild -workspace Runner.xcworkspace -scheme Runner \
               -configuration Release -sdk iphoneos \
               -archivePath ../build/ios/archive/Runner.xcarchive \
-              CODE_SIGN_STYLE=Manual \
-              CODE_SIGN_IDENTITY="Apple Distribution: Ilgis Uzbekov (V63B2H2DTP)" \
-              PROVISIONING_PROFILE_SPECIFIER="AkJolCustomer" \
               archive
             xcodebuild -exportArchive \
               -archivePath ../build/ios/archive/Runner.xcarchive \
@@ -328,12 +326,10 @@ jobs:
             python3 -c "import plistlib; plistlib.dump({'method':'app-store','teamID':'V63B2H2DTP','signingStyle':'manual','provisioningProfiles':{'com.akjol.courier':'AkJolPro'}}, open('ios/ExportOptions.plist','wb'), fmt=plistlib.FMT_XML)"
             cd ios
             pod install
+            ruby -e "require 'xcodeproj'; p=Xcodeproj::Project.open('Runner.xcodeproj'); p.targets.each{|t|next unless t.name=='Runner'; t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Manual'; c.build_settings['CODE_SIGN_IDENTITY']='Apple Distribution: Ilgis Uzbekov (V63B2H2DTP)'; c.build_settings['PROVISIONING_PROFILE_SPECIFIER']='AkJolPro'}}; p.save; pp=Xcodeproj::Project.open('Pods/Pods.xcodeproj'); pp.targets.each{|t|t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Automatic'; c.build_settings['CODE_SIGNING_ALLOWED']='NO'}}; pp.save"
             xcodebuild -workspace Runner.xcworkspace -scheme Runner \
               -configuration Release -sdk iphoneos \
               -archivePath ../build/ios/archive/Runner.xcarchive \
-              CODE_SIGN_STYLE=Manual \
-              CODE_SIGN_IDENTITY="Apple Distribution: Ilgis Uzbekov (V63B2H2DTP)" \
-              PROVISIONING_PROFILE_SPECIFIER="AkJolPro" \
               archive
             xcodebuild -exportArchive \
               -archivePath ../build/ios/archive/Runner.xcarchive \
@@ -361,12 +357,10 @@ jobs:
             python3 -c "import plistlib; plistlib.dump({'method':'app-store','teamID':'V63B2H2DTP','signingStyle':'manual','provisioningProfiles':{'com.takesep.warehouse':'TakEsep'}}, open('ios/ExportOptions.plist','wb'), fmt=plistlib.FMT_XML)"
             cd ios
             pod install
+            ruby -e "require 'xcodeproj'; p=Xcodeproj::Project.open('Runner.xcodeproj'); p.targets.each{|t|next unless t.name=='Runner'; t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Manual'; c.build_settings['CODE_SIGN_IDENTITY']='Apple Distribution: Ilgis Uzbekov (V63B2H2DTP)'; c.build_settings['PROVISIONING_PROFILE_SPECIFIER']='TakEsep'}}; p.save; pp=Xcodeproj::Project.open('Pods/Pods.xcodeproj'); pp.targets.each{|t|t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Automatic'; c.build_settings['CODE_SIGNING_ALLOWED']='NO'}}; pp.save"
             xcodebuild -workspace Runner.xcworkspace -scheme Runner \
               -configuration Release -sdk iphoneos \
               -archivePath ../build/ios/archive/Runner.xcarchive \
-              CODE_SIGN_STYLE=Manual \
-              CODE_SIGN_IDENTITY="Apple Distribution: Ilgis Uzbekov (V63B2H2DTP)" \
-              PROVISIONING_PROFILE_SPECIFIER="TakEsep" \
               archive
             xcodebuild -exportArchive \
               -archivePath ../build/ios/archive/Runner.xcarchive \
