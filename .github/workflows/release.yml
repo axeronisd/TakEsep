@@ -327,9 +327,9 @@ jobs:
                 "$(xcode-select -p)/../Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
                 "/Applications/Xcode_26.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
                 "/Applications/Xcode_26.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"; do
-                if [ -d "$SWIFT_PATH" ] && [ "$(ls -A "$SWIFT_PATH"/libswift* 2>/dev/null)" ]; then
+                if [ -d "$SWIFT_PATH" ] && [ "$(ls -A "$SWIFT_PATH"/libswift*.dylib 2>/dev/null)" ]; then
                   echo "Found Swift libs at: $SWIFT_PATH"
-                  cp "$SWIFT_PATH"/libswift* SwiftSupport/iphoneos/ 2>/dev/null || true
+                  cp "$SWIFT_PATH"/libswift*.dylib SwiftSupport/iphoneos/ 2>/dev/null || true
                   break
                 fi
               done
@@ -337,7 +337,7 @@ jobs:
             # Strategy 3: Find anywhere in Xcode
             if [ ! "$(ls -A SwiftSupport/iphoneos/ 2>/dev/null)" ]; then
               echo "Deep search in Xcode..."
-              find /Applications/Xcode* -path "*/iphoneos/libswift*" -type f 2>/dev/null | head -20 | while read f; do
+              find /Applications/Xcode* -path "*/iphoneos/libswift*.dylib" -type f 2>/dev/null | head -20 | while read f; do
                 echo "Copying: $f"
                 cp "$f" SwiftSupport/iphoneos/
               done
@@ -394,14 +394,14 @@ jobs:
                 "$(xcode-select -p)/../Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
                 "/Applications/Xcode_26.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
                 "/Applications/Xcode_26.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"; do
-                if [ -d "$SWIFT_PATH" ] && [ "$(ls -A "$SWIFT_PATH"/libswift* 2>/dev/null)" ]; then
-                  cp "$SWIFT_PATH"/libswift* SwiftSupport/iphoneos/ 2>/dev/null || true
+                if [ -d "$SWIFT_PATH" ] && [ "$(ls -A "$SWIFT_PATH"/libswift*.dylib 2>/dev/null)" ]; then
+                  cp "$SWIFT_PATH"/libswift*.dylib SwiftSupport/iphoneos/ 2>/dev/null || true
                   break
                 fi
               done
             fi
             if [ ! "$(ls -A SwiftSupport/iphoneos/ 2>/dev/null)" ]; then
-              find /Applications/Xcode* -path "*/iphoneos/libswift*" -type f 2>/dev/null | head -20 | while read f; do
+              find /Applications/Xcode* -path "*/iphoneos/libswift*.dylib" -type f 2>/dev/null | head -20 | while read f; do
                 cp "$f" SwiftSupport/iphoneos/
               done
             fi
@@ -452,14 +452,14 @@ jobs:
                 "$(xcode-select -p)/../Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
                 "/Applications/Xcode_26.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
                 "/Applications/Xcode_26.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"; do
-                if [ -d "$SWIFT_PATH" ] && [ "$(ls -A "$SWIFT_PATH"/libswift* 2>/dev/null)" ]; then
-                  cp "$SWIFT_PATH"/libswift* SwiftSupport/iphoneos/ 2>/dev/null || true
+                if [ -d "$SWIFT_PATH" ] && [ "$(ls -A "$SWIFT_PATH"/libswift*.dylib 2>/dev/null)" ]; then
+                  cp "$SWIFT_PATH"/libswift*.dylib SwiftSupport/iphoneos/ 2>/dev/null || true
                   break
                 fi
               done
             fi
             if [ ! "$(ls -A SwiftSupport/iphoneos/ 2>/dev/null)" ]; then
-              find /Applications/Xcode* -path "*/iphoneos/libswift*" -type f 2>/dev/null | head -20 | while read f; do
+              find /Applications/Xcode* -path "*/iphoneos/libswift*.dylib" -type f 2>/dev/null | head -20 | while read f; do
                 cp "$f" SwiftSupport/iphoneos/
               done
             fi
