@@ -286,86 +286,48 @@ jobs:
 
       # AkJol Customer iOS
       - name: Build AkJol iOS
-        timeout-minutes: 15
+        timeout-minutes: 45
         run: |
           cd apps/customer
           flutter pub get
-                    if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
-            flutter build ios --release --no-codesign
+          if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             security unlock-keychain -p "" ~/Library/Keychains/build.keychain
-            echo "=== Available signing identities ==="
-            security find-identity -v -p codesigning ~/Library/Keychains/build.keychain
-            IDENTITY=$(security find-identity -v -p codesigning ~/Library/Keychains/build.keychain | grep -E "Distribution|Developer" | head -1 | awk -F'"' '{print $2}')
-            echo "Signing with: $IDENTITY"
-            cp ~/Library/MobileDevice/Provisioning\ Profiles/AkJolCustomer.mobileprovision build/ios/iphoneos/Runner.app/embedded.mobileprovision
-            # Extract entitlements from provisioning profile
-            security cms -D -i build/ios/iphoneos/Runner.app/embedded.mobileprovision > /tmp/profile_customer.plist
-            /usr/libexec/PlistBuddy -x -c "Print :Entitlements" /tmp/profile_customer.plist > /tmp/entitlements_customer.plist
-            # Copy Swift dylibs to Frameworks (required by App Store for Xcode 26)
-            SWIFT_DYLIB_PATH=""
-            for p in "$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
-                     "$(xcode-select -p)/../Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
-                     "/Applications/Xcode_26.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
-                     "/Applications/Xcode_26.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"; do
-              if [ -d "$p" ] && [ "$(ls -A "$p"/libswift*.dylib 2>/dev/null)" ]; then
-                SWIFT_DYLIB_PATH="$p"
-                break
-              fi
-            done
-            if [ -n "$SWIFT_DYLIB_PATH" ]; then
-              mkdir -p build/ios/iphoneos/Runner.app/Frameworks
-              cp "$SWIFT_DYLIB_PATH"/libswift*.dylib build/ios/iphoneos/Runner.app/Frameworks/
-              echo "Copied Swift dylibs to Frameworks"
-            fi
-            # Sign all frameworks first (deep)
-            find build/ios/iphoneos/Runner.app/Frameworks -name "*.framework" -o -name "*.dylib" | while read f; do
-              codesign --force --sign "$IDENTITY" --timestamp=none "$f"
-            done
-            # Sign the main app with entitlements
-            codesign --force --sign "$IDENTITY" --entitlements /tmp/entitlements_customer.plist --timestamp=none --options=runtime build/ios/iphoneos/Runner.app
-            codesign --verify --verbose build/ios/iphoneos/Runner.app
-            mkdir -p Payload
-            cp -r build/ios/iphoneos/Runner.app Payload/
-            # Add SwiftSupport folder (required by App Store)
-            mkdir -p SwiftSupport/iphoneos
-            # Strategy 1: Use swift-stdlib-tool if available
-            if xcrun -find swift-stdlib-tool >/dev/null 2>&1; then
-              echo "Using swift-stdlib-tool"
-              xcrun swift-stdlib-tool --copy --platform iphoneos \
-                --scan-executable Payload/Runner.app/Runner \
-                --destination SwiftSupport/iphoneos/ 2>/dev/null || true
-            fi
-            # Strategy 2: Search known paths for Swift dylibs
-            if [ ! "$(ls -A SwiftSupport/iphoneos/ 2>/dev/null)" ]; then
-              echo "Searching for Swift libraries..."
-              for SWIFT_PATH in \
-                "$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
-                "$(xcode-select -p)/../Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
-                "/Applications/Xcode_26.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
-                "/Applications/Xcode_26.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"; do
-                if [ -d "$SWIFT_PATH" ] && [ "$(ls -A "$SWIFT_PATH"/libswift*.dylib 2>/dev/null)" ]; then
-                  echo "Found Swift libs at: $SWIFT_PATH"
-                  cp "$SWIFT_PATH"/libswift*.dylib SwiftSupport/iphoneos/ 2>/dev/null || true
-                  break
-                fi
-              done
-            fi
-            # Strategy 3: Find anywhere in Xcode
-            if [ ! "$(ls -A SwiftSupport/iphoneos/ 2>/dev/null)" ]; then
-              echo "Deep search in Xcode..."
-              find /Applications/Xcode* -path "*/iphoneos/libswift*.dylib" -type f 2>/dev/null | head -20 | while read f; do
-                echo "Copying: $f"
-                cp "$f" SwiftSupport/iphoneos/
-              done
-            fi
-            echo "=== SwiftSupport contents ==="
-            ls -la SwiftSupport/iphoneos/ 2>/dev/null || echo "EMPTY!"
-            if [ ! "$(ls -A SwiftSupport/iphoneos/ 2>/dev/null)" ]; then
-              echo "WARNING: SwiftSupport is empty, App Store may reject"
-            fi
+            # Create ExportOptions.plist
+            cat > ios/ExportOptions.plist << 'EOF'
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+                <key>method</key>
+                <string>app-store</string>
+                <key>teamID</key>
+                <string>V63B2H2DTP</string>
+                <key>signingStyle</key>
+                <string>manual</string>
+                <key>provisioningProfiles</key>
+                <dict>
+                    <key>com.akjol.customer</key>
+                    <string>AkJolCustomer</string>
+                </dict>
+            </dict>
+            </plist>
+            EOF
+            # Build archive with xcodebuild (handles signing + SwiftSupport automatically)
+            cd ios
+            xcodebuild -workspace Runner.xcworkspace -scheme Runner \
+              -configuration Release -sdk iphoneos \
+              -archivePath ../build/ios/archive/Runner.xcarchive \
+              CODE_SIGN_STYLE=Manual \
+              CODE_SIGN_IDENTITY="Apple Distribution: Ilgis Uzbekov (V63B2H2DTP)" \
+              PROVISIONING_PROFILE_SPECIFIER="AkJolCustomer" \
+              archive
+            # Export IPA
+            xcodebuild -exportArchive \
+              -archivePath ../build/ios/archive/Runner.xcarchive \
+              -exportPath ../build/ios/ipa \
+              -exportOptionsPlist ExportOptions.plist
             mkdir -p ../../ios-ipas
-            zip -r ../../ios-ipas/AkJol.ipa Payload SwiftSupport
-            rm -rf Payload SwiftSupport
+            cp ../build/ios/ipa/*.ipa ../../ios-ipas/AkJol.ipa
           else
             flutter build ios --release --no-codesign
             mkdir -p Payload
@@ -377,69 +339,45 @@ jobs:
 
       # AkJol Courier iOS
       - name: Build AkJol Pro iOS
-        timeout-minutes: 15
+        timeout-minutes: 45
         run: |
           cd apps/courier
           flutter pub get
-                    if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
-            flutter build ios --release --no-codesign
+          if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             security unlock-keychain -p "" ~/Library/Keychains/build.keychain
-            echo "=== Available signing identities ==="
-            security find-identity -v -p codesigning ~/Library/Keychains/build.keychain
-            IDENTITY=$(security find-identity -v -p codesigning ~/Library/Keychains/build.keychain | grep -E "Distribution|Developer" | head -1 | awk -F'"' '{print $2}')
-            echo "Signing with: $IDENTITY"
-            cp ~/Library/MobileDevice/Provisioning\ Profiles/AkJolPro.mobileprovision build/ios/iphoneos/Runner.app/embedded.mobileprovision
-            security cms -D -i build/ios/iphoneos/Runner.app/embedded.mobileprovision > /tmp/profile_courier.plist
-            /usr/libexec/PlistBuddy -x -c "Print :Entitlements" /tmp/profile_courier.plist > /tmp/entitlements_courier.plist
-            # Copy Swift dylibs to Frameworks (required by App Store for Xcode 26)
-            SWIFT_DYLIB_PATH=""
-            for p in "$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
-                     "$(xcode-select -p)/../Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
-                     "/Applications/Xcode_26.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
-                     "/Applications/Xcode_26.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"; do
-              if [ -d "$p" ] && [ "$(ls -A "$p"/libswift*.dylib 2>/dev/null)" ]; then
-                SWIFT_DYLIB_PATH="$p"
-                break
-              fi
-            done
-            if [ -n "$SWIFT_DYLIB_PATH" ]; then
-              mkdir -p build/ios/iphoneos/Runner.app/Frameworks
-              cp "$SWIFT_DYLIB_PATH"/libswift*.dylib build/ios/iphoneos/Runner.app/Frameworks/
-              echo "Copied Swift dylibs to Frameworks"
-            fi
-            find build/ios/iphoneos/Runner.app/Frameworks -name "*.framework" -o -name "*.dylib" | while read f; do
-              codesign --force --sign "$IDENTITY" --timestamp=none "$f"
-            done
-            codesign --force --sign "$IDENTITY" --entitlements /tmp/entitlements_courier.plist --timestamp=none --options=runtime build/ios/iphoneos/Runner.app
-            codesign --verify --verbose build/ios/iphoneos/Runner.app
-            mkdir -p Payload
-            cp -r build/ios/iphoneos/Runner.app Payload/
-            mkdir -p SwiftSupport/iphoneos
-            if xcrun -find swift-stdlib-tool >/dev/null 2>&1; then
-              xcrun swift-stdlib-tool --copy --platform iphoneos \
-                --scan-executable Payload/Runner.app/Runner \
-                --destination SwiftSupport/iphoneos/ 2>/dev/null || true
-            fi
-            if [ ! "$(ls -A SwiftSupport/iphoneos/ 2>/dev/null)" ]; then
-              for SWIFT_PATH in \
-                "$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
-                "$(xcode-select -p)/../Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
-                "/Applications/Xcode_26.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
-                "/Applications/Xcode_26.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"; do
-                if [ -d "$SWIFT_PATH" ] && [ "$(ls -A "$SWIFT_PATH"/libswift*.dylib 2>/dev/null)" ]; then
-                  cp "$SWIFT_PATH"/libswift*.dylib SwiftSupport/iphoneos/ 2>/dev/null || true
-                  break
-                fi
-              done
-            fi
-            if [ ! "$(ls -A SwiftSupport/iphoneos/ 2>/dev/null)" ]; then
-              find /Applications/Xcode* -path "*/iphoneos/libswift*.dylib" -type f 2>/dev/null | head -20 | while read f; do
-                cp "$f" SwiftSupport/iphoneos/
-              done
-            fi
+            cat > ios/ExportOptions.plist << 'EOF'
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+                <key>method</key>
+                <string>app-store</string>
+                <key>teamID</key>
+                <string>V63B2H2DTP</string>
+                <key>signingStyle</key>
+                <string>manual</string>
+                <key>provisioningProfiles</key>
+                <dict>
+                    <key>com.akjol.courier</key>
+                    <string>AkJolPro</string>
+                </dict>
+            </dict>
+            </plist>
+            EOF
+            cd ios
+            xcodebuild -workspace Runner.xcworkspace -scheme Runner \
+              -configuration Release -sdk iphoneos \
+              -archivePath ../build/ios/archive/Runner.xcarchive \
+              CODE_SIGN_STYLE=Manual \
+              CODE_SIGN_IDENTITY="Apple Distribution: Ilgis Uzbekov (V63B2H2DTP)" \
+              PROVISIONING_PROFILE_SPECIFIER="AkJolPro" \
+              archive
+            xcodebuild -exportArchive \
+              -archivePath ../build/ios/archive/Runner.xcarchive \
+              -exportPath ../build/ios/ipa \
+              -exportOptionsPlist ExportOptions.plist
             mkdir -p ../../ios-ipas
-            zip -r ../../ios-ipas/AkJol_Pro.ipa Payload SwiftSupport
-            rm -rf Payload SwiftSupport
+            cp ../build/ios/ipa/*.ipa ../../ios-ipas/AkJol_Pro.ipa
           else
             flutter build ios --release --no-codesign
             mkdir -p Payload
@@ -451,69 +389,45 @@ jobs:
 
       # TakEsep Warehouse iOS
       - name: Build TakEsep iOS
-        timeout-minutes: 15
+        timeout-minutes: 45
         run: |
           cd apps/warehouse
           flutter pub get
-                    if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
-            flutter build ios --release --no-codesign
+          if [ -n "$IOS_DISTRIBUTION_P12_BASE64" ]; then
             security unlock-keychain -p "" ~/Library/Keychains/build.keychain
-            echo "=== Available signing identities ==="
-            security find-identity -v -p codesigning ~/Library/Keychains/build.keychain
-            IDENTITY=$(security find-identity -v -p codesigning ~/Library/Keychains/build.keychain | grep -E "Distribution|Developer" | head -1 | awk -F'"' '{print $2}')
-            echo "Signing with: $IDENTITY"
-            cp ~/Library/MobileDevice/Provisioning\ Profiles/TakEsep.mobileprovision build/ios/iphoneos/Runner.app/embedded.mobileprovision
-            security cms -D -i build/ios/iphoneos/Runner.app/embedded.mobileprovision > /tmp/profile_warehouse.plist
-            /usr/libexec/PlistBuddy -x -c "Print :Entitlements" /tmp/profile_warehouse.plist > /tmp/entitlements_warehouse.plist
-            # Copy Swift dylibs to Frameworks (required by App Store for Xcode 26)
-            SWIFT_DYLIB_PATH=""
-            for p in "$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
-                     "$(xcode-select -p)/../Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
-                     "/Applications/Xcode_26.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
-                     "/Applications/Xcode_26.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"; do
-              if [ -d "$p" ] && [ "$(ls -A "$p"/libswift*.dylib 2>/dev/null)" ]; then
-                SWIFT_DYLIB_PATH="$p"
-                break
-              fi
-            done
-            if [ -n "$SWIFT_DYLIB_PATH" ]; then
-              mkdir -p build/ios/iphoneos/Runner.app/Frameworks
-              cp "$SWIFT_DYLIB_PATH"/libswift*.dylib build/ios/iphoneos/Runner.app/Frameworks/
-              echo "Copied Swift dylibs to Frameworks"
-            fi
-            find build/ios/iphoneos/Runner.app/Frameworks -name "*.framework" -o -name "*.dylib" | while read f; do
-              codesign --force --sign "$IDENTITY" --timestamp=none "$f"
-            done
-            codesign --force --sign "$IDENTITY" --entitlements /tmp/entitlements_warehouse.plist --timestamp=none --options=runtime build/ios/iphoneos/Runner.app
-            codesign --verify --verbose build/ios/iphoneos/Runner.app
-            mkdir -p Payload
-            cp -r build/ios/iphoneos/Runner.app Payload/
-            mkdir -p SwiftSupport/iphoneos
-            if xcrun -find swift-stdlib-tool >/dev/null 2>&1; then
-              xcrun swift-stdlib-tool --copy --platform iphoneos \
-                --scan-executable Payload/Runner.app/Runner \
-                --destination SwiftSupport/iphoneos/ 2>/dev/null || true
-            fi
-            if [ ! "$(ls -A SwiftSupport/iphoneos/ 2>/dev/null)" ]; then
-              for SWIFT_PATH in \
-                "$(xcode-select -p)/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
-                "$(xcode-select -p)/../Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
-                "/Applications/Xcode_26.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" \
-                "/Applications/Xcode_26.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos"; do
-                if [ -d "$SWIFT_PATH" ] && [ "$(ls -A "$SWIFT_PATH"/libswift*.dylib 2>/dev/null)" ]; then
-                  cp "$SWIFT_PATH"/libswift*.dylib SwiftSupport/iphoneos/ 2>/dev/null || true
-                  break
-                fi
-              done
-            fi
-            if [ ! "$(ls -A SwiftSupport/iphoneos/ 2>/dev/null)" ]; then
-              find /Applications/Xcode* -path "*/iphoneos/libswift*.dylib" -type f 2>/dev/null | head -20 | while read f; do
-                cp "$f" SwiftSupport/iphoneos/
-              done
-            fi
+            cat > ios/ExportOptions.plist << 'EOF'
+            <?xml version="1.0" encoding="UTF-8"?>
+            <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+            <plist version="1.0">
+            <dict>
+                <key>method</key>
+                <string>app-store</string>
+                <key>teamID</key>
+                <string>V63B2H2DTP</string>
+                <key>signingStyle</key>
+                <string>manual</string>
+                <key>provisioningProfiles</key>
+                <dict>
+                    <key>com.takesep.warehouse</key>
+                    <string>TakEsep</string>
+                </dict>
+            </dict>
+            </plist>
+            EOF
+            cd ios
+            xcodebuild -workspace Runner.xcworkspace -scheme Runner \
+              -configuration Release -sdk iphoneos \
+              -archivePath ../build/ios/archive/Runner.xcarchive \
+              CODE_SIGN_STYLE=Manual \
+              CODE_SIGN_IDENTITY="Apple Distribution: Ilgis Uzbekov (V63B2H2DTP)" \
+              PROVISIONING_PROFILE_SPECIFIER="TakEsep" \
+              archive
+            xcodebuild -exportArchive \
+              -archivePath ../build/ios/archive/Runner.xcarchive \
+              -exportPath ../build/ios/ipa \
+              -exportOptionsPlist ExportOptions.plist
             mkdir -p ../../ios-ipas
-            zip -r ../../ios-ipas/TakEsep.ipa Payload SwiftSupport
-            rm -rf Payload SwiftSupport
+            cp ../build/ios/ipa/*.ipa ../../ios-ipas/TakEsep.ipa
           else
             flutter build ios --release --no-codesign
             mkdir -p Payload
