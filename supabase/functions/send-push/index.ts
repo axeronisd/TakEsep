@@ -143,7 +143,7 @@ async function sendToToken(
         apns: {
           payload: {
             aps: {
-              sound: `${soundName}.caf`,
+              sound: 'default',
               badge: 1,
               "mutable-content": 1,
             },

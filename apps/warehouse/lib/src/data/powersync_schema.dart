@@ -15,7 +15,7 @@ const schema = Schema([
   Table('roles', [
     Column.text('company_id'),
     Column.text('name'),
-    Column.text('permissions'),   // stored as comma-separated or JSON
+    Column.text('permissions'), // stored as comma-separated or JSON
     Column.text('pin_code'),
     Column.integer('is_system'),
     Column.text('created_at'),

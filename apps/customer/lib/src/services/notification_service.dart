@@ -150,6 +150,7 @@ class NotificationService {
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
+      sound: 'default',
     );
 
     await _plugin.show(
@@ -171,7 +172,7 @@ class NotificationService {
   Future<void> _playSound(String soundName) async {
     try {
       // Try local asset first
-      final assetPath = 'sounds/$soundName.mp3';
+      final assetPath = 'sounds/$soundName.wav';
       await _audioPlayer.setVolume(0.7);
       await _audioPlayer.setReleaseMode(ReleaseMode.release);
       try {
