@@ -211,7 +211,7 @@ BEGIN
     INSERT INTO sales (
       id, company_id, warehouse_id, employee_id,
       total_amount, discount_amount, received_amount,
-      payment_method, status, notes, created_at, updated_at
+      payment_method, status, notes, sale_type, created_at, updated_at
     ) VALUES (
       v_sale_id,
       v_company_id,
@@ -224,6 +224,7 @@ BEGIN
       NEW.payment_method,
       'completed',
       'AkJol заказ ' || NEW.order_number,
+      'delivery',
       now(), now()
     );
 

@@ -28,6 +28,25 @@ class SalesRepository {
     if (companyId.isEmpty) throw ArgumentError('Company ID is required');
     if (warehouseId.isEmpty) throw ArgumentError('Warehouse ID is required');
 
+    // ── Validate stock availability before sale ──
+    for (final item in items) {
+      if (item.itemType == 'product' && item.productId.isNotEmpty) {
+        final product = await _db.getOptional(
+          'SELECT quantity, name FROM products WHERE id = ?',
+          [item.productId],
+        );
+        if (product != null) {
+          final available = product['quantity'] as int;
+          if (available < item.quantity) {
+            throw StateError(
+              'Недостаточно товара «${product['name']}» на складе: '
+              'доступно $available, запрошено ${item.quantity}',
+            );
+          }
+        }
+      }
+    }
+
     final saleId = const Uuid().v4();
     final now = DateTime.now().toIso8601String();
 
@@ -40,8 +59,8 @@ class SalesRepository {
       '''INSERT INTO sales (
         id, company_id, employee_id, warehouse_id,
         total_amount, discount_amount, payment_method,
-        status, notes, client_id, client_name, received_amount, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+        status, notes, client_id, client_name, received_amount, sale_type, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
       [
         saleId,
         companyId,
@@ -55,6 +74,7 @@ class SalesRepository {
         clientId,
         clientName,
         actualReceived,
+        'pos',
         now,
         now,
       ],
@@ -86,10 +106,10 @@ class SalesRepository {
       );
 
       if (item.itemType == 'product') {
-        // Decrement stock in catalog
+        // Decrement stock in catalog — use MAX to prevent negative stock
         await _db.execute(
           '''UPDATE products 
-               SET quantity = quantity - ?,
+               SET quantity = MAX(quantity - ?, 0),
                    sold_last_30_days = sold_last_30_days + ?,
                    updated_at = ?
                WHERE id = ?''',
@@ -140,6 +160,7 @@ class SalesRepository {
       'client_id': clientId,
       'client_name': clientName,
       'received_amount': actualReceived,
+      'sale_type': 'pos',
       'created_at': now,
       'updated_at': now,
     });

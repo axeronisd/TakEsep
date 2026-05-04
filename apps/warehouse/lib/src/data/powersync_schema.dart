@@ -109,6 +109,7 @@ const schema = Schema([
     Column.text('payment_method'),
     Column.text('status'),
     Column.text('notes'),
+    Column.text('sale_type'),
     Column.text('created_at'),
     Column.text('updated_at'),
   ]),
