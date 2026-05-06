@@ -112,7 +112,7 @@ class OrderService {
   /// Get orders for this courier:
   /// 1. Orders assigned to them by the system (courier_id = their ID)
   /// 2. Unassigned orders as fallback (courier_id IS NULL)
-  Future<List<Map<String, dynamic>>> getFreelanceOrders({String? transportType, String? courierId}) async {
+  Future<List<Map<String, dynamic>>> getFreelanceOrders({List<String>? transportTypes, String? courierId}) async {
     if (courierId == null) return [];
 
     // Get orders specifically assigned to this courier
@@ -123,16 +123,17 @@ class OrderService {
         .eq('courier_id', courierId)
         .order('created_at', ascending: false);
 
-    // Also get unassigned orders matching courier's transport (fallback)
+    // Also get unassigned orders matching courier's transports (fallback)
     var unassignedQuery = _supabase
         .from('delivery_orders')
         .select('*, customers(name, phone), warehouses(name, address, latitude, longitude), delivery_order_items(name, quantity, unit_price, total)')
         .eq('status', 'pending')
         .isFilter('courier_id', null);
 
-    // Filter by courier's transport type
-    if (transportType != null) {
-      unassignedQuery = unassignedQuery.eq('requested_transport', transportType);
+    // Filter by courier's transport types — if list has entries, match any;
+    // if empty/null, show all unassigned (no transport filter)
+    if (transportTypes != null && transportTypes.isNotEmpty) {
+      unassignedQuery = unassignedQuery.inFilter('requested_transport', transportTypes);
     }
 
     final unassigned = await unassignedQuery.order('created_at', ascending: false);
