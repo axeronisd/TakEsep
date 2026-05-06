@@ -141,7 +141,8 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
 
   void _callRecipient() async {
     try {
-      final cleanPhone = widget.recipientPhone.replaceAll(
+      final phoneStr = widget.recipientPhone.toString();
+      final cleanPhone = phoneStr.replaceAll(
         RegExp(r'[\s\-()]'),
         '',
       );

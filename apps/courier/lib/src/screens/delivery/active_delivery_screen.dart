@@ -366,7 +366,7 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
     final storeDescription = order['_store_description'] as String?;
     final storeLogo = order['_store_logo'] as String?;
     final customerName = order['customers']?['name'] ?? 'Клиент';
-    final customerPhone = order['customers']?['phone'] ?? '';
+    final customerPhone = order['customers']?['phone']?.toString() ?? '';
     final deliveryAddr = order['delivery_address'] ?? '';
     final itemsTotal = (order['items_total'] as num?)?.toDouble() ?? 0;
     final deliveryFee = (order['delivery_fee'] as num?)?.toDouble() ?? 0;
@@ -1052,9 +1052,10 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
     );
   }
 
-  void _callPhone(String phone) async {
+  void _callPhone(dynamic phone) async {
     try {
-      final cleanPhone = phone.replaceAll(RegExp(r'[\s\-()]'), '');
+      final phoneStr = phone.toString();
+      final cleanPhone = phoneStr.replaceAll(RegExp(r'[\s\-()]'), '');
       if (cleanPhone.isEmpty) return;
       final uri = Uri(scheme: 'tel', path: cleanPhone);
       if (await canLaunchUrl(uri)) {
