@@ -12,7 +12,7 @@ DECLARE
   v_warehouses JSONB;
 BEGIN
   -- 1. Find courier by phone
-  SELECT id, user_id, name, phone, courier_type, transport_type,
+  SELECT id, user_id, name, phone, courier_type, transport_type, transport_types,
          is_active, is_online, bank_balance
     INTO v_courier
     FROM couriers
@@ -54,6 +54,7 @@ BEGIN
       'phone', v_courier.phone,
       'courier_type', v_courier.courier_type,
       'transport_type', v_courier.transport_type,
+      'transport_types', v_courier.transport_types,
       'is_online', v_courier.is_online,
       'bank_balance', v_courier.bank_balance
     ),

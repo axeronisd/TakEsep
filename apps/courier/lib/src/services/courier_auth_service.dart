@@ -8,6 +8,7 @@ class CourierProfile {
   final String phone;
   final String courierType; // 'freelance' or 'store'
   final String transportType;
+  final List<String> transportTypes;
   final bool isOnline;
   final double bankBalance;
   final double earningRate;
@@ -21,6 +22,7 @@ class CourierProfile {
     required this.phone,
     required this.courierType,
     required this.transportType,
+    required this.transportTypes,
     required this.isOnline,
     required this.bankBalance,
     this.earningRate = 0.90,
@@ -120,6 +122,7 @@ class CourierAuthService {
         phone: courier['phone'],
         courierType: courier['courier_type'] ?? 'freelance',
         transportType: courier['transport_type'] ?? 'bicycle',
+        transportTypes: _parseTransportTypes(courier['transport_types']),
         isOnline: courier['is_online'] ?? false,
         bankBalance:
             (courier['bank_balance'] as num?)?.toDouble() ?? 0,
@@ -186,6 +189,7 @@ class CourierAuthService {
         phone: courier['phone'],
         courierType: courier['courier_type'] ?? 'freelance',
         transportType: courier['transport_type'] ?? 'bicycle',
+        transportTypes: _parseTransportTypes(courier['transport_types']),
         isOnline: courier['is_online'] ?? false,
         bankBalance: (courier['bank_balance'] as num?)?.toDouble() ?? 0,
         earningRate: _safeDouble(courier['earning_rate'], 0.90),
@@ -209,6 +213,7 @@ class CourierAuthService {
       phone: courier['phone'],
       courierType: courier['courier_type'] ?? 'freelance',
       transportType: courier['transport_type'] ?? 'bicycle',
+      transportTypes: _parseTransportTypes(courier['transport_types']),
       isOnline: courier['is_online'] ?? false,
       bankBalance: (courier['bank_balance'] as num?)?.toDouble() ?? 0,
       earningRate: _safeDouble(courier['earning_rate'], 0.90),
@@ -224,6 +229,15 @@ class CourierAuthService {
       }).toList(),
       isStoreCourier: data['is_store_courier'] == true,
     );
+  }
+
+  /// Parse transport_types JSONB array from Supabase
+  List<String> _parseTransportTypes(dynamic value) {
+    if (value == null) return [];
+    if (value is List) {
+      return value.map((e) => e.toString()).toList();
+    }
+    return [];
   }
 
   /// Bind Supabase auth user_id to courier record

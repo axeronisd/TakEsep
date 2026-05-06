@@ -127,6 +127,7 @@ BEGIN
       'phone', v_courier.phone,
       'courier_type', v_courier.courier_type,
       'transport_type', v_courier.transport_type,
+      'transport_types', v_courier.transport_types,
       'is_online', v_courier.is_online,
       'bank_balance', v_courier.bank_balance
     ),

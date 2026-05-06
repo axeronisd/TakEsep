@@ -117,10 +117,10 @@ class _AvailableOrdersScreenState
         return;
       }
 
-      debugPrint('🔍 Loading orders for courier: ${profile.id}, transport: ${profile.transportType}');
+      debugPrint('🔍 Loading orders for courier: ${profile.id}, transports: ${profile.transportTypes}');
 
       final orders = await _orderService.getFreelanceOrders(
-        transportType: profile.transportType,
+        transportTypes: profile.transportTypes,
         courierId: profile.id,
       );
 
