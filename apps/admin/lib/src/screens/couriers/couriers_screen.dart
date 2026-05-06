@@ -852,28 +852,6 @@ class _CouriersScreenState extends State<CouriersScreen> {
                           selectedTransports.add('bicycle');
                       }),
                     ),
-                    FilterChip(
-                      label: const Text('Мотоцикл'),
-                      selected: selectedTransports.contains('motorcycle'),
-                      onSelected: (sel) => setDialogState(() {
-                        sel
-                            ? selectedTransports.add('motorcycle')
-                            : selectedTransports.remove('motorcycle');
-                        if (selectedTransports.isEmpty)
-                          selectedTransports.add('bicycle');
-                      }),
-                    ),
-                    FilterChip(
-                      label: const Text('Грузовой'),
-                      selected: selectedTransports.contains('truck'),
-                      onSelected: (sel) => setDialogState(() {
-                        sel
-                            ? selectedTransports.add('truck')
-                            : selectedTransports.remove('truck');
-                        if (selectedTransports.isEmpty)
-                          selectedTransports.add('bicycle');
-                      }),
-                    ),
                   ],
                 ),
               ],
@@ -1203,28 +1181,6 @@ class _CouriersScreenState extends State<CouriersScreen> {
                         sel
                             ? selectedTransports.add('scooter')
                             : selectedTransports.remove('scooter');
-                        if (selectedTransports.isEmpty)
-                          selectedTransports.add('bicycle');
-                      }),
-                    ),
-                    FilterChip(
-                      label: const Text('Мотоцикл'),
-                      selected: selectedTransports.contains('motorcycle'),
-                      onSelected: (sel) => setDialogState(() {
-                        sel
-                            ? selectedTransports.add('motorcycle')
-                            : selectedTransports.remove('motorcycle');
-                        if (selectedTransports.isEmpty)
-                          selectedTransports.add('bicycle');
-                      }),
-                    ),
-                    FilterChip(
-                      label: const Text('Грузовой'),
-                      selected: selectedTransports.contains('truck'),
-                      onSelected: (sel) => setDialogState(() {
-                        sel
-                            ? selectedTransports.add('truck')
-                            : selectedTransports.remove('truck');
                         if (selectedTransports.isEmpty)
                           selectedTransports.add('bicycle');
                       }),
