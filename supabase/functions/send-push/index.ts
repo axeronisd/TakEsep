@@ -227,6 +227,18 @@ async function sendToAllOfType(
   return sent
 }
 
+// ── Resolve customers.id / couriers.id → auth.users.id ──
+
+async function resolveUserId(id: string, table: "customers" | "couriers"): Promise<string | null> {
+  const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
+  const { data } = await sb
+    .from(table)
+    .select("user_id")
+    .eq("id", id)
+    .maybeSingle()
+  return data?.user_id ?? null
+}
+
 // ── Main Handler ──
 
 const corsHeaders = {
@@ -318,50 +330,58 @@ async function handleWebhook(accessToken: string, payload: any) {
 
       // → Notify CUSTOMER about status changes
       if (record.customer_id) {
-        const templates: Record<string, { title: string; body: string; sound: string }> = {
-          accepted: {
-            title: "Курьер принял заказ",
-            body: `Заказ #${num} взят в работу`,
-            sound: "order_accepted",
-          },
-          picked_up: {
-            title: "Заказ забран",
-            body: `Курьер забрал #${num} и уже в пути`,
-            sound: "order_pickup",
-          },
-          delivered: {
-            title: "Заказ доставлен",
-            body: `#${num} — доставка завершена`,
-            sound: "order_delivered",
-          },
-          cancelled: {
-            title: "Заказ отменён",
-            body: `#${num} — заказ отменён`,
-            sound: "order_cancelled",
-          },
-        }
+        const customerUserId = await resolveUserId(record.customer_id, "customers")
+        if (customerUserId) {
+          const templates: Record<string, { title: string; body: string; sound: string }> = {
+            accepted: {
+              title: "Курьер принял заказ",
+              body: `Заказ #${num} взят в работу`,
+              sound: "order_accepted",
+            },
+            picked_up: {
+              title: "Заказ забран",
+              body: `Курьер забрал #${num} и уже в пути`,
+              sound: "order_pickup",
+            },
+            delivered: {
+              title: "Заказ доставлен",
+              body: `#${num} — доставка завершена`,
+              sound: "order_delivered",
+            },
+            cancelled: {
+              title: "Заказ отменён",
+              body: `#${num} — заказ отменён`,
+              sound: "order_cancelled",
+            },
+          }
 
-        const tmpl = templates[status]
-        if (tmpl) {
-          const sent = await sendToUser(
-            accessToken, record.customer_id, "customer",
-            tmpl.title, tmpl.body, "order_status", tmpl.sound,
-            { order_id: record.id, type: "order_status", status }
-          )
-          results.push(`customer:${sent}`)
+          const tmpl = templates[status]
+          if (tmpl) {
+            const sent = await sendToUser(
+              accessToken, customerUserId, "customer",
+              tmpl.title, tmpl.body, "order_status", tmpl.sound,
+              { order_id: record.id, type: "order_status", status }
+            )
+            results.push(`customer:${sent}`)
+          }
+        } else {
+          console.log(`[webhook] No auth user found for customer ${record.customer_id}`)
         }
       }
 
       // → Notify COURIER if order cancelled by customer
       if (status === "cancelled" && record.courier_id) {
-        const sent = await sendToUser(
-          accessToken, record.courier_id, "courier",
-          "Заказ отменён",
-          `#${num} — клиент отменил заказ`,
-          "order_status", "order_cancelled",
-          { order_id: record.id, type: "order_cancelled" }
-        )
-        results.push(`courier_cancel:${sent}`)
+        const courierUserId = await resolveUserId(record.courier_id, "couriers")
+        if (courierUserId) {
+          const sent = await sendToUser(
+            accessToken, courierUserId, "courier",
+            "Заказ отменён",
+            `#${num} — клиент отменил заказ`,
+            "order_status", "order_cancelled",
+            { order_id: record.id, type: "order_cancelled" }
+          )
+          results.push(`courier_cancel:${sent}`)
+        }
       }
 
       // → Notify WAREHOUSE if order cancelled
@@ -381,14 +401,17 @@ async function handleWebhook(accessToken: string, payload: any) {
         record.courier_id &&
         record.courier_id !== old_record?.courier_id
       ) {
-        const sent = await sendToUser(
-          accessToken, record.courier_id, "courier",
-          "Заказ назначен вам",
-          `#${num} — проверьте детали`,
-          "new_orders", "new_order_alert",
-          { order_id: record.id, type: "order_assigned" }
-        )
-        results.push(`courier_assign:${sent}`)
+        const courierUserId = await resolveUserId(record.courier_id, "couriers")
+        if (courierUserId) {
+          const sent = await sendToUser(
+            accessToken, courierUserId, "courier",
+            "Заказ назначен вам",
+            `#${num} — проверьте детали`,
+            "new_orders", "new_order_alert",
+            { order_id: record.id, type: "order_assigned" }
+          )
+          results.push(`courier_assign:${sent}`)
+        }
       }
 
       return jsonOk({ processed: true, results })
@@ -405,16 +428,23 @@ async function handleWebhook(accessToken: string, payload: any) {
       .single()
 
     if (order) {
-      const senderId = record.sender_id
-      const isFromCustomer = senderId === order.customer_id
-      const recipientId = isFromCustomer ? order.courier_id : order.customer_id
+      // Use sender_type to determine direction (sender_id can be customers.id, couriers.id, or auth.users.id)
+      const isFromCustomer = record.sender_type === "customer"
+
+      // Resolve customer_id and courier_id to auth.users.id
+      const [customerUserId, courierUserId] = await Promise.all([
+        order.customer_id ? resolveUserId(order.customer_id, "customers") : null,
+        order.courier_id ? resolveUserId(order.courier_id, "couriers") : null,
+      ])
+
+      const recipientUserId = isFromCustomer ? courierUserId : customerUserId
       const recipientApp = isFromCustomer ? "courier" : "customer"
       const senderLabel = isFromCustomer ? "Клиент" : "Курьер"
 
-      if (recipientId) {
+      if (recipientUserId) {
         const msgPreview = (record.content || "").substring(0, 50)
         const sent = await sendToUser(
-          accessToken, recipientId, recipientApp,
+          accessToken, recipientUserId, recipientApp,
           `Сообщение от ${senderLabel.toLowerCase()}а`,
           msgPreview || "Новое сообщение",
           "chat_messages", "chat_message",

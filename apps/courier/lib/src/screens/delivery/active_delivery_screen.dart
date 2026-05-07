@@ -1057,8 +1057,8 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
       final phoneStr = phone.toString();
       final cleanPhone = phoneStr.replaceAll(RegExp(r'[\s\-()]'), '');
       if (cleanPhone.isEmpty) return;
-      final uri = Uri(scheme: 'tel', path: cleanPhone);
-      await launchUrl(uri, mode: LaunchMode.platformDefault);
+      final uri = Uri.parse('tel:$cleanPhone');
+      await launchUrl(uri);
     } catch (e) {
       debugPrint('Call error: $e');
       if (mounted) {
