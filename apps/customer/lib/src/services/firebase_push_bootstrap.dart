@@ -136,6 +136,21 @@ class FirebasePushBootstrap {
     }
   }
 
+  /// Re-register token after login (call this when user signs in)
+  static Future<void> reRegisterToken() async {
+    try {
+      final messaging = FirebaseMessaging.instance;
+      final token = await messaging.getToken();
+      if (token != null) {
+        _currentToken = token;
+        await _pushService.registerToken(token);
+        debugPrint('[Push] Token re-registered after login');
+      }
+    } catch (e) {
+      debugPrint('[Push] Re-register token failed: $e');
+    }
+  }
+
   /// Call on logout
   static Future<void> onLogout() async {
     if (_currentToken != null) {

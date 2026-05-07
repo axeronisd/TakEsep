@@ -1058,14 +1058,14 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
       final cleanPhone = phoneStr.replaceAll(RegExp(r'[\s\-()]'), '');
       if (cleanPhone.isEmpty) return;
       final uri = Uri(scheme: 'tel', path: cleanPhone);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        final dialUri = Uri(scheme: 'tel', path: cleanPhone);
-        await launchUrl(dialUri, mode: LaunchMode.platformDefault);
-      }
+      await launchUrl(uri, mode: LaunchMode.platformDefault);
     } catch (e) {
       debugPrint('Call error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Не удалось позвонить: $e')),
+        );
+      }
     }
   }
 

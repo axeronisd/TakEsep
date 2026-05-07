@@ -212,7 +212,7 @@ class _AvailableOrdersScreenState
 
     // Then every 30 seconds
     _locationTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      _sendLocation();
+      if (mounted) _sendLocation();
     });
   }
 
@@ -222,6 +222,7 @@ class _AvailableOrdersScreenState
   }
 
   Future<void> _sendLocation() async {
+    if (!mounted) return;
     final profile = ref.read(courierProfileProvider);
     if (profile == null) return;
 

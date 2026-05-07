@@ -35,17 +35,17 @@ class NotificationService {
   // Sound URLs for in-app playback (foreground)
   static const _sounds = <String, String>{
     'new_order_alert':
-        'https://cdn.pixabay.com/audio/2024/02/19/audio_e06e29e1e4.mp3', // urgent alert
+        'https://cdn.pixabay.com/audio/2022/01/18/audio_d0a13f69d2.mp3', // soft bell
     'order_accepted':
-        'https://cdn.pixabay.com/audio/2024/11/07/audio_77e36f21ee.mp3', // pleasant chime
+        'https://cdn.pixabay.com/audio/2021/08/09/audio_88447e769f.mp3', // gentle chime
     'order_pickup':
-        'https://cdn.pixabay.com/audio/2022/03/24/audio_5fae3a00d7.mp3', // soft notification
+        'https://cdn.pixabay.com/audio/2022/11/15/audio_c0c6c6a3c3.mp3', // soft pop
     'order_delivered':
-        'https://cdn.pixabay.com/audio/2024/01/22/audio_ab330e42e0.mp3', // success melody
+        'https://cdn.pixabay.com/audio/2022/03/24/audio_5fae3a00d7.mp3', // soft notification
     'order_cancelled':
-        'https://cdn.pixabay.com/audio/2022/03/15/audio_942e0c3b46.mp3', // alert tone
+        'https://cdn.pixabay.com/audio/2024/01/22/audio_ab330e42e0.mp3', // success melody
     'chat_message':
-        'https://cdn.pixabay.com/audio/2024/04/02/audio_3540451f52.mp3', // message pop
+        'https://cdn.pixabay.com/audio/2024/11/07/audio_77e36f21ee.mp3', // pleasant chime
   };
 
   /// Initialize the notification plugin

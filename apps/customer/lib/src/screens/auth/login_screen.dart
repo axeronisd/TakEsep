@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:akjol_auth/akjol_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../services/firebase_push_bootstrap.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -766,6 +767,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     try {
       await _auth.signIn(login: login, password: password);
+      await FirebasePushBootstrap.reRegisterToken();
       if (mounted) context.go('/');
     } on AkJolAuthException catch (e) {
       setState(() { _loading = false; _error = e.message; });
@@ -894,6 +896,7 @@ class _LoginScreenState extends State<LoginScreen> {
         password: password,
         name: name,
       );
+      await FirebasePushBootstrap.reRegisterToken();
       if (mounted) context.go('/');
     } on AkJolAuthException catch (e) {
       setState(() { _loading = false; _error = e.message; });

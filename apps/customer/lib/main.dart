@@ -22,6 +22,16 @@ void main() {
   };
 
   PlatformDispatcher.instance.onError = (error, stack) {
+    final errorStr = error.toString().toLowerCase();
+    if (errorStr.contains('connection closed') ||
+        errorStr.contains('clientexception') ||
+        errorStr.contains('socketexception') ||
+        errorStr.contains('handshakeexception') ||
+        errorStr.contains('connection refused') ||
+        errorStr.contains('connection reset')) {
+      debugPrint('[AkJol] Network error suppressed: $error');
+      return true;
+    }
     _showErrorOnScreen('$error', stack.toString());
     return true;
   };
@@ -36,6 +46,16 @@ void main() {
       }
     },
     (error, stack) {
+      final errorStr = error.toString().toLowerCase();
+      if (errorStr.contains('connection closed') ||
+          errorStr.contains('clientexception') ||
+          errorStr.contains('socketexception') ||
+          errorStr.contains('handshakeexception') ||
+          errorStr.contains('connection refused') ||
+          errorStr.contains('connection reset')) {
+        debugPrint('[AkJol] Network error suppressed: $error');
+        return;
+      }
       debugPrint('[AkJol] UNHANDLED: $error\n$stack');
       _showErrorOnScreen('UNHANDLED: $error', stack.toString());
     },

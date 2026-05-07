@@ -148,13 +148,14 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
       );
       if (cleanPhone.isEmpty) return;
       final uri = Uri(scheme: 'tel', path: cleanPhone);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        await launchUrl(uri, mode: LaunchMode.platformDefault);
-      }
+      await launchUrl(uri, mode: LaunchMode.platformDefault);
     } catch (e) {
       debugPrint('Call error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Не удалось позвонить: $e')),
+        );
+      }
     }
   }
 
