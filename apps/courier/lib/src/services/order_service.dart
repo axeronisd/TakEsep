@@ -13,34 +13,37 @@ class OrderService {
   /// Courier accepts a pending order
   /// pending → courier_assigned
   Future<void> acceptOrder(String orderId, String courierId) async {
-    await _supabase.from('delivery_orders').update({
-      'courier_id': courierId,
-      'status': 'courier_assigned',
-    }).eq('id', orderId);
+    await _supabase
+        .from('delivery_orders')
+        .update({'courier_id': courierId, 'status': 'courier_assigned'})
+        .eq('id', orderId);
   }
 
   /// Courier verifies customer payment
   /// payment_sent → payment_verified
   Future<void> verifyPayment(String orderId) async {
-    await _supabase.from('delivery_orders').update({
-      'status': 'payment_verified',
-    }).eq('id', orderId);
+    await _supabase
+        .from('delivery_orders')
+        .update({'status': 'payment_verified'})
+        .eq('id', orderId);
   }
 
   /// Courier picked up order from store
   /// ready → picked_up
   Future<void> pickedUp(String orderId) async {
-    await _supabase.from('delivery_orders').update({
-      'status': 'picked_up',
-    }).eq('id', orderId);
+    await _supabase
+        .from('delivery_orders')
+        .update({'status': 'picked_up'})
+        .eq('id', orderId);
   }
 
   /// Courier arrived at customer location
   /// picked_up → arrived
   Future<void> markArrived(String orderId) async {
-    await _supabase.from('delivery_orders').update({
-      'status': 'arrived',
-    }).eq('id', orderId);
+    await _supabase
+        .from('delivery_orders')
+        .update({'status': 'arrived'})
+        .eq('id', orderId);
   }
 
   /// Courier delivered to customer
@@ -55,10 +58,10 @@ class OrderService {
           .select('delivery_fee, items_total, courier_id')
           .eq('id', orderId)
           .single();
-      
+
       final deliveryFee = (order['delivery_fee'] as num?)?.toDouble() ?? 0;
       final courierId = order['courier_id'] as String?;
-      
+
       // Get courier's earning_rate
       double earningRate = 0.90; // default 90%
       if (courierId != null) {
@@ -73,24 +76,27 @@ class OrderService {
           }
         } catch (_) {}
       }
-      
+
       courierEarning = deliveryFee * earningRate;
     } catch (_) {}
 
-    await _supabase.from('delivery_orders').update({
-      'status': 'delivered',
-      'is_paid': true,
-      'delivered_at': DateTime.now().toIso8601String(),
-      'courier_earning': courierEarning,
-    }).eq('id', orderId);
+    await _supabase
+        .from('delivery_orders')
+        .update({
+          'status': 'delivered',
+          'is_paid': true,
+          'delivered_at': DateTime.now().toIso8601String(),
+          'courier_earning': courierEarning,
+        })
+        .eq('id', orderId);
   }
 
   /// Courier declines order (goes back to pending for another courier)
   Future<void> declineOrder(String orderId) async {
-    await _supabase.from('delivery_orders').update({
-      'status': 'pending',
-      'courier_id': null,
-    }).eq('id', orderId);
+    await _supabase
+        .from('delivery_orders')
+        .update({'status': 'pending', 'courier_id': null})
+        .eq('id', orderId);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -99,7 +105,8 @@ class OrderService {
 
   /// Get orders for store courier's warehouse(s)
   Future<List<Map<String, dynamic>>> getStoreOrders(
-      List<String> warehouseIds) async {
+    List<String> warehouseIds,
+  ) async {
     final data = await _supabase
         .from('delivery_orders')
         .select('*, customers(name, phone), warehouses(name, address)')
@@ -112,13 +119,18 @@ class OrderService {
   /// Get orders for this courier:
   /// 1. Orders assigned to them by the system (courier_id = their ID)
   /// 2. Unassigned orders as fallback (courier_id IS NULL)
-  Future<List<Map<String, dynamic>>> getFreelanceOrders({List<String>? transportTypes, String? courierId}) async {
+  Future<List<Map<String, dynamic>>> getFreelanceOrders({
+    List<String>? transportTypes,
+    String? courierId,
+  }) async {
     if (courierId == null) return [];
 
     // Get orders specifically assigned to this courier
     final assigned = await _supabase
         .from('delivery_orders')
-        .select('*, customers(name, phone), warehouses(name, address, latitude, longitude), delivery_order_items(name, quantity, unit_price, total)')
+        .select(
+          '*, customers(name, phone), warehouses(name, address, latitude, longitude), delivery_order_items(name, quantity, unit_price, total)',
+        )
         .eq('status', 'pending')
         .eq('courier_id', courierId)
         .order('created_at', ascending: false);
@@ -126,17 +138,25 @@ class OrderService {
     // Also get unassigned orders matching courier's transports (fallback)
     var unassignedQuery = _supabase
         .from('delivery_orders')
-        .select('*, customers(name, phone), warehouses(name, address, latitude, longitude), delivery_order_items(name, quantity, unit_price, total)')
+        .select(
+          '*, customers(name, phone), warehouses(name, address, latitude, longitude), delivery_order_items(name, quantity, unit_price, total)',
+        )
         .eq('status', 'pending')
         .isFilter('courier_id', null);
 
     // Filter by courier's transport types — if list has entries, match any;
     // if empty/null, show all unassigned (no transport filter)
     if (transportTypes != null && transportTypes.isNotEmpty) {
-      unassignedQuery = unassignedQuery.inFilter('requested_transport', transportTypes);
+      unassignedQuery = unassignedQuery.inFilter(
+        'requested_transport',
+        transportTypes,
+      );
     }
 
-    final unassigned = await unassignedQuery.order('created_at', ascending: false);
+    final unassigned = await unassignedQuery.order(
+      'created_at',
+      ascending: false,
+    );
 
     // Merge: assigned first, then unassigned
     final all = <Map<String, dynamic>>[
@@ -151,7 +171,8 @@ class OrderService {
     return await _supabase
         .from('delivery_orders')
         .select(
-            '*, customers(name, phone), warehouses(name, address, latitude, longitude), delivery_order_items(*)')
+          '*, customers(name, phone), warehouses(name, address, latitude, longitude), delivery_order_items(*)',
+        )
         .eq('id', orderId)
         .single();
   }
@@ -162,13 +183,22 @@ class OrderService {
         .from('delivery_orders')
         .select()
         .eq('courier_id', courierId)
-        .inFilter('status', ['courier_assigned', 'payment_sent', 'payment_verified', 'assembling', 'ready', 'picked_up', 'arrived'])
+        .inFilter('status', [
+          'courier_assigned',
+          'payment_sent',
+          'payment_verified',
+          'assembling',
+          'ready',
+          'picked_up',
+          'arrived',
+        ])
         .maybeSingle();
   }
 
   /// Get courier's delivery history
   Future<List<Map<String, dynamic>>> getDeliveryHistory(
-      String courierId) async {
+    String courierId,
+  ) async {
     final data = await _supabase
         .from('delivery_orders')
         .select('*, customers(name), warehouses(name)')
@@ -218,18 +248,18 @@ class OrderService {
   // COURIER LOCATION
   // ═══════════════════════════════════════════════════════════
 
-  Future<void> updateLocation(
-      String courierId, double lat, double lng) async {
-    await _supabase.from('couriers').update({
-      'current_lat': lat,
-      'current_lng': lng,
-    }).eq('id', courierId);
+  Future<void> updateLocation(String courierId, double lat, double lng) async {
+    await _supabase
+        .from('couriers')
+        .update({'current_lat': lat, 'current_lng': lng})
+        .eq('id', courierId);
   }
 
   Future<void> setOnline(String courierId, bool online) async {
-    await _supabase.from('couriers').update({
-      'is_online': online,
-    }).eq('id', courierId);
+    await _supabase
+        .from('couriers')
+        .update({'is_online': online})
+        .eq('id', courierId);
   }
 
   // ═══════════════════════════════════════════════════════════
@@ -237,18 +267,23 @@ class OrderService {
   // ═══════════════════════════════════════════════════════════
 
   Future<Map<String, dynamic>> startShift(
-      String courierId, double startBank) async {
-    final data = await _supabase.from('courier_shifts').insert({
-      'courier_id': courierId,
-      'start_bank': startBank,
-    }).select().single();
+    String courierId,
+    double startBank,
+  ) async {
+    final data = await _supabase
+        .from('courier_shifts')
+        .insert({'courier_id': courierId, 'start_bank': startBank})
+        .select()
+        .single();
 
     await setOnline(courierId, true);
     return data;
   }
 
   Future<Map<String, dynamic>> endShift(
-      String shiftId, String courierId) async {
+    String shiftId,
+    String courierId,
+  ) async {
     final shift = await _supabase
         .from('courier_shifts')
         .select()
@@ -276,14 +311,19 @@ class OrderService {
     final startBank = (shift['start_bank'] as num).toDouble();
     final amountToReturn = totalCollected - courierEarning + startBank;
 
-    final updatedShift = await _supabase.from('courier_shifts').update({
-      'ended_at': DateTime.now().toIso8601String(),
-      'total_collected': totalCollected,
-      'total_orders': orders.length,
-      'courier_earning': courierEarning,
-      'platform_earning': platformEarning,
-      'amount_to_return': amountToReturn,
-    }).eq('id', shiftId).select().single();
+    final updatedShift = await _supabase
+        .from('courier_shifts')
+        .update({
+          'ended_at': DateTime.now().toIso8601String(),
+          'total_collected': totalCollected,
+          'total_orders': orders.length,
+          'courier_earning': courierEarning,
+          'platform_earning': platformEarning,
+          'amount_to_return': amountToReturn,
+        })
+        .eq('id', shiftId)
+        .select()
+        .single();
 
     await setOnline(courierId, false);
     return updatedShift;

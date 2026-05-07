@@ -142,19 +142,16 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
   void _callRecipient() async {
     try {
       final phoneStr = widget.recipientPhone.toString();
-      final cleanPhone = phoneStr.replaceAll(
-        RegExp(r'[\s\-()]'),
-        '',
-      );
+      final cleanPhone = phoneStr.replaceAll(RegExp(r'[\s\-()]'), '');
       if (cleanPhone.isEmpty) return;
       final uri = Uri(scheme: 'tel', path: cleanPhone);
       await launchUrl(uri, mode: LaunchMode.platformDefault);
     } catch (e) {
       debugPrint('Call error: $e');
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Не удалось позвонить: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Не удалось позвонить: $e')));
       }
     }
   }

@@ -67,10 +67,10 @@ class CourierAuthService {
   }) async {
     try {
       // Try RPC first
-      final result = await _supabase.rpc('rpc_courier_key_login', params: {
-        'p_phone': phone,
-        'p_key': accessKey,
-      });
+      final result = await _supabase.rpc(
+        'rpc_courier_key_login',
+        params: {'p_phone': phone, 'p_key': accessKey},
+      );
 
       if (result == null) return null;
 
@@ -100,7 +100,9 @@ class CourierAuthService {
       // Check warehouse bindings
       final bindings = await _supabase
           .from('courier_warehouse')
-          .select('warehouse_id, warehouses(name, address, latitude, longitude)')
+          .select(
+            'warehouse_id, warehouses(name, address, latitude, longitude)',
+          )
           .eq('courier_id', courier['id'])
           .eq('is_active', true);
 
@@ -124,8 +126,7 @@ class CourierAuthService {
         transportType: courier['transport_type'] ?? 'bicycle',
         transportTypes: _parseTransportTypes(courier['transport_types']),
         isOnline: courier['is_online'] ?? false,
-        bankBalance:
-            (courier['bank_balance'] as num?)?.toDouble() ?? 0,
+        bankBalance: (courier['bank_balance'] as num?)?.toDouble() ?? 0,
         earningRate: _safeDouble(courier['earning_rate'], 0.90),
         warehouses: warehouses,
         isStoreCourier: warehouses.isNotEmpty,
@@ -138,9 +139,10 @@ class CourierAuthService {
   /// Lookup courier by phone (used for profile reload)
   Future<CourierProfile?> lookupCourier(String phone) async {
     try {
-      final result = await _supabase.rpc('rpc_courier_login', params: {
-        'p_phone': phone,
-      });
+      final result = await _supabase.rpc(
+        'rpc_courier_login',
+        params: {'p_phone': phone},
+      );
 
       if (result == null) return null;
 
@@ -167,7 +169,9 @@ class CourierAuthService {
 
       final bindings = await _supabase
           .from('courier_warehouse')
-          .select('warehouse_id, warehouses(name, address, latitude, longitude)')
+          .select(
+            'warehouse_id, warehouses(name, address, latitude, longitude)',
+          )
           .eq('courier_id', courier['id'])
           .eq('is_active', true);
 
@@ -242,9 +246,10 @@ class CourierAuthService {
 
   /// Bind Supabase auth user_id to courier record
   Future<void> bindUserId(String courierId, String userId) async {
-    await _supabase.from('couriers').update({
-      'user_id': userId,
-    }).eq('id', courierId);
+    await _supabase
+        .from('couriers')
+        .update({'user_id': userId})
+        .eq('id', courierId);
   }
 }
 

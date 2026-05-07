@@ -21,7 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _loginCtrl = TextEditingController();
   final _loginPassCtrl = TextEditingController();
   bool _loginPassVisible = false;
-  
+
   // Login Validation
   String? _loginIdError;
   String? _loginPassError;
@@ -75,9 +75,13 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     final textColor = _isDark ? Colors.white : const Color(0xFF111827);
-    final mutedColor = _isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280);
+    final mutedColor = _isDark
+        ? const Color(0xFF8B949E)
+        : const Color(0xFF6B7280);
     final fieldBg = _isDark ? const Color(0xFF0D1117) : const Color(0xFFF3F4F6);
-    final borderColor = _isDark ? const Color(0xFF30363D) : const Color(0xFFE5E7EB);
+    final borderColor = _isDark
+        ? const Color(0xFF30363D)
+        : const Color(0xFFE5E7EB);
 
     return Scaffold(
       body: Stack(
@@ -89,36 +93,56 @@ class _LoginScreenState extends State<LoginScreen> {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: _isDark
-                    ? [const Color(0xFF0D1117), const Color(0xFF0A0F14), const Color(0xFF0D1117)]
-                    : [const Color(0xFFF0FFF4), const Color(0xFFF7F8FA), const Color(0xFFECFDF5)],
+                    ? [
+                        const Color(0xFF0D1117),
+                        const Color(0xFF0A0F14),
+                        const Color(0xFF0D1117),
+                      ]
+                    : [
+                        const Color(0xFFF0FFF4),
+                        const Color(0xFFF7F8FA),
+                        const Color(0xFFECFDF5),
+                      ],
               ),
             ),
           ),
           // Green orb top-right
           Positioned(
-            top: -60, right: -40,
+            top: -60,
+            right: -40,
             child: Container(
-              width: 200, height: 200,
+              width: 200,
+              height: 200,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: RadialGradient(colors: [
-                  const Color(0xFF2ECC71).withValues(alpha: _isDark ? 0.08 : 0.12),
-                  const Color(0xFF2ECC71).withValues(alpha: 0),
-                ]),
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(
+                      0xFF2ECC71,
+                    ).withValues(alpha: _isDark ? 0.08 : 0.12),
+                    const Color(0xFF2ECC71).withValues(alpha: 0),
+                  ],
+                ),
               ),
             ),
           ),
           // Green orb bottom-left
           Positioned(
-            bottom: 100, left: -80,
+            bottom: 100,
+            left: -80,
             child: Container(
-              width: 250, height: 250,
+              width: 250,
+              height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                gradient: RadialGradient(colors: [
-                  const Color(0xFF1ABC9C).withValues(alpha: _isDark ? 0.06 : 0.08),
-                  const Color(0xFF1ABC9C).withValues(alpha: 0),
-                ]),
+                gradient: RadialGradient(
+                  colors: [
+                    const Color(
+                      0xFF1ABC9C,
+                    ).withValues(alpha: _isDark ? 0.06 : 0.08),
+                    const Color(0xFF1ABC9C).withValues(alpha: 0),
+                  ],
+                ),
               ),
             ),
           ),
@@ -126,7 +150,10 @@ class _LoginScreenState extends State<LoginScreen> {
           SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 40,
+                ),
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 420),
                   child: Column(
@@ -141,10 +168,15 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: BackdropFilter(
                           filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 28,
+                              vertical: 32,
+                            ),
                             decoration: BoxDecoration(
                               color: _isDark
-                                  ? const Color(0xFF0D1117).withValues(alpha: 0.7)
+                                  ? const Color(
+                                      0xFF0D1117,
+                                    ).withValues(alpha: 0.7)
                                   : Colors.white.withValues(alpha: 0.85),
                               borderRadius: BorderRadius.circular(28),
                               border: Border.all(
@@ -154,7 +186,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withValues(alpha: _isDark ? 0.5 : 0.08),
+                                  color: Colors.black.withValues(
+                                    alpha: _isDark ? 0.5 : 0.08,
+                                  ),
                                   blurRadius: 32,
                                   offset: const Offset(0, 12),
                                 ),
@@ -164,19 +198,30 @@ class _LoginScreenState extends State<LoginScreen> {
                               duration: const Duration(milliseconds: 350),
                               switchInCurve: Curves.easeOutCubic,
                               switchOutCurve: Curves.easeInCubic,
-                              transitionBuilder: (child, anim) => FadeTransition(
-                                opacity: anim,
-                                child: SlideTransition(
-                                  position: Tween<Offset>(
-                                    begin: const Offset(0, 0.05),
-                                    end: Offset.zero,
-                                  ).animate(anim),
-                                  child: child,
-                                ),
-                              ),
+                              transitionBuilder: (child, anim) =>
+                                  FadeTransition(
+                                    opacity: anim,
+                                    child: SlideTransition(
+                                      position: Tween<Offset>(
+                                        begin: const Offset(0, 0.05),
+                                        end: Offset.zero,
+                                      ).animate(anim),
+                                      child: child,
+                                    ),
+                                  ),
                               child: _isRegister
-                                  ? _registerForm(textColor, mutedColor, fieldBg, borderColor)
-                                  : _loginForm(textColor, mutedColor, fieldBg, borderColor),
+                                  ? _registerForm(
+                                      textColor,
+                                      mutedColor,
+                                      fieldBg,
+                                      borderColor,
+                                    )
+                                  : _loginForm(
+                                      textColor,
+                                      mutedColor,
+                                      fieldBg,
+                                      borderColor,
+                                    ),
                             ),
                           ),
                         ),
@@ -187,7 +232,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       // ── Футер ─────────────────────
                       Text(
                         'Нажимая «${_isRegister ? 'Создать аккаунт' : 'Войти'}», вы принимаете\nусловия использования AkJol',
-                        style: TextStyle(fontSize: 11, color: mutedColor.withValues(alpha: 0.5), height: 1.5),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: mutedColor.withValues(alpha: 0.5),
+                          height: 1.5,
+                        ),
                         textAlign: TextAlign.center,
                       ),
                     ],
@@ -233,7 +282,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: const Icon(Icons.location_on, color: Colors.white, size: 36),
+                child: const Icon(
+                  Icons.location_on,
+                  color: Colors.white,
+                  size: 36,
+                ),
               ),
             ),
           ),
@@ -281,12 +334,22 @@ class _LoginScreenState extends State<LoginScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Заголовок
-        Text('Добро пожаловать',
-            style: TextStyle(
-                fontSize: 26, fontWeight: FontWeight.w800, color: text, height: 1.2, letterSpacing: -0.5, fontFamily: 'Inter')),
+        Text(
+          'Добро пожаловать',
+          style: TextStyle(
+            fontSize: 26,
+            fontWeight: FontWeight.w800,
+            color: text,
+            height: 1.2,
+            letterSpacing: -0.5,
+            fontFamily: 'Inter',
+          ),
+        ),
         const SizedBox(height: 6),
-        Text('Войдите в свой аккаунт AkJol',
-            style: TextStyle(fontSize: 14, color: muted, height: 1.4)),
+        Text(
+          'Войдите в свой аккаунт AkJol',
+          style: TextStyle(fontSize: 14, color: muted, height: 1.4),
+        ),
         const SizedBox(height: 28),
 
         // Ошибка сервера
@@ -338,8 +401,14 @@ class _LoginScreenState extends State<LoginScreen> {
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            child: Text('Забыли пароль?',
-                style: TextStyle(fontSize: 13, color: muted, fontWeight: FontWeight.w500)),
+            child: Text(
+              'Забыли пароль?',
+              style: TextStyle(
+                fontSize: 13,
+                color: muted,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 20),
@@ -352,7 +421,10 @@ class _LoginScreenState extends State<LoginScreen> {
         _switchRow(
           'Ещё нет аккаунта?',
           'Создать',
-          () => setState(() { _isRegister = true; _clearErrors(); }),
+          () => setState(() {
+            _isRegister = true;
+            _clearErrors();
+          }),
           text,
           muted,
         ),
@@ -369,12 +441,22 @@ class _LoginScreenState extends State<LoginScreen> {
       key: const ValueKey('register_form'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Создать аккаунт',
-            style: TextStyle(
-                fontSize: 24, fontWeight: FontWeight.w800, color: text, height: 1.2, letterSpacing: -0.5, fontFamily: 'Inter')),
+        Text(
+          'Создать аккаунт',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.w800,
+            color: text,
+            height: 1.2,
+            letterSpacing: -0.5,
+            fontFamily: 'Inter',
+          ),
+        ),
         const SizedBox(height: 4),
-        Text('Заполните данные для регистрации',
-            style: TextStyle(fontSize: 13, color: muted, height: 1.4)),
+        Text(
+          'Заполните данные для регистрации',
+          style: TextStyle(fontSize: 13, color: muted, height: 1.4),
+        ),
         const SizedBox(height: 20),
 
         if (_error != null) ...[_errorWidget(), const SizedBox(height: 16)],
@@ -407,9 +489,14 @@ class _LoginScreenState extends State<LoginScreen> {
         _inputField(
           controller: _regUsernameCtrl,
           hint: 'akjol_user',
-          prefix: Text('@  ',
-              style: TextStyle(
-                  fontSize: 15, fontWeight: FontWeight.w600, color: muted)),
+          prefix: Text(
+            '@  ',
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+              color: muted,
+            ),
+          ),
           fieldBg: fieldBg,
           border: border,
           text: text,
@@ -461,7 +548,8 @@ class _LoginScreenState extends State<LoginScreen> {
           suffixIcon: _eyeButton(
             visible: _regConfirmVisible,
             muted: muted,
-            onTap: () => setState(() => _regConfirmVisible = !_regConfirmVisible),
+            onTap: () =>
+                setState(() => _regConfirmVisible = !_regConfirmVisible),
           ),
         ),
         const SizedBox(height: 20),
@@ -472,7 +560,10 @@ class _LoginScreenState extends State<LoginScreen> {
         _switchRow(
           'Уже есть аккаунт?',
           'Войти',
-          () => setState(() { _isRegister = false; _clearErrors(); }),
+          () => setState(() {
+            _isRegister = false;
+            _clearErrors();
+          }),
           text,
           muted,
         ),
@@ -485,12 +576,15 @@ class _LoginScreenState extends State<LoginScreen> {
   // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
   Widget _label(String text, Color muted) {
-    return Text(text,
-        style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: muted,
-            letterSpacing: 0.2));
+    return Text(
+      text,
+      style: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+        color: muted,
+        letterSpacing: 0.2,
+      ),
+    );
   }
 
   Widget _inputField({
@@ -511,11 +605,11 @@ class _LoginScreenState extends State<LoginScreen> {
     void Function(String)? onSubmit,
   }) {
     final hasError = errorText != null;
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-         Container(
+        Container(
           decoration: BoxDecoration(
             color: fieldBg,
             borderRadius: BorderRadius.circular(12),
@@ -543,23 +637,47 @@ class _LoginScreenState extends State<LoginScreen> {
                 fontWeight: FontWeight.w400,
                 fontSize: 14,
               ),
-              prefixIcon: prefix != null ? Padding(padding: const EdgeInsets.only(left: 16, right: 0), child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [prefix])) : null,
+              prefixIcon: prefix != null
+                  ? Padding(
+                      padding: const EdgeInsets.only(left: 16, right: 0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [prefix],
+                      ),
+                    )
+                  : null,
               suffixIcon: suffixIcon,
               border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 14,
+              ),
             ),
           ),
         ),
         if (hasError)
           Padding(
             padding: const EdgeInsets.only(top: 6, left: 4),
-            child: Text(errorText, style: const TextStyle(color: Color(0xFFEF4444), fontSize: 12, fontWeight: FontWeight.w500)),
+            child: Text(
+              errorText,
+              style: const TextStyle(
+                color: Color(0xFFEF4444),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
       ],
     );
   }
 
-  Widget _phoneInput(Color fieldBg, Color border, Color text, Color muted, String? errorText) {
+  Widget _phoneInput(
+    Color fieldBg,
+    Color border,
+    Color text,
+    Color muted,
+    String? errorText,
+  ) {
     final hasError = errorText != null;
 
     return Column(
@@ -577,11 +695,14 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               Padding(
                 padding: const EdgeInsets.only(left: 16),
-                child: Text('KG  +996',
-                    style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: text.withValues(alpha: 0.7))),
+                child: Text(
+                  'KG  +996',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: text.withValues(alpha: 0.7),
+                  ),
+                ),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -605,9 +726,10 @@ class _LoginScreenState extends State<LoginScreen> {
                   decoration: InputDecoration(
                     hintText: '700 123 456',
                     hintStyle: TextStyle(
-                        color: muted.withValues(alpha: 0.35),
-                        fontWeight: FontWeight.w400,
-                        fontSize: 14),
+                      color: muted.withValues(alpha: 0.35),
+                      fontWeight: FontWeight.w400,
+                      fontSize: 14,
+                    ),
                     border: InputBorder.none,
                     contentPadding: const EdgeInsets.symmetric(vertical: 14),
                   ),
@@ -619,7 +741,14 @@ class _LoginScreenState extends State<LoginScreen> {
         if (hasError)
           Padding(
             padding: const EdgeInsets.only(top: 6, left: 4),
-            child: Text(errorText, style: const TextStyle(color: Color(0xFFEF4444), fontSize: 12, fontWeight: FontWeight.w500)),
+            child: Text(
+              errorText,
+              style: const TextStyle(
+                color: Color(0xFFEF4444),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
           ),
       ],
     );
@@ -666,25 +795,40 @@ class _LoginScreenState extends State<LoginScreen> {
             shadowColor: Colors.transparent,
             foregroundColor: Colors.white,
             disabledBackgroundColor: Colors.transparent,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
             elevation: 0,
           ),
           child: _loading
               ? const SizedBox(
                   width: 20,
                   height: 20,
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-              : Text(label,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
+              : Text(
+                  label,
                   style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.5)),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.5,
+                  ),
+                ),
         ),
       ),
     );
   }
 
-  Widget _switchRow(String text, String action, VoidCallback onTap, Color textColor, Color muted) {
+  Widget _switchRow(
+    String text,
+    String action,
+    VoidCallback onTap,
+    Color textColor,
+    Color muted,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -692,11 +836,14 @@ class _LoginScreenState extends State<LoginScreen> {
         const SizedBox(width: 4),
         GestureDetector(
           onTap: onTap,
-          child: Text(action,
-              style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: Color(0xFF2ECC71))),
+          child: Text(
+            action,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFF2ECC71),
+            ),
+          ),
         ),
       ],
     );
@@ -719,9 +866,15 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(_error!,
-                style: const TextStyle(
-                    color: Color(0xFFDC2626), fontSize: 13, fontWeight: FontWeight.w500, height: 1.4)),
+            child: Text(
+              _error!,
+              style: const TextStyle(
+                color: Color(0xFFDC2626),
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                height: 1.4,
+              ),
+            ),
           ),
           GestureDetector(
             onTap: () => setState(() => _error = null),
@@ -746,7 +899,8 @@ class _LoginScreenState extends State<LoginScreen> {
     if (login.isEmpty) {
       _loginIdError = 'Введите номер или username';
       hasErr = true;
-    } else if (!RegExp(r'^\d').hasMatch(login) && !RegExp(r'^@?[a-zA-Z0-9._]{3,}$').hasMatch(login)) {
+    } else if (!RegExp(r'^\d').hasMatch(login) &&
+        !RegExp(r'^@?[a-zA-Z0-9._]{3,}$').hasMatch(login)) {
       _loginIdError = 'Некорректный формат';
       hasErr = true;
     }
@@ -763,16 +917,24 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    setState(() { _loading = true; });
+    setState(() {
+      _loading = true;
+    });
 
     try {
       await _auth.signIn(login: login, password: password);
       await FirebasePushBootstrap.reRegisterToken();
       if (mounted) context.go('/');
     } on AkJolAuthException catch (e) {
-      setState(() { _loading = false; _error = e.message; });
+      setState(() {
+        _loading = false;
+        _error = e.message;
+      });
     } catch (e) {
-      setState(() { _loading = false; _error = 'Ошибка соединения. Проверьте интернет.'; });
+      setState(() {
+        _loading = false;
+        _error = 'Ошибка соединения. Проверьте интернет.';
+      });
     }
   }
 
@@ -857,7 +1019,9 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    setState(() { _loading = true; });
+    setState(() {
+      _loading = true;
+    });
 
     try {
       // Проверить уникальность username
@@ -899,9 +1063,15 @@ class _LoginScreenState extends State<LoginScreen> {
       await FirebasePushBootstrap.reRegisterToken();
       if (mounted) context.go('/');
     } on AkJolAuthException catch (e) {
-      setState(() { _loading = false; _error = e.message; });
+      setState(() {
+        _loading = false;
+        _error = e.message;
+      });
     } catch (e) {
-      setState(() { _loading = false; _error = 'Ошибка регистрации. Проверьте интернет и попробуйте снова.'; });
+      setState(() {
+        _loading = false;
+        _error = 'Ошибка регистрации. Проверьте интернет и попробуйте снова.';
+      });
     }
   }
 }

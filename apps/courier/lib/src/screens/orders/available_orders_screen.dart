@@ -31,8 +31,7 @@ class AvailableOrdersScreen extends ConsumerStatefulWidget {
       _AvailableOrdersScreenState();
 }
 
-class _AvailableOrdersScreenState
-    extends ConsumerState<AvailableOrdersScreen> {
+class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
   final _orderService = OrderService();
   List<Map<String, dynamic>> _allOrders = [];
   bool _loading = true;
@@ -117,7 +116,9 @@ class _AvailableOrdersScreenState
         return;
       }
 
-      debugPrint('🔍 Loading orders for courier: ${profile.id}, transports: ${profile.transportTypes}');
+      debugPrint(
+        '🔍 Loading orders for courier: ${profile.id}, transports: ${profile.transportTypes}',
+      );
 
       final orders = await _orderService.getFreelanceOrders(
         transportTypes: profile.transportTypes,
@@ -126,11 +127,14 @@ class _AvailableOrdersScreenState
 
       debugPrint('📦 Found ${orders.length} orders');
       for (final o in orders) {
-        debugPrint('   → Order: ${o['id']} status=${o['status']} courier_id=${o['courier_id']}');
+        debugPrint(
+          '   → Order: ${o['id']} status=${o['status']} courier_id=${o['courier_id']}',
+        );
       }
 
       if (mounted) {
-        final hadNewOrders = orders.length > _previousOrderCount && _previousOrderCount > 0;
+        final hadNewOrders =
+            orders.length > _previousOrderCount && _previousOrderCount > 0;
         if (hadNewOrders) {
           _alertService.playNewOrderAlert();
         }
@@ -147,16 +151,27 @@ class _AvailableOrdersScreenState
             SnackBar(
               content: Row(
                 children: [
-                  const Icon(Icons.notifications_active, color: Colors.white, size: 22),
+                  const Icon(
+                    Icons.notifications_active,
+                    color: Colors.white,
+                    size: 22,
+                  ),
                   const SizedBox(width: 10),
-                  Text('Новый заказ ($newCount)',
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                  Text(
+                    'Новый заказ ($newCount)',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 15,
+                    ),
+                  ),
                 ],
               ),
               backgroundColor: AkJolTheme.primary,
               behavior: SnackBarBehavior.floating,
               duration: const Duration(seconds: 4),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
           );
         }
@@ -170,9 +185,7 @@ class _AvailableOrdersScreenState
   }
 
   void _subscribeToOrders() {
-    _channel = _orderService.subscribeToFreelanceOrders(
-      (_) => _loadOrders(),
-    );
+    _channel = _orderService.subscribeToFreelanceOrders((_) => _loadOrders());
   }
 
   Future<void> _toggleOnline(bool value) async {
@@ -230,7 +243,9 @@ class _AvailableOrdersScreenState
       final perm = await Geolocator.checkPermission();
       if (perm == LocationPermission.denied) {
         final newPerm = await Geolocator.requestPermission();
-        if (newPerm == LocationPermission.denied || newPerm == LocationPermission.deniedForever) return;
+        if (newPerm == LocationPermission.denied ||
+            newPerm == LocationPermission.deniedForever)
+          return;
       }
 
       final pos = await Geolocator.getCurrentPosition(
@@ -240,11 +255,14 @@ class _AvailableOrdersScreenState
         ),
       );
 
-      await Supabase.instance.client.from('couriers').update({
-        'current_lat': pos.latitude,
-        'current_lng': pos.longitude,
-        'last_location_at': DateTime.now().toUtc().toIso8601String(),
-      }).eq('id', profile.id);
+      await Supabase.instance.client
+          .from('couriers')
+          .update({
+            'current_lat': pos.latitude,
+            'current_lng': pos.longitude,
+            'last_location_at': DateTime.now().toUtc().toIso8601String(),
+          })
+          .eq('id', profile.id);
 
       debugPrint('📍 Location sent: ${pos.latitude}, ${pos.longitude}');
     } catch (e) {
@@ -335,32 +353,35 @@ class _AvailableOrdersScreenState
               child: !_isOnline
                   ? _buildOfflineState()
                   : _loading
-                      ? const Center(
-                          child: CircularProgressIndicator(color: AkJolTheme.primary))
-                      : visible.isEmpty
-                          ? _buildEmptyState(pendingCount)
-                          : Column(
-                              children: [
-                                if (pendingCount > 0)
-                                  _PendingBroadcastBanner(count: pendingCount),
-                                Expanded(
-                                  child: RefreshIndicator(
-                                    onRefresh: _loadOrders,
-                                    color: AkJolTheme.primary,
-                                    child: ListView.builder(
-                                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-                                      itemCount: visible.length,
-                                      itemBuilder: (_, i) => _OrderCard(
-                                        order: visible[i],
-                                        isStoreCourier: false,
-                                        earningRate: profile?.earningRate ?? 0.90,
-                                        onAccept: () => _acceptOrder(visible[i]),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: AkJolTheme.primary,
+                      ),
+                    )
+                  : visible.isEmpty
+                  ? _buildEmptyState(pendingCount)
+                  : Column(
+                      children: [
+                        if (pendingCount > 0)
+                          _PendingBroadcastBanner(count: pendingCount),
+                        Expanded(
+                          child: RefreshIndicator(
+                            onRefresh: _loadOrders,
+                            color: AkJolTheme.primary,
+                            child: ListView.builder(
+                              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                              itemCount: visible.length,
+                              itemBuilder: (_, i) => _OrderCard(
+                                order: visible[i],
+                                isStoreCourier: false,
+                                earningRate: profile?.earningRate ?? 0.90,
+                                onAccept: () => _acceptOrder(visible[i]),
+                              ),
                             ),
+                          ),
+                        ),
+                      ],
+                    ),
             ),
           ],
         ),
@@ -389,7 +410,11 @@ class _AvailableOrdersScreenState
                   color: AkJolTheme.primary.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.delivery_dining, color: AkJolTheme.primary, size: 22),
+                child: const Icon(
+                  Icons.delivery_dining,
+                  color: AkJolTheme.primary,
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -452,9 +477,7 @@ class _AvailableOrdersScreenState
                     child: Icon(
                       _isOnline ? Icons.wifi_rounded : Icons.wifi_off_rounded,
                       key: ValueKey(_isOnline),
-                      color: _isOnline
-                          ? AkJolTheme.primary
-                          : Colors.white38,
+                      color: _isOnline ? AkJolTheme.primary : Colors.white38,
                       size: 24,
                     ),
                   ),
@@ -517,19 +540,30 @@ class _AvailableOrdersScreenState
               color: Colors.white.withValues(alpha: 0.05),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.wifi_off_rounded,
-                size: 44, color: Colors.white.withValues(alpha: 0.2)),
+            child: Icon(
+              Icons.wifi_off_rounded,
+              size: 44,
+              color: Colors.white.withValues(alpha: 0.2),
+            ),
           ),
           const SizedBox(height: 20),
-          const Text('Вы офлайн',
-              style: TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white54)),
+          const Text(
+            'Вы офлайн',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w700,
+              color: Colors.white54,
+            ),
+          ),
           const SizedBox(height: 8),
-          Text('Включите режим «В сети»\nчтобы получать заказы',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white.withValues(alpha: 0.3), fontSize: 14)),
+          Text(
+            'Включите режим «В сети»\nчтобы получать заказы',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.3),
+              fontSize: 14,
+            ),
+          ),
         ],
       ),
     );
@@ -547,16 +581,22 @@ class _AvailableOrdersScreenState
               color: AkJolTheme.primary.withValues(alpha: 0.08),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.delivery_dining,
-                size: 44, color: AkJolTheme.primary),
+            child: const Icon(
+              Icons.delivery_dining,
+              size: 44,
+              color: AkJolTheme.primary,
+            ),
           ),
           const SizedBox(height: 20),
           Text(
-            pendingCount > 0 ? 'Заказы скоро появятся' : 'Нет доступных заказов',
+            pendingCount > 0
+                ? 'Заказы скоро появятся'
+                : 'Нет доступных заказов',
             style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-                color: Colors.white54),
+              fontSize: 20,
+              fontWeight: FontWeight.w700,
+              color: Colors.white54,
+            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -668,31 +708,41 @@ class _OrderCard extends StatelessWidget {
             child: Row(
               children: [
                 Container(
-                  width: 36, height: 36,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
                     color: AkJolTheme.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Icon(_transportIcon(transport),
-                      color: AkJolTheme.primary, size: 20),
+                  child: Icon(
+                    _transportIcon(transport),
+                    color: AkJolTheme.primary,
+                    size: 20,
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(storeName,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600)),
+                      Text(
+                        storeName,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                       if (storeAddr.isNotEmpty)
-                        Text(storeAddr,
-                            style: TextStyle(
-                                fontSize: 11,
-                                color: Colors.white.withValues(alpha: 0.4)),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis),
+                        Text(
+                          storeAddr,
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.white.withValues(alpha: 0.4),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                     ],
                   ),
                 ),
@@ -701,7 +751,10 @@ class _OrderCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 5,
+                      ),
                       decoration: BoxDecoration(
                         color: AkJolTheme.primary.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(10),
@@ -718,11 +771,13 @@ class _OrderCard extends StatelessWidget {
                     if (isNight)
                       Padding(
                         padding: const EdgeInsets.only(top: 4),
-                        child: Text('Ночной тариф',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.amber.withValues(alpha: 0.7),
-                            )),
+                        child: Text(
+                          'Ночной тариф',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.amber.withValues(alpha: 0.7),
+                          ),
+                        ),
                       ),
                   ],
                 ),
@@ -745,13 +800,19 @@ class _OrderCard extends StatelessWidget {
                     padding: const EdgeInsets.only(bottom: 6),
                     child: Row(
                       children: [
-                        Icon(Icons.person_outline,
-                            size: 16, color: Colors.white.withValues(alpha: 0.4)),
+                        Icon(
+                          Icons.person_outline,
+                          size: 16,
+                          color: Colors.white.withValues(alpha: 0.4),
+                        ),
                         const SizedBox(width: 6),
-                        Text(customerName,
-                            style: TextStyle(
-                                fontSize: 13,
-                                color: Colors.white.withValues(alpha: 0.6))),
+                        Text(
+                          customerName,
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.white.withValues(alpha: 0.6),
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -760,16 +821,22 @@ class _OrderCard extends StatelessWidget {
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.location_on_rounded,
-                        size: 16, color: Colors.white.withValues(alpha: 0.4)),
+                    Icon(
+                      Icons.location_on_rounded,
+                      size: 16,
+                      color: Colors.white.withValues(alpha: 0.4),
+                    ),
                     const SizedBox(width: 6),
                     Expanded(
-                      child: Text(address,
-                          style: TextStyle(
-                              fontSize: 13,
-                              color: Colors.white.withValues(alpha: 0.7)),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis),
+                      child: Text(
+                        address,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.white.withValues(alpha: 0.7),
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ],
                 ),
@@ -784,29 +851,40 @@ class _OrderCard extends StatelessWidget {
                 // Total + status
                 Row(
                   children: [
-                    Text('Итого: ${total.toStringAsFixed(0)} сом',
-                        style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500)),
+                    Text(
+                      'Итого: ${total.toStringAsFixed(0)} сом',
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
                     const SizedBox(width: 8),
-                    Text('Доставка: ${deliveryFee.toStringAsFixed(0)}',
-                        style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.white.withValues(alpha: 0.35))),
+                    Text(
+                      'Доставка: ${deliveryFee.toStringAsFixed(0)}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.white.withValues(alpha: 0.35),
+                      ),
+                    ),
                     const Spacer(),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 3,
+                      ),
                       decoration: BoxDecoration(
                         color: _statusColor(status).withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: Text(_statusLabel(status),
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: _statusColor(status),
-                          )),
+                      child: Text(
+                        _statusLabel(status),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: _statusColor(status),
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -825,17 +903,20 @@ class _OrderCard extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: onAccept,
                 icon: const Icon(Icons.check_circle_rounded, size: 22),
-                label: const Text('ПРИНЯТЬ ЗАКАЗ',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.5,
-                    )),
+                label: const Text(
+                  'ПРИНЯТЬ ЗАКАЗ',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.5,
+                  ),
+                ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AkJolTheme.primary,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   elevation: 0,
                 ),
               ),
@@ -913,15 +994,20 @@ class _OrderCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(Icons.shopping_bag_outlined,
-                  size: 14, color: Colors.white.withValues(alpha: 0.5)),
+              Icon(
+                Icons.shopping_bag_outlined,
+                size: 14,
+                color: Colors.white.withValues(alpha: 0.5),
+              ),
               const SizedBox(width: 6),
-              Text('Состав заказа (${items.length})',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white.withValues(alpha: 0.5),
-                  )),
+              Text(
+                'Состав заказа (${items.length})',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white.withValues(alpha: 0.5),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 6),
@@ -934,17 +1020,21 @@ class _OrderCard extends StatelessWidget {
               child: Row(
                 children: [
                   Expanded(
-                    child: Text('$name ×$qty',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.white.withValues(alpha: 0.7),
-                        )),
-                  ),
-                  Text('${(price * qty).toStringAsFixed(0)} сом',
+                    child: Text(
+                      '$name ×$qty',
                       style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.5),
-                      )),
+                        fontSize: 13,
+                        color: Colors.white.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ),
+                  Text(
+                    '${(price * qty).toStringAsFixed(0)} сом',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.white.withValues(alpha: 0.5),
+                    ),
+                  ),
                 ],
               ),
             );
@@ -953,6 +1043,4 @@ class _OrderCard extends StatelessWidget {
       ),
     );
   }
-
 }
-
