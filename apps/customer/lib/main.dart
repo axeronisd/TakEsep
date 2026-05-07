@@ -25,7 +25,10 @@ void main() {
     }
     FlutterError.presentError(details);
     if (showErrorScreen) {
-      _showErrorOnScreen(details.exceptionAsString(), details.stack?.toString());
+      _showErrorOnScreen(
+        details.exceptionAsString(),
+        details.stack?.toString(),
+      );
     }
   };
 
@@ -113,6 +116,11 @@ Future<void> _initPushInBackground() async {
     await NotificationService().initialize();
     await FirebasePushBootstrap.initialize();
     debugPrint('[AkJol] Push notifications initialized ✅');
+
+    // If user is already logged in, re-register token to ensure it's stored
+    if (Supabase.instance.client.auth.currentUser != null) {
+      await FirebasePushBootstrap.reRegisterToken();
+    }
   } catch (e, st) {
     debugPrint('[AkJol] Push init FAILED (non-fatal): $e');
   }

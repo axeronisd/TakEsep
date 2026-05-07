@@ -141,7 +141,6 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
 
   void _callRecipient() async {
     String phoneStr = widget.recipientPhone.toString();
-    String debugInfo = 'From widget: "$phoneStr"';
 
     // If phone is empty, try to resolve from DB
     if (phoneStr.isEmpty) {
@@ -155,26 +154,31 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
 
         if (order != null && order['customer_id'] != null) {
           final customerId = order['customer_id'].toString();
-          debugInfo += '\nOrder customer_id: $customerId';
 
-          // Step 2: Get phone from customers table
+          // Step 2a: Try customers table by id
           final customer = await _supabase
               .from('customers')
-              .select('phone, name')
+              .select('phone')
               .eq('id', customerId)
               .maybeSingle();
 
           if (customer != null && customer['phone'] != null) {
             phoneStr = customer['phone'].toString();
-            debugInfo += '\nResolved phone: "$phoneStr"';
           } else {
-            debugInfo += '\nCustomer query result: ${customer?.toString() ?? "null"}';
+            // Step 2b: Try customers table by user_id (in case customer_id = auth.users.id)
+            final byUserId = await _supabase
+                .from('customers')
+                .select('phone')
+                .eq('user_id', customerId)
+                .maybeSingle();
+
+            if (byUserId != null && byUserId['phone'] != null) {
+              phoneStr = byUserId['phone'].toString();
+            }
           }
-        } else {
-          debugInfo += '\nOrder query result: ${order?.toString() ?? "null"}';
         }
       } catch (e) {
-        debugInfo += '\nDB error: $e';
+        debugPrint('[Chat] Failed to resolve phone: $e');
       }
     }
 
@@ -184,17 +188,10 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
 
     if (cleanPhone.isEmpty) {
       if (mounted) {
-        showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Телефон не найден'),
-            content: Text(debugInfo),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Номер телефона клиента не найден'),
+            duration: Duration(seconds: 3),
           ),
         );
       }
@@ -205,37 +202,14 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
       final uri = Uri.parse('tel:$cleanPhone');
       final launched = await launchUrl(uri);
       if (!launched && mounted) {
-        // Показать диалог с номером — для диагностики
-        showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Звонок'),
-            content: Text(
-              'Не удалось набрать $cleanPhone\n\nПозвоните вручную: $cleanPhone',
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Позвоните вручную: $cleanPhone')),
         );
       }
     } catch (e) {
       if (mounted) {
-        showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Ошибка звонка'),
-            content: Text('$e\n\nНомер: $cleanPhone'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка звонка: $e')),
         );
       }
     }

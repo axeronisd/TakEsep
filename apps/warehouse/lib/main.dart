@@ -31,7 +31,8 @@ void main() {
     }
     FlutterError.presentError(details);
     if (showErrorScreen) {
-      _showErrorOnScreen(details.exceptionAsString(), details.stack?.toString());
+      _showErrorOnScreen(
+          details.exceptionAsString(), details.stack?.toString());
     }
   };
 

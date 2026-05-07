@@ -367,9 +367,6 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
     final storeLogo = order['_store_logo'] as String?;
     final customerName = order['customers']?['name'] ?? 'Клиент';
     final customerPhone = order['customers']?['phone']?.toString() ?? '';
-    // Debug: show customers object
-    debugPrint('[Order] customers raw: ${order['customers']}');
-    debugPrint('[Order] customerPhone: "$customerPhone"');
     final deliveryAddr = order['delivery_address'] ?? '';
     final itemsTotal = (order['items_total'] as num?)?.toDouble() ?? 0;
     final deliveryFee = (order['delivery_fee'] as num?)?.toDouble() ?? 0;
@@ -1038,31 +1035,11 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
     });
   }
 
-  void _openChat(String name, String phone) async {
+  void _openChat(String name, String phone) {
     final courierId = ref.read(courierIdProvider) ?? '';
     setState(() => _unreadMessages = 0);
 
-    // If phone is empty, try to fetch it directly from customers table
-    String resolvedPhone = phone;
-    if (resolvedPhone.isEmpty && _order != null) {
-      final customerId = _order!['customer_id'];
-      if (customerId != null) {
-        try {
-          final result = await Supabase.instance.client
-              .from('customers')
-              .select('phone')
-              .eq('id', customerId)
-              .maybeSingle();
-          if (result != null && result['phone'] != null) {
-            resolvedPhone = result['phone'].toString();
-          }
-        } catch (e) {
-          debugPrint('[Chat] Failed to fetch customer phone: $e');
-        }
-      }
-    }
-
-    if (!mounted) return;
+    // Navigate immediately — chat screen will resolve phone itself
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -1071,7 +1048,7 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
           senderId: courierId,
           senderType: 'courier',
           recipientName: name,
-          recipientPhone: resolvedPhone,
+          recipientPhone: phone,
         ),
       ),
     );
@@ -1079,7 +1056,6 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
 
   void _callPhone(dynamic phone) async {
     String phoneStr = phone.toString();
-    String debugInfo = 'From order: "$phoneStr"';
 
     // If phone is empty, try to fetch from DB directly
     if (phoneStr.isEmpty) {
@@ -1092,7 +1068,6 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
 
         if (order != null && order['customer_id'] != null) {
           final customerId = order['customer_id'].toString();
-          debugInfo += '\ncustomer_id: $customerId';
 
           final customer = await Supabase.instance.client
               .from('customers')
@@ -1102,37 +1077,31 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
 
           if (customer != null && customer['phone'] != null) {
             phoneStr = customer['phone'].toString();
-            debugInfo += '\nResolved: "$phoneStr"';
           } else {
-            debugInfo += '\nCustomer: ${customer?.toString() ?? "null"}';
+            // Try by user_id in case customer_id = auth.users.id
+            final byUserId = await Supabase.instance.client
+                .from('customers')
+                .select('phone')
+                .eq('user_id', customerId)
+                .maybeSingle();
+            if (byUserId != null && byUserId['phone'] != null) {
+              phoneStr = byUserId['phone'].toString();
+            }
           }
-        } else {
-          debugInfo += '\nOrder: ${order?.toString() ?? "null"}';
         }
       } catch (e) {
-        debugInfo += '\nError: $e';
+        debugPrint('[Call] Failed to resolve phone: $e');
       }
     }
 
     final cleanPhone = phoneStr
         .replaceAll(RegExp(r'[\s\-()]'), '')
-        .replaceAll(RegExp(r'\.0$'), ''); // fix numeric .0 suffix
-    debugPrint('[Call] cleanPhone: "$cleanPhone"');
+        .replaceAll(RegExp(r'\.0$'), '');
 
     if (cleanPhone.isEmpty) {
       if (mounted) {
-        showDialog(
-          context: context,
-          builder: (_) => AlertDialog(
-            title: const Text('Телефон не найден'),
-            content: Text(debugInfo),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Номер телефона клиента не найден')),
         );
       }
       return;
@@ -1140,20 +1109,17 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
 
     try {
       final uri = Uri.parse('tel:$cleanPhone');
-      debugPrint('[Call] launching: $uri');
       final launched = await launchUrl(uri);
-      debugPrint('[Call] launchUrl result: $launched');
       if (!launched && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Не удалось позвонить на $cleanPhone')),
         );
       }
     } catch (e) {
-      debugPrint('[Call] error: $e');
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Ошибка звонка: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка звонка: $e')),
+        );
       }
     }
   }

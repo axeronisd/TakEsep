@@ -20,12 +20,17 @@ void main() {
   FlutterError.onError = (details) {
     final allText = '${details.exceptionAsString()} ${details.stack ?? ""}';
     if (_isNetworkErrorString(allText)) {
-      debugPrint('[AkJol Pro] FlutterError network suppressed: ${details.exceptionAsString()}');
+      debugPrint(
+        '[AkJol Pro] FlutterError network suppressed: ${details.exceptionAsString()}',
+      );
       return;
     }
     FlutterError.presentError(details);
     if (showErrorScreen) {
-      _showErrorOnScreen(details.exceptionAsString(), details.stack?.toString());
+      _showErrorOnScreen(
+        details.exceptionAsString(),
+        details.stack?.toString(),
+      );
     }
   };
 

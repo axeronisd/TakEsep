@@ -137,18 +137,28 @@ class FirebasePushBootstrap {
   }
 
   /// Re-register token after login (call this when user signs in)
+  /// Tries multiple times with delay to handle slow auth state updates
   static Future<void> reRegisterToken() async {
-    try {
-      final messaging = FirebaseMessaging.instance;
-      final token = await messaging.getToken();
-      if (token != null) {
-        _currentToken = token;
-        await _pushService.registerToken(token);
-        debugPrint('[Push] Token re-registered after login');
+    for (int attempt = 0; attempt < 3; attempt++) {
+      try {
+        final messaging = FirebaseMessaging.instance;
+        final token = await messaging.getToken();
+        if (token != null) {
+          _currentToken = token;
+          await _pushService.registerToken(token);
+          debugPrint('[Push] Token re-registered after login (attempt ${attempt + 1})');
+          return;
+        } else {
+          debugPrint('[Push] getToken() returned null, attempt ${attempt + 1}');
+        }
+      } catch (e) {
+        debugPrint('[Push] Re-register token failed (attempt ${attempt + 1}): $e');
       }
-    } catch (e) {
-      debugPrint('[Push] Re-register token failed: $e');
+      if (attempt < 2) {
+        await Future.delayed(const Duration(seconds: 2));
+      }
     }
+    debugPrint('[Push] WARNING: Failed to register FCM token after 3 attempts');
   }
 
   /// Call on logout
