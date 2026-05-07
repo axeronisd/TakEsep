@@ -17,18 +17,17 @@ void main() {
 
   // Catch ALL errors and show them on screen
   FlutterError.onError = (details) {
+    final msg = details.exceptionAsString().toLowerCase();
+    if (msg.contains('connection') || msg.contains('socket') || msg.contains('websocket')) {
+      debugPrint('[AkJol] FlutterError network suppressed');
+      return;
+    }
     FlutterError.presentError(details);
     _showErrorOnScreen(details.exceptionAsString(), details.stack?.toString());
   };
 
   PlatformDispatcher.instance.onError = (error, stack) {
-    final errorStr = error.toString().toLowerCase();
-    if (errorStr.contains('connection closed') ||
-        errorStr.contains('clientexception') ||
-        errorStr.contains('socketexception') ||
-        errorStr.contains('handshakeexception') ||
-        errorStr.contains('connection refused') ||
-        errorStr.contains('connection reset')) {
+    if (_isNetworkError(error)) {
       debugPrint('[AkJol] Network error suppressed: $error');
       return true;
     }
@@ -46,13 +45,7 @@ void main() {
       }
     },
     (error, stack) {
-      final errorStr = error.toString().toLowerCase();
-      if (errorStr.contains('connection closed') ||
-          errorStr.contains('clientexception') ||
-          errorStr.contains('socketexception') ||
-          errorStr.contains('handshakeexception') ||
-          errorStr.contains('connection refused') ||
-          errorStr.contains('connection reset')) {
+      if (_isNetworkError(error)) {
         debugPrint('[AkJol] Network error suppressed: $error');
         return;
       }
@@ -113,6 +106,24 @@ Future<void> _initPushInBackground() async {
   } catch (e, st) {
     debugPrint('[AkJol] Push init FAILED (non-fatal): $e');
   }
+}
+
+bool _isNetworkError(Object error) {
+  final s = error.toString().toLowerCase();
+  return s.contains('connection closed') ||
+      s.contains('connection reset') ||
+      s.contains('connection refused') ||
+      s.contains('clientexception') ||
+      s.contains('socketexception') ||
+      s.contains('handshakeexception') ||
+      s.contains('websocketchannel') ||
+      s.contains('websocket') ||
+      s.contains('os error') ||
+      s.contains('errno') ||
+      s.contains('networkimage') ||
+      s.contains('timed out') ||
+      s.contains('timeout') ||
+      s.contains('connection aborted');
 }
 
 void _showErrorOnScreen(String message, String? stack) {
