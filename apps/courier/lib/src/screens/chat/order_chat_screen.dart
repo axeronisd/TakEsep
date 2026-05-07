@@ -140,18 +140,57 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
   }
 
   void _callRecipient() async {
-    try {
-      final phoneStr = widget.recipientPhone.toString();
-      final cleanPhone = phoneStr.replaceAll(RegExp(r'[\s\-()]'), '');
-      if (cleanPhone.isEmpty) return;
-      final uri = Uri.parse('tel:$cleanPhone');
-      await launchUrl(uri);
-    } catch (e) {
-      debugPrint('Call error: $e');
+    final phoneStr = widget.recipientPhone.toString();
+    final cleanPhone = phoneStr
+        .replaceAll(RegExp(r'[\s\-()]'), '')
+        .replaceAll(RegExp(r'\.0$'), '');
+
+    if (cleanPhone.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Не удалось позвонить: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Номер телефона клиента не найден'),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+      return;
+    }
+
+    try {
+      final uri = Uri.parse('tel:$cleanPhone');
+      final launched = await launchUrl(uri);
+      if (!launched && mounted) {
+        // Показать диалог с номером — для диагностики
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Звонок'),
+            content: Text('Не удалось набрать $cleanPhone\n\nПозвоните вручную: $cleanPhone'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Ошибка звонка'),
+            content: Text('$e\n\nНомер: $cleanPhone'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
       }
     }
   }

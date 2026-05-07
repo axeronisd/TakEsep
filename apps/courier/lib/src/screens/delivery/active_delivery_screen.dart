@@ -1053,18 +1053,39 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
   }
 
   void _callPhone(dynamic phone) async {
+    final phoneStr = phone.toString();
+    debugPrint('[Call] raw phone: "$phoneStr"');
+
+    final cleanPhone = phoneStr
+        .replaceAll(RegExp(r'[\s\-()]'), '')
+        .replaceAll(RegExp(r'\.0$'), ''); // fix numeric .0 suffix
+    debugPrint('[Call] cleanPhone: "$cleanPhone"');
+
+    if (cleanPhone.isEmpty) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Номер телефона не найден')),
+        );
+      }
+      return;
+    }
+
     try {
-      final phoneStr = phone.toString();
-      final cleanPhone = phoneStr.replaceAll(RegExp(r'[\s\-()]'), '');
-      if (cleanPhone.isEmpty) return;
       final uri = Uri.parse('tel:$cleanPhone');
-      await launchUrl(uri);
+      debugPrint('[Call] launching: $uri');
+      final launched = await launchUrl(uri);
+      debugPrint('[Call] launchUrl result: $launched');
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Не удалось позвонить на $cleanPhone')),
+        );
+      }
     } catch (e) {
-      debugPrint('Call error: $e');
+      debugPrint('[Call] error: $e');
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text('Не удалось позвонить: $e')));
+        ).showSnackBar(SnackBar(content: Text('Ошибка звонка: $e')));
       }
     }
   }
