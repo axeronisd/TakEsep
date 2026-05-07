@@ -1038,11 +1038,31 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
     });
   }
 
-  void _openChat(String name, String phone) {
+  void _openChat(String name, String phone) async {
     final courierId = ref.read(courierIdProvider) ?? '';
     setState(() => _unreadMessages = 0);
-    // Debug: show what phone value is being passed
-    debugPrint('[Chat] Opening chat with name="$name", phone="$phone"');
+
+    // If phone is empty, try to fetch it directly from customers table
+    String resolvedPhone = phone;
+    if (resolvedPhone.isEmpty && _order != null) {
+      final customerId = _order!['customer_id'];
+      if (customerId != null) {
+        try {
+          final result = await Supabase.instance.client
+              .from('customers')
+              .select('phone')
+              .eq('id', customerId)
+              .maybeSingle();
+          if (result != null && result['phone'] != null) {
+            resolvedPhone = result['phone'].toString();
+          }
+        } catch (e) {
+          debugPrint('[Chat] Failed to fetch customer phone: $e');
+        }
+      }
+    }
+
+    if (!mounted) return;
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -1051,15 +1071,31 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
           senderId: courierId,
           senderType: 'courier',
           recipientName: name,
-          recipientPhone: phone,
+          recipientPhone: resolvedPhone,
         ),
       ),
     );
   }
 
   void _callPhone(dynamic phone) async {
-    final phoneStr = phone.toString();
-    debugPrint('[Call] raw phone: "$phoneStr"');
+    String phoneStr = phone.toString();
+
+    // If phone is empty, try to fetch from customers table
+    if (phoneStr.isEmpty && _order != null) {
+      final customerId = _order!['customer_id'];
+      if (customerId != null) {
+        try {
+          final result = await Supabase.instance.client
+              .from('customers')
+              .select('phone')
+              .eq('id', customerId)
+              .maybeSingle();
+          if (result != null && result['phone'] != null) {
+            phoneStr = result['phone'].toString();
+          }
+        } catch (_) {}
+      }
+    }
 
     final cleanPhone = phoneStr
         .replaceAll(RegExp(r'[\s\-()]'), '')

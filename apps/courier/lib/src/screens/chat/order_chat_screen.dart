@@ -149,7 +149,9 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Номер пустой. Raw: "$phoneStr", Type: ${widget.recipientPhone.runtimeType}'),
+            content: Text(
+              'Номер пустой. Raw: "$phoneStr", Type: ${widget.recipientPhone.runtimeType}',
+            ),
             duration: const Duration(seconds: 5),
           ),
         );
@@ -166,7 +168,9 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
           context: context,
           builder: (_) => AlertDialog(
             title: const Text('Звонок'),
-            content: Text('Не удалось набрать $cleanPhone\n\nПозвоните вручную: $cleanPhone'),
+            content: Text(
+              'Не удалось набрать $cleanPhone\n\nПозвоните вручную: $cleanPhone',
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
