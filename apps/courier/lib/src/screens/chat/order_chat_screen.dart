@@ -148,9 +148,9 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
     if (cleanPhone.isEmpty) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Номер телефона клиента не найден'),
-            duration: Duration(seconds: 3),
+          SnackBar(
+            content: Text('Номер пустой. Raw: "$phoneStr", Type: ${widget.recipientPhone.runtimeType}'),
+            duration: const Duration(seconds: 5),
           ),
         );
       }

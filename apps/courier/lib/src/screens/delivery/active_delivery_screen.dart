@@ -367,6 +367,9 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
     final storeLogo = order['_store_logo'] as String?;
     final customerName = order['customers']?['name'] ?? 'Клиент';
     final customerPhone = order['customers']?['phone']?.toString() ?? '';
+    // Debug: show customers object
+    debugPrint('[Order] customers raw: ${order['customers']}');
+    debugPrint('[Order] customerPhone: "$customerPhone"');
     final deliveryAddr = order['delivery_address'] ?? '';
     final itemsTotal = (order['items_total'] as num?)?.toDouble() ?? 0;
     final deliveryFee = (order['delivery_fee'] as num?)?.toDouble() ?? 0;
@@ -1038,6 +1041,8 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
   void _openChat(String name, String phone) {
     final courierId = ref.read(courierIdProvider) ?? '';
     setState(() => _unreadMessages = 0);
+    // Debug: show what phone value is being passed
+    debugPrint('[Chat] Opening chat with name="$name", phone="$phone"');
     Navigator.push(
       context,
       MaterialPageRoute(
