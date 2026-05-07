@@ -1079,21 +1079,38 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
 
   void _callPhone(dynamic phone) async {
     String phoneStr = phone.toString();
+    String debugInfo = 'From order: "$phoneStr"';
 
-    // If phone is empty, try to fetch from customers table
-    if (phoneStr.isEmpty && _order != null) {
-      final customerId = _order!['customer_id'];
-      if (customerId != null) {
-        try {
-          final result = await Supabase.instance.client
+    // If phone is empty, try to fetch from DB directly
+    if (phoneStr.isEmpty) {
+      try {
+        final order = await Supabase.instance.client
+            .from('delivery_orders')
+            .select('customer_id')
+            .eq('id', widget.orderId)
+            .maybeSingle();
+
+        if (order != null && order['customer_id'] != null) {
+          final customerId = order['customer_id'].toString();
+          debugInfo += '\ncustomer_id: $customerId';
+
+          final customer = await Supabase.instance.client
               .from('customers')
               .select('phone')
               .eq('id', customerId)
               .maybeSingle();
-          if (result != null && result['phone'] != null) {
-            phoneStr = result['phone'].toString();
+
+          if (customer != null && customer['phone'] != null) {
+            phoneStr = customer['phone'].toString();
+            debugInfo += '\nResolved: "$phoneStr"';
+          } else {
+            debugInfo += '\nCustomer: ${customer?.toString() ?? "null"}';
           }
-        } catch (_) {}
+        } else {
+          debugInfo += '\nOrder: ${order?.toString() ?? "null"}';
+        }
+      } catch (e) {
+        debugInfo += '\nError: $e';
       }
     }
 
@@ -1104,8 +1121,18 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
 
     if (cleanPhone.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Номер телефона не найден')),
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Телефон не найден'),
+            content: Text(debugInfo),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
         );
       }
       return;

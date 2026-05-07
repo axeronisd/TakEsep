@@ -140,19 +140,61 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
   }
 
   void _callRecipient() async {
-    final phoneStr = widget.recipientPhone.toString();
+    String phoneStr = widget.recipientPhone.toString();
+    String debugInfo = 'From widget: "$phoneStr"';
+
+    // If phone is empty, try to resolve from DB
+    if (phoneStr.isEmpty) {
+      try {
+        // Step 1: Get customer_id from the order
+        final order = await _supabase
+            .from('delivery_orders')
+            .select('customer_id')
+            .eq('id', widget.orderId)
+            .maybeSingle();
+
+        if (order != null && order['customer_id'] != null) {
+          final customerId = order['customer_id'].toString();
+          debugInfo += '\nOrder customer_id: $customerId';
+
+          // Step 2: Get phone from customers table
+          final customer = await _supabase
+              .from('customers')
+              .select('phone, name')
+              .eq('id', customerId)
+              .maybeSingle();
+
+          if (customer != null && customer['phone'] != null) {
+            phoneStr = customer['phone'].toString();
+            debugInfo += '\nResolved phone: "$phoneStr"';
+          } else {
+            debugInfo += '\nCustomer query result: ${customer?.toString() ?? "null"}';
+          }
+        } else {
+          debugInfo += '\nOrder query result: ${order?.toString() ?? "null"}';
+        }
+      } catch (e) {
+        debugInfo += '\nDB error: $e';
+      }
+    }
+
     final cleanPhone = phoneStr
         .replaceAll(RegExp(r'[\s\-()]'), '')
         .replaceAll(RegExp(r'\.0$'), '');
 
     if (cleanPhone.isEmpty) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Номер пустой. Raw: "$phoneStr", Type: ${widget.recipientPhone.runtimeType}',
-            ),
-            duration: const Duration(seconds: 5),
+        showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: const Text('Телефон не найден'),
+            content: Text(debugInfo),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('OK'),
+              ),
+            ],
           ),
         );
       }
