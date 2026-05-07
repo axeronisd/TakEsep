@@ -18,8 +18,13 @@ void main() {
   const showErrorScreen = bool.fromEnvironment('dart.vm.product') == false;
 
   FlutterError.onError = (details) {
+    final allText = '${details.exceptionAsString()} ${details.stack ?? ""}';
+    if (_isNetworkErrorString(allText)) {
+      debugPrint('[AkJol Pro] FlutterError network suppressed: ${details.exceptionAsString()}');
+      return;
+    }
     FlutterError.presentError(details);
-    if (showErrorScreen && !_isNetworkErrorString(details.exceptionAsString())) {
+    if (showErrorScreen) {
       _showErrorOnScreen(details.exceptionAsString(), details.stack?.toString());
     }
   };
@@ -119,7 +124,8 @@ bool _isNetworkErrorString(String s) {
       l.contains('os error') ||
       l.contains('errno') ||
       l.contains('handshake') ||
-      l.contains('network');
+      l.contains('network') ||
+      l.contains('clientexception');
 }
 
 bool _isNetworkError(Object error) {
