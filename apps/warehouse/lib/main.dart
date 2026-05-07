@@ -21,14 +21,24 @@ import 'src/services/notification_service.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Catch ALL errors and show them on screen
+  const showErrorScreen = bool.fromEnvironment('dart.vm.product') == false;
+
   FlutterError.onError = (details) {
     FlutterError.presentError(details);
-    _showErrorOnScreen(details.exceptionAsString(), details.stack?.toString());
+    if (showErrorScreen && !_isNetworkErrorString(details.exceptionAsString())) {
+      _showErrorOnScreen(details.exceptionAsString(), details.stack?.toString());
+    }
   };
 
   PlatformDispatcher.instance.onError = (error, stack) {
-    _showErrorOnScreen('$error', stack.toString());
+    if (_isNetworkError(error)) {
+      debugPrint('[TakEsep] Network error suppressed: $error');
+      return true;
+    }
+    debugPrint('[TakEsep] Platform error: $error');
+    if (showErrorScreen) {
+      _showErrorOnScreen('$error', stack.toString());
+    }
     return true;
   };
 
@@ -37,11 +47,19 @@ void main() {
       await _bootstrapApp();
     } catch (e, st) {
       debugPrint('[TakEsep] FATAL BOOT ERROR: $e\n$st');
-      _showErrorOnScreen('BOOT ERROR: $e', st.toString());
+      if (showErrorScreen) {
+        _showErrorOnScreen('BOOT ERROR: $e', st.toString());
+      }
     }
   }, (error, stack) {
+    if (_isNetworkError(error)) {
+      debugPrint('[TakEsep] Network error suppressed: $error');
+      return;
+    }
     debugPrint('[TakEsep] UNHANDLED: $error\n$stack');
-    _showErrorOnScreen('UNHANDLED: $error', stack.toString());
+    if (showErrorScreen) {
+      _showErrorOnScreen('UNHANDLED: $error', stack.toString());
+    }
   });
 }
 
@@ -111,6 +129,22 @@ Future<void> _initPushInBackground() async {
   } catch (e, st) {
     debugPrint('[TakEsep] Push init FAILED (non-fatal): $e');
   }
+}
+
+bool _isNetworkErrorString(String s) {
+  final l = s.toLowerCase();
+  return l.contains('connection') ||
+      l.contains('socket') ||
+      l.contains('websocket') ||
+      l.contains('timeout') ||
+      l.contains('os error') ||
+      l.contains('errno') ||
+      l.contains('handshake') ||
+      l.contains('network');
+}
+
+bool _isNetworkError(Object error) {
+  return _isNetworkErrorString(error.toString());
 }
 
 void _showErrorOnScreen(String message, String? stack) {

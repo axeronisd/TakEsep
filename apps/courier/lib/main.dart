@@ -15,15 +15,13 @@ import 'src/services/notification_service.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Catch ALL errors and show them on screen
+  const showErrorScreen = bool.fromEnvironment('dart.vm.product') == false;
+
   FlutterError.onError = (details) {
-    final msg = details.exceptionAsString().toLowerCase();
-    if (msg.contains('connection') || msg.contains('socket') || msg.contains('websocket')) {
-      debugPrint('[AkJol Pro] FlutterError network suppressed: ${details.exceptionAsString()}');
-      return;
-    }
     FlutterError.presentError(details);
-    _showErrorOnScreen(details.exceptionAsString(), details.stack?.toString());
+    if (showErrorScreen && !_isNetworkErrorString(details.exceptionAsString())) {
+      _showErrorOnScreen(details.exceptionAsString(), details.stack?.toString());
+    }
   };
 
   PlatformDispatcher.instance.onError = (error, stack) {
@@ -31,7 +29,10 @@ void main() {
       debugPrint('[AkJol Pro] Network error suppressed: $error');
       return true;
     }
-    _showErrorOnScreen('$error', stack.toString());
+    debugPrint('[AkJol Pro] Platform error: $error');
+    if (showErrorScreen) {
+      _showErrorOnScreen('$error', stack.toString());
+    }
     return true;
   };
 
@@ -41,7 +42,9 @@ void main() {
         await _bootstrapApp();
       } catch (e, st) {
         debugPrint('[AkJol Pro] FATAL BOOT ERROR: $e\n$st');
-        _showErrorOnScreen('BOOT ERROR: $e', st.toString());
+        if (showErrorScreen) {
+          _showErrorOnScreen('BOOT ERROR: $e', st.toString());
+        }
       }
     },
     (error, stack) {
@@ -50,7 +53,9 @@ void main() {
         return;
       }
       debugPrint('[AkJol Pro] UNHANDLED: $error\n$stack');
-      _showErrorOnScreen('UNHANDLED: $error', stack.toString());
+      if (showErrorScreen) {
+        _showErrorOnScreen('UNHANDLED: $error', stack.toString());
+      }
     },
   );
 }
@@ -105,22 +110,20 @@ Future<void> _initPushInBackground() async {
   }
 }
 
+bool _isNetworkErrorString(String s) {
+  final l = s.toLowerCase();
+  return l.contains('connection') ||
+      l.contains('socket') ||
+      l.contains('websocket') ||
+      l.contains('timeout') ||
+      l.contains('os error') ||
+      l.contains('errno') ||
+      l.contains('handshake') ||
+      l.contains('network');
+}
+
 bool _isNetworkError(Object error) {
-  final s = error.toString().toLowerCase();
-  return s.contains('connection closed') ||
-      s.contains('connection reset') ||
-      s.contains('connection refused') ||
-      s.contains('clientexception') ||
-      s.contains('socketexception') ||
-      s.contains('handshakeexception') ||
-      s.contains('websocketchannel') ||
-      s.contains('websocket') ||
-      s.contains('os error') ||
-      s.contains('errno') ||
-      s.contains('networkimage') ||
-      s.contains('timed out') ||
-      s.contains('timeout') ||
-      s.contains('connection aborted');
+  return _isNetworkErrorString(error.toString());
 }
 
 void _showErrorOnScreen(String message, String? stack) {
