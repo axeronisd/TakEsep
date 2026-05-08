@@ -264,19 +264,13 @@ jobs:
       - name: Install iOS 26 SDK
         timeout-minutes: 30
         run: |
-          echo "=== Initialize Xcode ==="
-          sudo xcodebuild -runFirstLaunch || true
-          echo "=== Installed SDKs ==="
+          echo "=== Installed SDKs before download ==="
           xcodebuild -showsdks | grep -i ios || true
-          echo "=== Checking iOS destinations ==="
-          if xcodebuild -workspace apps/customer/ios/Runner.xcworkspace -scheme Runner -destination 'generic/platform=iOS' -list 2>/dev/null | grep -q "iOS"; then
-            echo "✅ iOS platform available, skipping download"
-          else
-            echo "=== Downloading iOS platform ==="
-            sudo xcodebuild -downloadPlatform iOS || true
-            echo "=== Retry with xcrun ==="
-            xcrun xcodebuild -downloadPlatform iOS || echo "Download may have partially failed, continuing..."
-          fi
+          echo "=== Starting CoreSimulator service ==="
+          sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.CoreSimulator.plist 2>/dev/null || true
+          xcrun simctl list devices 2>/dev/null || true
+          echo "=== Downloading iOS platform ==="
+          xcodebuild -downloadPlatform iOS
           echo "=== Installed SDKs after download ==="
           xcodebuild -showsdks | grep -i ios
           echo "=== Verifying iOS SDK exists ==="
