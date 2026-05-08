@@ -266,8 +266,12 @@ jobs:
         run: |
           echo "=== Installed SDKs before download ==="
           xcodebuild -showsdks | grep -i ios || true
-          echo "=== Downloading iOS platform ==="
-          xcodebuild -downloadPlatform iOS
+          if xcodebuild -showsdks | grep -q "iphoneos26"; then
+            echo "✅ iOS 26 SDK already installed, skipping download"
+          else
+            echo "=== Downloading iOS platform ==="
+            xcodebuild -downloadPlatform iOS || true
+          fi
           echo "=== Installed SDKs after download ==="
           xcodebuild -showsdks | grep -i ios
           echo "=== Verifying iOS SDK exists ==="
