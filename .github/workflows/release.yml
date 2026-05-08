@@ -264,6 +264,8 @@ jobs:
       - name: Install iOS 26 SDK
         timeout-minutes: 30
         run: |
+          echo "=== Initialize Xcode ==="
+          sudo xcodebuild -runFirstLaunch || true
           echo "=== Installed SDKs ==="
           xcodebuild -showsdks | grep -i ios || true
           echo "=== Checking iOS destinations ==="
@@ -271,9 +273,9 @@ jobs:
             echo "✅ iOS platform available, skipping download"
           else
             echo "=== Downloading iOS platform ==="
-            xcodebuild -downloadPlatform iOS || true
-            echo "=== Retry if needed ==="
-            xcodebuild -downloadPlatform iOS || echo "Download may have partially failed, continuing..."
+            sudo xcodebuild -downloadPlatform iOS || true
+            echo "=== Retry with xcrun ==="
+            xcrun xcodebuild -downloadPlatform iOS || echo "Download may have partially failed, continuing..."
           fi
           echo "=== Installed SDKs after download ==="
           xcodebuild -showsdks | grep -i ios
