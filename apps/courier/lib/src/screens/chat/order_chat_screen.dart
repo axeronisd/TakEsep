@@ -219,6 +219,22 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
           final p = profile['phone']?.toString() ?? '';
           if (p.trim().isNotEmpty) return p;
         }
+
+        // Step 4: RPC fallback — query auth.users directly via SECURITY DEFINER
+        try {
+          final rpcResult = await _supabase
+              .rpc('rpc_resolve_customer_phone', params: {'p_customer_id': customerId});
+          _diag['rpc'] = rpcResult != null ? 'ok' : 'null';
+          if (rpcResult != null) {
+            final resultMap = rpcResult as Map<String, dynamic>;
+            _diag['rpc_source'] = resultMap['source']?.toString() ?? '<null>';
+            _diag['rpc_phone'] = resultMap['phone']?.toString() ?? '<null>';
+            final rpcPhone = resultMap['phone']?.toString() ?? '';
+            if (rpcPhone.trim().isNotEmpty) return rpcPhone;
+          }
+        } catch (e) {
+          _diag['rpc_error'] = e.toString();
+        }
       }
     } catch (e) {
       _diag['error'] = e.toString();
@@ -257,6 +273,10 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
                   Text('user_profiles_found: ${_diag['user_profiles_found'] ?? '<null>'}'),
                   const SizedBox(height: 4),
                   Text('user_profiles.phone: ${_diag['user_profiles_phone'] ?? '<null>'}'),
+                  const SizedBox(height: 4),
+                  Text('rpc.source: ${_diag['rpc_source'] ?? '<null>'}'),
+                  const SizedBox(height: 4),
+                  Text('rpc.phone: ${_diag['rpc_phone'] ?? '<null>'}'),
                   const SizedBox(height: 4),
                   Text('step/error: ${_diag['step'] ?? _diag['error'] ?? 'all steps exhausted'}'),
                 ],

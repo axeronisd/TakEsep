@@ -36,6 +36,8 @@ class _PhoneDiag {
   String customerPhone = '<null>';
   String customerUserId = '<null>';
   String profilePhone = '<null>';
+  String rpcSource = '<null>';
+  String rpcPhone = '<null>';
   String resolvedPhone = '';
   final List<String> steps = [];
 }
@@ -1203,6 +1205,25 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
           final p = profile['phone']?.toString() ?? '';
           if (p.trim().isNotEmpty) { diag.resolvedPhone = p; return diag; }
         }
+
+        // Step 4: RPC fallback — query auth.users directly via SECURITY DEFINER
+        try {
+          final rpcResult = await Supabase.instance.client
+              .rpc('rpc_resolve_customer_phone', params: {'p_customer_id': customerId});
+          diag.steps.add('rpc=${rpcResult != null ? "ok" : "null"}');
+          if (rpcResult != null) {
+            final resultMap = rpcResult as Map<String, dynamic>;
+            diag.rpcSource = resultMap['source']?.toString() ?? '<null>';
+            diag.rpcPhone = resultMap['phone']?.toString() ?? '<null>';
+            final rpcPhone = resultMap['phone']?.toString() ?? '';
+            if (rpcPhone.trim().isNotEmpty) {
+              diag.resolvedPhone = rpcPhone;
+              return diag;
+            }
+          }
+        } catch (e) {
+          diag.steps.add('rpc_error=$e');
+        }
       }
     } catch (e) {
       diag.steps.add('ERROR: $e');
@@ -1238,6 +1259,10 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
                   Text('customers.user_id=${diag.customerUserId}'),
                   const SizedBox(height: 4),
                   Text('user_profiles.phone=${diag.profilePhone}'),
+                  const SizedBox(height: 4),
+                  Text('rpc.source=${diag.rpcSource}'),
+                  const SizedBox(height: 4),
+                  Text('rpc.phone=${diag.rpcPhone}'),
                   const SizedBox(height: 4),
                   Text('Steps: ${diag.steps.join(" → ")}'),
                 ],
