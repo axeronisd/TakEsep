@@ -139,47 +139,98 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
     });
   }
 
-  void _callRecipient() async {
-    String phoneStr = widget.recipientPhone.toString();
+  /// Resolve customer phone using cascade fallback:
+  /// 1. customers.phone (by id)
+  /// 2. customers.phone (by user_id)
+  /// 3. user_profiles.phone (always populated by handle_new_user trigger)
+  Future<String> _resolveCustomerPhone() async {
+    try {
+      // Step 1: Get customer_id from order
+      final order = await _supabase
+          .from('delivery_orders')
+          .select('customer_id')
+          .eq('id', widget.orderId)
+          .maybeSingle();
 
-    // If phone is empty, try to resolve from DB
-    if (phoneStr.isEmpty) {
-      try {
-        // Step 1: Get customer_id from the order
-        final order = await _supabase
-            .from('delivery_orders')
-            .select('customer_id')
-            .eq('id', widget.orderId)
-            .maybeSingle();
+      if (order == null || order['customer_id'] == null) return '';
+      final customerId = order['customer_id'].toString();
 
-        if (order != null && order['customer_id'] != null) {
-          final customerId = order['customer_id'].toString();
+      // Step 2: Try customers.phone by id
+      final customer = await _supabase
+          .from('customers')
+          .select('phone, user_id')
+          .eq('id', customerId)
+          .maybeSingle();
 
-          // Step 2a: Try customers table by id
-          final customer = await _supabase
-              .from('customers')
+      if (customer != null) {
+        final phone = customer['phone']?.toString() ?? '';
+        if (phone.trim().replaceAll(RegExp(r'[^0-9+]'), '').isNotEmpty) {
+          return phone;
+        }
+
+        // Step 3: customers.phone was empty — try user_profiles via user_id
+        final userId = customer['user_id']?.toString();
+        if (userId != null && userId.isNotEmpty) {
+          final profile = await _supabase
+              .from('user_profiles')
               .select('phone')
-              .eq('id', customerId)
+              .eq('id', userId)
               .maybeSingle();
-
-          if (customer != null && customer['phone'] != null) {
-            phoneStr = customer['phone'].toString();
-          } else {
-            // Step 2b: Try customers table by user_id (in case customer_id = auth.users.id)
-            final byUserId = await _supabase
-                .from('customers')
+          if (profile != null && profile['phone'] != null) {
+            final profilePhone = profile['phone'].toString();
+            if (profilePhone.trim().isNotEmpty) return profilePhone;
+          }
+        }
+      } else {
+        // Step 2b: Try customers by user_id (in case customer_id = auth.users.id)
+        final byUserId = await _supabase
+            .from('customers')
+            .select('phone, user_id')
+            .eq('user_id', customerId)
+            .maybeSingle();
+        if (byUserId != null) {
+          final phone = byUserId['phone']?.toString() ?? '';
+          if (phone.trim().replaceAll(RegExp(r'[^0-9+]'), '').isNotEmpty) {
+            return phone;
+          }
+          // Try user_profiles
+          final userId = byUserId['user_id']?.toString();
+          if (userId != null && userId.isNotEmpty) {
+            final profile = await _supabase
+                .from('user_profiles')
                 .select('phone')
-                .eq('user_id', customerId)
+                .eq('id', userId)
                 .maybeSingle();
-
-            if (byUserId != null && byUserId['phone'] != null) {
-              phoneStr = byUserId['phone'].toString();
+            if (profile != null && profile['phone'] != null) {
+              final profilePhone = profile['phone'].toString();
+              if (profilePhone.trim().isNotEmpty) return profilePhone;
             }
           }
         }
-      } catch (e) {
-        debugPrint('[Chat] Failed to resolve phone: $e');
+
+        // Step 3b: Last resort — try user_profiles directly with customer_id
+        final profile = await _supabase
+            .from('user_profiles')
+            .select('phone')
+            .eq('id', customerId)
+            .maybeSingle();
+        if (profile != null && profile['phone'] != null) {
+          final profilePhone = profile['phone'].toString();
+          if (profilePhone.trim().isNotEmpty) return profilePhone;
+        }
       }
+    } catch (e) {
+      debugPrint('[Chat] Failed to resolve phone: $e');
+    }
+    return '';
+  }
+
+  void _callRecipient() async {
+    String phoneStr = widget.recipientPhone.toString();
+
+    // If phone is empty or just whitespace, resolve from DB cascade
+    if (phoneStr.trim().replaceAll(RegExp(r'[^0-9+]'), '').isEmpty) {
+      phoneStr = await _resolveCustomerPhone();
     }
 
     final cleanPhone = phoneStr

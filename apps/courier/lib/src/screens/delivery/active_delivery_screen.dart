@@ -142,6 +142,48 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
         } catch (_) {}
       }
 
+      // ── Resolve customer phone from user_profiles if customers join has empty phone ──
+      // The customers.phone may be empty if _getOrCreateCustomer didn't have
+      // access to user.phone at creation time. user_profiles is always populated
+      // by the handle_new_user trigger during registration.
+      final customerJoin = data['customers'] as Map<String, dynamic>?;
+      final customerPhoneFromJoin = customerJoin?['phone']?.toString() ?? '';
+      if (customerPhoneFromJoin.trim().replaceAll(RegExp(r'[^0-9+]'), '').isEmpty) {
+        try {
+          final customerId = data['customer_id']?.toString();
+          if (customerId != null && customerId.isNotEmpty) {
+            // Step 1: Get user_id from customers table
+            final customerRow = await Supabase.instance.client
+                .from('customers')
+                .select('user_id')
+                .eq('id', customerId)
+                .maybeSingle();
+            final userId = customerRow?['user_id']?.toString();
+            if (userId != null && userId.isNotEmpty) {
+              // Step 2: Get phone from user_profiles (always has phone from registration)
+              final profile = await Supabase.instance.client
+                  .from('user_profiles')
+                  .select('phone')
+                  .eq('id', userId)
+                  .maybeSingle();
+              if (profile != null && profile['phone'] != null) {
+                final profilePhone = profile['phone'].toString();
+                if (profilePhone.trim().isNotEmpty) {
+                  // Patch the customers join data so the UI uses it
+                  data['customers'] = {
+                    ...?customerJoin,
+                    'phone': profilePhone,
+                  };
+                  debugPrint('[Delivery] Customer phone resolved from user_profiles: $profilePhone');
+                }
+              }
+            }
+          }
+        } catch (e) {
+          debugPrint('[Delivery] Failed to resolve customer phone from user_profiles: $e');
+        }
+      }
+
       if (mounted) {
         final rawItems = List<Map<String, dynamic>>.from(
           data['delivery_order_items'] ?? [],
@@ -1054,44 +1096,98 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
     );
   }
 
-  void _callPhone(dynamic phone) async {
-    String phoneStr = phone.toString();
+  /// Resolve customer phone using cascade fallback:
+  /// 1. customers.phone (from join or direct query by id)
+  /// 2. customers.phone (by user_id, in case customer_id = auth.users.id)
+  /// 3. user_profiles.phone (always populated by handle_new_user trigger)
+  Future<String> _resolveCustomerPhone() async {
+    try {
+      // Step 1: Get customer_id from order
+      final order = await Supabase.instance.client
+          .from('delivery_orders')
+          .select('customer_id')
+          .eq('id', widget.orderId)
+          .maybeSingle();
 
-    // If phone is empty, try to fetch from DB directly
-    if (phoneStr.isEmpty) {
-      try {
-        final order = await Supabase.instance.client
-            .from('delivery_orders')
-            .select('customer_id')
-            .eq('id', widget.orderId)
-            .maybeSingle();
+      if (order == null || order['customer_id'] == null) return '';
+      final customerId = order['customer_id'].toString();
 
-        if (order != null && order['customer_id'] != null) {
-          final customerId = order['customer_id'].toString();
+      // Step 2: Try customers.phone by id
+      final customer = await Supabase.instance.client
+          .from('customers')
+          .select('phone, user_id')
+          .eq('id', customerId)
+          .maybeSingle();
 
-          final customer = await Supabase.instance.client
-              .from('customers')
+      if (customer != null) {
+        final phone = customer['phone']?.toString() ?? '';
+        if (phone.trim().replaceAll(RegExp(r'[^0-9+]'), '').isNotEmpty) {
+          return phone;
+        }
+
+        // Step 3: customers.phone was empty — try user_profiles via user_id
+        final userId = customer['user_id']?.toString();
+        if (userId != null && userId.isNotEmpty) {
+          final profile = await Supabase.instance.client
+              .from('user_profiles')
               .select('phone')
-              .eq('id', customerId)
+              .eq('id', userId)
               .maybeSingle();
-
-          if (customer != null && customer['phone'] != null) {
-            phoneStr = customer['phone'].toString();
-          } else {
-            // Try by user_id in case customer_id = auth.users.id
-            final byUserId = await Supabase.instance.client
-                .from('customers')
+          if (profile != null && profile['phone'] != null) {
+            final profilePhone = profile['phone'].toString();
+            if (profilePhone.trim().isNotEmpty) return profilePhone;
+          }
+        }
+      } else {
+        // Step 2b: Try customers by user_id (in case customer_id = auth.users.id)
+        final byUserId = await Supabase.instance.client
+            .from('customers')
+            .select('phone, user_id')
+            .eq('user_id', customerId)
+            .maybeSingle();
+        if (byUserId != null) {
+          final phone = byUserId['phone']?.toString() ?? '';
+          if (phone.trim().replaceAll(RegExp(r'[^0-9+]'), '').isNotEmpty) {
+            return phone;
+          }
+          // Try user_profiles
+          final userId = byUserId['user_id']?.toString();
+          if (userId != null && userId.isNotEmpty) {
+            final profile = await Supabase.instance.client
+                .from('user_profiles')
                 .select('phone')
-                .eq('user_id', customerId)
+                .eq('id', userId)
                 .maybeSingle();
-            if (byUserId != null && byUserId['phone'] != null) {
-              phoneStr = byUserId['phone'].toString();
+            if (profile != null && profile['phone'] != null) {
+              final profilePhone = profile['phone'].toString();
+              if (profilePhone.trim().isNotEmpty) return profilePhone;
             }
           }
         }
-      } catch (e) {
-        debugPrint('[Call] Failed to resolve phone: $e');
+
+        // Step 3b: Last resort — try user_profiles directly with customer_id
+        final profile = await Supabase.instance.client
+            .from('user_profiles')
+            .select('phone')
+            .eq('id', customerId)
+            .maybeSingle();
+        if (profile != null && profile['phone'] != null) {
+          final profilePhone = profile['phone'].toString();
+          if (profilePhone.trim().isNotEmpty) return profilePhone;
+        }
       }
+    } catch (e) {
+      debugPrint('[Call] Failed to resolve phone: $e');
+    }
+    return '';
+  }
+
+  void _callPhone(dynamic phone) async {
+    String phoneStr = phone.toString();
+
+    // If phone is empty or just whitespace, resolve from DB cascade
+    if (phoneStr.trim().replaceAll(RegExp(r'[^0-9+]'), '').isEmpty) {
+      phoneStr = await _resolveCustomerPhone();
     }
 
     final cleanPhone = phoneStr

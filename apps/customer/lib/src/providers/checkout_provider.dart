@@ -433,44 +433,75 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
 
   Future<String> _getOrCreateCustomer(String userId) async {
     try {
+      // Resolve phone: prefer auth phone, then user_profiles as fallback
+      String phone = _supabase.auth.currentUser?.phone
+          ?? _supabase.auth.currentUser?.userMetadata?['phone'] as String?
+          ?? _supabase.auth.currentUser?.userMetadata?['phone_number'] as String?
+          ?? '';
+
+      // If phone still empty, try user_profiles table (always populated by handle_new_user trigger)
+      if (phone.trim().replaceAll(RegExp(r'[^0-9+]'), '').isEmpty) {
+        try {
+          final profile = await _supabase
+              .from('user_profiles')
+              .select('phone')
+              .eq('id', userId)
+              .maybeSingle();
+          if (profile != null && profile['phone'] != null) {
+            final profilePhone = profile['phone'].toString();
+            if (profilePhone.trim().isNotEmpty) {
+              phone = profilePhone;
+            }
+          }
+        } catch (_) {}
+      }
+
       final existing = await _supabase
           .from('customers')
-          .select('id')
+          .select('id, phone')
           .eq('user_id', userId)
           .maybeSingle();
 
       if (existing != null) {
-        // Update phone if it's currently empty (fixes existing customers)
+        // Update phone if it's currently empty or placeholder
         try {
-          final user = _supabase.auth.currentUser;
-          final phone = user?.phone
-              ?? user?.userMetadata?['phone'] as String?
-              ?? user?.userMetadata?['phone_number'] as String?
-              ?? '';
-          if (phone.isNotEmpty) {
+          final existingPhone = existing['phone']?.toString() ?? '';
+          if (phone.isNotEmpty &&
+              existingPhone.trim().replaceAll(RegExp(r'[^0-9+]'), '').isEmpty) {
             await _supabase.from('customers')
                 .update({'phone': phone})
-                .eq('id', existing['id'])
-                .eq('phone', ''); // only update if currently empty
+                .eq('id', existing['id']);
+            debugPrint('[Checkout] Updated customer phone from $existingPhone to $phone');
           }
         } catch (_) {}
         return existing['id'] as String;
       }
 
       final user = _supabase.auth.currentUser;
-      final phone = user?.phone
-          ?? user?.userMetadata?['phone'] as String?
-          ?? user?.userMetadata?['phone_number'] as String?
-          ?? '';
+      final name = user?.userMetadata?['name']
+          ?? user?.userMetadata?['full_name']
+          ?? user?.email
+          ?? 'Клиент';
+
       final newCustomer = await _supabase.from('customers').insert({
         'user_id': userId,
-        'name': user?.userMetadata?['full_name'] ?? user?.email ?? 'Клиент',
-        'phone': phone,
+        'name': name,
+        'phone': phone.isNotEmpty ? phone : '',
       }).select('id').single();
 
       return newCustomer['id'] as String;
     } catch (e) {
       debugPrint('⚠️ Customer lookup error: $e');
+      // INSERT may have failed due to UNIQUE constraint on phone (e.g. phone='')
+      // Retry lookup by user_id — the row might exist despite the error
+      try {
+        final retry = await _supabase
+            .from('customers')
+            .select('id')
+            .eq('user_id', userId)
+            .maybeSingle();
+        if (retry != null) return retry['id'] as String;
+      } catch (_) {}
       return userId;
     }
   }
