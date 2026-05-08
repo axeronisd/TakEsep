@@ -264,13 +264,16 @@ jobs:
       - name: Install iOS 26 SDK
         timeout-minutes: 30
         run: |
-          echo "=== Installed SDKs before download ==="
+          echo "=== Installed SDKs ==="
           xcodebuild -showsdks | grep -i ios || true
-          if xcodebuild -showsdks | grep -q "iphoneos26"; then
-            echo "✅ iOS 26 SDK already installed, skipping download"
+          echo "=== Checking iOS destinations ==="
+          if xcodebuild -workspace apps/customer/ios/Runner.xcworkspace -scheme Runner -destination 'generic/platform=iOS' -list 2>/dev/null | grep -q "iOS"; then
+            echo "✅ iOS platform available, skipping download"
           else
             echo "=== Downloading iOS platform ==="
             xcodebuild -downloadPlatform iOS || true
+            echo "=== Retry if needed ==="
+            xcodebuild -downloadPlatform iOS || echo "Download may have partially failed, continuing..."
           fi
           echo "=== Installed SDKs after download ==="
           xcodebuild -showsdks | grep -i ios
