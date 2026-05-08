@@ -28,20 +28,6 @@ class ActiveDeliveryScreen extends ConsumerStatefulWidget {
       _ActiveDeliveryScreenState();
 }
 
-// Phone resolution diagnostic data holder
-class _PhoneDiag {
-  String joinPhone = '<null>';
-  String joinName = '<null>';
-  String orderCustomerId = '<null>';
-  String customerPhone = '<null>';
-  String customerUserId = '<null>';
-  String profilePhone = '<null>';
-  String rpcSource = '<null>';
-  String rpcPhone = '<null>';
-  String resolvedPhone = '';
-  final List<String> steps = [];
-}
-
 class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
   final _orderService = OrderService();
   final _locationService = CourierLocationService();
@@ -1118,49 +1104,32 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
     );
   }
 
-  /// Resolve customer phone using cascade fallback with full diagnostics
-  Future<_PhoneDiag> _resolveCustomerPhoneDiag() async {
-    final diag = _PhoneDiag();
+  /// Resolve customer phone using cascade fallback:
+  /// 1. customers.phone (by id)
+  /// 2. user_profiles.phone (by user_id)
+  /// 3. user_profiles.phone (by customer_id if it's auth UUID)
+  /// 4. RPC: auth.users.phone via SECURITY DEFINER
+  Future<String> _resolveCustomerPhone() async {
     try {
-      // Step 0: Check what the order already has from the join
-      if (_order != null) {
-        diag.joinPhone = _order?['customers']?['phone']?.toString() ?? '<null>';
-        diag.joinName = _order?['customers']?['name']?.toString() ?? '<null>';
-        diag.orderCustomerId = _order?['customer_id']?.toString() ?? '<null>';
-      }
-
-      // Step 1: Get customer_id from order
       final order = await Supabase.instance.client
           .from('delivery_orders')
           .select('customer_id')
           .eq('id', widget.orderId)
           .maybeSingle();
-
-      if (order == null) { diag.steps.add('order=null'); return diag; }
+      if (order == null) return '';
       final customerId = order['customer_id']?.toString() ?? '';
-      diag.steps.add('customer_id=$customerId');
-      if (customerId.isEmpty) return diag;
+      if (customerId.isEmpty) return '';
 
-      // Step 2: Try customers by id
+      // Step 1: customers by id
       final customer = await Supabase.instance.client
           .from('customers')
           .select('phone, user_id')
           .eq('id', customerId)
           .maybeSingle();
-      diag.steps.add('customers_by_id=${customer != null ? "found" : "null"}');
-
       if (customer != null) {
-        diag.customerPhone = customer['phone']?.toString() ?? '<null>';
-        diag.customerUserId = customer['user_id']?.toString() ?? '<null>';
-
         final phone = customer['phone']?.toString() ?? '';
-        if (phone.trim().replaceAll(RegExp(r'[^0-9+]'), '').isNotEmpty) {
-          diag.resolvedPhone = phone;
-          return diag;
-        }
-        diag.steps.add('customers.phone empty, trying user_profiles');
-
-        // Step 3: Try user_profiles via user_id
+        if (phone.trim().replaceAll(RegExp(r'[^0-9+]'), '').isNotEmpty) return phone;
+        // Try user_profiles via user_id
         final userId = customer['user_id']?.toString() ?? '';
         if (userId.isNotEmpty) {
           final profile = await Supabase.instance.client
@@ -1168,116 +1137,54 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
               .select('phone')
               .eq('id', userId)
               .maybeSingle();
-          diag.steps.add('user_profiles_by_userId=${profile != null ? "found" : "null"}');
           if (profile != null) {
-            diag.profilePhone = profile['phone']?.toString() ?? '<null>';
             final p = profile['phone']?.toString() ?? '';
-            if (p.trim().isNotEmpty) { diag.resolvedPhone = p; return diag; }
+            if (p.trim().isNotEmpty) return p;
           }
         }
       } else {
-        // Step 2b: Try customers by user_id
+        // Step 2: customers by user_id (customer_id might be auth UUID)
         final byUserId = await Supabase.instance.client
             .from('customers')
             .select('phone, user_id')
             .eq('user_id', customerId)
             .maybeSingle();
-        diag.steps.add('customers_by_userId=${byUserId != null ? "found" : "null"}');
-
         if (byUserId != null) {
-          diag.customerPhone = byUserId['phone']?.toString() ?? '<null>';
           final phone = byUserId['phone']?.toString() ?? '';
-          if (phone.trim().replaceAll(RegExp(r'[^0-9+]'), '').isNotEmpty) {
-            diag.resolvedPhone = phone;
-            return diag;
-          }
+          if (phone.trim().replaceAll(RegExp(r'[^0-9+]'), '').isNotEmpty) return phone;
         }
-
-        // Step 3b: Try user_profiles directly with customer_id
+        // Step 3: user_profiles directly
         final profile = await Supabase.instance.client
             .from('user_profiles')
             .select('phone')
             .eq('id', customerId)
             .maybeSingle();
-        diag.steps.add('user_profiles_by_customerId=${profile != null ? "found" : "null"}');
         if (profile != null) {
-          diag.profilePhone = profile['phone']?.toString() ?? '<null>';
           final p = profile['phone']?.toString() ?? '';
-          if (p.trim().isNotEmpty) { diag.resolvedPhone = p; return diag; }
-        }
-
-        // Step 4: RPC fallback — query auth.users directly via SECURITY DEFINER
-        try {
-          final rpcResult = await Supabase.instance.client
-              .rpc('rpc_resolve_customer_phone', params: {'p_customer_id': customerId});
-          diag.steps.add('rpc=${rpcResult != null ? "ok" : "null"}');
-          if (rpcResult != null) {
-            final resultMap = rpcResult as Map<String, dynamic>;
-            diag.rpcSource = resultMap['source']?.toString() ?? '<null>';
-            diag.rpcPhone = resultMap['phone']?.toString() ?? '<null>';
-            final rpcPhone = resultMap['phone']?.toString() ?? '';
-            if (rpcPhone.trim().isNotEmpty) {
-              diag.resolvedPhone = rpcPhone;
-              return diag;
-            }
-          }
-        } catch (e) {
-          diag.steps.add('rpc_error=$e');
+          if (p.trim().isNotEmpty) return p;
         }
       }
-    } catch (e) {
-      diag.steps.add('ERROR: $e');
-    }
-    return diag;
+
+      // Step 4: RPC fallback — auth.users via SECURITY DEFINER
+      try {
+        final rpcResult = await Supabase.instance.client
+            .rpc('rpc_resolve_customer_phone', params: {'p_customer_id': customerId});
+        if (rpcResult != null) {
+          final resultMap = rpcResult as Map<String, dynamic>;
+          final rpcPhone = resultMap['phone']?.toString() ?? '';
+          if (rpcPhone.trim().isNotEmpty) return rpcPhone;
+        }
+      } catch (_) {}
+    } catch (_) {}
+    return '';
   }
 
   void _callPhone(dynamic phone) async {
     String phoneStr = phone.toString();
 
-    // If phone is empty or just whitespace, resolve from DB with diagnostics
+    // If phone is empty, resolve from DB cascade
     if (phoneStr.trim().replaceAll(RegExp(r'[^0-9+]'), '').isEmpty) {
-      final diag = await _resolveCustomerPhoneDiag();
-      phoneStr = diag.resolvedPhone;
-
-      // If still not found, show diagnostic dialog
-      if (phoneStr.trim().replaceAll(RegExp(r'[^0-9+]'), '').isEmpty && mounted) {
-        showDialog(
-          context: context,
-          builder: (ctx) => AlertDialog(
-            title: const Text('Диагностика телефона', style: TextStyle(fontSize: 16)),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Join: phone=${diag.joinPhone}, name=${diag.joinName}'),
-                  const SizedBox(height: 4),
-                  Text('order.customer_id=${diag.orderCustomerId}'),
-                  const SizedBox(height: 4),
-                  Text('customers.phone=${diag.customerPhone}'),
-                  const SizedBox(height: 4),
-                  Text('customers.user_id=${diag.customerUserId}'),
-                  const SizedBox(height: 4),
-                  Text('user_profiles.phone=${diag.profilePhone}'),
-                  const SizedBox(height: 4),
-                  Text('rpc.source=${diag.rpcSource}'),
-                  const SizedBox(height: 4),
-                  Text('rpc.phone=${diag.rpcPhone}'),
-                  const SizedBox(height: 4),
-                  Text('Steps: ${diag.steps.join(" → ")}'),
-                ],
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(ctx).pop(),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-        return;
-      }
+      phoneStr = await _resolveCustomerPhone();
     }
 
     final cleanPhone = phoneStr
