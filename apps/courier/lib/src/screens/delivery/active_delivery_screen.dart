@@ -602,19 +602,27 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
                             color: Colors.grey[500],
                             fontSize: 11,
                           ),
+                        )
+                      else
+                        Text(
+                          'Телефон не указан',
+                          style: TextStyle(
+                            color: Colors.grey[400],
+                            fontSize: 11,
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
                     ],
                   ),
                 ),
-                if (customerPhone.isNotEmpty)
-                  IconButton(
-                    icon: const Icon(
-                      Icons.phone_rounded,
-                      color: AkJolTheme.primary,
-                      size: 20,
-                    ),
-                    onPressed: () => _callPhone(customerPhone),
+                IconButton(
+                  icon: const Icon(
+                    Icons.phone_rounded,
+                    color: AkJolTheme.primary,
+                    size: 20,
                   ),
+                  onPressed: () => _callPhone(customerPhone),
+                ),
               ],
             ),
           ),

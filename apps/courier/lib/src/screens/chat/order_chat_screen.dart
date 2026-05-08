@@ -139,11 +139,12 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
     });
   }
 
-  /// Resolve customer phone using cascade fallback:
-  /// 1. customers.phone (by id)
-  /// 2. customers.phone (by user_id)
-  /// 3. user_profiles.phone (always populated by handle_new_user trigger)
+  // Phone resolution diagnostic data holder
+  static final _diag = <String, String>{};
+
+  /// Resolve customer phone using cascade fallback with full diagnostics
   Future<String> _resolveCustomerPhone() async {
+    _diag.clear();
     try {
       // Step 1: Get customer_id from order
       final order = await _supabase
@@ -152,75 +153,75 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
           .eq('id', widget.orderId)
           .maybeSingle();
 
-      if (order == null || order['customer_id'] == null) return '';
-      final customerId = order['customer_id'].toString();
+      if (order == null) { _diag['step'] = 'order=null'; return ''; }
+      final customerId = order['customer_id']?.toString() ?? '';
+      _diag['customer_id'] = customerId;
+      if (customerId.isEmpty) { _diag['step'] = 'customer_id empty'; return ''; }
 
-      // Step 2: Try customers.phone by id
+      // Step 2: Try customers by id
       final customer = await _supabase
           .from('customers')
           .select('phone, user_id')
           .eq('id', customerId)
           .maybeSingle();
+      _diag['customers_found'] = customer != null ? 'yes' : 'no';
 
       if (customer != null) {
+        _diag['customers_phone'] = customer['phone']?.toString() ?? '<null>';
+        _diag['customers_user_id'] = customer['user_id']?.toString() ?? '<null>';
+
         final phone = customer['phone']?.toString() ?? '';
         if (phone.trim().replaceAll(RegExp(r'[^0-9+]'), '').isNotEmpty) {
           return phone;
         }
 
-        // Step 3: customers.phone was empty — try user_profiles via user_id
-        final userId = customer['user_id']?.toString();
-        if (userId != null && userId.isNotEmpty) {
+        // Step 3: Try user_profiles via user_id
+        final userId = customer['user_id']?.toString() ?? '';
+        if (userId.isNotEmpty) {
           final profile = await _supabase
               .from('user_profiles')
               .select('phone')
               .eq('id', userId)
               .maybeSingle();
-          if (profile != null && profile['phone'] != null) {
-            final profilePhone = profile['phone'].toString();
-            if (profilePhone.trim().isNotEmpty) return profilePhone;
+          _diag['user_profiles_found'] = profile != null ? 'yes' : 'no';
+          if (profile != null) {
+            _diag['user_profiles_phone'] = profile['phone']?.toString() ?? '<null>';
+            final p = profile['phone']?.toString() ?? '';
+            if (p.trim().isNotEmpty) return p;
           }
         }
       } else {
-        // Step 2b: Try customers by user_id (in case customer_id = auth.users.id)
+        // Step 2b: Try customers by user_id
         final byUserId = await _supabase
             .from('customers')
             .select('phone, user_id')
             .eq('user_id', customerId)
             .maybeSingle();
+        _diag['customers_by_userId'] = byUserId != null ? 'yes' : 'no';
+
         if (byUserId != null) {
+          _diag['customers_phone'] = byUserId['phone']?.toString() ?? '<null>';
           final phone = byUserId['phone']?.toString() ?? '';
           if (phone.trim().replaceAll(RegExp(r'[^0-9+]'), '').isNotEmpty) {
             return phone;
           }
-          // Try user_profiles
-          final userId = byUserId['user_id']?.toString();
-          if (userId != null && userId.isNotEmpty) {
-            final profile = await _supabase
-                .from('user_profiles')
-                .select('phone')
-                .eq('id', userId)
-                .maybeSingle();
-            if (profile != null && profile['phone'] != null) {
-              final profilePhone = profile['phone'].toString();
-              if (profilePhone.trim().isNotEmpty) return profilePhone;
-            }
-          }
         }
 
-        // Step 3b: Last resort — try user_profiles directly with customer_id
+        // Step 3b: Try user_profiles directly with customer_id
         final profile = await _supabase
             .from('user_profiles')
             .select('phone')
             .eq('id', customerId)
             .maybeSingle();
-        if (profile != null && profile['phone'] != null) {
-          final profilePhone = profile['phone'].toString();
-          if (profilePhone.trim().isNotEmpty) return profilePhone;
+        _diag['user_profiles_by_id'] = profile != null ? 'yes' : 'no';
+        if (profile != null) {
+          _diag['user_profiles_phone'] = profile['phone']?.toString() ?? '<null>';
+          final p = profile['phone']?.toString() ?? '';
+          if (p.trim().isNotEmpty) return p;
         }
       }
     } catch (e) {
-      debugPrint('[Chat] Failed to resolve phone: $e');
+      _diag['error'] = e.toString();
     }
     return '';
   }
@@ -228,9 +229,49 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
   void _callRecipient() async {
     String phoneStr = widget.recipientPhone.toString();
 
-    // If phone is empty or just whitespace, resolve from DB cascade
+    // If phone is empty or just whitespace, resolve from DB with diagnostics
     if (phoneStr.trim().replaceAll(RegExp(r'[^0-9+]'), '').isEmpty) {
       phoneStr = await _resolveCustomerPhone();
+
+      // If still not found, show diagnostic dialog
+      if (phoneStr.trim().replaceAll(RegExp(r'[^0-9+]'), '').isEmpty && mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            title: const Text('Диагностика телефона', style: TextStyle(fontSize: 16)),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('recipientPhone param: "${widget.recipientPhone}"'),
+                  const SizedBox(height: 4),
+                  Text('order.customer_id: ${_diag['customer_id'] ?? '<null>'}'),
+                  const SizedBox(height: 4),
+                  Text('customers_found: ${_diag['customers_found'] ?? '<null>'}'),
+                  const SizedBox(height: 4),
+                  Text('customers.phone: ${_diag['customers_phone'] ?? '<null>'}'),
+                  const SizedBox(height: 4),
+                  Text('customers.user_id: ${_diag['customers_user_id'] ?? '<null>'}'),
+                  const SizedBox(height: 4),
+                  Text('user_profiles_found: ${_diag['user_profiles_found'] ?? '<null>'}'),
+                  const SizedBox(height: 4),
+                  Text('user_profiles.phone: ${_diag['user_profiles_phone'] ?? '<null>'}'),
+                  const SizedBox(height: 4),
+                  Text('step/error: ${_diag['step'] ?? _diag['error'] ?? 'all steps exhausted'}'),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
     }
 
     final cleanPhone = phoneStr
