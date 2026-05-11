@@ -10,6 +10,7 @@ import '../../services/order_service.dart';
 import '../../services/order_alert_service.dart';
 import '../../providers/courier_providers.dart';
 import '../../theme/akjol_theme.dart';
+import '../../utils/location_disclosure.dart';
 
 // ═══════════════════════════════════════════════════════════════
 // Available Orders Screen — with Cascading Routing
@@ -192,10 +193,28 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
     final profile = ref.read(courierProfileProvider);
     if (profile == null) return;
 
+    final prefs = await SharedPreferences.getInstance();
+
+    // Google Play / App Store compliance: Prominent Disclosure before requesting
+    // background location permission when courier goes online.
+    if (value) {
+      final shown = prefs.getBool('location_disclosure_shown') ?? false;
+      final perm = await Geolocator.checkPermission();
+      final needDisclosure = !shown ||
+          perm == LocationPermission.denied ||
+          perm == LocationPermission.deniedForever;
+      if (needDisclosure && mounted) {
+        final agreed = await LocationDisclosure.show(context);
+        if (!agreed) {
+          return; // user refused — do not go online, do not request permission
+        }
+        await prefs.setBool('location_disclosure_shown', true);
+      }
+    }
+
     setState(() => _isOnline = value);
 
     // Save state
-    final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('courier_online', value);
 
     try {

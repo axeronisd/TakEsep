@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Точная геопозиция клиента
 class LocationState {
@@ -126,6 +127,19 @@ class LocationNotifier extends StateNotifier<LocationState> {
 
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
+        // Prominent Disclosure compliance: do NOT trigger the system prompt
+        // until the user has explicitly acknowledged our in-app disclosure.
+        final prefs = await SharedPreferences.getInstance();
+        final disclosureShown =
+            prefs.getBool('location_disclosure_shown') ?? false;
+        if (!disclosureShown) {
+          state = state.copyWith(
+              loading: false,
+              permissionDenied: true,
+              error: 'Разрешите геолокацию');
+          _setDefaultLocation();
+          return;
+        }
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
           state = state.copyWith(loading: false, permissionDenied: true, error: 'Разрешите геолокацию');

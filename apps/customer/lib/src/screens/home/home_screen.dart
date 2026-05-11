@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../theme/akjol_theme.dart';
 import '../../providers/location_provider.dart';
 import '../../providers/marketplace_provider.dart';
 import '../../providers/orders_provider.dart';
+import '../../utils/location_disclosure.dart';
 import '../map/address_picker_screen.dart';
 import 'home_widgets.dart';
 import 'marketplace_widgets.dart';
@@ -18,6 +21,33 @@ class HomeScreen extends ConsumerStatefulWidget {
 }
 
 class _HomeScreenState extends ConsumerState<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowLocationDisclosure());
+  }
+
+  Future<void> _maybeShowLocationDisclosure() async {
+    if (!mounted) return;
+    final prefs = await SharedPreferences.getInstance();
+    final shown = prefs.getBool('location_disclosure_shown') ?? false;
+    if (shown) return;
+    final perm = await Geolocator.checkPermission();
+    if (perm == LocationPermission.always ||
+        perm == LocationPermission.whileInUse) {
+      await prefs.setBool('location_disclosure_shown', true);
+      return;
+    }
+    if (!mounted) return;
+    final agreed = await LocationDisclosure.show(context);
+    if (!agreed) return;
+    await prefs.setBool('location_disclosure_shown', true);
+    // Now re-request position — system prompt will appear.
+    if (mounted) {
+      await ref.read(locationProvider.notifier).determinePosition();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final location = ref.watch(locationProvider);
