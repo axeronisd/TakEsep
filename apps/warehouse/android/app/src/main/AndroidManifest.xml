@@ -10,8 +10,6 @@
     <uses-permission android:name="android.permission.USE_FINGERPRINT"/>
     <!-- Haptic feedback for scanner -->
     <uses-permission android:name="android.permission.VIBRATE"/>
-    <!-- Install APK updates -->
-    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
     
     <application
         android:label="TakEsep"
