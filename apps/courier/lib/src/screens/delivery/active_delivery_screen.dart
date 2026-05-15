@@ -11,6 +11,7 @@ import '../../services/courier_location_service.dart';
 import '../../services/route_service.dart';
 import '../../providers/courier_providers.dart';
 import '../../theme/akjol_theme.dart';
+import '../../utils/phone_formatter.dart';
 import '../chat/order_chat_screen.dart';
 
 // ═══════════════════════════════════════════════════════════════
@@ -148,7 +149,10 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
       // by the handle_new_user trigger during registration.
       final customerJoin = data['customers'] as Map<String, dynamic>?;
       final customerPhoneFromJoin = customerJoin?['phone']?.toString() ?? '';
-      if (customerPhoneFromJoin.trim().replaceAll(RegExp(r'[^0-9+]'), '').isEmpty) {
+      if (customerPhoneFromJoin
+          .trim()
+          .replaceAll(RegExp(r'[^0-9+]'), '')
+          .isEmpty) {
         try {
           final customerId = data['customer_id']?.toString();
           if (customerId != null && customerId.isNotEmpty) {
@@ -170,17 +174,18 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
                 final profilePhone = profile['phone'].toString();
                 if (profilePhone.trim().isNotEmpty) {
                   // Patch the customers join data so the UI uses it
-                  data['customers'] = {
-                    ...?customerJoin,
-                    'phone': profilePhone,
-                  };
-                  debugPrint('[Delivery] Customer phone resolved from user_profiles: $profilePhone');
+                  data['customers'] = {...?customerJoin, 'phone': profilePhone};
+                  debugPrint(
+                    '[Delivery] Customer phone resolved from user_profiles: $profilePhone',
+                  );
                 }
               }
             }
           }
         } catch (e) {
-          debugPrint('[Delivery] Failed to resolve customer phone from user_profiles: $e');
+          debugPrint(
+            '[Delivery] Failed to resolve customer phone from user_profiles: $e',
+          );
         }
       }
 
@@ -1128,7 +1133,8 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
           .maybeSingle();
       if (customer != null) {
         final phone = customer['phone']?.toString() ?? '';
-        if (phone.trim().replaceAll(RegExp(r'[^0-9+]'), '').isNotEmpty) return phone;
+        if (phone.trim().replaceAll(RegExp(r'[^0-9+]'), '').isNotEmpty)
+          return phone;
         // Try user_profiles via user_id
         final userId = customer['user_id']?.toString() ?? '';
         if (userId.isNotEmpty) {
@@ -1151,7 +1157,8 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
             .maybeSingle();
         if (byUserId != null) {
           final phone = byUserId['phone']?.toString() ?? '';
-          if (phone.trim().replaceAll(RegExp(r'[^0-9+]'), '').isNotEmpty) return phone;
+          if (phone.trim().replaceAll(RegExp(r'[^0-9+]'), '').isNotEmpty)
+            return phone;
         }
         // Step 3: user_profiles directly
         final profile = await Supabase.instance.client
@@ -1167,8 +1174,10 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
 
       // Step 4: RPC fallback — auth.users via SECURITY DEFINER
       try {
-        final rpcResult = await Supabase.instance.client
-            .rpc('rpc_resolve_customer_phone', params: {'p_customer_id': customerId});
+        final rpcResult = await Supabase.instance.client.rpc(
+          'rpc_resolve_customer_phone',
+          params: {'p_customer_id': customerId},
+        );
         if (rpcResult != null) {
           final resultMap = rpcResult as Map<String, dynamic>;
           final rpcPhone = resultMap['phone']?.toString() ?? '';
@@ -1187,9 +1196,7 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
       phoneStr = await _resolveCustomerPhone();
     }
 
-    final cleanPhone = phoneStr
-        .replaceAll(RegExp(r'[\s\-()]'), '')
-        .replaceAll(RegExp(r'\.0$'), '');
+    final cleanPhone = normalizePhoneForDial(phoneStr);
 
     if (cleanPhone.isEmpty) {
       if (mounted) {
@@ -1210,9 +1217,9 @@ class _ActiveDeliveryScreenState extends ConsumerState<ActiveDeliveryScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка звонка: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Ошибка звонка: $e')));
       }
     }
   }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../theme/akjol_theme.dart';
+import '../../utils/phone_formatter.dart';
 
 class OrderChatScreen extends StatefulWidget {
   final String orderId;
@@ -163,7 +164,8 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
           .maybeSingle();
       if (customer != null) {
         final phone = customer['phone']?.toString() ?? '';
-        if (phone.trim().replaceAll(RegExp(r'[^0-9+]'), '').isNotEmpty) return phone;
+        if (phone.trim().replaceAll(RegExp(r'[^0-9+]'), '').isNotEmpty)
+          return phone;
         // Try user_profiles via user_id
         final userId = customer['user_id']?.toString() ?? '';
         if (userId.isNotEmpty) {
@@ -186,7 +188,8 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
             .maybeSingle();
         if (byUserId != null) {
           final phone = byUserId['phone']?.toString() ?? '';
-          if (phone.trim().replaceAll(RegExp(r'[^0-9+]'), '').isNotEmpty) return phone;
+          if (phone.trim().replaceAll(RegExp(r'[^0-9+]'), '').isNotEmpty)
+            return phone;
         }
         // Step 3: user_profiles directly
         final profile = await _supabase
@@ -201,8 +204,10 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
 
         // Step 4: RPC fallback — auth.users via SECURITY DEFINER
         try {
-          final rpcResult = await _supabase
-              .rpc('rpc_resolve_customer_phone', params: {'p_customer_id': customerId});
+          final rpcResult = await _supabase.rpc(
+            'rpc_resolve_customer_phone',
+            params: {'p_customer_id': customerId},
+          );
           if (rpcResult != null) {
             final resultMap = rpcResult as Map<String, dynamic>;
             final rpcPhone = resultMap['phone']?.toString() ?? '';
@@ -222,9 +227,7 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
       phoneStr = await _resolveCustomerPhone();
     }
 
-    final cleanPhone = phoneStr
-        .replaceAll(RegExp(r'[\s\-()]'), '')
-        .replaceAll(RegExp(r'\.0$'), '');
+    final cleanPhone = normalizePhoneForDial(phoneStr);
 
     if (cleanPhone.isEmpty) {
       if (mounted) {
@@ -248,9 +251,9 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка звонка: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Ошибка звонка: $e')));
       }
     }
   }

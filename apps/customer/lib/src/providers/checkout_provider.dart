@@ -96,9 +96,10 @@ class CheckoutState {
     this.customerNote,
   });
 
-  TransportOption get currentTransport =>
-      kTransports.firstWhere((t) => t.id == selectedTransport,
-          orElse: () => kTransports.first);
+  TransportOption get currentTransport => kTransports.firstWhere(
+    (t) => t.id == selectedTransport,
+    orElse: () => kTransports.first,
+  );
 
   double effectiveDeliveryFee(double itemsTotal) {
     if (freeDeliveryFrom > 0 && itemsTotal >= freeDeliveryFrom) return 0;
@@ -126,22 +127,21 @@ class CheckoutState {
     double? deliveryLng,
     String? selectedTransport,
     String? customerNote,
-  }) =>
-      CheckoutState(
-        loading: loading ?? this.loading,
-        submitting: submitting ?? this.submitting,
-        error: error,
-        deliveryFee: deliveryFee ?? this.deliveryFee,
-        freeDeliveryFrom: freeDeliveryFrom ?? this.freeDeliveryFrom,
-        estimatedMinutes: estimatedMinutes ?? this.estimatedMinutes,
-        minOrderAmount: minOrderAmount ?? this.minOrderAmount,
-        deliveryAddress: deliveryAddress ?? this.deliveryAddress,
-        addressDetails: addressDetails ?? this.addressDetails,
-        deliveryLat: deliveryLat ?? this.deliveryLat,
-        deliveryLng: deliveryLng ?? this.deliveryLng,
-        selectedTransport: selectedTransport ?? this.selectedTransport,
-        customerNote: customerNote ?? this.customerNote,
-      );
+  }) => CheckoutState(
+    loading: loading ?? this.loading,
+    submitting: submitting ?? this.submitting,
+    error: error,
+    deliveryFee: deliveryFee ?? this.deliveryFee,
+    freeDeliveryFrom: freeDeliveryFrom ?? this.freeDeliveryFrom,
+    estimatedMinutes: estimatedMinutes ?? this.estimatedMinutes,
+    minOrderAmount: minOrderAmount ?? this.minOrderAmount,
+    deliveryAddress: deliveryAddress ?? this.deliveryAddress,
+    addressDetails: addressDetails ?? this.addressDetails,
+    deliveryLat: deliveryLat ?? this.deliveryLat,
+    deliveryLng: deliveryLng ?? this.deliveryLng,
+    selectedTransport: selectedTransport ?? this.selectedTransport,
+    customerNote: customerNote ?? this.customerNote,
+  );
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -180,19 +180,26 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
     }
   }
 
-  Future<void> _loadDeliveryInfo(String warehouseId, double lat, double lng) async {
+  Future<void> _loadDeliveryInfo(
+    String warehouseId,
+    double lat,
+    double lng,
+  ) async {
     try {
-      final rpcResult = await _supabase.rpc('find_businesses_near', params: {
-        'p_lat': lat,
-        'p_lng': lng,
-      });
+      final rpcResult = await _supabase.rpc(
+        'find_businesses_near',
+        params: {'p_lat': lat, 'p_lng': lng},
+      );
 
-      final zones = (rpcResult as List?)
+      final zones =
+          (rpcResult as List?)
               ?.map((e) => e as Map<String, dynamic>)
               .toList() ??
           [];
 
-      final zone = zones.where((z) => z['warehouse_id'] == warehouseId).toList();
+      final zone = zones
+          .where((z) => z['warehouse_id'] == warehouseId)
+          .toList();
 
       if (zone.isNotEmpty) {
         final bestZone = zone.first;
@@ -223,8 +230,10 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
   }
 
   void setTransport(String transport) {
-    final t = kTransports.firstWhere((x) => x.id == transport,
-        orElse: () => kTransports.first);
+    final t = kTransports.firstWhere(
+      (x) => x.id == transport,
+      orElse: () => kTransports.first,
+    );
     state = state.copyWith(
       selectedTransport: transport,
       deliveryFee: t.currentPrice,
@@ -254,19 +263,22 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
         final is24h = settings['is_24h'] == true;
         if (!is24h) {
           final workStart = settings['work_start'] as String?; // "08:00"
-          final workEnd = settings['work_end'] as String?;     // "22:00"
+          final workEnd = settings['work_end'] as String?; // "22:00"
           if (workStart != null && workEnd != null) {
             final now = DateTime.now();
             final startParts = workStart.split(':');
             final endParts = workEnd.split(':');
-            final startMinutes = int.parse(startParts[0]) * 60 + int.parse(startParts[1]);
-            final endMinutes = int.parse(endParts[0]) * 60 + int.parse(endParts[1]);
+            final startMinutes =
+                int.parse(startParts[0]) * 60 + int.parse(startParts[1]);
+            final endMinutes =
+                int.parse(endParts[0]) * 60 + int.parse(endParts[1]);
             final nowMinutes = now.hour * 60 + now.minute;
 
             if (nowMinutes < startMinutes || nowMinutes >= endMinutes) {
               state = state.copyWith(
                 submitting: false,
-                error: 'Магазин сейчас закрыт. Время работы: $workStart – $workEnd',
+                error:
+                    'Магазин сейчас закрыт. Время работы: $workStart – $workEnd',
               );
               return null;
             }
@@ -292,7 +304,10 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
 
       final userId = _supabase.auth.currentUser?.id;
       if (userId == null) {
-        state = state.copyWith(submitting: false, error: 'Необходима авторизация');
+        state = state.copyWith(
+          submitting: false,
+          error: 'Необходима авторизация',
+        );
         return null;
       }
 
@@ -301,18 +316,21 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
       final itemsTotal = cart.itemsTotal;
       final effectiveFee = state.effectiveDeliveryFee(itemsTotal);
 
-      final result = await _supabase.rpc('create_customer_order', params: {
-        'p_warehouse_id': cart.warehouseId,
-        'p_customer_id': customerId,
-        'p_requested_transport': state.selectedTransport,
-        'p_delivery_address': fullAddress,
-        'p_delivery_lat': state.deliveryLat,
-        'p_delivery_lng': state.deliveryLng,
-        'p_delivery_fee': effectiveFee,
-        'p_payment_method': 'prepaid',
-        'p_customer_note': state.customerNote ?? '',
-        'p_items': items,
-      });
+      final result = await _supabase.rpc(
+        'create_customer_order',
+        params: {
+          'p_warehouse_id': cart.warehouseId,
+          'p_customer_id': customerId,
+          'p_requested_transport': state.selectedTransport,
+          'p_delivery_address': fullAddress,
+          'p_delivery_lat': state.deliveryLat,
+          'p_delivery_lng': state.deliveryLng,
+          'p_delivery_fee': effectiveFee,
+          'p_payment_method': 'prepaid',
+          'p_customer_note': state.customerNote ?? '',
+          'p_items': items,
+        },
+      );
 
       final orderData = result as Map<String, dynamic>;
       debugPrint('✅ Order created: ${orderData['order_number']}');
@@ -332,27 +350,28 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
           if ((existingItems as List).isEmpty) {
             // Use RPC with SECURITY DEFINER to bypass RLS
             try {
-              await _supabase.rpc('insert_order_items', params: {
-                'p_order_id': orderId,
-                'p_items': items,  // already prepared JSON array
-              });
+              await _supabase.rpc(
+                'insert_order_items',
+                params: {
+                  'p_order_id': orderId,
+                  'p_items': items, // already prepared JSON array
+                },
+              );
               debugPrint('✅ Inserted ${cart.items.length} order items via RPC');
             } catch (rpcErr) {
               debugPrint('⚠️ RPC insert_order_items failed: $rpcErr');
               // Fallback: try direct insert
               for (final item in cart.items) {
                 try {
-                  await _supabase
-                      .from('delivery_order_items')
-                      .insert({
-                        'order_id': orderId,
-                        'product_id': item.productId,
-                        'name': item.name,
-                        'quantity': item.quantity,
-                        'unit_price': item.unitPrice,
-                        'total': item.total,
-                        'image_url': item.imageUrl ?? '',
-                      });
+                  await _supabase.from('delivery_order_items').insert({
+                    'order_id': orderId,
+                    'product_id': item.productId,
+                    'name': item.name,
+                    'quantity': item.quantity,
+                    'unit_price': item.unitPrice,
+                    'total': item.total,
+                    'image_url': item.imageUrl ?? '',
+                  });
                 } catch (_) {}
               }
             }
@@ -405,11 +424,10 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
       final wLat = (warehouse['latitude'] as num).toDouble();
       final wLng = (warehouse['longitude'] as num).toDouble();
 
-      final result = await _supabase.rpc('rpc_find_nearest_courier', params: {
-        'p_transport': transport,
-        'p_lat': wLat,
-        'p_lng': wLng,
-      });
+      final result = await _supabase.rpc(
+        'rpc_find_nearest_courier',
+        params: {'p_transport': transport, 'p_lat': wLat, 'p_lng': wLng},
+      );
 
       final rows = (result as List?) ?? [];
       if (rows.isNotEmpty) {
@@ -418,9 +436,10 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
 
         // Only set courier_id — do NOT change status
         // Courier will see this order and must accept manually
-        await _supabase.from('delivery_orders').update({
-          'courier_id': courierId,
-        }).eq('id', orderId);
+        await _supabase
+            .from('delivery_orders')
+            .update({'courier_id': courierId})
+            .eq('id', orderId);
 
         debugPrint('✅ Order offered to courier');
       } else {
@@ -434,10 +453,12 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
   Future<String> _getOrCreateCustomer(String userId) async {
     try {
       // Resolve phone: prefer auth phone, then user_profiles as fallback
-      String phone = _supabase.auth.currentUser?.phone
-          ?? _supabase.auth.currentUser?.userMetadata?['phone'] as String?
-          ?? _supabase.auth.currentUser?.userMetadata?['phone_number'] as String?
-          ?? '';
+      String phone =
+          _supabase.auth.currentUser?.phone ??
+          _supabase.auth.currentUser?.userMetadata?['phone'] as String? ??
+          _supabase.auth.currentUser?.userMetadata?['phone_number']
+              as String? ??
+          '';
 
       // If phone still empty, try user_profiles table (always populated by handle_new_user trigger)
       if (phone.trim().replaceAll(RegExp(r'[^0-9+]'), '').isEmpty) {
@@ -468,26 +489,34 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
           final existingPhone = existing['phone']?.toString() ?? '';
           if (phone.isNotEmpty &&
               existingPhone.trim().replaceAll(RegExp(r'[^0-9+]'), '').isEmpty) {
-            await _supabase.from('customers')
+            await _supabase
+                .from('customers')
                 .update({'phone': phone})
                 .eq('id', existing['id']);
-            debugPrint('[Checkout] Updated customer phone from $existingPhone to $phone');
+            debugPrint(
+              '[Checkout] Updated customer phone from $existingPhone to $phone',
+            );
           }
         } catch (_) {}
         return existing['id'] as String;
       }
 
       final user = _supabase.auth.currentUser;
-      final name = user?.userMetadata?['name']
-          ?? user?.userMetadata?['full_name']
-          ?? user?.email
-          ?? 'Клиент';
+      final name =
+          user?.userMetadata?['name'] ??
+          user?.userMetadata?['full_name'] ??
+          user?.email ??
+          'Клиент';
 
-      final newCustomer = await _supabase.from('customers').insert({
-        'user_id': userId,
-        'name': name,
-        'phone': phone.isNotEmpty ? phone : '',
-      }).select('id').single();
+      final newCustomer = await _supabase
+          .from('customers')
+          .insert({
+            'user_id': userId,
+            'name': name,
+            'phone': phone.isNotEmpty ? phone : '',
+          })
+          .select('id')
+          .single();
 
       return newCustomer['id'] as String;
     } catch (e) {
@@ -509,5 +538,5 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
 
 final checkoutProvider =
     StateNotifierProvider.autoDispose<CheckoutNotifier, CheckoutState>(
-  (ref) => CheckoutNotifier(ref),
-);
+      (ref) => CheckoutNotifier(ref),
+    );

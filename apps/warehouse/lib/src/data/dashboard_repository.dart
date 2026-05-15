@@ -17,37 +17,61 @@ class DashboardRepository {
       final whParam = warehouseId != null ? [warehouseId] : <String>[];
 
       // ── Sales revenue ──
+      // Exclude AkJol delivery sales (sale_type = 'delivery') — only count POS sales.
       final salesResult = await _db.getAll(
-        'SELECT total_amount FROM sales WHERE company_id = ? AND created_at >= ? AND created_at <= ? AND status = ?$whFilter',
-        [companyId, startDate.toIso8601String(), endDate.toIso8601String(), 'completed', ...whParam],
+        "SELECT total_amount FROM sales WHERE company_id = ? AND created_at >= ? AND created_at <= ? AND status = ? AND (sale_type = 'pos' OR sale_type IS NULL)$whFilter",
+        [
+          companyId,
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+          'completed',
+          ...whParam
+        ],
       );
 
       final totalRevenue = salesResult.fold<double>(
-          0.0, (sum, row) => sum + ((row['total_amount'] as num?)?.toDouble() ?? 0.0));
+          0.0,
+          (sum, row) =>
+              sum + ((row['total_amount'] as num?)?.toDouble() ?? 0.0));
       final salesCount = salesResult.length;
       final avgCheck = salesCount > 0 ? totalRevenue / salesCount : 0.0;
 
       // ── Cost of goods sold (from sale_items) ──
+      // Exclude AkJol delivery sales — only POS sales.
       final costResult = await _db.get(
         '''SELECT COALESCE(SUM(si.cost_price * si.quantity), 0) as total_cost
            FROM sale_items si
            INNER JOIN sales s ON si.sale_id = s.id
            WHERE s.company_id = ? AND s.status = 'completed'
+             AND (s.sale_type = 'pos' OR s.sale_type IS NULL)
              AND s.created_at >= ? AND s.created_at <= ?$whFilter''',
-        [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParam],
+        [
+          companyId,
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+          ...whParam
+        ],
       );
       final totalCost = (costResult['total_cost'] as num?)?.toDouble() ?? 0.0;
 
       // ── Arrivals (purchases = expense) ──
       final arrivalsResult = await _db.getAll(
         'SELECT total_amount FROM arrivals WHERE company_id = ? AND created_at >= ? AND created_at <= ?$whFilter',
-        [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParam],
+        [
+          companyId,
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+          ...whParam
+        ],
       );
       final totalIncome = arrivalsResult.fold<double>(
-          0.0, (sum, row) => sum + ((row['total_amount'] as num?)?.toDouble() ?? 0.0));
+          0.0,
+          (sum, row) =>
+              sum + ((row['total_amount'] as num?)?.toDouble() ?? 0.0));
 
       // ── Audit losses (shortage × cost_price) ──
-      final whFilterAudit = warehouseId != null ? ' AND a.warehouse_id = ?' : '';
+      final whFilterAudit =
+          warehouseId != null ? ' AND a.warehouse_id = ?' : '';
       final whParamAudit = warehouseId != null ? [warehouseId] : <String>[];
       double auditLosses = 0.0;
       try {
@@ -62,7 +86,12 @@ class DashboardRepository {
              INNER JOIN audits a ON ai.audit_id = a.id
              WHERE a.company_id = ? AND a.status = 'completed'
                AND a.created_at >= ? AND a.created_at <= ?$whFilterAudit''',
-          [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParamAudit],
+          [
+            companyId,
+            startDate.toIso8601String(),
+            endDate.toIso8601String(),
+            ...whParamAudit
+          ],
         );
         auditLosses = (auditResult['total_loss'] as num?)?.toDouble() ?? 0.0;
       } catch (e) {
@@ -72,9 +101,8 @@ class DashboardRepository {
       // ── Transfer costs (outgoing, non-simple pricing) ──
       double transferCosts = 0.0;
       try {
-        final whFilterT = warehouseId != null
-            ? ' AND t.from_warehouse_id = ?'
-            : '';
+        final whFilterT =
+            warehouseId != null ? ' AND t.from_warehouse_id = ?' : '';
         final whParamT = warehouseId != null ? [warehouseId] : <String>[];
         final transferResult = await _db.get(
           '''SELECT COALESCE(SUM(t.total_amount), 0) as total
@@ -83,7 +111,12 @@ class DashboardRepository {
                AND t.pricing_mode != 'simple'
                AND t.status IN ('received', 'completed')
                AND t.created_at >= ? AND t.created_at <= ?$whFilterT''',
-          [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParamT],
+          [
+            companyId,
+            startDate.toIso8601String(),
+            endDate.toIso8601String(),
+            ...whParamT
+          ],
         );
         transferCosts = (transferResult['total'] as num?)?.toDouble() ?? 0.0;
       } catch (e) {
@@ -98,7 +131,12 @@ class DashboardRepository {
              FROM write_offs
              WHERE company_id = ? AND status = 'completed'
                AND created_at >= ? AND created_at <= ?$whFilter''',
-          [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParam],
+          [
+            companyId,
+            startDate.toIso8601String(),
+            endDate.toIso8601String(),
+            ...whParam
+          ],
         );
         writeOffCosts = (woResult['total'] as num?)?.toDouble() ?? 0.0;
       } catch (e) {
@@ -118,7 +156,13 @@ class DashboardRepository {
       }
 
       // ── Net profit = Revenue - COGS - all operating expenses ──
-      final netProfit = totalRevenue - totalCost - totalIncome - auditLosses - transferCosts - writeOffCosts - employeeExpenses;
+      final netProfit = totalRevenue -
+          totalCost -
+          totalIncome -
+          auditLosses -
+          transferCosts -
+          writeOffCosts -
+          employeeExpenses;
 
       return {
         'totalRevenue': totalRevenue,
@@ -158,9 +202,16 @@ class DashboardRepository {
         '''SELECT s.total_amount, s.created_at,
                   COALESCE((SELECT SUM(si.cost_price * si.quantity) FROM sale_items si WHERE si.sale_id = s.id), 0) as total_cost
            FROM sales s
-           WHERE s.company_id = ? AND s.created_at >= ? AND s.created_at <= ? AND s.status = ? AND s.total_amount > 0$whFilter
+           WHERE s.company_id = ? AND s.created_at >= ? AND s.created_at <= ? AND s.status = ? AND s.total_amount > 0
+             AND (s.sale_type = 'pos' OR s.sale_type IS NULL)$whFilter
            ORDER BY s.created_at''',
-        [companyId, startDate.toIso8601String(), endDate.toIso8601String(), 'completed', ...whParam],
+        [
+          companyId,
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+          'completed',
+          ...whParam
+        ],
       );
 
       final days = endDate.difference(startDate).inDays;
@@ -223,7 +274,8 @@ class DashboardRepository {
           cumRevenue += dailyRevenue[key] ?? 0;
           cumCost += dailyCost[key] ?? 0;
           points.add(ChartPoint(
-            label: '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}',
+            label:
+                '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}',
             revenue: cumRevenue,
             profit: cumRevenue - cumCost,
           ));
@@ -253,11 +305,18 @@ class DashboardRepository {
            FROM sale_items si
            INNER JOIN sales s ON si.sale_id = s.id
            WHERE s.company_id = ? AND s.status = 'completed'
+             AND (s.sale_type = 'pos' OR s.sale_type IS NULL)
              AND s.created_at >= ? AND s.created_at <= ?$whFilter
            GROUP BY si.product_name
            ORDER BY total_qty DESC
            LIMIT ?''',
-        [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParam, limit],
+        [
+          companyId,
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+          ...whParam,
+          limit
+        ],
       );
 
       return results.map((row) {
@@ -265,7 +324,8 @@ class DashboardRepository {
         final cost = (row['total_cost'] as num?)?.toDouble() ?? 0.0;
         final profit = revenue - cost;
         // margin = -1 means "no cost data" (UI should show '—')
-        final margin = cost > 0 && revenue > 0 ? (profit / revenue) * 100 : -1.0;
+        final margin =
+            cost > 0 && revenue > 0 ? (profit / revenue) * 100 : -1.0;
         return TopProduct(
           name: row['product_name'] as String,
           soldCount: (row['total_qty'] as num?)?.toInt() ?? 0,
@@ -299,13 +359,20 @@ class DashboardRepository {
            FROM sale_items si
            INNER JOIN sales s ON si.sale_id = s.id
            WHERE s.company_id = ? AND s.status = 'completed'
+             AND (s.sale_type = 'pos' OR s.sale_type IS NULL)
              AND s.created_at >= ? AND s.created_at <= ?
              AND si.item_type = 'service'
              AND si.executor_id IS NOT NULL$whFilter
            GROUP BY si.executor_id, si.executor_name
            ORDER BY total_revenue DESC
            LIMIT ?''',
-        [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParam, limit],
+        [
+          companyId,
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+          ...whParam,
+          limit
+        ],
       );
 
       return results.map((row) {
@@ -340,11 +407,18 @@ class DashboardRepository {
                   MAX(created_at) as last_purchase_at
            FROM sales
            WHERE company_id = ? AND status = 'completed' AND client_id IS NOT NULL
+             AND (sale_type = 'pos' OR sale_type IS NULL)
              AND created_at >= ? AND created_at <= ?$whFilter
            GROUP BY client_id, client_name
            ORDER BY total_spent DESC
            LIMIT ?''',
-        [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParam, limit],
+        [
+          companyId,
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+          ...whParam,
+          limit
+        ],
       );
 
       return results.map((row) {
@@ -354,7 +428,8 @@ class DashboardRepository {
           purchasesCount: (row['purchases_count'] as num?)?.toInt() ?? 0,
           totalSpent: (row['total_spent'] as num?)?.toDouble() ?? 0.0,
           lastPurchaseAt: row['last_purchase_at'] != null
-              ? DateTime.tryParse(row['last_purchase_at'] as String) ?? DateTime.now()
+              ? DateTime.tryParse(row['last_purchase_at'] as String) ??
+                  DateTime.now()
               : DateTime.now(),
         );
       }).toList();
@@ -384,9 +459,15 @@ class DashboardRepository {
            FROM sales s
            LEFT JOIN employees e ON s.employee_id = e.id
            LEFT JOIN companies c ON s.company_id = c.id
-           WHERE s.company_id = ? AND s.created_at >= ? AND s.created_at <= ?$whFilterS
+           WHERE s.company_id = ? AND s.created_at >= ? AND s.created_at <= ?
+             AND (s.sale_type = 'pos' OR s.sale_type IS NULL)$whFilterS
            ORDER BY s.created_at DESC''',
-        [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParam],
+        [
+          companyId,
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+          ...whParam
+        ],
       );
 
       // Arrivals with employee name, supplier, items count
@@ -401,7 +482,12 @@ class DashboardRepository {
            LEFT JOIN companies c ON a.company_id = c.id
            WHERE a.company_id = ? AND a.created_at >= ? AND a.created_at <= ?$whFilterA
            ORDER BY a.created_at DESC''',
-        [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParam],
+        [
+          companyId,
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+          ...whParam
+        ],
       );
 
       final operations = <Map<String, dynamic>>[];
@@ -412,7 +498,8 @@ class DashboardRepository {
           'type': 'sale',
           'title': 'Продажа',
           'total': (sale['total_amount'] as num?)?.toDouble() ?? 0.0,
-          'discountAmount': (sale['discount_amount'] as num?)?.toDouble() ?? 0.0,
+          'discountAmount':
+              (sale['discount_amount'] as num?)?.toDouble() ?? 0.0,
           'paymentMethod': sale['payment_method'] ?? 'cash',
           'employeeName': sale['employee_name'] ?? 'Не указан',
           'employeeId': sale['employee_id'],
@@ -447,9 +534,8 @@ class DashboardRepository {
       final whFilterT = warehouseId != null
           ? ' AND (t.from_warehouse_id = ? OR t.to_warehouse_id = ?)'
           : '';
-      final whParamT = warehouseId != null
-          ? [warehouseId, warehouseId]
-          : <String>[];
+      final whParamT =
+          warehouseId != null ? [warehouseId, warehouseId] : <String>[];
 
       final transfersResults = await _db.getAll(
         '''SELECT t.id, t.total_amount, t.status, t.sender_notes, t.receiver_notes,
@@ -462,12 +548,17 @@ class DashboardRepository {
            FROM transfers t
            WHERE t.company_id = ? AND t.created_at >= ? AND t.created_at <= ?$whFilterT
            ORDER BY t.created_at DESC''',
-        [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParamT],
+        [
+          companyId,
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+          ...whParamT
+        ],
       );
 
       for (final transfer in transfersResults) {
-        final isOutgoing = warehouseId != null &&
-            transfer['from_warehouse_id'] == warehouseId;
+        final isOutgoing =
+            warehouseId != null && transfer['from_warehouse_id'] == warehouseId;
         final direction = isOutgoing ? 'Исходящее' : 'Входящее';
         final otherWarehouse = isOutgoing
             ? (transfer['to_warehouse_name'] ?? 'Склад')
@@ -479,8 +570,10 @@ class DashboardRepository {
         final senderNotes = transfer['sender_notes'] as String?;
         final receiverNotes = transfer['receiver_notes'] as String?;
         final combinedNotes = [
-          if (senderNotes != null && senderNotes.isNotEmpty) 'Отправитель: $senderNotes',
-          if (receiverNotes != null && receiverNotes.isNotEmpty) 'Получатель: $receiverNotes',
+          if (senderNotes != null && senderNotes.isNotEmpty)
+            'Отправитель: $senderNotes',
+          if (receiverNotes != null && receiverNotes.isNotEmpty)
+            'Получатель: $receiverNotes',
         ].join(' | ');
 
         final modeLabel = switch (pricingMode) {
@@ -493,7 +586,9 @@ class DashboardRepository {
           'id': transfer['id'],
           'type': 'transfer',
           'title': 'Перемещение ($direction · $modeLabel)',
-          'total': isSimple ? 0.0 : ((transfer['total_amount'] as num?)?.toDouble() ?? 0.0),
+          'total': isSimple
+              ? 0.0
+              : ((transfer['total_amount'] as num?)?.toDouble() ?? 0.0),
           'employeeName': isOutgoing
               ? (transfer['sender_employee_name'] ?? 'Не указан')
               : (transfer['receiver_employee_name'] ?? 'Не указан'),
@@ -510,7 +605,8 @@ class DashboardRepository {
       }
 
       // Audits (completed)
-      final whFilterAudit = warehouseId != null ? ' AND a.warehouse_id = ?' : '';
+      final whFilterAudit =
+          warehouseId != null ? ' AND a.warehouse_id = ?' : '';
       final whParamAudit = warehouseId != null ? [warehouseId] : <String>[];
 
       final auditsResults = await _db.getAll(
@@ -530,7 +626,12 @@ class DashboardRepository {
                  AND a.created_at >= ? AND a.created_at <= ?$whFilterAudit
            GROUP BY a.id, a.type, a.status, a.warehouse_name, a.employee_name, a.created_at, a.completed_at
            ORDER BY a.created_at DESC''',
-        [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParamAudit],
+        [
+          companyId,
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+          ...whParamAudit
+        ],
       );
 
       for (final audit in auditsResults) {
@@ -569,7 +670,12 @@ class DashboardRepository {
            FROM write_offs wo
            WHERE wo.company_id = ? AND wo.created_at >= ? AND wo.created_at <= ?$whFilterWo
            ORDER BY wo.created_at DESC''',
-        [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParamWo],
+        [
+          companyId,
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+          ...whParamWo
+        ],
       );
 
       for (final wo in writeOffResults) {
@@ -609,7 +715,9 @@ class DashboardRepository {
             'employeeId': exp['employee_id'],
             'createdBy': exp['created_by'],
             'deletedBy': exp['deleted_by'],
-            'deletedAt': exp['deleted_at'] != null ? DateTime.parse(exp['deleted_at'] as String) : null,
+            'deletedAt': exp['deleted_at'] != null
+                ? DateTime.parse(exp['deleted_at'] as String)
+                : null,
             'notes': comment.isNotEmpty ? comment : null,
             'dateTime': DateTime.parse(exp['created_at'] as String),
             'status': isDel ? 'deleted' : 'completed',
@@ -648,16 +756,20 @@ class DashboardRepository {
         [saleId],
       );
 
-      final totalCost = items.fold<double>(0.0, (sum, item) =>
-          sum + ((item['cost_price'] as num?)?.toDouble() ?? 0) *
-                ((item['quantity'] as num?)?.toInt() ?? 0));
+      final totalCost = items.fold<double>(
+          0.0,
+          (sum, item) =>
+              sum +
+              ((item['cost_price'] as num?)?.toDouble() ?? 0) *
+                  ((item['quantity'] as num?)?.toInt() ?? 0));
 
       return {
         ...sale,
         'employee_name': sale['employee_name'] ?? 'Не указан',
         'items': items,
         'total_cost': totalCost,
-        'net_profit': ((sale['total_amount'] as num?)?.toDouble() ?? 0) - totalCost,
+        'net_profit':
+            ((sale['total_amount'] as num?)?.toDouble() ?? 0) - totalCost,
       };
     } catch (e) {
       print('DashboardRepository getSaleDetail error: $e');
@@ -714,7 +826,8 @@ class DashboardRepository {
       final processedItems = <Map<String, dynamic>>[];
       for (final item in items) {
         final snapshot = (item['snapshot_quantity'] as num?)?.toInt() ?? 0;
-        final movements = (item['movements_during_audit'] as num?)?.toInt() ?? 0;
+        final movements =
+            (item['movements_during_audit'] as num?)?.toInt() ?? 0;
         final expected = snapshot + movements;
         final actual = item['actual_quantity'] as int?;
         final isChecked = item['is_checked'] == 1;
@@ -723,8 +836,10 @@ class DashboardRepository {
         int diff = 0;
         if (isChecked && actual != null) {
           diff = actual - expected;
-          if (diff == 0) matchCount++;
-          else if (diff > 0) surplusCount++;
+          if (diff == 0)
+            matchCount++;
+          else if (diff > 0)
+            surplusCount++;
           else {
             shortageCount++;
             totalShortageValue += diff.abs() * costPrice;
@@ -811,24 +926,41 @@ class DashboardRepository {
 
       // Sales
       final salesRow = await _db.get(
-        'SELECT COUNT(*) as cnt, COALESCE(SUM(total_amount), 0) as total FROM sales WHERE company_id = ? AND status = ? AND created_at >= ? AND created_at <= ?$whFilter',
-        [companyId, 'completed', startDate.toIso8601String(), endDate.toIso8601String(), ...whParam],
+        "SELECT COUNT(*) as cnt, COALESCE(SUM(total_amount), 0) as total FROM sales WHERE company_id = ? AND status = ? AND (sale_type = 'pos' OR sale_type IS NULL) AND created_at >= ? AND created_at <= ?$whFilter",
+        [
+          companyId,
+          'completed',
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+          ...whParam
+        ],
       );
 
       // Arrivals
       final arrivalsRow = await _db.get(
         'SELECT COUNT(*) as cnt, COALESCE(SUM(total_amount), 0) as total FROM arrivals WHERE company_id = ? AND created_at >= ? AND created_at <= ?$whFilter',
-        [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParam],
+        [
+          companyId,
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+          ...whParam
+        ],
       );
 
       // Transfers
       final whFilterT = warehouseId != null
           ? ' AND (from_warehouse_id = ? OR to_warehouse_id = ?)'
           : '';
-      final whParamT = warehouseId != null ? [warehouseId, warehouseId] : <String>[];
+      final whParamT =
+          warehouseId != null ? [warehouseId, warehouseId] : <String>[];
       final transfersRow = await _db.get(
         'SELECT COUNT(*) as cnt FROM transfers WHERE company_id = ? AND created_at >= ? AND created_at <= ?$whFilterT',
-        [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParamT],
+        [
+          companyId,
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+          ...whParamT
+        ],
       );
 
       // Audits
@@ -836,7 +968,12 @@ class DashboardRepository {
       final whParamA = warehouseId != null ? [warehouseId] : <String>[];
       final auditsRow = await _db.get(
         "SELECT COUNT(*) as cnt FROM audits WHERE company_id = ? AND status = 'completed' AND created_at >= ? AND created_at <= ?$whFilterA",
-        [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParamA],
+        [
+          companyId,
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+          ...whParamA
+        ],
       );
 
       // Write-offs
@@ -845,7 +982,12 @@ class DashboardRepository {
       try {
         final woRow = await _db.get(
           'SELECT COUNT(*) as cnt, COALESCE(SUM(total_cost), 0) as total FROM write_offs WHERE company_id = ? AND created_at >= ? AND created_at <= ?$whFilter',
-          [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParam],
+          [
+            companyId,
+            startDate.toIso8601String(),
+            endDate.toIso8601String(),
+            ...whParam
+          ],
         );
         writeOffCount = (woRow['cnt'] as num?)?.toInt() ?? 0;
         writeOffTotal = (woRow['total'] as num?)?.toDouble() ?? 0.0;
@@ -878,12 +1020,16 @@ class DashboardRepository {
     } catch (e) {
       print('DashboardRepository getOperationsSummary error: $e');
       return {
-        'salesCount': 0, 'salesTotal': 0.0,
-        'arrivalsCount': 0, 'arrivalsTotal': 0.0,
+        'salesCount': 0,
+        'salesTotal': 0.0,
+        'arrivalsCount': 0,
+        'arrivalsTotal': 0.0,
         'transfersCount': 0,
         'auditsCount': 0,
-        'writeOffsCount': 0, 'writeOffsTotal': 0.0,
-        'expensesCount': 0, 'expensesTotal': 0.0,
+        'writeOffsCount': 0,
+        'writeOffsTotal': 0.0,
+        'expensesCount': 0,
+        'expensesTotal': 0.0,
       };
     }
   }
@@ -901,7 +1047,7 @@ class DashboardRepository {
         "SELECT * FROM products WHERE company_id = ?$whFilterP",
         [companyId, ...whParam],
       );
-      
+
       // Compute sold quantity per product for the selected period
       final soldData = await _db.getAll(
         '''SELECT si.product_id,
@@ -912,9 +1058,14 @@ class DashboardRepository {
            WHERE s.company_id = ? AND s.status = 'completed'
              AND s.created_at >= ? AND s.created_at <= ?$whFilterS
            GROUP BY si.product_id''',
-        [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParam],
+        [
+          companyId,
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+          ...whParam
+        ],
       );
-      
+
       // Build a map productId → {soldQty, lastSale}
       final soldMap = <String, Map<String, dynamic>>{};
       for (final row in soldData) {
@@ -928,17 +1079,20 @@ class DashboardRepository {
           };
         }
       }
-      
+
       // Build products with dynamic sold count, filter out normal zone
-      final products = results.map((row) {
-        final p = Product.fromJson(row);
-        final sold = soldMap[p.id];
-        return p.copyWith(
-          soldLast30Days: sold?['soldQty'] as int? ?? 0,
-          lastSoldAt: sold?['lastSale'] as DateTime?,
-        );
-      }).where((p) => p.stockZone != StockZone.normal).toList();
-      
+      final products = results
+          .map((row) {
+            final p = Product.fromJson(row);
+            final sold = soldMap[p.id];
+            return p.copyWith(
+              soldLast30Days: sold?['soldQty'] as int? ?? 0,
+              lastSoldAt: sold?['lastSale'] as DateTime?,
+            );
+          })
+          .where((p) => p.stockZone != StockZone.normal)
+          .toList();
+
       return products;
     } catch (e) {
       print('DashboardRepository getStockAlertProducts error: $e');
@@ -955,8 +1109,14 @@ class DashboardRepository {
       final whParam = warehouseId != null ? [warehouseId] : <String>[];
 
       final results = await _db.getAll(
-        'SELECT total_amount FROM sales WHERE company_id = ? AND created_at >= ? AND created_at <= ? AND status = ?$whFilter ORDER BY total_amount DESC',
-        [companyId, startDate.toIso8601String(), endDate.toIso8601String(), 'completed', ...whParam],
+        "SELECT total_amount FROM sales WHERE company_id = ? AND created_at >= ? AND created_at <= ? AND status = ? AND (sale_type = 'pos' OR sale_type IS NULL)$whFilter ORDER BY total_amount DESC",
+        [
+          companyId,
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+          'completed',
+          ...whParam
+        ],
       );
 
       return results
@@ -992,7 +1152,12 @@ class DashboardRepository {
              $whFilter
            ORDER BY loss DESC
            LIMIT 10''',
-        [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParam],
+        [
+          companyId,
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+          ...whParam
+        ],
       );
 
       return results;
@@ -1019,11 +1184,17 @@ class DashboardRepository {
            FROM sale_items si
            INNER JOIN sales s ON si.sale_id = s.id
            WHERE s.company_id = ? AND s.status = 'completed'
+             AND (s.sale_type = 'pos' OR s.sale_type IS NULL)
              AND s.created_at >= ? AND s.created_at <= ?
              AND (si.item_type = 'product' OR si.item_type IS NULL)$whFilter
            GROUP BY si.product_name
            ORDER BY total DESC''',
-        [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParam],
+        [
+          companyId,
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+          ...whParam
+        ],
       );
 
       // Services (item_type = 'service') — include executor name and date
@@ -1035,17 +1206,23 @@ class DashboardRepository {
            FROM sale_items si
            INNER JOIN sales s ON si.sale_id = s.id
            WHERE s.company_id = ? AND s.status = 'completed'
+             AND (s.sale_type = 'pos' OR s.sale_type IS NULL)
              AND s.created_at >= ? AND s.created_at <= ?
              AND si.item_type = 'service'$whFilter
            GROUP BY si.product_name, si.executor_name
            ORDER BY total DESC''',
-        [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParam],
+        [
+          companyId,
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+          ...whParam
+        ],
       );
 
       final goodsTotal = goodsResult.fold<double>(
           0.0, (sum, row) => sum + ((row['total'] as num?)?.toDouble() ?? 0.0));
-      final goodsCost = goodsResult.fold<double>(
-          0.0, (sum, row) => sum + ((row['total_cost'] as num?)?.toDouble() ?? 0.0));
+      final goodsCost = goodsResult.fold<double>(0.0,
+          (sum, row) => sum + ((row['total_cost'] as num?)?.toDouble() ?? 0.0));
       final servicesTotal = servicesResult.fold<double>(
           0.0, (sum, row) => sum + ((row['total'] as num?)?.toDouble() ?? 0.0));
 

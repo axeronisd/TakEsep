@@ -146,13 +146,17 @@ class FirebasePushBootstrap {
         if (token != null) {
           _currentToken = token;
           await _pushService.registerToken(token);
-          debugPrint('[Push] Token re-registered after login (attempt ${attempt + 1})');
+          debugPrint(
+            '[Push] Token re-registered after login (attempt ${attempt + 1})',
+          );
           return;
         } else {
           debugPrint('[Push] getToken() returned null, attempt ${attempt + 1}');
         }
       } catch (e) {
-        debugPrint('[Push] Re-register token failed (attempt ${attempt + 1}): $e');
+        debugPrint(
+          '[Push] Re-register token failed (attempt ${attempt + 1}): $e',
+        );
       }
       if (attempt < 2) {
         await Future.delayed(const Duration(seconds: 2));
