@@ -9,7 +9,7 @@ class AkJolAuthService {
   final SupabaseClient _client;
 
   AkJolAuthService([SupabaseClient? client])
-      : _client = client ?? Supabase.instance.client;
+    : _client = client ?? Supabase.instance.client;
 
   // ─── Текущий пользователь ───────────────────
 
@@ -42,7 +42,9 @@ class AkJolAuthService {
       throw const AkJolAuthException('Username минимум 3 символа');
     }
     if (!RegExp(r'^[a-zA-Z0-9._]+$').hasMatch(cleanUsername)) {
-      throw const AkJolAuthException('Username: только буквы, цифры, точка и _');
+      throw const AkJolAuthException(
+        'Username: только буквы, цифры, точка и _',
+      );
     }
     if (password.length < 6) {
       throw const AkJolAuthException('Пароль минимум 6 символов');
@@ -68,20 +70,18 @@ class AkJolAuthService {
       final response = await _client.auth.signUp(
         phone: '+996$cleanPhone',
         password: password,
-        data: {
-          'username': cleanUsername,
-          'name': name ?? '',
-        },
+        data: {'username': cleanUsername, 'name': name ?? ''},
       );
 
       if (response.user == null) {
         throw const AkJolAuthException('Ошибка регистрации');
       }
-      
+
       if (response.session == null) {
         throw const AkJolAuthException(
-            'Аккаунт создан, но Supabase требует подтверждения телефона по SMS. '
-            'Пожалуйста, отключите "Confirm phone" в настройках Supabase (Authentication -> Providers -> Phone).');
+          'Аккаунт создан, но Supabase требует подтверждения телефона по SMS. '
+          'Пожалуйста, отключите "Confirm phone" в настройках Supabase (Authentication -> Providers -> Phone).',
+        );
       }
 
       // Обновить профиль с username
@@ -199,7 +199,9 @@ class AkJolAuthService {
     }
 
     // Иначе — username. Убираем @ если пользователь ввел его.
-    final cleanUsername = trimmed.startsWith('@') ? trimmed.substring(1) : trimmed;
+    final cleanUsername = trimmed.startsWith('@')
+        ? trimmed.substring(1)
+        : trimmed;
     return signInWithUsername(username: cleanUsername, password: password);
   }
 
@@ -342,19 +344,25 @@ class AkJolAuthService {
   Future<void> enableCourierRole() async {
     final user = currentUser;
     if (user == null) return;
-    await _client.from('user_profiles').update({
-      'is_courier': true,
-      'updated_at': DateTime.now().toIso8601String(),
-    }).eq('id', user.id);
+    await _client
+        .from('user_profiles')
+        .update({
+          'is_courier': true,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', user.id);
   }
 
   Future<void> enableDriverRole() async {
     final user = currentUser;
     if (user == null) return;
-    await _client.from('user_profiles').update({
-      'is_driver': true,
-      'updated_at': DateTime.now().toIso8601String(),
-    }).eq('id', user.id);
+    await _client
+        .from('user_profiles')
+        .update({
+          'is_driver': true,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', user.id);
   }
 
   // ─── Выход ──────────────────────────────────
@@ -373,7 +381,9 @@ class AkJolAuthService {
       }
       await signOut();
     } on FunctionException catch (e) {
-      throw AkJolAuthException('Ошибка удаления аккаунта: ${e.reason}');
+      throw AkJolAuthException(
+        'Ошибка удаления аккаунта: ${e.reasonPhrase ?? e.details?.toString() ?? "Unknown error"}',
+      );
     } catch (e) {
       throw const AkJolAuthException('Ошибка соединения. Попробуйте позже.');
     }
@@ -389,7 +399,8 @@ class AkJolAuthService {
     if (msg.contains('Invalid login credentials')) {
       return 'Неверный логин или пароль';
     }
-    if (msg.contains('User already registered') || msg.contains('already registered')) {
+    if (msg.contains('User already registered') ||
+        msg.contains('already registered')) {
       return 'Этот номер телефона уже зарегистрирован';
     }
     if (msg.contains('Token has expired or is invalid')) {
@@ -407,7 +418,8 @@ class AkJolAuthService {
     if (msg.contains('Database error') || msg.contains('unexpected_failure')) {
       return 'Ошибка сервера. Пожалуйста, попробуйте позже или обратитесь в поддержку.';
     }
-    if (msg.contains('email_not_confirmed') || msg.contains('phone_not_confirmed')) {
+    if (msg.contains('email_not_confirmed') ||
+        msg.contains('phone_not_confirmed')) {
       return 'Аккаунт не подтверждён. Проверьте SMS.';
     }
     return 'Ошибка: $msg';
