@@ -232,6 +232,118 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  // ─── Delete Account ──────────────────────────
+  void _confirmDeleteAccount() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _isDark ? const Color(0xFF161B22) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Удалить аккаунт?', style: TextStyle(color: AkJolTheme.error)),
+        content: const Text(
+            'Вы уверены, что хотите навсегда удалить свой аккаунт? '
+            'Все ваши личные данные будут безвозвратно удалены. '
+            'Ваши заказы также будут удалены из системы.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Отмена',
+              style: TextStyle(
+                color: _isDark
+                    ? const Color(0xFF8B949E)
+                    : const Color(0xFF6B7280),
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _promptDeleteConfirmation();
+            },
+            child: const Text(
+              'Удалить навсегда',
+              style: TextStyle(color: AkJolTheme.error, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _promptDeleteConfirmation() {
+    final confirmCtrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: _isDark ? const Color(0xFF161B22) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Подтверждение удаления'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Введите слово УДАЛИТЬ для подтверждения:'),
+            const SizedBox(height: 12),
+            TextField(
+              controller: confirmCtrl,
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: _isDark ? const Color(0xFF0D1117) : const Color(0xFFF3F4F6),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide: BorderSide.none,
+                ),
+                hintText: 'УДАЛИТЬ',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text(
+              'Отмена',
+              style: TextStyle(
+                color: _isDark
+                    ? const Color(0xFF8B949E)
+                    : const Color(0xFF6B7280),
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (confirmCtrl.text.trim().toUpperCase() != 'УДАЛИТЬ') {
+                _snack('Слово введено неверно', AkJolTheme.error);
+                return;
+              }
+              Navigator.pop(ctx);
+              _executeDeleteAccount();
+            },
+            child: const Text(
+              'Подтвердить',
+              style: TextStyle(color: AkJolTheme.error, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _executeDeleteAccount() async {
+    setState(() => _loading = true);
+    try {
+      await FirebasePushBootstrap.onLogout();
+      await _auth.deleteAccount();
+      if (mounted) context.go('/login');
+    } catch (e) {
+      if (mounted) {
+        setState(() => _loading = false);
+        _snack('Ошибка: не удалось удалить аккаунт', AkJolTheme.error);
+      }
+    }
+  }
+
   void _snack(String msg, Color color) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -340,14 +452,28 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       borderRadius: BorderRadius.circular(18),
                       border: Border.all(color: border, width: 0.5),
                     ),
-                    child: _ActionTile(
-                      icon: Icons.logout_rounded,
-                      color: AkJolTheme.error,
-                      title: 'Выйти из аккаунта',
-                      subtitle: 'Вы сможете войти снова',
-                      isDark: _isDark,
-                      onTap: _confirmLogout,
-                      titleColor: AkJolTheme.error,
+                    child: Column(
+                      children: [
+                        _ActionTile(
+                          icon: Icons.delete_forever_outlined,
+                          color: AkJolTheme.error,
+                          title: 'Удалить аккаунт',
+                          subtitle: 'Безвозвратное удаление данных',
+                          isDark: _isDark,
+                          onTap: _confirmDeleteAccount,
+                          titleColor: AkJolTheme.error,
+                        ),
+                        Divider(color: border, height: 1, indent: 56),
+                        _ActionTile(
+                          icon: Icons.logout_rounded,
+                          color: AkJolTheme.error,
+                          title: 'Выйти из аккаунта',
+                          subtitle: 'Вы сможете войти снова',
+                          isDark: _isDark,
+                          onTap: _confirmLogout,
+                          titleColor: AkJolTheme.error,
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 24),

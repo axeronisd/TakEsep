@@ -363,6 +363,22 @@ class AkJolAuthService {
     await _client.auth.signOut();
   }
 
+  // ─── Удаление аккаунта ──────────────────────
+
+  Future<void> deleteAccount() async {
+    try {
+      final response = await _client.functions.invoke('delete-account');
+      if (response.status != 200) {
+        throw const AkJolAuthException('Не удалось удалить аккаунт');
+      }
+      await signOut();
+    } on FunctionException catch (e) {
+      throw AkJolAuthException('Ошибка удаления аккаунта: ${e.reason}');
+    } catch (e) {
+      throw const AkJolAuthException('Ошибка соединения. Попробуйте позже.');
+    }
+  }
+
   // ─── Helpers ────────────────────────────────
 
   String _cleanPhone(String phone) {

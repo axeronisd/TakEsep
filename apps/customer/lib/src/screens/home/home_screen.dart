@@ -89,8 +89,20 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ?.split('@')
                             .first,
                     onAddressTap: () => _showCityPicker(context),
-                    onProfileTap: () => context.go('/profile'),
-                    onOrdersTap: () => context.go('/orders'),
+                    onProfileTap: () {
+                      if (Supabase.instance.client.auth.currentSession == null) {
+                        context.push('/login');
+                      } else {
+                        context.go('/profile');
+                      }
+                    },
+                    onOrdersTap: () {
+                      if (Supabase.instance.client.auth.currentSession == null) {
+                        context.push('/login');
+                      } else {
+                        context.go('/orders');
+                      }
+                    },
                   ),
                 ),
               ),

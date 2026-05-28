@@ -122,18 +122,12 @@ class _SplashScreenState extends State<SplashScreen>
     // Hold
     await Future.delayed(const Duration(milliseconds: 1800));
 
-    // Determine destination
-    final session = Supabase.instance.client.auth.currentSession;
-
     // Phase 3: DIVE IN!
     await _diveController.forward();
 
     if (!mounted) return;
-    if (session != null) {
-      context.go('/');
-    } else {
-      context.go('/login');
-    }
+    // Разрешаем гостевой доступ: перенаправляем всех на главную
+    context.go('/');
   }
 
   @override

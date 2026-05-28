@@ -306,14 +306,16 @@ class _StorefrontSettingsSheetState
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    final safeBottom = MediaQuery.of(context).padding.bottom;
 
     return Container(
       padding: EdgeInsets.only(
         left: AppSpacing.xl,
         right: AppSpacing.xl,
         top: AppSpacing.lg,
-        bottom:
-            bottomInset > 0 ? bottomInset + AppSpacing.md : AppSpacing.xxl,
+        bottom: bottomInset > 0 
+            ? bottomInset + AppSpacing.md 
+            : safeBottom + AppSpacing.xxl + 24, // Extra 24px safety margin
       ),
       decoration: BoxDecoration(
         color: cs.surface,

@@ -33,8 +33,18 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Splash сам решит куда идти
       if (path == '/splash') return null;
 
-      if (!isLoggedIn && path != '/login') return '/login';
       if (isLoggedIn && path == '/login') return '/';
+
+      if (!isLoggedIn) {
+        // Гостевые пути
+        final guestPaths = ['/', '/login', '/catalog', '/map', '/services'];
+        if (guestPaths.contains(path) || path.startsWith('/store/')) {
+          return null; // Разрешить
+        }
+        // Всё остальное требует логина
+        return '/login';
+      }
+
       return null;
     },
     routes: [
@@ -97,7 +107,38 @@ class _AppShell extends ConsumerWidget {
         isDark: isDark,
         onMapTap: () => context.go('/map'),
         onHomeTap: () => context.go('/'),
-        onCartTap: () => showCartSheet(context),
+        onCartTap: () {
+          if (Supabase.instance.client.auth.currentSession == null) {
+            _showGuestLoginDialog(context, isDark);
+          } else {
+            showCartSheet(context);
+          }
+        },
+      ),
+    );
+  }
+
+  void _showGuestLoginDialog(BuildContext context, bool isDark) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Требуется вход'),
+        content: const Text('Пожалуйста, войдите в аккаунт, чтобы пользоваться корзиной и оформлять заказы.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Отмена', style: TextStyle(color: isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280))),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              context.push('/login');
+            },
+            child: const Text('Войти', style: TextStyle(color: AkJolTheme.primary)),
+          ),
+        ],
       ),
     );
   }
