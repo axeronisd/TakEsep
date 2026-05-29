@@ -249,7 +249,22 @@ jobs:
       COCOAPODS_DISABLE_STATS: true
     steps:
       - uses: actions/checkout@v4
-      
+
+      - name: Select Xcode 26
+        run: |
+          echo "=== Available Xcode versions ==="
+          ls /Applications/ | grep Xcode || true
+          XCODE26=$(ls /Applications/ | grep -E '^Xcode_26' | sort -V | tail -1)
+          if [ -n "$XCODE26" ]; then
+            sudo xcode-select -s "/Applications/$XCODE26"
+            echo "✅ Selected: $XCODE26"
+          else
+            echo "⚠️ Xcode 26 not found by name, trying path Xcode.app"
+            # macOS-15 might ship Xcode 26 as default Xcode.app
+            sudo xcode-select -s /Applications/Xcode.app
+          fi
+          xcodebuild -version
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -572,10 +587,21 @@ jobs:
   # ═══════════════════════════════════════════════
   upload-testflight:
     needs: [build-ios, release]
-    runs-on: macos-latest
+    runs-on: macos-15
     env:
       APPSTORE_API_KEY_ID: ${{ secrets.APPSTORE_API_KEY_ID }}
     steps:
+      - name: Select Xcode 26
+        run: |
+          XCODE26=$(ls /Applications/ | grep -E '^Xcode_26' | sort -V | tail -1)
+          if [ -n "$XCODE26" ]; then
+            sudo xcode-select -s "/Applications/$XCODE26"
+            echo "✅ Selected: $XCODE26"
+          else
+            sudo xcode-select -s /Applications/Xcode.app
+          fi
+          xcodebuild -version
+
       - name: Download iOS IPAs
         uses: actions/download-artifact@v4
         with:
