@@ -429,11 +429,12 @@ build-ios:
           name: ios-ipas
           path: ios-ipas/*.ipa
           if-no-files-found: warn
+          
 
   # ═══════════════════════════════════════════════
   # Create GitHub Release
   # ═══════════════════════════════════════════════
-  release:
+    release:
     needs: [build-windows, build-android-apks, build-android-aabs, build-ios]
     runs-on: ubuntu-latest
     steps:
