@@ -275,7 +275,6 @@ jobs:
           xcodebuild -showsdks | grep -i ios
           echo "=== Verifying iOS SDK exists ==="
           ls -la $(xcode-select -p)/Platforms/iPhoneOS.platform/ 2>/dev/null || echo "WARNING: iPhoneOS platform not found!"
-
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
