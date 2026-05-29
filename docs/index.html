@@ -2,935 +2,1120 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TakEsep — Экосистема управления бизнесом</title>
-  <meta name="description" content="TakEsep — профессиональная экосистема для складов, магазинов и служб доставки. Управляйте бизнесом с Windows, Android и iOS.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#06080f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>TakEsep — Экосистема для склада, доставки и продаж</title>
+  <meta name="description" content="TakEsep и AkJol — профессиональная экосистема для складов, магазинов, курьеров и покупателей. Windows, Android, iOS.">
+  <link rel="icon" href="logo.png" type="image/png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
-      --bg: #050508;
-      --text: #ffffff;
-      --text-muted: #71717a;
-      --text-secondary: #a1a1aa;
-      --primary: #6366f1;
-      --primary-glow: rgba(99,102,241,0.4);
+      --bg: #06080f;
+      --bg-soft: #0b101a;
+      --bg-card: rgba(14, 20, 33, 0.78);
+      --bg-card-solid: #0e1421;
+      --text: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --border: rgba(148, 163, 184, 0.1);
+      --border-strong: rgba(148, 163, 184, 0.2);
+      --brand: #3b82f6;
+      --brand-2: #6366f1;
+      --accent: #f59e0b;
       --green: #22c55e;
-      --orange: #f97316;
-      --surface: rgba(255,255,255,0.03);
-      --surface-hover: rgba(255,255,255,0.06);
-      --border: rgba(255,255,255,0.08);
-      --border-hover: rgba(255,255,255,0.18);
+      --green-2: #84cc16;
+      --radius: 18px;
+      --radius-lg: 28px;
+      --shadow: 0 28px 80px rgba(0, 0, 0, 0.45);
+      --glass: blur(18px) saturate(140%);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --nav-h: 64px;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
     html { scroll-behavior: smooth; }
 
     body {
-      font-family: 'Inter', sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
       background: var(--bg);
       color: var(--text);
       line-height: 1.6;
-      overflow-x: hidden;
       -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
+      padding-bottom: calc(72px + var(--safe-bottom));
     }
 
-    /* ── Noise texture overlay ── */
     body::before {
       content: '';
       position: fixed;
       inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+      background:
+        radial-gradient(circle at 12% 8%, rgba(59, 130, 246, 0.18), transparent 28%),
+        radial-gradient(circle at 88% 12%, rgba(245, 158, 11, 0.12), transparent 24%),
+        radial-gradient(circle at 50% 100%, rgba(34, 197, 94, 0.08), transparent 32%),
+        linear-gradient(180deg, #06080f 0%, #090d16 45%, #06080f 100%);
       pointer-events: none;
       z-index: 0;
     }
 
-    /* ── Ambient glows ── */
-    .glow {
+    .grid-overlay {
       position: fixed;
-      border-radius: 50%;
-      filter: blur(120px);
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+      background-size: 72px 72px;
+      mask-image: radial-gradient(circle at center, black 30%, transparent 85%);
       pointer-events: none;
       z-index: 0;
-      animation: floatGlow 8s ease-in-out infinite;
-    }
-    .glow-1 {
-      width: 70vw; height: 70vw;
-      top: -25vw; left: -10vw;
-      background: radial-gradient(circle, rgba(99,102,241,0.18) 0%, transparent 70%);
-    }
-    .glow-2 {
-      width: 50vw; height: 50vw;
-      bottom: -15vw; right: -10vw;
-      background: radial-gradient(circle, rgba(6,182,212,0.12) 0%, transparent 70%);
-      animation-delay: -4s;
-    }
-    .glow-3 {
-      width: 30vw; height: 30vw;
-      top: 50%; left: 50%; transform: translate(-50%,-50%);
-      background: radial-gradient(circle, rgba(168,85,247,0.08) 0%, transparent 70%);
-      animation-delay: -2s;
-    }
-    @keyframes floatGlow {
-      0%, 100% { transform: scale(1) translateY(0); }
-      50% { transform: scale(1.05) translateY(-2%); }
     }
 
-    /* ── Layout ── */
     .container {
-      max-width: 1200px;
+      max-width: 1180px;
       margin: 0 auto;
-      padding: 0 24px;
+      padding: 0 20px;
       position: relative;
       z-index: 1;
     }
 
-    /* ── Nav ── */
-    nav {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 20px 0;
-      border-bottom: 1px solid var(--border);
-      backdrop-filter: blur(12px);
+    /* ── Header ── */
+    .site-header {
       position: sticky;
       top: 0;
-      z-index: 100;
-      background: rgba(5,5,8,0.6);
+      z-index: 200;
+      backdrop-filter: var(--glass);
+      background: rgba(6, 8, 15, 0.72);
+      border-bottom: 1px solid var(--border);
     }
+
+    nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      min-height: var(--nav-h);
+      gap: 16px;
+    }
+
     .brand {
       display: flex;
       align-items: center;
-      gap: 10px;
-      font-size: 1.2rem;
-      font-weight: 800;
-      letter-spacing: -0.03em;
+      gap: 12px;
       text-decoration: none;
       color: inherit;
+      min-width: 0;
     }
-    .brand-icon {
-      width: 34px; height: 34px;
-      border-radius: 9px;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 18px;
-      box-shadow: 0 0 20px rgba(99,102,241,0.4);
+
+    .brand img {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      object-fit: cover;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
     }
-    .nav-right {
+
+    .brand-name {
+      font-size: 1.02rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      white-space: nowrap;
+    }
+
+    .brand-tagline {
+      font-size: 0.66rem;
+      color: var(--text-muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .nav-desktop {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 18px;
     }
-    .nav-badge {
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 5px 12px;
-      border-radius: 100px;
-      background: rgba(99,102,241,0.12);
-      border: 1px solid rgba(99,102,241,0.3);
-      color: #818cf8;
-      letter-spacing: 0.02em;
-    }
+
     .nav-link {
       color: var(--text-secondary);
       text-decoration: none;
-      font-size: 0.9rem;
+      font-size: 0.875rem;
       font-weight: 500;
       transition: color 0.2s;
     }
+
     .nav-link:hover { color: var(--text); }
+
+    .nav-badge {
+      font-size: 0.7rem;
+      font-weight: 600;
+      padding: 7px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border-strong);
+      background: rgba(255,255,255,0.03);
+      color: var(--text-secondary);
+      white-space: nowrap;
+    }
+
+    .menu-btn {
+      display: none;
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid var(--border-strong);
+      background: rgba(255,255,255,0.03);
+      color: var(--text);
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .mobile-menu {
+      display: none;
+      padding: 0 20px 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .mobile-menu.open { display: block; }
+
+    .mobile-menu a {
+      display: block;
+      padding: 14px 0;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .mobile-menu a:last-child { border-bottom: none; }
 
     /* ── Hero ── */
     .hero {
-      padding: 100px 0 70px;
-      text-align: center;
-    }
-    .hero-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 0.8rem;
-      font-weight: 600;
-      padding: 6px 14px;
-      border-radius: 100px;
-      background: rgba(99,102,241,0.1);
-      border: 1px solid rgba(99,102,241,0.25);
-      color: #818cf8;
-      margin-bottom: 28px;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-    }
-    .hero-badge span { color: #6ee7b7; }
-    .hero h1 {
-      font-size: clamp(2.8rem, 7vw, 5.5rem);
-      font-weight: 900;
-      letter-spacing: -0.05em;
-      line-height: 1.05;
-      margin-bottom: 24px;
-    }
-    .hero h1 .gradient-text {
-      background: linear-gradient(135deg, #fff 30%, #818cf8 60%, #c084fc 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .hero p {
-      font-size: 1.2rem;
-      color: var(--text-secondary);
-      max-width: 560px;
-      margin: 0 auto 48px;
-      line-height: 1.7;
-    }
-    .hero-cta {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-bottom: 72px;
-    }
-    .cta-primary {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 14px 28px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      color: white;
-      font-weight: 700;
-      font-size: 0.95rem;
-      text-decoration: none;
-      transition: all 0.2s;
-      box-shadow: 0 8px 32px rgba(99,102,241,0.35);
-    }
-    .cta-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 40px rgba(99,102,241,0.5);
-    }
-    .cta-secondary {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 14px 28px;
-      border-radius: 12px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      color: white;
-      font-weight: 600;
-      font-size: 0.95rem;
-      text-decoration: none;
-      transition: all 0.2s;
-    }
-    .cta-secondary:hover {
-      background: var(--surface-hover);
-      border-color: var(--border-hover);
-      transform: translateY(-2px);
-    }
-
-    /* ── Stats ── */
-    .stats {
-      display: flex;
-      justify-content: center;
-      gap: 0;
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      background: var(--surface);
-      backdrop-filter: blur(12px);
-      overflow: hidden;
-      max-width: 700px;
-      margin: 0 auto;
-    }
-    .stat {
-      flex: 1;
-      padding: 28px 20px;
-      text-align: center;
-      border-right: 1px solid var(--border);
-    }
-    .stat:last-child { border-right: none; }
-    .stat-value {
-      font-size: 2rem;
-      font-weight: 800;
-      letter-spacing: -0.04em;
-      background: linear-gradient(135deg, #fff, #a5b4fc);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .stat-label {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      margin-top: 4px;
-      font-weight: 500;
-    }
-
-    /* ── Section header ── */
-    .section-header {
-      text-align: center;
-      margin-bottom: 56px;
-    }
-    .section-eyebrow {
-      font-size: 0.78rem;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: #818cf8;
-      margin-bottom: 12px;
-    }
-    .section-header h2 {
-      font-size: clamp(1.8rem, 4vw, 2.8rem);
-      font-weight: 800;
-      letter-spacing: -0.04em;
-      color: var(--text);
-    }
-    .section-header p {
-      color: var(--text-secondary);
-      margin-top: 12px;
-      font-size: 1.05rem;
-    }
-
-    /* ── Apps Section ── */
-    .apps-section { padding: 80px 0 60px; }
-
-    .apps-grid {
+      padding: 56px 0 40px;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-      gap: 24px;
+      grid-template-columns: 1.05fr 0.95fr;
+      gap: 36px;
+      align-items: center;
     }
 
-    .app-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 28px;
-      padding: 36px;
-      display: flex;
-      flex-direction: column;
-      backdrop-filter: blur(20px);
-      transition: transform 0.4s cubic-bezier(0.16,1,0.3,1),
-                  border-color 0.3s, background 0.3s, box-shadow 0.4s;
-      position: relative;
-      overflow: hidden;
-    }
-    .app-card::after {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; height: 1px;
-      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
-    }
-    .app-card:hover {
-      transform: translateY(-10px);
-      border-color: var(--border-hover);
-      background: var(--surface-hover);
-      box-shadow: 0 30px 60px rgba(0,0,0,0.4);
-    }
-
-    /* Card accent lines */
-    .app-card.warehouse { --accent: #6366f1; }
-    .app-card.customer  { --accent: #22c55e; }
-    .app-card.courier   { --accent: #f97316; }
-    .app-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; bottom: 0; width: 3px;
-      background: var(--accent, transparent);
-      opacity: 0;
-      transition: opacity 0.3s;
-      border-radius: 3px 0 0 3px;
-    }
-    .app-card:hover::before { opacity: 1; }
-
-    .card-top {
-      display: flex;
-      align-items: flex-start;
-      gap: 18px;
-      margin-bottom: 20px;
-    }
-    .app-icon {
-      width: 70px; height: 70px;
-      border-radius: 18px;
-      object-fit: cover;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-      flex-shrink: 0;
-      background: rgba(255,255,255,0.05);
-    }
-    .app-icon-placeholder {
-      width: 70px; height: 70px;
-      border-radius: 18px;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 32px;
-      flex-shrink: 0;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    }
-    .placeholder-warehouse { background: linear-gradient(135deg, #312e81, #4338ca); }
-    .placeholder-customer  { background: linear-gradient(135deg, #14532d, #16a34a); }
-    .placeholder-courier   { background: linear-gradient(135deg, #7c2d12, #ea580c); }
-
-    .app-meta { flex: 1; }
-    .app-name {
-      font-size: 1.4rem;
-      font-weight: 800;
-      letter-spacing: -0.02em;
-      margin-bottom: 6px;
-    }
-    .app-badge {
+    .eyebrow {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
+      gap: 10px;
       font-size: 0.72rem;
       font-weight: 700;
-      padding: 3px 10px;
-      border-radius: 6px;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
+      color: var(--accent);
+      margin-bottom: 18px;
     }
-    .badge-wh { background: rgba(99,102,241,0.15); color: #818cf8; }
-    .badge-cu { background: rgba(34,197,94,0.15); color: #4ade80; }
-    .badge-co { background: rgba(249,115,22,0.15); color: #fb923c; }
 
-    .app-desc {
+    .eyebrow::before {
+      content: '';
+      width: 28px;
+      height: 1px;
+      background: linear-gradient(90deg, var(--accent), transparent);
+    }
+
+    .hero h1 {
+      font-size: clamp(2.2rem, 6vw, 4rem);
+      font-weight: 800;
+      letter-spacing: -0.045em;
+      line-height: 1.04;
+      margin-bottom: 18px;
+    }
+
+    .hero h1 .muted {
+      display: block;
       color: var(--text-secondary);
-      font-size: 0.95rem;
-      line-height: 1.65;
-      margin-bottom: 28px;
-      flex-grow: 1;
+      font-weight: 700;
     }
 
-    .features-list {
+    .hero-lead {
+      color: var(--text-secondary);
+      font-size: clamp(1rem, 2.4vw, 1.08rem);
+      line-height: 1.75;
+      margin-bottom: 28px;
+      max-width: 540px;
+    }
+
+    .hero-actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
+      gap: 10px;
       margin-bottom: 28px;
     }
-    .feature-tag {
-      font-size: 0.75rem;
-      font-weight: 500;
-      padding: 4px 10px;
-      border-radius: 6px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      color: var(--text-secondary);
-    }
 
-    /* Divider */
-    .card-divider {
-      height: 1px;
-      background: var(--border);
-      margin-bottom: 24px;
-    }
-
-    .download-btns {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-    .dl-btn {
-      display: flex;
+    .btn {
+      display: inline-flex;
       align-items: center;
-      gap: 12px;
-      padding: 13px 18px;
-      border-radius: 12px;
-      font-size: 0.9rem;
+      justify-content: center;
+      gap: 10px;
+      min-height: 48px;
+      padding: 0 20px;
+      border-radius: 14px;
+      font-size: 0.92rem;
       font-weight: 600;
       text-decoration: none;
       border: none;
       cursor: pointer;
-      transition: all 0.2s;
-      width: 100%;
+      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
     }
-    .dl-btn-icon {
-      width: 36px; height: 36px;
-      border-radius: 8px;
-      display: flex; align-items: center; justify-content: center;
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ffffff 0%, #dbeafe 100%);
+      color: #0f172a;
+      box-shadow: 0 14px 40px rgba(59, 130, 246, 0.22);
+    }
+
+    .btn-primary:hover { transform: translateY(-2px); }
+
+    .btn-secondary {
+      background: rgba(255,255,255,0.04);
+      color: var(--text);
+      border: 1px solid var(--border-strong);
+    }
+
+    .btn-secondary:hover {
+      background: rgba(255,255,255,0.07);
+      transform: translateY(-2px);
+    }
+
+    .device-banner {
+      display: none;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid rgba(59, 130, 246, 0.25);
+      background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(99,102,241,0.06));
+      margin-bottom: 24px;
+    }
+
+    .device-banner.visible { display: flex; }
+
+    .device-banner-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.08);
       flex-shrink: 0;
     }
-    .dl-btn-text { flex: 1; text-align: left; }
-    .dl-btn-sub {
-      font-size: 0.72rem;
-      font-weight: 400;
-      opacity: 0.7;
-      display: block;
+
+    .device-banner-title {
+      font-size: 0.88rem;
+      font-weight: 700;
     }
 
-    .dl-windows {
-      background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(99,102,241,0.05));
-      border: 1px solid rgba(99,102,241,0.25);
-      color: #a5b4fc;
+    .device-banner-sub {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      margin-top: 2px;
     }
-    .dl-windows:hover {
-      background: linear-gradient(135deg, rgba(99,102,241,0.25), rgba(99,102,241,0.12));
-      transform: scale(1.01);
-    }
-    .dl-windows .dl-btn-icon { background: rgba(99,102,241,0.2); }
 
-    .dl-android {
-      background: linear-gradient(135deg, rgba(34,197,94,0.12), rgba(34,197,94,0.04));
-      border: 1px solid rgba(34,197,94,0.2);
-      color: #86efac;
+    .hero-metrics {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
     }
-    .dl-android:hover {
-      background: linear-gradient(135deg, rgba(34,197,94,0.2), rgba(34,197,94,0.08));
-      transform: scale(1.01);
-    }
-    .dl-android .dl-btn-icon { background: rgba(34,197,94,0.15); }
 
-    .dl-ios {
+    .metric {
+      padding: 16px;
+      border-radius: 16px;
       background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.06);
-      color: #ffffff;
+      border: 1px solid var(--border);
     }
-    .dl-ios:hover {
-      background: rgba(255,255,255,0.07);
-      transform: scale(1.01);
-    }
-    .dl-ios .dl-btn-icon { background: rgba(255,255,255,0.08); }
 
-    .dl-ios-disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
+    .metric-value {
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .metric-label {
+      font-size: 0.74rem;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .hero-panel {
+      position: relative;
+      padding: 24px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-strong);
+      background: var(--bg-card);
+      backdrop-filter: var(--glass);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+
+    .hero-panel::after {
+      content: '';
+      position: absolute;
+      inset: auto -20% -40% -20%;
+      height: 220px;
+      background: radial-gradient(circle, rgba(59,130,246,0.18), transparent 70%);
       pointer-events: none;
     }
 
-    /* ── Features strip ── */
-    .features-section {
-      padding: 60px 0 80px;
+    .panel-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 18px;
     }
+
+    .app-showcase {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .showcase-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.2s, border-color 0.2s, background 0.2s;
+    }
+
+    .showcase-item:hover {
+      transform: translateX(4px);
+      border-color: var(--border-strong);
+      background: rgba(255,255,255,0.05);
+    }
+
+    .showcase-item img {
+      width: 54px;
+      height: 54px;
+      border-radius: 14px;
+      object-fit: cover;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+    }
+
+    .showcase-name {
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .showcase-role {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* ── Sections ── */
+    section.block { padding: 56px 0; }
+
+    .section-head {
+      max-width: 680px;
+      margin: 0 auto 40px;
+      text-align: center;
+    }
+
+    .section-head h2 {
+      font-size: clamp(1.7rem, 4vw, 2.4rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      margin-bottom: 10px;
+    }
+
+    .section-head p {
+      color: var(--text-secondary);
+      line-height: 1.7;
+    }
+
+    .release-note {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(34,197,94,0.1);
+      border: 1px solid rgba(34,197,94,0.22);
+      color: #86efac;
+      font-size: 0.76rem;
+      font-weight: 600;
+    }
+
+    .release-note.loading {
+      background: rgba(255,255,255,0.04);
+      border-color: var(--border);
+      color: var(--text-muted);
+    }
+
+    /* ── App cards ── */
+    .apps-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 18px;
+    }
+
+    .app-card {
+      display: flex;
+      flex-direction: column;
+      padding: 24px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      backdrop-filter: var(--glass);
+      transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+      scroll-margin-top: calc(var(--nav-h) + 16px);
+    }
+
+    .app-card:hover {
+      transform: translateY(-4px);
+      border-color: var(--border-strong);
+      box-shadow: var(--shadow);
+    }
+
+    .app-card.warehouse { --accent: var(--brand); }
+    .app-card.customer  { --accent: var(--green); }
+    .app-card.courier   { --accent: var(--accent); }
+
+    .app-card.recommended {
+      border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent), var(--shadow);
+    }
+
+    .recommended-pill {
+      display: none;
+      align-self: flex-start;
+      margin-bottom: 14px;
+      padding: 5px 10px;
+      border-radius: 999px;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: color-mix(in srgb, var(--accent) 16%, transparent);
+      color: var(--accent);
+    }
+
+    .app-card.recommended .recommended-pill { display: inline-flex; }
+
+    .card-header {
+      display: flex;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+
+    .app-icon {
+      width: 68px;
+      height: 68px;
+      border-radius: 16px;
+      object-fit: cover;
+      box-shadow: 0 12px 28px rgba(0,0,0,0.38);
+    }
+
+    .app-title {
+      font-size: 1.18rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 8px;
+    }
+
+    .role-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.67rem;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      padding: 5px 10px;
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--accent) 14%, transparent);
+      color: var(--accent);
+    }
+
+    .role-badge::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .app-desc {
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+      line-height: 1.65;
+      margin-bottom: 16px;
+      flex: 1;
+    }
+
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+
+    .tag {
+      font-size: 0.72rem;
+      padding: 5px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      background: rgba(255,255,255,0.02);
+    }
+
+    .card-divider {
+      height: 1px;
+      background: var(--border);
+      margin-bottom: 16px;
+    }
+
+    .download-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .dl-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 56px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      text-decoration: none;
+      color: var(--text);
+      border: 1px solid var(--border);
+      background: rgba(255,255,255,0.025);
+      transition: transform 0.2s, border-color 0.2s, background 0.2s;
+    }
+
+    .dl-btn:hover:not(.disabled) {
+      transform: translateY(-1px);
+      border-color: var(--border-strong);
+      background: rgba(255,255,255,0.05);
+    }
+
+    .dl-btn.highlight {
+      border-color: color-mix(in srgb, var(--accent, #3b82f6) 35%, var(--border));
+      background: color-mix(in srgb, var(--accent, #3b82f6) 8%, rgba(255,255,255,0.02));
+    }
+
+    .dl-btn.disabled {
+      opacity: 0.45;
+      pointer-events: none;
+    }
+
+    .dl-btn.loading {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    .dl-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.06);
+      flex-shrink: 0;
+    }
+
+    .dl-text { flex: 1; min-width: 0; }
+
+    .dl-title {
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+
+    .dl-sub {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .dl-size {
+      font-size: 0.68rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    /* ── Features ── */
     .features-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
     }
+
     .feature-card {
-      padding: 28px 24px;
-      background: var(--surface);
+      padding: 22px;
+      border-radius: var(--radius);
       border: 1px solid var(--border);
-      border-radius: 20px;
-      transition: border-color 0.3s, background 0.3s;
+      background: rgba(255,255,255,0.02);
     }
-    .feature-card:hover {
-      border-color: var(--border-hover);
-      background: var(--surface-hover);
-    }
+
     .feature-icon {
-      font-size: 1.8rem;
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       margin-bottom: 14px;
+      background: rgba(59,130,246,0.12);
+      color: #60a5fa;
     }
+
+    .feature-card:nth-child(2) .feature-icon { background: rgba(34,197,94,0.12); color: var(--green); }
+    .feature-card:nth-child(3) .feature-icon { background: rgba(245,158,11,0.12); color: var(--accent); }
+    .feature-card:nth-child(4) .feature-icon { background: rgba(168,85,247,0.12); color: #c084fc; }
+    .feature-card:nth-child(5) .feature-icon { background: rgba(239,68,68,0.12); color: #f87171; }
+    .feature-card:nth-child(6) .feature-icon { background: rgba(6,182,212,0.12); color: #22d3ee; }
+
     .feature-title {
-      font-size: 1rem;
+      font-size: 0.94rem;
       font-weight: 700;
       margin-bottom: 8px;
-      letter-spacing: -0.01em;
     }
+
     .feature-desc {
-      font-size: 0.85rem;
+      font-size: 0.84rem;
       color: var(--text-muted);
-      line-height: 1.6;
+      line-height: 1.65;
     }
 
     /* ── Support ── */
-    .support-section {
-      padding: 0 0 80px;
-    }
     .support-card {
-      background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(168,85,247,0.05) 100%);
-      border: 1px solid rgba(99,102,241,0.2);
-      border-radius: 28px;
-      padding: 70px 40px;
+      padding: 48px 28px;
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border-strong);
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
       text-align: center;
-      position: relative;
-      overflow: hidden;
     }
-    .support-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 10%; right: 10%; height: 1px;
-      background: linear-gradient(90deg, transparent, rgba(99,102,241,0.6), transparent);
-    }
-    .support-glow {
-      position: absolute;
-      width: 60%; height: 60%;
-      top: -20%; left: 20%;
-      background: radial-gradient(circle, rgba(99,102,241,0.12), transparent 70%);
-      filter: blur(40px);
-      pointer-events: none;
-    }
+
     .support-card h2 {
-      font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+      font-size: clamp(1.45rem, 3vw, 2rem);
       font-weight: 800;
-      letter-spacing: -0.04em;
-      margin-bottom: 12px;
+      letter-spacing: -0.03em;
+      margin-bottom: 10px;
     }
+
     .support-card p {
       color: var(--text-secondary);
-      margin-bottom: 36px;
-      font-size: 1.05rem;
-      max-width: 500px;
-      margin-left: auto; margin-right: auto;
+      max-width: 520px;
+      margin: 0 auto 24px;
     }
-    .support-btns {
+
+    .support-actions {
       display: flex;
       justify-content: center;
-      gap: 14px;
       flex-wrap: wrap;
+      gap: 10px;
     }
+
     .support-btn {
       display: inline-flex;
       align-items: center;
       gap: 10px;
-      padding: 14px 26px;
-      border-radius: 12px;
-      font-weight: 600;
-      font-size: 0.95rem;
+      min-height: 48px;
+      padding: 0 18px;
+      border-radius: 14px;
       text-decoration: none;
-      transition: all 0.2s;
-      border: 1px solid;
+      color: var(--text);
+      border: 1px solid var(--border-strong);
+      background: rgba(255,255,255,0.03);
+      font-weight: 600;
+      font-size: 0.9rem;
     }
-    .support-email {
-      background: rgba(255,255,255,0.04);
-      border-color: rgba(255,255,255,0.12);
-      color: #fff;
-    }
-    .support-email:hover {
-      background: rgba(255,255,255,0.09);
-      transform: translateY(-2px);
-    }
-    .support-wa {
-      background: rgba(37,211,102,0.1);
-      border-color: rgba(37,211,102,0.3);
-      color: #4ade80;
-    }
-    .support-wa:hover {
-      background: rgba(37,211,102,0.18);
-      transform: translateY(-2px);
+
+    .support-btn.whatsapp {
+      border-color: rgba(34,197,94,0.3);
+      color: #86efac;
     }
 
     /* ── Footer ── */
     footer {
+      padding: 28px 0 36px;
       border-top: 1px solid var(--border);
-      padding: 40px 0;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      flex-wrap: wrap;
       gap: 16px;
+      flex-wrap: wrap;
     }
+
     .footer-brand {
-      font-weight: 700;
-      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
       color: var(--text-secondary);
+      font-size: 0.875rem;
     }
+
+    .footer-brand img {
+      width: 22px;
+      height: 22px;
+      border-radius: 6px;
+    }
+
     .footer-links {
       display: flex;
-      gap: 24px;
+      flex-wrap: wrap;
+      gap: 18px;
     }
+
     .footer-links a {
       color: var(--text-muted);
       text-decoration: none;
-      font-size: 0.85rem;
+      font-size: 0.84rem;
       font-weight: 500;
-      transition: color 0.2s;
     }
+
     .footer-links a:hover { color: var(--text); }
+
+    /* ── Mobile sticky CTA ── */
+    .mobile-cta {
+      display: none;
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 300;
+      padding: 12px 16px calc(12px + var(--safe-bottom));
+      background: rgba(6, 8, 15, 0.88);
+      backdrop-filter: var(--glass);
+      border-top: 1px solid var(--border-strong);
+    }
+
+    .mobile-cta .btn {
+      width: 100%;
+    }
 
     /* ── Animations ── */
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(32px); }
-      to   { opacity: 1; transform: translateY(0); }
+      from { opacity: 0; transform: translateY(18px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-    .anim { opacity: 0; animation: fadeUp 0.9s cubic-bezier(0.16,1,0.3,1) forwards; }
-    .d1 { animation-delay: 0.05s; }
-    .d2 { animation-delay: 0.15s; }
-    .d3 { animation-delay: 0.25s; }
-    .d4 { animation-delay: 0.35s; }
-    .d5 { animation-delay: 0.45s; }
 
-    /* ── Responsive ── */
-    @media (max-width: 640px) {
-      .hero { padding: 64px 0 50px; }
-      .hero h1 { font-size: 2.4rem; }
-      .stats { flex-direction: column; }
-      .stat { border-right: none; border-bottom: 1px solid var(--border); }
-      .stat:last-child { border-bottom: none; }
-      footer { flex-direction: column; text-align: center; }
-      .footer-links { justify-content: center; }
-      .support-card { padding: 48px 24px; }
-      .nav-link { display: none; }
+    .reveal {
+      opacity: 0;
+      animation: fadeUp 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    .delay-1 { animation-delay: 0.05s; }
+    .delay-2 { animation-delay: 0.12s; }
+    .delay-3 { animation-delay: 0.18s; }
+
+    @media (max-width: 980px) {
+      .hero {
+        grid-template-columns: 1fr;
+        padding-top: 36px;
+      }
+
+      .apps-grid,
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 760px) {
+      body { padding-bottom: calc(84px + var(--safe-bottom)); }
+
+      .nav-desktop { display: none; }
+      .menu-btn {
+        display: inline-flex;
+      }
+
+      .hero-metrics {
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+
+      .metric {
+        padding: 12px;
+      }
+
+      .metric-value {
+        font-size: 1.1rem;
+      }
+
+      .hero-actions .btn {
+        flex: 1 1 100%;
+      }
+
+      .mobile-cta { display: block; }
+
+      .app-card {
+        padding: 20px;
+      }
+
+      .support-card {
+        padding: 36px 20px;
+      }
+
+      footer {
+        flex-direction: column;
+        text-align: center;
+        padding-bottom: 24px;
+      }
+
+      .footer-links {
+        justify-content: center;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .container { padding: 0 16px; }
+      .brand-tagline { display: none; }
+      .hero-metrics { grid-template-columns: 1fr; }
+    }
+
+    @media (min-width: 761px) {
+      body { padding-bottom: 0; }
     }
   </style>
 </head>
 <body>
-  <!-- Ambient background -->
-  <div class="glow glow-1"></div>
-  <div class="glow glow-2"></div>
-  <div class="glow glow-3"></div>
+  <div class="grid-overlay" aria-hidden="true"></div>
 
-  <!-- Navigation -->
-  <div class="container">
-    <nav>
-      <a href="#" class="brand">
-        <div class="brand-icon">📦</div>
-        TakEsep
-      </a>
-      <div class="nav-right">
-        <a href="#apps" class="nav-link">Приложения</a>
-        <a href="#support" class="nav-link">Поддержка</a>
-        <a href="https://github.com/axeronisd/TakEsep/releases" target="_blank" class="nav-link">Релизы</a>
-        <span class="nav-badge">v2.1.8 · build 72</span>
+  <header class="site-header">
+    <div class="container">
+      <nav>
+        <a href="#" class="brand">
+          <img src="logo.png" alt="TakEsep" width="38" height="38">
+          <div>
+            <div class="brand-name">TakEsep</div>
+            <div class="brand-tagline">Business ecosystem</div>
+          </div>
+        </a>
+        <div class="nav-desktop">
+          <a href="#apps" class="nav-link">Приложения</a>
+          <a href="#features" class="nav-link">Возможности</a>
+          <a href="#support" class="nav-link">Поддержка</a>
+          <a href="https://github.com/axeronisd/TakEsep/releases" target="_blank" rel="noopener" class="nav-link">GitHub</a>
+          <span class="nav-badge" id="nav-version">Загрузка версии…</span>
+        </div>
+        <button class="menu-btn" id="menu-btn" aria-label="Меню" aria-expanded="false">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+      </nav>
+      <div class="mobile-menu" id="mobile-menu">
+        <a href="#apps">Приложения</a>
+        <a href="#features">Возможности</a>
+        <a href="#support">Поддержка</a>
+        <a href="admin.html">Веб-панель</a>
+        <a href="https://github.com/axeronisd/TakEsep/releases" target="_blank" rel="noopener">GitHub Releases</a>
       </div>
-    </nav>
-  </div>
+    </div>
+  </header>
 
-  <!-- Hero -->
   <div class="container">
     <section class="hero">
-      <div class="hero-badge anim d1">
-        ✦ <span>Новинка:</span> Build 72 — новые возможности
-      </div>
-      <h1 class="anim d2">
-        <span class="gradient-text">Управляйте бизнесом</span><br>в одно касание
-      </h1>
-      <p class="anim d3">
-        Полная экосистема для склада, магазина и службы доставки.
-        Работает на Windows, Android и iOS — всё в одном месте.
-      </p>
-      <div class="hero-cta anim d4">
-        <a href="#apps" class="cta-primary">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          Скачать приложения
-        </a>
-        <a href="admin.html" class="cta-secondary">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-          Веб-панель
-        </a>
+      <div class="hero-copy reveal delay-1">
+        <div class="eyebrow">Экосистема AkJol</div>
+        <h1>
+          Склад, доставка и продажи
+          <span class="muted">в одной платформе</span>
+        </h1>
+        <p class="hero-lead">
+          TakEsep для бизнеса. AkJol для клиентов. AkJol Pro для курьеров.
+          Сборки обновляются автоматически из GitHub Releases.
+        </p>
+
+        <div class="device-banner" id="device-banner">
+          <div class="device-banner-icon" id="device-banner-icon"></div>
+          <div>
+            <div class="device-banner-title" id="device-banner-title">Рекомендуемая версия</div>
+            <div class="device-banner-sub" id="device-banner-sub">Подбираем сборку для вашего устройства</div>
+          </div>
+        </div>
+
+        <div class="hero-actions">
+          <a href="#apps" class="btn btn-primary" id="hero-download-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Скачать приложения
+          </a>
+          <a href="admin.html" class="btn btn-secondary">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Веб-панель
+          </a>
+        </div>
+
+        <div class="hero-metrics">
+          <div class="metric">
+            <div class="metric-value">3</div>
+            <div class="metric-label">Приложения</div>
+          </div>
+          <div class="metric">
+            <div class="metric-value" id="metric-platforms">5+</div>
+            <div class="metric-label">Платформ</div>
+          </div>
+          <div class="metric">
+            <div class="metric-value" id="metric-build">—</div>
+            <div class="metric-label">Текущая сборка</div>
+          </div>
+        </div>
       </div>
 
-      <!-- Stats -->
-      <div class="stats anim d5">
-        <div class="stat">
-          <div class="stat-value">3</div>
-          <div class="stat-label">Приложения</div>
-        </div>
-        <div class="stat">
-          <div class="stat-value">5+</div>
-          <div class="stat-label">Платформ</div>
-        </div>
-        <div class="stat">
-          <div class="stat-value">72</div>
-          <div class="stat-label">Сборка</div>
-        </div>
-        <div class="stat">
-          <div class="stat-value">24/7</div>
-          <div class="stat-label">Поддержка</div>
+      <div class="hero-panel reveal delay-2">
+        <div class="panel-label">Состав экосистемы</div>
+        <div class="app-showcase">
+          <a href="#app-warehouse" class="showcase-item">
+            <img src="logo.png" alt="TakEsep">
+            <div>
+              <div class="showcase-name">TakEsep</div>
+              <div class="showcase-role">Склад, касса, аналитика</div>
+            </div>
+          </a>
+          <a href="#app-customer" class="showcase-item">
+            <img src="akjol_customer.png" alt="AkJol">
+            <div>
+              <div class="showcase-name">AkJol</div>
+              <div class="showcase-role">Заказы и доставка</div>
+            </div>
+          </a>
+          <a href="#app-courier" class="showcase-item">
+            <img src="akjol_courier.png" alt="AkJol Pro">
+            <div>
+              <div class="showcase-name">AkJol Pro</div>
+              <div class="showcase-role">Приложение курьера</div>
+            </div>
+          </a>
         </div>
       </div>
     </section>
   </div>
 
-  <!-- Apps -->
   <div class="container" id="apps">
-    <section class="apps-section">
-      <div class="section-header anim d1">
-        <div class="section-eyebrow">Экосистема</div>
-        <h2>Три приложения — одна система</h2>
-        <p>Скачайте актуальные версии для вашей платформы</p>
+    <section class="block">
+      <div class="section-head reveal delay-1">
+        <div class="eyebrow" style="justify-content:center;">Загрузка</div>
+        <h2>Приложения экосистемы</h2>
+        <p>Ссылки и размеры файлов подтягиваются из последнего GitHub Release.</p>
+        <div class="release-note loading" id="release-note">Проверяем актуальную сборку…</div>
       </div>
 
       <div class="apps-grid">
-
-        <!-- TakEsep Warehouse -->
-        <div class="app-card warehouse anim d2">
-          <div class="card-top">
-            <div class="app-icon-placeholder placeholder-warehouse">📦</div>
-            <div class="app-meta">
-              <div class="app-name">TakEsep</div>
-              <span class="app-badge badge-wh">🏭 Склад и Касса</span>
+        <article class="app-card warehouse reveal delay-2" id="app-warehouse" data-app="warehouse">
+          <span class="recommended-pill">Рекомендуем для вас</span>
+          <div class="card-header">
+            <img class="app-icon" src="logo.png" alt="TakEsep">
+            <div>
+              <div class="app-title">TakEsep</div>
+              <span class="role-badge">Склад и касса</span>
             </div>
           </div>
-          <p class="app-desc">
-            Полноценная система управления запасами, кассой и аналитикой для администраторов и кассиров.
-          </p>
-          <div class="features-list">
-            <span class="feature-tag">Учёт товаров</span>
-            <span class="feature-tag">Касса</span>
-            <span class="feature-tag">Аналитика</span>
-            <span class="feature-tag">Отчёты</span>
+          <p class="app-desc">Управление запасами, касса, отчёты и аналитика для администраторов и сотрудников точки продаж.</p>
+          <div class="tag-list">
+            <span class="tag">Windows</span>
+            <span class="tag">Android</span>
+            <span class="tag">iOS</span>
           </div>
           <div class="card-divider"></div>
-          <div class="download-btns">
-            <a href="https://github.com/axeronisd/TakEsep/releases/latest/download/TakEsep_Setup.exe"
-               class="dl-btn dl-windows" id="dl-warehouse-windows">
-              <div class="dl-btn-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>
-              </div>
-              <div class="dl-btn-text">
-                Windows (ПК)
-                <span class="dl-btn-sub">Установщик .exe · 64-bit</span>
-              </div>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            </a>
-            <a href="https://github.com/axeronisd/TakEsep/releases/latest/download/TakEsep.apk"
-               class="dl-btn dl-android" id="dl-warehouse-android">
-              <div class="dl-btn-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.34c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-11.05 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm11.41-7.28l1.98-3.44a.42.42 0 0 0-.15-.57.42.42 0 0 0-.57.15l-2.02 3.51C15.6 7.19 13.84 6.5 12 6.5s-3.6.69-5.13 1.72L4.85 4.71a.42.42 0 0 0-.57-.15.42.42 0 0 0-.15.57l1.98 3.44C2.59 10.44.13 14.14 0 18.35h24c-.13-4.21-2.59-7.91-6.12-9.77z"/></svg>
-              </div>
-              <div class="dl-btn-text">
-                Android (APK)
-                <span class="dl-btn-sub">Прямая установка</span>
-              </div>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            </a>
-          </div>
-        </div>
+          <div class="download-list" data-downloads="warehouse"></div>
+        </article>
 
-        <!-- AkJol Customer -->
-        <div class="app-card customer anim d3">
-          <div class="card-top">
-            <div class="app-icon-placeholder placeholder-customer">🛒</div>
-            <div class="app-meta">
-              <div class="app-name">AkJol</div>
-              <span class="app-badge badge-cu">🧑‍💼 Покупателям</span>
+        <article class="app-card customer reveal delay-2" id="app-customer" data-app="customer">
+          <span class="recommended-pill">Рекомендуем для вас</span>
+          <div class="card-header">
+            <img class="app-icon" src="akjol_customer.png" alt="AkJol">
+            <div>
+              <div class="app-title">AkJol</div>
+              <span class="role-badge">Для покупателей</span>
             </div>
           </div>
-          <p class="app-desc">
-            Мобильное приложение для клиентов: удобный каталог товаров, оформление заказов и отслеживание на карте в реальном времени.
-          </p>
-          <div class="features-list">
-            <span class="feature-tag">Каталог</span>
-            <span class="feature-tag">Заказы</span>
-            <span class="feature-tag">Карта</span>
-            <span class="feature-tag">Уведомления</span>
+          <p class="app-desc">Каталог, корзина, оформление заказа и отслеживание доставки на карте в реальном времени.</p>
+          <div class="tag-list">
+            <span class="tag">Android</span>
+            <span class="tag">iOS</span>
           </div>
           <div class="card-divider"></div>
-          <div class="download-btns">
-            <a href="https://github.com/axeronisd/TakEsep/releases/latest/download/AkJol.apk"
-               class="dl-btn dl-android" id="dl-customer-android">
-              <div class="dl-btn-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.34c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-11.05 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm11.41-7.28l1.98-3.44a.42.42 0 0 0-.15-.57.42.42 0 0 0-.57.15l-2.02 3.51C15.6 7.19 13.84 6.5 12 6.5s-3.6.69-5.13 1.72L4.85 4.71a.42.42 0 0 0-.57-.15.42.42 0 0 0-.15.57l1.98 3.44C2.59 10.44.13 14.14 0 18.35h24c-.13-4.21-2.59-7.91-6.12-9.77z"/></svg>
-              </div>
-              <div class="dl-btn-text">
-                Android (APK)
-                <span class="dl-btn-sub">Прямая установка</span>
-              </div>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            </a>
-            <a href="https://apps.apple.com/app/akjol/id6745783003"
-               target="_blank" class="dl-btn dl-ios" id="dl-customer-ios">
-              <div class="dl-btn-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-              </div>
-              <div class="dl-btn-text">
-                App Store (iOS)
-                <span class="dl-btn-sub">iPhone и iPad</span>
-              </div>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            </a>
-          </div>
-        </div>
+          <div class="download-list" data-downloads="customer"></div>
+        </article>
 
-        <!-- AkJol Courier -->
-        <div class="app-card courier anim d4">
-          <div class="card-top">
-            <div class="app-icon-placeholder placeholder-courier">🚴</div>
-            <div class="app-meta">
-              <div class="app-name">AkJol Pro</div>
-              <span class="app-badge badge-co">🚚 Курьерам</span>
+        <article class="app-card courier reveal delay-3" id="app-courier" data-app="courier">
+          <span class="recommended-pill">Рекомендуем для вас</span>
+          <div class="card-header">
+            <img class="app-icon" src="akjol_courier.png" alt="AkJol Pro">
+            <div>
+              <div class="app-title">AkJol Pro</div>
+              <span class="role-badge">Для курьеров</span>
             </div>
           </div>
-          <p class="app-desc">
-            Профессиональный инструмент для курьеров: маршруты, статусы заказов и мгновенные push-уведомления.
-          </p>
-          <div class="features-list">
-            <span class="feature-tag">Маршруты</span>
-            <span class="feature-tag">Статусы</span>
-            <span class="feature-tag">Push</span>
-            <span class="feature-tag">Навигация</span>
+          <p class="app-desc">Активные заказы, маршруты, статусы и push-уведомления для полевой команды.</p>
+          <div class="tag-list">
+            <span class="tag">Android</span>
+            <span class="tag">iOS</span>
           </div>
           <div class="card-divider"></div>
-          <div class="download-btns">
-            <a href="https://github.com/axeronisd/TakEsep/releases/latest/download/AkJol_Pro.apk"
-               class="dl-btn dl-android" id="dl-courier-android">
-              <div class="dl-btn-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.34c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-11.05 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm11.41-7.28l1.98-3.44a.42.42 0 0 0-.15-.57.42.42 0 0 0-.57.15l-2.02 3.51C15.6 7.19 13.84 6.5 12 6.5s-3.6.69-5.13 1.72L4.85 4.71a.42.42 0 0 0-.57-.15.42.42 0 0 0-.15.57l1.98 3.44C2.59 10.44.13 14.14 0 18.35h24c-.13-4.21-2.59-7.91-6.12-9.77z"/></svg>
-              </div>
-              <div class="dl-btn-text">
-                Android (APK)
-                <span class="dl-btn-sub">Прямая установка</span>
-              </div>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            </a>
-            <a href="https://apps.apple.com/app/akjol-pro/id6745789036"
-               target="_blank" class="dl-btn dl-ios" id="dl-courier-ios">
-              <div class="dl-btn-icon">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-              </div>
-              <div class="dl-btn-text">
-                App Store (iOS)
-                <span class="dl-btn-sub">iPhone и iPad</span>
-              </div>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-            </a>
-          </div>
-        </div>
-
+          <div class="download-list" data-downloads="courier"></div>
+        </article>
       </div>
     </section>
   </div>
 
-  <!-- Features -->
-  <div class="container">
-    <section class="features-section">
-      <div class="section-header anim d1">
-        <div class="section-eyebrow">Возможности</div>
-        <h2>Всё что нужно бизнесу</h2>
+  <div class="container" id="features">
+    <section class="block">
+      <div class="section-head reveal delay-1">
+        <div class="eyebrow" style="justify-content:center;">Платформа</div>
+        <h2>Возможности для бизнеса</h2>
+        <p>Единый контур для склада, клиента и курьера — от заказа до доставки.</p>
       </div>
       <div class="features-grid">
-        <div class="feature-card anim d2">
-          <div class="feature-icon">⚡</div>
-          <div class="feature-title">Мгновенная синхронизация</div>
-          <div class="feature-desc">Данные обновляются в реальном времени на всех устройствах и платформах.</div>
+        <div class="feature-card reveal delay-2">
+          <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+          <div class="feature-title">Синхронизация в реальном времени</div>
+          <div class="feature-desc">Статусы, остатки и заказы обновляются мгновенно на всех устройствах.</div>
         </div>
-        <div class="feature-card anim d2">
-          <div class="feature-icon">🗺️</div>
+        <div class="feature-card reveal delay-2">
+          <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-4.5 7-10a7 7 0 1 0-14 0c0 5.5 7 10 7 10z"/><circle cx="12" cy="11" r="2.5"/></svg></div>
           <div class="feature-title">Трекинг на карте</div>
-          <div class="feature-desc">Отслеживайте курьеров и заказы на интерактивной карте в режиме реального времени.</div>
+          <div class="feature-desc">Клиент видит доставку, курьер работает с актуальным маршрутом.</div>
         </div>
-        <div class="feature-card anim d3">
-          <div class="feature-icon">📊</div>
+        <div class="feature-card reveal delay-2">
+          <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-5 4 3 5-7"/></svg></div>
           <div class="feature-title">Аналитика и отчёты</div>
-          <div class="feature-desc">Детальная статистика продаж, склада и производительности команды.</div>
+          <div class="feature-desc">Продажи, склад и эффективность команды в понятных сводках.</div>
         </div>
-        <div class="feature-card anim d3">
-          <div class="feature-icon">🔔</div>
+        <div class="feature-card reveal delay-3">
+          <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
           <div class="feature-title">Push-уведомления</div>
-          <div class="feature-desc">Мгновенные оповещения о заказах, изменениях статуса и важных событиях.</div>
+          <div class="feature-desc">Оповещения о заказах, статусах и сообщениях в чате.</div>
         </div>
-        <div class="feature-card anim d4">
-          <div class="feature-icon">🔒</div>
-          <div class="feature-title">Безопасность</div>
-          <div class="feature-desc">Шифрование данных, ролевой доступ и защищённое облачное хранение.</div>
+        <div class="feature-card reveal delay-3">
+          <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
+          <div class="feature-title">Безопасность данных</div>
+          <div class="feature-desc">Ролевой доступ и защищённое облачное хранение.</div>
         </div>
-        <div class="feature-card anim d4">
-          <div class="feature-icon">🌐</div>
+        <div class="feature-card reveal delay-3">
+          <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg></div>
           <div class="feature-title">Мультиплатформа</div>
-          <div class="feature-desc">Windows, Android, iOS — полноценная работа на любом устройстве.</div>
+          <div class="feature-desc">Windows, Android и iOS — полноценная работа на любом устройстве.</div>
         </div>
       </div>
     </section>
   </div>
 
-  <!-- Support -->
   <div class="container" id="support">
-    <section class="support-section">
-      <div class="support-card anim d1">
-        <div class="support-glow"></div>
+    <section class="block">
+      <div class="support-card reveal delay-1">
         <h2>Служба поддержки</h2>
-        <p>Нужна помощь с установкой, настройкой или возникли вопросы? Мы всегда на связи и готовы помочь.</p>
-        <div class="support-btns">
-          <a href="mailto:uzbekovilgis@gmail.com" class="support-btn support-email" id="support-email">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+        <p>Поможем с установкой, настройкой и подключением экосистемы к вашему бизнесу.</p>
+        <div class="support-actions">
+          <a href="mailto:uzbekovilgis@gmail.com" class="support-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             uzbekovilgis@gmail.com
           </a>
-          <a href="https://wa.me/996506384666" target="_blank" class="support-btn support-wa" id="support-whatsapp">
+          <a href="https://wa.me/996506384666" target="_blank" rel="noopener" class="support-btn whatsapp">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413z"/></svg>
             WhatsApp +996 506 384 666
           </a>
@@ -939,17 +1124,264 @@
     </section>
   </div>
 
-  <!-- Footer -->
   <div class="container">
     <footer>
-      <div class="footer-brand">© 2026 TakEsep Ecosystem</div>
+      <div class="footer-brand">
+        <img src="logo.png" alt="">
+        <span>© 2026 TakEsep Ecosystem</span>
+      </div>
       <div class="footer-links">
-        <a href="https://github.com/axeronisd/TakEsep/releases" target="_blank">Все версии</a>
+        <a href="https://github.com/axeronisd/TakEsep/releases" target="_blank" rel="noopener" id="footer-releases">Все версии</a>
         <a href="admin.html">Админ-панель</a>
         <a href="privacy.html">Конфиденциальность</a>
       </div>
     </footer>
   </div>
 
+  <div class="mobile-cta">
+    <a href="#apps" class="btn btn-primary" id="mobile-cta-btn">Скачать для вашего устройства</a>
+  </div>
+
+  <script>
+    const GITHUB_REPO = 'axeronisd/TakEsep';
+    const RELEASES_PAGE = `https://github.com/${GITHUB_REPO}/releases`;
+
+    const ICONS = {
+      windows: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>',
+      android: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.34c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-11.05 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm11.41-7.28l1.98-3.44a.42.42 0 0 0-.15-.57.42.42 0 0 0-.57.15l-2.02 3.51C15.6 7.19 13.84 6.5 12 6.5s-3.6.69-5.13 1.72L4.85 4.71a.42.42 0 0 0-.57-.15.42.42 0 0 0-.15.57l1.98 3.44C2.59 10.44.13 14.14 0 18.35h24c-.13-4.21-2.59-7.91-6.12-9.77z"/></svg>',
+      ios: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>',
+      store: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>',
+      download: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+    };
+
+    const APP_CONFIG = {
+      warehouse: {
+        label: 'TakEsep',
+        downloads: [
+          { id: 'warehouse-windows', platform: 'windows', file: 'TakEsep_Setup.exe', title: 'Windows', sub: 'Установщик .exe · 64-bit' },
+          { id: 'warehouse-android', platform: 'android', file: 'TakEsep.apk', title: 'Android', sub: 'APK · прямая установка' },
+          { id: 'warehouse-ios-ipa', platform: 'ios', file: 'TakEsep.ipa', title: 'iOS (IPA)', sub: 'Сборка из GitHub Releases' },
+        ]
+      },
+      customer: {
+        label: 'AkJol',
+        downloads: [
+          { id: 'customer-android', platform: 'android', file: 'AkJol.apk', title: 'Android', sub: 'APK · прямая установка' },
+          { id: 'customer-ios-ipa', platform: 'ios', file: 'AkJol.ipa', title: 'iOS (IPA)', sub: 'Сборка из GitHub Releases' },
+          { id: 'customer-appstore', platform: 'ios', external: 'https://apps.apple.com/app/akjol/id6745783003', title: 'App Store', sub: 'Официальная установка для iPhone' },
+        ]
+      },
+      courier: {
+        label: 'AkJol Pro',
+        downloads: [
+          { id: 'courier-android', platform: 'android', file: 'AkJol_Pro.apk', title: 'Android', sub: 'APK · прямая установка' },
+          { id: 'courier-ios-ipa', platform: 'ios', file: 'AkJol_Pro.ipa', title: 'iOS (IPA)', sub: 'Сборка из GitHub Releases' },
+          { id: 'courier-appstore', platform: 'ios', external: 'https://apps.apple.com/app/akjol-pro/id6745789036', title: 'App Store', sub: 'Официальная установка для iPhone' },
+        ]
+      }
+    };
+
+    const DEVICE = detectDevice();
+    let releaseData = null;
+    let primaryDownload = null;
+
+    function detectDevice() {
+      const ua = navigator.userAgent || '';
+      if (/Windows/i.test(ua)) return { type: 'windows', label: 'Windows', app: 'warehouse' };
+      if (/Android/i.test(ua)) {
+        if (/Courier|Pro/i.test(document.title)) return { type: 'android', label: 'Android', app: 'courier' };
+        return { type: 'android', label: 'Android', app: 'customer' };
+      }
+      if (/iPhone|iPad|iPod/i.test(ua)) return { type: 'ios', label: 'iOS', app: 'customer' };
+      return { type: 'desktop', label: 'Desktop', app: 'warehouse' };
+    }
+
+    function formatBytes(bytes) {
+      if (!bytes) return '';
+      const units = ['B', 'KB', 'MB', 'GB'];
+      let value = bytes;
+      let i = 0;
+      while (value >= 1024 && i < units.length - 1) {
+        value /= 1024;
+        i++;
+      }
+      return `${value.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+    }
+
+    function parseReleaseTag(tag) {
+      const match = String(tag || '').match(/v?([\d.]+)(?:-b(\d+))?/i);
+      return {
+        version: match?.[1] || tag || 'latest',
+        build: match?.[2] || null,
+      };
+    }
+
+    function buildAssetMap(assets) {
+      const map = {};
+      (assets || []).forEach((asset) => {
+        map[asset.name] = asset;
+      });
+      return map;
+    }
+
+    function renderDownloadButton(item, asset, highlight) {
+      const href = item.external || asset?.browser_download_url || `${RELEASES_PAGE}/latest`;
+      const size = asset ? formatBytes(asset.size) : '';
+      const icon = item.external ? ICONS.store : ICONS[item.platform] || ICONS.download;
+      const disabled = !item.external && !asset;
+
+      return `
+        <a href="${href}"
+           class="dl-btn ${highlight ? 'highlight' : ''} ${disabled ? 'disabled' : ''}"
+           id="${item.id}"
+           ${item.external ? 'target="_blank" rel="noopener"' : 'download'}
+           data-platform="${item.platform}">
+          <span class="dl-icon">${icon}</span>
+          <span class="dl-text">
+            <div class="dl-title">${item.title}</div>
+            <div class="dl-sub">${item.sub}${size ? ` · ${size}` : ''}</div>
+          </span>
+          ${item.external ? ICONS.store : ICONS.download}
+        </a>
+      `;
+    }
+
+    function renderDownloads() {
+      Object.entries(APP_CONFIG).forEach(([appKey, config]) => {
+        const container = document.querySelector(`[data-downloads="${appKey}"]`);
+        if (!container) return;
+
+        const assetMap = buildAssetMap(releaseData?.assets || []);
+        container.innerHTML = config.downloads.map((item) => {
+          const asset = item.file ? assetMap[item.file] : null;
+          const highlight =
+            (DEVICE.type === item.platform || (DEVICE.type === 'desktop' && item.platform === 'windows')) &&
+            appKey === DEVICE.app;
+          if (highlight && !item.external && asset) {
+            primaryDownload = { href: asset.browser_download_url, app: appKey, title: `${config.label} · ${item.title}` };
+          }
+          if (highlight && item.external) {
+            primaryDownload = { href: item.external, app: appKey, title: `${config.label} · ${item.title}` };
+          }
+          return renderDownloadButton(item, asset, highlight);
+        }).join('');
+      });
+
+      document.querySelectorAll('.app-card').forEach((card) => {
+        card.classList.toggle('recommended', card.dataset.app === DEVICE.app);
+      });
+    }
+
+    function updateVersionUI(release) {
+      const parsed = parseReleaseTag(release.tag_name);
+      const buildLabel = parsed.build ? ` · build ${parsed.build}` : '';
+      const versionText = `v${parsed.version}${buildLabel}`;
+      const date = release.published_at
+        ? new Date(release.published_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+        : '';
+
+      document.getElementById('nav-version').textContent = versionText;
+      document.getElementById('metric-build').textContent = parsed.build || parsed.version;
+
+      const note = document.getElementById('release-note');
+      note.classList.remove('loading');
+      note.innerHTML = `
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+        Актуальный релиз: <strong>${release.name || versionText}</strong>${date ? ` · ${date}` : ''}
+      `;
+
+      document.getElementById('footer-releases').href = release.html_url || RELEASES_PAGE;
+    }
+
+    function updateDeviceBanner() {
+      const banner = document.getElementById('device-banner');
+      const iconWrap = document.getElementById('device-banner-icon');
+      const title = document.getElementById('device-banner-title');
+      const sub = document.getElementById('device-banner-sub');
+      const app = APP_CONFIG[DEVICE.app];
+
+      banner.classList.add('visible');
+      iconWrap.innerHTML = ICONS[DEVICE.type === 'desktop' ? 'windows' : DEVICE.type] || ICONS.download;
+      title.textContent = `Рекомендуем: ${app.label} для ${DEVICE.label}`;
+
+      if (primaryDownload) {
+        sub.textContent = primaryDownload.title;
+        const heroBtn = document.getElementById('hero-download-btn');
+        const mobileBtn = document.getElementById('mobile-cta-btn');
+        heroBtn.href = primaryDownload.href;
+        mobileBtn.href = primaryDownload.href;
+        if (primaryDownload.href.startsWith('http')) {
+          heroBtn.setAttribute('target', '_blank');
+          heroBtn.setAttribute('rel', 'noopener');
+          mobileBtn.setAttribute('target', '_blank');
+          mobileBtn.setAttribute('rel', 'noopener');
+        }
+      } else {
+        sub.textContent = 'Выберите приложение и платформу ниже';
+      }
+    }
+
+    async function loadRelease() {
+      try {
+        const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
+          headers: { Accept: 'application/vnd.github+json' }
+        });
+        if (!response.ok) throw new Error(`GitHub API ${response.status}`);
+        releaseData = await response.json();
+        renderDownloads();
+        updateVersionUI(releaseData);
+        updateDeviceBanner();
+      } catch (error) {
+        console.warn('[TakEsep landing] Release fetch failed:', error);
+        document.getElementById('nav-version').textContent = 'GitHub Releases';
+        document.getElementById('release-note').textContent = 'Не удалось загрузить метаданные релиза. Ссылки ведут на /releases/latest.';
+        renderFallbackDownloads();
+        updateDeviceBanner();
+      }
+    }
+
+    function renderFallbackDownloads() {
+      Object.entries(APP_CONFIG).forEach(([appKey, config]) => {
+        const container = document.querySelector(`[data-downloads="${appKey}"]`);
+        if (!container) return;
+        container.innerHTML = config.downloads.map((item) => {
+          const href = item.external || `https://github.com/${GITHUB_REPO}/releases/latest/download/${item.file}`;
+          const highlight = appKey === DEVICE.app && (DEVICE.type === item.platform || (DEVICE.type === 'desktop' && item.platform === 'windows'));
+          if (highlight) primaryDownload = { href, app: appKey, title: `${config.label} · ${item.title}` };
+          return `
+            <a href="${href}" class="dl-btn ${highlight ? 'highlight' : ''}" id="${item.id}"
+               ${item.external ? 'target="_blank" rel="noopener"' : 'download'} data-platform="${item.platform}">
+              <span class="dl-icon">${item.external ? ICONS.store : (ICONS[item.platform] || ICONS.download)}</span>
+              <span class="dl-text">
+                <div class="dl-title">${item.title}</div>
+                <div class="dl-sub">${item.sub}</div>
+              </span>
+              ${item.external ? ICONS.store : ICONS.download}
+            </a>
+          `;
+        }).join('');
+      });
+      document.querySelectorAll('.app-card').forEach((card) => {
+        card.classList.toggle('recommended', card.dataset.app === DEVICE.app);
+      });
+    }
+
+    document.getElementById('menu-btn').addEventListener('click', () => {
+      const menu = document.getElementById('mobile-menu');
+      const btn = document.getElementById('menu-btn');
+      const open = menu.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+
+    document.querySelectorAll('#mobile-menu a').forEach((link) => {
+      link.addEventListener('click', () => {
+        document.getElementById('mobile-menu').classList.remove('open');
+        document.getElementById('menu-btn').setAttribute('aria-expanded', 'false');
+      });
+    });
+
+    renderFallbackDownloads();
+    loadRelease();
+  </script>
 </body>
 </html>

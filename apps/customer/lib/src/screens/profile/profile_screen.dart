@@ -333,13 +333,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _executeDeleteAccount() async {
     setState(() => _loading = true);
     try {
-      await FirebasePushBootstrap.onLogout();
       await _auth.deleteAccount();
+      await FirebasePushBootstrap.onLogout();
       if (mounted) context.go('/login');
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
-        _snack('Ошибка: не удалось удалить аккаунт', AkJolTheme.error);
+        final message = e is AkJolAuthException ? e.message : e.toString();
+        _snack('Ошибка: $message', AkJolTheme.error);
       }
     }
   }

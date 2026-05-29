@@ -375,17 +375,36 @@ class AkJolAuthService {
 
   Future<void> deleteAccount() async {
     try {
-      final response = await _client.functions.invoke('delete-account');
-      if (response.status != 200) {
-        throw const AkJolAuthException('Не удалось удалить аккаунт');
+      final session = _client.auth.currentSession;
+      if (session == null) {
+        throw const AkJolAuthException(
+          'Сессия истекла. Пожалуйста, войдите заново.',
+        );
       }
+
+      final token = session.accessToken;
+
+      // Вызов функции с явной передачей токена в заголовке
+      final response = await _client.functions.invoke(
+        'delete-account',
+        headers: {'Authorization': 'Bearer $token'},
+      );
+
+      if (response.status != 200) {
+        throw AkJolAuthException(
+          'Не удалось удалить аккаунт: ${response.data?['error'] ?? response.data?['details'] ?? "Unknown error"}',
+        );
+      }
+
       await signOut();
     } on FunctionException catch (e) {
       throw AkJolAuthException(
         'Ошибка удаления аккаунта: ${e.reasonPhrase ?? e.details?.toString() ?? "Unknown error"}',
       );
+    } on AkJolAuthException {
+      rethrow;
     } catch (e) {
-      throw const AkJolAuthException('Ошибка соединения. Попробуйте позже.');
+      throw AkJolAuthException('Ошибка удаления: $e');
     }
   }
 

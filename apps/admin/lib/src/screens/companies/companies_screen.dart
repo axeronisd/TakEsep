@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:takesep_design_system/takesep_design_system.dart';
 import '../../providers/admin_providers.dart';
+import '../../widgets/admin_page_body.dart';
 
 class CompaniesScreen extends ConsumerStatefulWidget {
   const CompaniesScreen({super.key});
@@ -17,130 +19,71 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
   @override
   Widget build(BuildContext context) {
     final companiesAsync = ref.watch(companiesProvider);
-    final isMobile = MediaQuery.of(context).size.width < 600;
+    final isMobile = MediaQuery.of(context).size.width < 760;
 
-    return Padding(
-      padding: EdgeInsets.all(isMobile ? 16 : 32),
+    return AdminPageBody(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
-          if (isMobile)
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text('Компании',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w700)),
-                const SizedBox(height: 4),
-                const Text('Лицензионные ключи и доступ',
-                    style: TextStyle(color: Color(0xFF8888AA), fontSize: 13)),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      backgroundColor: const Color(0xFF6C5CE7),
-                      foregroundColor: Colors.white,
-                    ),
-                    onPressed: () => _showCreateCompanyDialog(context),
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text('Новая компания'),
-                  ),
+          Row(
+            children: [
+              Expanded(
+                child: AdminSearchField(
+                  hint: 'Поиск по названию...',
+                  onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
                 ),
-              ],
-            )
-          else
-            Row(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: const [
-                    Text('Компании',
-                        style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 28,
-                            fontWeight: FontWeight.w700)),
-                    SizedBox(height: 4),
-                    Text('Управление компаниями и лицензионными ключами',
-                        style: TextStyle(color: Color(0xFF8888AA), fontSize: 14)),
-                  ],
-                ),
-                const Spacer(),
+              ),
+              if (!isMobile) ...[
+                const SizedBox(width: 16),
                 ElevatedButton.icon(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6C5CE7),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 16),
-                  ),
                   onPressed: () => _showCreateCompanyDialog(context),
-                  icon: const Icon(Icons.add, size: 18),
+                  icon: const Icon(Icons.add_rounded, size: 18),
                   label: const Text('Новая компания'),
                 ),
               ],
-            ),
-
-          SizedBox(height: isMobile ? 16 : 24),
-
-          // Search
-          SizedBox(
-            width: isMobile ? double.infinity : 400,
-            child: TextField(
-              style: const TextStyle(color: Colors.white),
-              decoration: InputDecoration(
-                hintText: 'Поиск по названию...',
-                hintStyle: const TextStyle(color: Color(0xFF6666AA)),
-                prefixIcon: const Icon(Icons.search, color: Color(0xFF6666AA)),
-                filled: true,
-                fillColor: const Color(0xFF12122B),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
-            ),
+            ],
           ),
-          SizedBox(height: isMobile ? 16 : 24),
-
-          // Content
+          if (isMobile) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _showCreateCompanyDialog(context),
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text('Новая компания'),
+              ),
+            ),
+          ],
+          const SizedBox(height: 20),
           Expanded(
             child: companiesAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator(color: Color(0xFF6C5CE7))),
-              error: (e, _) => Center(
-                  child: Text('Ошибка: $e',
-                      style: const TextStyle(color: Color(0xFFFF6B6B)))),
+              loading: () => const Center(
+                child: CircularProgressIndicator(color: AppColors.primary),
+              ),
+              error: (e, _) => AdminEmptyState(
+                icon: Icons.error_outline_rounded,
+                title: 'Не удалось загрузить компании',
+                subtitle: e.toString(),
+              ),
               data: (companies) {
                 final filtered = companies.where((c) {
                   if (_searchQuery.isEmpty) return true;
                   final title = (c['title'] as String? ?? '').toLowerCase();
                   return title.contains(_searchQuery);
                 }).toList();
-                
+
                 if (filtered.isEmpty) {
-                  return const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.business_outlined, size: 56, color: Color(0xFF3A3A6A)),
-                        SizedBox(height: 16),
-                        Text('Нет компаний',
-                            style: TextStyle(color: Color(0xFF8888AA), fontSize: 16)),
-                      ],
-                    ),
+                  return const AdminEmptyState(
+                    icon: Icons.business_outlined,
+                    title: 'Нет компаний',
+                    subtitle: 'Создайте первую компанию для выдачи лицензии',
                   );
                 }
 
                 if (isMobile) {
                   return _buildMobileList(filtered);
-                } else {
-                  return _buildTable(filtered);
                 }
+                return _buildTable(filtered);
               },
             ),
           ),
@@ -162,9 +105,9 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: const Color(0xFF1A1A3E),
+            color: AppColors.darkSurface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: const Color(0xFF2A2A5A)),
+            border: Border.all(color: AppColors.darkBorder),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,

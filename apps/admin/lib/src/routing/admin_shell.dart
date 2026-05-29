@@ -1,131 +1,293 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:takesep_design_system/takesep_design_system.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-/// Admin shell layout with responsive navigation.
-/// Desktop: sidebar | Mobile: bottom nav + hamburger drawer
+/// Admin shell — desktop sidebar + mobile bottom navigation.
 class AdminShell extends StatelessWidget {
   final Widget child;
 
   const AdminShell({super.key, required this.child});
 
-  static const _navItems = [
-    _NavDef(Icons.business, 'Компании', '/', ['/companies']),
-    _NavDef(Icons.delivery_dining, 'Курьеры', '/couriers', ['/couriers']),
-    _NavDef(Icons.map_rounded, 'Адреса', '/addresses', ['/addresses']),
-    _NavDef(Icons.storage, 'База данных', '/database', ['/database']),
+  static const _sections = [
+    _NavSection('Панель', [
+      _NavDef(Icons.business_rounded, 'Компании', '/', ['/', '/companies'],
+          AppColors.info),
+      _NavDef(Icons.delivery_dining_rounded, 'Курьеры', '/couriers',
+          ['/couriers'], AppColors.success),
+      _NavDef(Icons.map_rounded, 'Адреса', '/addresses', ['/addresses'],
+          AppColors.secondary),
+    ]),
+    _NavSection('Система', [
+      _NavDef(Icons.storage_rounded, 'База данных', '/database', ['/database'],
+          AppColors.error),
+    ]),
   ];
 
-  static const _navColors = [
-    null,
-    Color(0xFF2ECC71),
-    Color(0xFF3498DB),
-    Color(0xFFE74C3C),
-  ];
+  static String titleFor(String location) {
+    if (location == '/' || location.startsWith('/companies')) {
+      return location.contains('/') && location != '/'
+          ? 'Компания'
+          : 'Компании';
+    }
+    if (location.startsWith('/couriers')) return 'Курьеры';
+    if (location.startsWith('/addresses')) return 'Адреса';
+    if (location.startsWith('/database')) return 'База данных';
+    return 'TakEsep Admin';
+  }
+
+  static String subtitleFor(String location) {
+    if (location == '/' || location.startsWith('/companies')) {
+      return 'Лицензии, ключи и доступ компаний';
+    }
+    if (location.startsWith('/couriers')) {
+      return 'Курьеры, ключи доступа и склады';
+    }
+    if (location.startsWith('/addresses')) {
+      return 'База адресов и геоданные';
+    }
+    if (location.startsWith('/database')) {
+      return 'Таблицы, записи и обслуживание';
+    }
+    return 'Панель управления экосистемой';
+  }
 
   @override
   Widget build(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
-    final isMobile = MediaQuery.of(context).size.width < 720;
+    final width = MediaQuery.sizeOf(context).width;
+    final isMobile = width < 760;
 
     if (isMobile) {
       return _MobileShell(location: location, child: child);
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F23),
+      backgroundColor: AppColors.darkBackground,
       body: Row(
         children: [
-          // ── Sidebar ──
-          Container(
-            width: 220,
-            color: const Color(0xFF12122B),
+          _Sidebar(location: location),
+          Expanded(
             child: Column(
               children: [
-                // Logo
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
-                          ),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Icon(Icons.admin_panel_settings,
-                            color: Colors.white, size: 20),
-                      ),
-                      const SizedBox(width: 12),
-                      const Text('Super Admin',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700)),
-                    ],
-                  ),
+                _DesktopTopBar(
+                  title: titleFor(location),
+                  subtitle: subtitleFor(location),
                 ),
-                const Divider(color: Color(0xFF2A2A4E), height: 1),
-                const SizedBox(height: 8),
-
-                // Nav items
-                for (var i = 0; i < _navItems.length; i++)
-                  _NavItem(
-                    icon: _navItems[i].icon,
-                    label: _navItems[i].label,
-                    isActive: _isActive(location, _navItems[i]),
-                    onTap: () => context.go(_navItems[i].route),
-                    badge: _navColors[i],
-                  ),
-
-                const Spacer(),
-
-                // WhatsApp Support
-                Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  child: _NavItem(
-                    icon: Icons.chat_bubble_outline,
-                    label: 'Поддержка WhatsApp',
-                    isActive: false,
-                    onTap: () async {
-                      final uri = Uri.parse('https://wa.me/996506384666');
-                      if (await canLaunchUrl(uri)) {
-                        await launchUrl(uri,
-                            mode: LaunchMode.externalApplication);
-                      }
-                    },
-                  ),
-                ),
-
-                // Version
-                Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Text('v1.0.4',
-                      style: TextStyle(fontSize: 11, color: Colors.grey[700])),
-                ),
+                Expanded(child: child),
               ],
             ),
           ),
-
-          // ── Content ──
-          Expanded(child: child),
         ],
       ),
     );
   }
 
-  static bool _isActive(String location, _NavDef def) {
+  static bool _checkActive(String location, _NavDef def) {
     if (def.route == '/' &&
-        (location == '/' || location.startsWith('/companies'))) return true;
+        (location == '/' || location.startsWith('/companies'))) {
+      return true;
+    }
     return def.matches.any((m) => location == m || location.startsWith('$m/'));
   }
 }
 
-/// Mobile shell with bottom navigation bar + optional drawer
+class _Sidebar extends StatelessWidget {
+  final String location;
+
+  const _Sidebar({required this.location});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 264,
+      decoration: BoxDecoration(
+        color: AppColors.darkSurface,
+        border: Border(
+          right: BorderSide(color: AppColors.darkBorder.withValues(alpha: 0.9)),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+            child: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: Image.network(
+                    '/TakEsep/logo.png',
+                    width: 40,
+                    height: 40,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        gradient: AppColors.primaryGradient,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Icon(Icons.shield_rounded,
+                          color: Colors.white, size: 22),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'TakEsep Admin',
+                        style: TextStyle(
+                          color: AppColors.darkTextPrimary,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Super Admin',
+                        style: TextStyle(
+                          color: AppColors.darkTextTertiary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: AppColors.darkBorder),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+              children: [
+                for (final section in AdminShell._sections) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+                    child: Text(
+                      section.label,
+                      style: const TextStyle(
+                        color: AppColors.darkTextTertiary,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 1.1,
+                      ),
+                    ),
+                  ),
+                  for (final item in section.items)
+                    _NavTile(
+                      item: item,
+                      isActive: AdminShell._checkActive(location, item),
+                      onTap: () => context.go(item.route),
+                    ),
+                  const SizedBox(height: 12),
+                ],
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: AppColors.darkBorder),
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              children: [
+                _SidebarAction(
+                  icon: Icons.chat_bubble_outline_rounded,
+                  label: 'Поддержка WhatsApp',
+                  onTap: () => _openWhatsApp(),
+                ),
+                _SidebarAction(
+                  icon: Icons.public_rounded,
+                  label: 'На сайт',
+                  onTap: () => _openSite(),
+                ),
+                _SidebarAction(
+                  icon: Icons.logout_rounded,
+                  label: 'Выйти',
+                  destructive: true,
+                  onTap: () => _logout(context),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'v2.0.0 · build 72',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: AppColors.darkTextTertiary,
+                    fontSize: 11,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DesktopTopBar extends StatelessWidget {
+  final String title;
+  final String subtitle;
+
+  const _DesktopTopBar({required this.title, required this.subtitle});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(28, 22, 28, 18),
+      decoration: BoxDecoration(
+        color: AppColors.darkBackground,
+        border: Border(
+          bottom: BorderSide(color: AppColors.darkBorder.withValues(alpha: 0.8)),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: AppColors.darkTextPrimary,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: AppColors.darkTextSecondary,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            tooltip: 'Обновить страницу',
+            onPressed: () {
+              final router = GoRouter.of(context);
+              router.go(router.state.matchedLocation);
+            },
+            icon: const Icon(Icons.refresh_rounded,
+                color: AppColors.darkTextSecondary),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _MobileShell extends StatelessWidget {
   final String location;
   final Widget child;
@@ -142,197 +304,219 @@ class _MobileShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final destinations = [
+      (Icons.business_rounded, 'Компании', '/'),
+      (Icons.delivery_dining_rounded, 'Курьеры', '/couriers'),
+      (Icons.map_rounded, 'Адреса', '/addresses'),
+      (Icons.storage_rounded, 'База', '/database'),
+    ];
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F23),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF12122B),
-        elevation: 0,
-        title: Row(
-          children: [
-            Container(
-              width: 30,
-              height: 30,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF6C5CE7), Color(0xFFA29BFE)],
+      backgroundColor: AppColors.darkBackground,
+      drawer: Drawer(
+        backgroundColor: AppColors.darkSurface,
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(10),
+                      child: Image.network(
+                        '/TakEsep/logo.png',
+                        width: 36,
+                        height: 36,
+                        errorBuilder: (_, __, ___) => Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            gradient: AppColors.primaryGradient,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.shield_rounded,
+                              color: Colors.white, size: 18),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    const Text(
+                      'TakEsep Admin',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
                 ),
-                borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.admin_panel_settings,
-                  color: Colors.white, size: 16),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.chat_bubble_outline_rounded),
+                title: const Text('Поддержка WhatsApp'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openWhatsApp();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.public_rounded),
+                title: const Text('На сайт'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _openSite();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.logout_rounded,
+                    color: AppColors.errorLight),
+                title: const Text('Выйти',
+                    style: TextStyle(color: AppColors.errorLight)),
+                onTap: () {
+                  Navigator.pop(context);
+                  _logout(context);
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      appBar: AppBar(
+        backgroundColor: AppColors.darkSurface,
+        surfaceTintColor: Colors.transparent,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              AdminShell.titleFor(location),
+              style: const TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w800,
+                letterSpacing: -0.3,
+              ),
             ),
-            const SizedBox(width: 10),
-            const Text('Super Admin',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white)),
+            Text(
+              AdminShell.subtitleFor(location),
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: AppColors.darkTextTertiary,
+              ),
+            ),
           ],
         ),
         actions: [
           IconButton(
-            icon:
-                const Icon(Icons.chat_bubble_outline, color: Color(0xFF25D366)),
-            onPressed: () async {
-              final uri = Uri.parse('https://wa.me/996506384666');
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-              }
+            tooltip: 'Обновить',
+            onPressed: () {
+              final router = GoRouter.of(context);
+              router.go(router.state.matchedLocation);
             },
-            tooltip: 'Поддержка WhatsApp',
+            icon: const Icon(Icons.refresh_rounded, size: 22),
           ),
+          Builder(
+            builder: (ctx) => IconButton(
+              tooltip: 'Меню',
+              onPressed: () => Scaffold.of(ctx).openDrawer(),
+              icon: const Icon(Icons.menu_rounded),
+            ),
+          ),
+          const SizedBox(width: 4),
         ],
       ),
       body: child,
-      bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Color(0xFF12122B),
-          border: Border(
-            top: BorderSide(color: Color(0xFF2A2A4E), width: 0.5),
-          ),
-        ),
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _BottomNavItem(
-                  icon: Icons.business,
-                  label: 'Компании',
-                  isActive: _currentIndex == 0,
-                  onTap: () => context.go('/'),
-                ),
-                _BottomNavItem(
-                  icon: Icons.delivery_dining,
-                  label: 'Курьеры',
-                  isActive: _currentIndex == 1,
-                  onTap: () => context.go('/couriers'),
-                  badgeColor: const Color(0xFF2ECC71),
-                ),
-                _BottomNavItem(
-                  icon: Icons.map_rounded,
-                  label: 'Адреса',
-                  isActive: _currentIndex == 2,
-                  onTap: () => context.go('/addresses'),
-                  badgeColor: const Color(0xFF3498DB),
-                ),
-                _BottomNavItem(
-                  icon: Icons.storage,
-                  label: 'База',
-                  isActive: _currentIndex == 3,
-                  onTap: () => context.go('/database'),
-                  badgeColor: const Color(0xFFE74C3C),
-                ),
-              ],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _currentIndex,
+        backgroundColor: AppColors.darkSurface,
+        indicatorColor: AppColors.primary.withValues(alpha: 0.16),
+        surfaceTintColor: Colors.transparent,
+        height: 68,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        onDestinationSelected: (index) => context.go(destinations[index].$3),
+        destinations: [
+          for (final d in destinations)
+            NavigationDestination(
+              icon: Icon(d.$1),
+              selectedIcon: Icon(d.$1, color: AppColors.primaryLight),
+              label: d.$2,
             ),
-          ),
-        ),
+        ],
       ),
     );
   }
 }
 
-class _BottomNavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
+class _NavTile extends StatelessWidget {
+  final _NavDef item;
   final bool isActive;
   final VoidCallback onTap;
-  final Color? badgeColor;
 
-  const _BottomNavItem({
-    required this.icon,
-    required this.label,
+  const _NavTile({
+    required this.item,
     required this.isActive,
     required this.onTap,
-    this.badgeColor,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final color = isActive ? const Color(0xFFA29BFE) : Colors.grey[600];
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 22, color: color),
-            const SizedBox(height: 3),
-            Text(label,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
-                  color: color,
-                )),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NavDef {
-  final IconData icon;
-  final String label;
-  final String route;
-  final List<String> matches;
-  const _NavDef(this.icon, this.label, this.route, this.matches);
-}
-
-class _NavItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isActive;
-  final VoidCallback onTap;
-  final Color? badge;
-
-  const _NavItem({
-    required this.icon,
-    required this.label,
-    required this.isActive,
-    required this.onTap,
-    this.badge,
   });
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      padding: const EdgeInsets.only(bottom: 4),
       child: Material(
         color: isActive
-            ? const Color(0xFF6C5CE7).withValues(alpha: 0.15)
+            ? item.accent.withValues(alpha: 0.12)
             : Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         child: InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(10),
-          child: Padding(
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: isActive
+                    ? item.accent.withValues(alpha: 0.28)
+                    : Colors.transparent,
+              ),
+            ),
             child: Row(
               children: [
-                Icon(icon,
-                    size: 20,
-                    color:
-                        isActive ? const Color(0xFFA29BFE) : Colors.grey[500]),
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? item.accent.withValues(alpha: 0.18)
+                        : AppColors.darkSurfaceVariant,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(
+                    item.icon,
+                    size: 18,
+                    color: isActive ? item.accent : AppColors.darkTextTertiary,
+                  ),
+                ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(label,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight:
-                            isActive ? FontWeight.w600 : FontWeight.w400,
-                        color: isActive ? Colors.white : Colors.grey[400],
-                      )),
+                  child: Text(
+                    item.label,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+                      color: isActive
+                          ? AppColors.darkTextPrimary
+                          : AppColors.darkTextSecondary,
+                    ),
+                  ),
                 ),
-                if (badge != null)
+                if (isActive)
                   Container(
-                    width: 8,
-                    height: 8,
+                    width: 7,
+                    height: 7,
                     decoration: BoxDecoration(
-                      color: badge,
+                      color: item.accent,
                       shape: BoxShape.circle,
                     ),
                   ),
@@ -342,5 +526,85 @@ class _NavItem extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _SidebarAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool destructive;
+
+  const _SidebarAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.destructive = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final color =
+        destructive ? AppColors.errorLight : AppColors.darkTextSecondary;
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(10),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          child: Row(
+            children: [
+              Icon(icon, size: 18, color: color),
+              const SizedBox(width: 10),
+              Text(
+                label,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _NavSection {
+  final String label;
+  final List<_NavDef> items;
+  const _NavSection(this.label, this.items);
+}
+
+class _NavDef {
+  final IconData icon;
+  final String label;
+  final String route;
+  final List<String> matches;
+  final Color accent;
+  const _NavDef(this.icon, this.label, this.route, this.matches, this.accent);
+}
+
+Future<void> _openWhatsApp() async {
+  final uri = Uri.parse('https://wa.me/996506384666');
+  if (await canLaunchUrl(uri)) {
+    await launchUrl(uri, mode: LaunchMode.externalApplication);
+  }
+}
+
+Future<void> _openSite() async {
+  final uri = Uri.parse('/TakEsep/');
+  if (await canLaunchUrl(uri)) {
+    await launchUrl(uri, webOnlyWindowName: '_self');
+  }
+}
+
+Future<void> _logout(BuildContext context) async {
+  final uri = Uri.parse('/TakEsep/admin.html?logout=1');
+  if (await canLaunchUrl(uri)) {
+    await launchUrl(uri, webOnlyWindowName: '_self');
   }
 }

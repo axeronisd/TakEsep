@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:takesep_design_system/takesep_design_system.dart';
 import 'firebase_options.dart';
 import 'src/routing/app_router.dart';
 import 'src/services/firebase_push_bootstrap.dart';
@@ -47,50 +47,8 @@ class TakEsepAdminApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'TakEsep Admin',
       debugShowCheckedModeBanner: false,
-      theme: _buildTheme(),
+      theme: AppTheme.darkTheme,
       routerConfig: router,
-    );
-  }
-
-  ThemeData _buildTheme() {
-    final base = ThemeData(
-      brightness: Brightness.dark,
-      useMaterial3: true,
-      colorSchemeSeed: const Color(0xFF6C5CE7),
-      scaffoldBackgroundColor: const Color(0xFF0F0F23),
-    );
-
-    return base.copyWith(
-      textTheme: GoogleFonts.interTextTheme(base.textTheme),
-      cardTheme: CardThemeData(
-        color: const Color(0xFF1A1A3E),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        elevation: 0,
-      ),
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF0F0F23),
-        elevation: 0,
-        centerTitle: false,
-      ),
-      inputDecorationTheme: InputDecorationTheme(
-        filled: true,
-        fillColor: const Color(0xFF1A1A3E),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide.none,
-        ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      ),
-      elevatedButtonTheme: ElevatedButtonThemeData(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF6C5CE7),
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      ),
     );
   }
 }
