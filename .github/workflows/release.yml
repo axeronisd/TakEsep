@@ -238,7 +238,7 @@ jobs:
   # Build iOS IPAs (App Store Connect)
   # ═══════════════════════════════════════════════
   build-ios:
-    runs-on: macos-26
+    runs-on: macos-14
     timeout-minutes: 90
     env:
       IOS_DISTRIBUTION_P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_P12_BASE64 }}
@@ -250,31 +250,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Select Xcode 26
-        run: |
-          echo "=== Available Xcode versions ==="
-          ls /Applications/ | grep -i xcode || true
-          if [ -d "/Applications/Xcode_26.app" ]; then
-            sudo xcode-select -s /Applications/Xcode_26.app/Contents/Developer
-          elif [ -d "/Applications/Xcode_26.0.app" ]; then
-            sudo xcode-select -s /Applications/Xcode_26.0.app/Contents/Developer
-          fi
-          xcodebuild -version
-
-      - name: Install iOS 26 SDK
-        timeout-minutes: 30
-        run: |
-          echo "=== Installed SDKs before download ==="
-          xcodebuild -showsdks | grep -i ios || true
-          echo "=== Starting CoreSimulator service ==="
-          sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.CoreSimulator.plist 2>/dev/null || true
-          xcrun simctl list devices 2>/dev/null || true
-          echo "=== Downloading iOS platform ==="
-          xcodebuild -downloadPlatform iOS
-          echo "=== Installed SDKs after download ==="
-          xcodebuild -showsdks | grep -i ios
-          echo "=== Verifying iOS SDK exists ==="
-          ls -la $(xcode-select -p)/Platforms/iPhoneOS.platform/ 2>/dev/null || echo "WARNING: iPhoneOS platform not found!"
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -328,12 +303,6 @@ jobs:
           echo "$IOS_PROVISIONING_PROFILE_COURIER_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/AkJolPro.mobileprovision
           echo "$IOS_PROVISIONING_PROFILE_WAREHOUSE_BASE64" | base64 --decode > ~/Library/MobileDevice/Provisioning\ Profiles/TakEsep.mobileprovision
           echo "✅ Provisioning profiles imported"
-          echo "=== AkJolCustomer profile diagnostic ==="
-          security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/AkJolCustomer.mobileprovision | grep -A1 -E 'Name|aps-environment|UUID|TeamIdentifier' | head -40
-          echo "=== AkJolPro profile diagnostic ==="
-          security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/AkJolPro.mobileprovision | grep -A1 -E 'Name|aps-environment|UUID|TeamIdentifier' | head -40
-          echo "=== TakEsep profile diagnostic ==="
-          security cms -D -i ~/Library/MobileDevice/Provisioning\ Profiles/TakEsep.mobileprovision | grep -A1 -E 'Name|aps-environment|UUID|TeamIdentifier' | head -40
 
       # AkJol Customer iOS
       - name: Build AkJol iOS
@@ -346,14 +315,12 @@ jobs:
             python3 -c "import plistlib; plistlib.dump({'method':'app-store','teamID':'V63B2H2DTP','signingStyle':'manual','provisioningProfiles':{'com.akjolui.customer':'AkJolCustomer'}}, open('ios/ExportOptions.plist','wb'), fmt=plistlib.FMT_XML)"
             cd ios
             pod install
-            ruby -e "require 'xcodeproj'; p=Xcodeproj::Project.open('Runner.xcodeproj'); p.targets.each{|t|next unless t.name=='Runner'; t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Manual'; c.build_settings['CODE_SIGN_IDENTITY']='Apple Distribution: Ilgis Uzbekov (V63B2H2DTP)'; c.build_settings['PROVISIONING_PROFILE_SPECIFIER']='AkJolCustomer'}}; p.save; pp=Xcodeproj::Project.open('Pods/Pods.xcodeproj'); pp.targets.each{|t|t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Automatic'; c.build_settings['CODE_SIGNING_ALLOWED']='NO'}}; pp.save"
+            ruby -e "require 'xcodeproj'; p=Xcodeproj::Project.open('Runner.xcodeproj'); p.targets.each{|t|next unless t.name=='Runner'; t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Manual'; c.build_settings['CODE_SIGN_IDENTITY']='Apple Distribution: Ilgis Uzbekov (V63B2H2DTP)'; c.build_settings['PROVISIONING_PROFILE_SPECIFIER']='AkJolCustomer'}}; p.save; pp=Xcodeproj::Project.open('Pods/Pods.xcodeproj'); pp.targets.each{|t|t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Automatic'; c.build_settings['CODE_SIGNING_ALLOWED']='NO'; c.build_settings['IPHONEOS_DEPLOYMENT_TARGET']='12.0'}}; pp.save"
             xcodebuild -workspace Runner.xcworkspace -scheme Runner \
               -configuration Release \
               -destination 'generic/platform=iOS' \
               -archivePath ../build/ios/archive/Runner.xcarchive \
               archive
-            echo "=== Archive embedded.mobileprovision diagnostic ==="
-            security cms -D -i ../build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app/embedded.mobileprovision | grep -A1 -E 'Name|aps-environment|UUID' | head -20 || echo "NO embedded profile found"
             xcodebuild -exportArchive \
               -archivePath ../build/ios/archive/Runner.xcarchive \
               -exportPath ../build/ios/ipa \
@@ -380,7 +347,7 @@ jobs:
             python3 -c "import plistlib; plistlib.dump({'method':'app-store','teamID':'V63B2H2DTP','signingStyle':'manual','provisioningProfiles':{'com.akjolui.courier':'AkJolPro'}}, open('ios/ExportOptions.plist','wb'), fmt=plistlib.FMT_XML)"
             cd ios
             pod install
-            ruby -e "require 'xcodeproj'; p=Xcodeproj::Project.open('Runner.xcodeproj'); p.targets.each{|t|next unless t.name=='Runner'; t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Manual'; c.build_settings['CODE_SIGN_IDENTITY']='Apple Distribution: Ilgis Uzbekov (V63B2H2DTP)'; c.build_settings['PROVISIONING_PROFILE_SPECIFIER']='AkJolPro'}}; p.save; pp=Xcodeproj::Project.open('Pods/Pods.xcodeproj'); pp.targets.each{|t|t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Automatic'; c.build_settings['CODE_SIGNING_ALLOWED']='NO'}}; pp.save"
+            ruby -e "require 'xcodeproj'; p=Xcodeproj::Project.open('Runner.xcodeproj'); p.targets.each{|t|next unless t.name=='Runner'; t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Manual'; c.build_settings['CODE_SIGN_IDENTITY']='Apple Distribution: Ilgis Uzbekov (V63B2H2DTP)'; c.build_settings['PROVISIONING_PROFILE_SPECIFIER']='AkJolPro'}}; p.save; pp=Xcodeproj::Project.open('Pods/Pods.xcodeproj'); pp.targets.each{|t|t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Automatic'; c.build_settings['CODE_SIGNING_ALLOWED']='NO'; c.build_settings['IPHONEOS_DEPLOYMENT_TARGET']='12.0'}}; pp.save"
             xcodebuild -workspace Runner.xcworkspace -scheme Runner \
               -configuration Release \
               -destination 'generic/platform=iOS' \
@@ -412,7 +379,7 @@ jobs:
             python3 -c "import plistlib; plistlib.dump({'method':'app-store','teamID':'V63B2H2DTP','signingStyle':'manual','provisioningProfiles':{'com.takesep.app':'TakEsep'}}, open('ios/ExportOptions.plist','wb'), fmt=plistlib.FMT_XML)"
             cd ios
             pod install
-            ruby -e "require 'xcodeproj'; p=Xcodeproj::Project.open('Runner.xcodeproj'); p.targets.each{|t|next unless t.name=='Runner'; t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Manual'; c.build_settings['CODE_SIGN_IDENTITY']='Apple Distribution: Ilgis Uzbekov (V63B2H2DTP)'; c.build_settings['PROVISIONING_PROFILE_SPECIFIER']='TakEsep'}}; p.save; pp=Xcodeproj::Project.open('Pods/Pods.xcodeproj'); pp.targets.each{|t|t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Automatic'; c.build_settings['CODE_SIGNING_ALLOWED']='NO'}}; pp.save"
+            ruby -e "require 'xcodeproj'; p=Xcodeproj::Project.open('Runner.xcodeproj'); p.targets.each{|t|next unless t.name=='Runner'; t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Manual'; c.build_settings['CODE_SIGN_IDENTITY']='Apple Distribution: Ilgis Uzbekov (V63B2H2DTP)'; c.build_settings['PROVISIONING_PROFILE_SPECIFIER']='TakEsep'}}; p.save; pp=Xcodeproj::Project.open('Pods/Pods.xcodeproj'); pp.targets.each{|t|t.build_configurations.each{|c|c.build_settings['CODE_SIGN_STYLE']='Automatic'; c.build_settings['CODE_SIGNING_ALLOWED']='NO'; c.build_settings['IPHONEOS_DEPLOYMENT_TARGET']='12.0'}}; pp.save"
             xcodebuild -workspace Runner.xcworkspace -scheme Runner \
               -configuration Release \
               -destination 'generic/platform=iOS' \
