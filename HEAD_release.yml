@@ -238,7 +238,7 @@ jobs:
   # Build iOS IPAs (App Store Connect)
   # ═══════════════════════════════════════════════
   build-ios:
-    runs-on: macos-latest
+    runs-on: macos-26
     timeout-minutes: 90
     env:
       IOS_DISTRIBUTION_P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_P12_BASE64 }}
