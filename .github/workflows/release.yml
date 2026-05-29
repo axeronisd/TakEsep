@@ -237,8 +237,8 @@ jobs:
   # ═══════════════════════════════════════════════
   # Build iOS IPAs (App Store Connect)
   # ═══════════════════════════════════════════════
-build-ios:
-    runs-on: macos-26
+  build-ios:
+    runs-on: macos-14
     timeout-minutes: 90
     env:
       IOS_DISTRIBUTION_P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_P12_BASE64 }}
@@ -249,33 +249,10 @@ build-ios:
       COCOAPODS_DISABLE_STATS: true
     steps:
       - uses: actions/checkout@v4
-
-      - name: Select Xcode 26
-        run: |
-          echo "=== Available Xcode versions ==="
-          ls /Applications/ | grep -i xcode || true
-          if [ -d "/Applications/Xcode_26.app" ]; then
-            sudo xcode-select -s /Applications/Xcode_26.app/Contents/Developer
-          elif [ -d "/Applications/Xcode_26.0.app" ]; then
-            sudo xcode-select -s /Applications/Xcode_26.0.app/Contents/Developer
-          fi
-          xcodebuild -version
-
-      - name: Install iOS 26 SDK
-        timeout-minutes: 30
-        run: |
-          echo "=== Installed SDKs before download ==="
-          xcodebuild -showsdks | grep -i ios || true
-          echo "=== Starting CoreSimulator service ==="
-          sudo launchctl load -w /System/Library/LaunchDaemons/com.apple.CoreSimulator.plist 2>/dev/null || true
-          xcrun simctl list devices 2>/dev/null || true
-          echo "=== Downloading iOS platform ==="
-          xcodebuild -downloadPlatform iOS
-          echo "=== Installed SDKs after download ==="
-          xcodebuild -showsdks | grep -i ios
-          echo "=== Verifying iOS SDK exists ==="
-          ls -la $(xcode-select -p)/Platforms/iPhoneOS.platform/ 2>/dev/null || echo "WARNING: iPhoneOS platform not found!"
-
+      
+      - name: Select Xcode 16
+        run: sudo xcode-select -s /Applications/Xcode_16.app
+        
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -429,12 +406,11 @@ build-ios:
           name: ios-ipas
           path: ios-ipas/*.ipa
           if-no-files-found: warn
-          
 
   # ═══════════════════════════════════════════════
   # Create GitHub Release
   # ═══════════════════════════════════════════════
-    release:
+  release:
     needs: [build-windows, build-android-apks, build-android-aabs, build-ios]
     runs-on: ubuntu-latest
     steps:
