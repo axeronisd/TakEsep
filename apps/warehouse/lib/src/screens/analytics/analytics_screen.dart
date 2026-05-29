@@ -8,6 +8,7 @@ import '../../providers/dashboard_providers.dart';
 import '../../providers/date_filter_provider.dart';
 import '../../providers/currency_provider.dart';
 import '../../providers/owner_settings_provider.dart';
+import '../../providers/realtime_analytics_providers.dart';
 
 
 /// Analytics screen — deep analysis with beautiful charts and detailed metrics.
@@ -120,7 +121,8 @@ class _KpiSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    final kpisAsync = ref.watch(dashboardKpisProvider);
+    // Use realtime KPI provider instead of Future-based provider
+    final kpisAsync = ref.watch(realtimeKpisProvider);
     final isDesktop = MediaQuery.of(context).size.width >= 900;
     final fmt = ref.watch(priceFormatterProvider);
 
@@ -305,8 +307,9 @@ class _RevenueChart extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    final dataAsync = ref.watch(revenueChartProvider);
-    final totalAsync = ref.watch(periodTotalProvider);
+    // Use realtime providers instead of Future-based providers
+    final dataAsync = ref.watch(realtimeRevenueChartProvider);
+    final totalAsync = ref.watch(realtimePeriodTotalProvider);
     final fmt = ref.watch(priceFormatterProvider);
 
     return TECard(
@@ -514,8 +517,9 @@ class _ExpensesBreakdown extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    final kpisAsync = ref.watch(dashboardKpisProvider);
-    final summaryAsync = ref.watch(operationsSummaryProvider);
+    // Use realtime providers instead of Future-based providers
+    final kpisAsync = ref.watch(realtimeKpisProvider);
+    final summaryAsync = ref.watch(realtimeOperationsSummaryProvider);
     final fmt = ref.watch(priceFormatterProvider);
 
     return TECard(
