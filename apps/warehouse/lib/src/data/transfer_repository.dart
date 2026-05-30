@@ -13,6 +13,7 @@ class TransferRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   /// Fetch transfers for a warehouse (both outgoing and incoming).
+  /// Fetches from Supabase directly for real-time sync.
   Future<List<Transfer>> getTransfers({
     required String companyId,
     String? warehouseId,
@@ -20,6 +21,92 @@ class TransferRepository {
     int limit = 20,
   }) async {
     try {
+      final offset = (page - 1) * limit;
+
+      var query =
+          _supabase.from('transfers').select().eq('company_id', companyId);
+
+      if (warehouseId != null) {
+        query = query.or(
+            'from_warehouse_id.eq.$warehouseId,to_warehouse_id.eq.$warehouseId');
+      }
+
+      final transfers = await query
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
+
+      final result = <Transfer>[];
+      for (final transferJson in transfers) {
+        // Fetch items from Supabase
+        final items = await _supabase
+            .from('transfer_items')
+            .select()
+            .eq('transfer_id', transferJson['id']);
+
+        result.add(Transfer.fromJson({
+          ...transferJson,
+          'items': items,
+        }));
+
+        // Cache in local DB for offline support
+        await _db.execute(
+          '''INSERT OR REPLACE INTO transfers (
+            id, company_id, from_warehouse_id, to_warehouse_id,
+            from_warehouse_name, to_warehouse_name,
+            sender_employee_id, sender_employee_name,
+            receiver_employee_id, receiver_employee_name,
+            status, total_amount, sender_notes, receiver_notes,
+            sender_photos, receiver_photos, pricing_mode, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          [
+            transferJson['id'],
+            transferJson['company_id'],
+            transferJson['from_warehouse_id'],
+            transferJson['to_warehouse_id'],
+            transferJson['from_warehouse_name'],
+            transferJson['to_warehouse_name'],
+            transferJson['sender_employee_id'],
+            transferJson['sender_employee_name'],
+            transferJson['receiver_employee_id'],
+            transferJson['receiver_employee_name'],
+            transferJson['status'],
+            transferJson['total_amount'],
+            transferJson['sender_notes'],
+            transferJson['receiver_notes'],
+            transferJson['sender_photos'],
+            transferJson['receiver_photos'],
+            transferJson['pricing_mode'],
+            transferJson['created_at'],
+            transferJson['updated_at'],
+          ],
+        );
+
+        // Cache items in local DB
+        for (final item in items) {
+          await _db.execute(
+            '''INSERT OR REPLACE INTO transfer_items (
+              id, transfer_id, product_id, product_name, product_sku,
+              product_barcode, quantity_sent, quantity_received, cost_price, created_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            [
+              item['id'],
+              item['transfer_id'],
+              item['product_id'],
+              item['product_name'],
+              item['product_sku'],
+              item['product_barcode'],
+              item['quantity_sent'],
+              item['quantity_received'],
+              item['cost_price'],
+              item['created_at'],
+            ],
+          );
+        }
+      }
+      return result;
+    } catch (e) {
+      print('TransferRepository getTransfers Supabase error: $e');
+      // Fallback to local DB if Supabase fails
       final offset = (page - 1) * limit;
       List<Map<String, dynamic>> transfers;
 
@@ -47,18 +134,72 @@ class TransferRepository {
         }));
       }
       return result;
-    } catch (e) {
-      print('TransferRepository getTransfers error: $e');
-      return [];
     }
   }
 
   /// Get pending incoming transfers for a warehouse.
+  /// Fetches from Supabase directly for real-time sync.
   Future<List<Transfer>> getPendingIncoming({
     required String companyId,
     required String warehouseId,
   }) async {
     try {
+      final transfers = await _supabase
+          .from('transfers')
+          .select()
+          .eq('company_id', companyId)
+          .eq('to_warehouse_id', warehouseId)
+          .or('status.eq.pending,status.eq.inTransit')
+          .order('created_at', ascending: false);
+
+      final result = <Transfer>[];
+      for (final transferJson in transfers) {
+        final items = await _supabase
+            .from('transfer_items')
+            .select()
+            .eq('transfer_id', transferJson['id']);
+        result.add(Transfer.fromJson({
+          ...transferJson,
+          'items': items,
+        }));
+
+        // Cache in local DB for offline support
+        await _db.execute(
+          '''INSERT OR REPLACE INTO transfers (
+            id, company_id, from_warehouse_id, to_warehouse_id,
+            from_warehouse_name, to_warehouse_name,
+            sender_employee_id, sender_employee_name,
+            receiver_employee_id, receiver_employee_name,
+            status, total_amount, sender_notes, receiver_notes,
+            sender_photos, receiver_photos, pricing_mode, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          [
+            transferJson['id'],
+            transferJson['company_id'],
+            transferJson['from_warehouse_id'],
+            transferJson['to_warehouse_id'],
+            transferJson['from_warehouse_name'],
+            transferJson['to_warehouse_name'],
+            transferJson['sender_employee_id'],
+            transferJson['sender_employee_name'],
+            transferJson['receiver_employee_id'],
+            transferJson['receiver_employee_name'],
+            transferJson['status'],
+            transferJson['total_amount'],
+            transferJson['sender_notes'],
+            transferJson['receiver_notes'],
+            transferJson['sender_photos'],
+            transferJson['receiver_photos'],
+            transferJson['pricing_mode'],
+            transferJson['created_at'],
+            transferJson['updated_at'],
+          ],
+        );
+      }
+      return result;
+    } catch (e) {
+      print('TransferRepository getPendingIncoming Supabase error: $e');
+      // Fallback to local DB if Supabase fails
       final transfers = await _db.getAll(
         "SELECT * FROM transfers WHERE company_id = ? AND to_warehouse_id = ? AND status IN ('pending', 'inTransit') ORDER BY created_at DESC",
         [companyId, warehouseId],
@@ -76,18 +217,72 @@ class TransferRepository {
         }));
       }
       return result;
-    } catch (e) {
-      print('TransferRepository getPendingIncoming error: $e');
-      return [];
     }
   }
 
   /// Get pending outgoing transfers (sent from this warehouse, awaiting acceptance).
+  /// Fetches from Supabase directly for real-time sync.
   Future<List<Transfer>> getPendingOutgoing({
     required String companyId,
     required String warehouseId,
   }) async {
     try {
+      final transfers = await _supabase
+          .from('transfers')
+          .select()
+          .eq('company_id', companyId)
+          .eq('from_warehouse_id', warehouseId)
+          .or('status.eq.pending,status.eq.inTransit')
+          .order('created_at', ascending: false);
+
+      final result = <Transfer>[];
+      for (final transferJson in transfers) {
+        final items = await _supabase
+            .from('transfer_items')
+            .select()
+            .eq('transfer_id', transferJson['id']);
+        result.add(Transfer.fromJson({
+          ...transferJson,
+          'items': items,
+        }));
+
+        // Cache in local DB for offline support
+        await _db.execute(
+          '''INSERT OR REPLACE INTO transfers (
+            id, company_id, from_warehouse_id, to_warehouse_id,
+            from_warehouse_name, to_warehouse_name,
+            sender_employee_id, sender_employee_name,
+            receiver_employee_id, receiver_employee_name,
+            status, total_amount, sender_notes, receiver_notes,
+            sender_photos, receiver_photos, pricing_mode, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          [
+            transferJson['id'],
+            transferJson['company_id'],
+            transferJson['from_warehouse_id'],
+            transferJson['to_warehouse_id'],
+            transferJson['from_warehouse_name'],
+            transferJson['to_warehouse_name'],
+            transferJson['sender_employee_id'],
+            transferJson['sender_employee_name'],
+            transferJson['receiver_employee_id'],
+            transferJson['receiver_employee_name'],
+            transferJson['status'],
+            transferJson['total_amount'],
+            transferJson['sender_notes'],
+            transferJson['receiver_notes'],
+            transferJson['sender_photos'],
+            transferJson['receiver_photos'],
+            transferJson['pricing_mode'],
+            transferJson['created_at'],
+            transferJson['updated_at'],
+          ],
+        );
+      }
+      return result;
+    } catch (e) {
+      print('TransferRepository getPendingOutgoing Supabase error: $e');
+      // Fallback to local DB if Supabase fails
       final transfers = await _db.getAll(
         "SELECT * FROM transfers WHERE company_id = ? AND from_warehouse_id = ? AND status IN ('pending', 'inTransit') ORDER BY created_at DESC",
         [companyId, warehouseId],
@@ -105,9 +300,6 @@ class TransferRepository {
         }));
       }
       return result;
-    } catch (e) {
-      print('TransferRepository getPendingOutgoing error: $e');
-      return [];
     }
   }
 

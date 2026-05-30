@@ -1,5 +1,6 @@
 import 'package:takesep_core/takesep_core.dart';
 import 'package:uuid/uuid.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'powersync_db.dart';
 import 'supabase_sync.dart';
@@ -7,14 +8,61 @@ import 'supabase_sync.dart';
 /// Repository for Employee CRUD operations via PowerSync.
 class EmployeeRepository {
   final _uuid = const Uuid();
+  final SupabaseClient _supabase = Supabase.instance.client;
 
-  /// Get all employees for a company.
+  /// Get all employees for a company (fetches from Supabase directly for real-time sync).
   Future<List<Employee>> getEmployees(String companyId) async {
-    final rows = await powerSyncDb.getAll(
-      'SELECT * FROM employees WHERE company_id = ? ORDER BY name',
-      [companyId],
-    );
-    return rows.map((r) => Employee.fromJson(r)).toList();
+    try {
+      final results = await _supabase
+          .from('employees')
+          .select()
+          .eq('company_id', companyId)
+          .order('name');
+
+      final employees = (results as List)
+          .map((row) => Employee.fromJson(row as Map<String, dynamic>))
+          .toList();
+
+      // Cache in local DB for offline support
+      for (final e in results) {
+        await powerSyncDb.execute(
+          '''INSERT OR REPLACE INTO employees (
+            id, company_id, name, pin_code, role_id, allowed_warehouses, 
+            is_active, phone, inn, passport_number, passport_issued_by, passport_issued_date,
+            salary_type, salary_amount, salary_auto_deduct, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          [
+            e['id'],
+            e['company_id'],
+            e['name'],
+            e['pin_code'],
+            e['role_id'],
+            e['allowed_warehouses'],
+            e['is_active'] == true ? 1 : 0,
+            e['phone'],
+            e['inn'],
+            e['passport_number'],
+            e['passport_issued_by'],
+            e['passport_issued_date'],
+            e['salary_type'],
+            e['salary_amount'],
+            e['salary_auto_deduct'] == true ? 1 : 0,
+            e['created_at'],
+            e['updated_at'],
+          ],
+        );
+      }
+
+      return employees;
+    } catch (e) {
+      print('EmployeeRepository getEmployees Supabase error: $e');
+      // Fallback to local DB if Supabase fails
+      final rows = await powerSyncDb.getAll(
+        'SELECT * FROM employees WHERE company_id = ? ORDER BY name',
+        [companyId],
+      );
+      return rows.map((r) => Employee.fromJson(r)).toList();
+    }
   }
 
   /// Get a single employee by ID.
@@ -54,20 +102,44 @@ class EmployeeRepository {
          )
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
       [
-        id, companyId, name, pinCode, roleId, allowedWarehouses?.join(','), 1,
-        phone, inn, passportNumber, passportIssuedBy, passportIssuedDate,
-        salaryType.name, salaryAmount, salaryAutoDeduct ? 1 : 0, now, now,
+        id,
+        companyId,
+        name,
+        pinCode,
+        roleId,
+        allowedWarehouses?.join(','),
+        1,
+        phone,
+        inn,
+        passportNumber,
+        passportIssuedBy,
+        passportIssuedDate,
+        salaryType.name,
+        salaryAmount,
+        salaryAutoDeduct ? 1 : 0,
+        now,
+        now,
       ],
     );
 
     await SupabaseSync.upsert('employees', {
-      'id': id, 'company_id': companyId, 'name': name, 'pin_code': pinCode,
-      'role_id': roleId, 'allowed_warehouses': allowedWarehouses?.join(','),
-      'is_active': true, 'phone': phone, 'inn': inn,
-      'passport_number': passportNumber, 'passport_issued_by': passportIssuedBy,
-      'passport_issued_date': passportIssuedDate, 'salary_type': salaryType.name,
-      'salary_amount': salaryAmount, 'salary_auto_deduct': salaryAutoDeduct,
-      'created_at': now, 'updated_at': now,
+      'id': id,
+      'company_id': companyId,
+      'name': name,
+      'pin_code': pinCode,
+      'role_id': roleId,
+      'allowed_warehouses': allowedWarehouses?.join(','),
+      'is_active': true,
+      'phone': phone,
+      'inn': inn,
+      'passport_number': passportNumber,
+      'passport_issued_by': passportIssuedBy,
+      'passport_issued_date': passportIssuedDate,
+      'salary_type': salaryType.name,
+      'salary_amount': salaryAmount,
+      'salary_auto_deduct': salaryAutoDeduct,
+      'created_at': now,
+      'updated_at': now,
     });
 
     return Employee(
@@ -153,7 +225,7 @@ class EmployeeRepository {
       sets.add('phone = ?');
       params.add(phone);
     }
-    
+
     if (clearInn) {
       sets.add('inn = ?');
       params.add(null);
@@ -190,12 +262,12 @@ class EmployeeRepository {
       sets.add('salary_type = ?');
       params.add(salaryType.name);
     }
-    
+
     if (salaryAmount != null) {
       sets.add('salary_amount = ?');
       params.add(salaryAmount);
     }
-    
+
     if (salaryAutoDeduct != null) {
       sets.add('salary_auto_deduct = ?');
       params.add(salaryAutoDeduct ? 1 : 0);
@@ -216,19 +288,35 @@ class EmployeeRepository {
     final sbData = <String, dynamic>{};
     if (name != null) sbData['name'] = name;
     if (pinCode != null) sbData['pin_code'] = pinCode;
-    if (clearRoleId) sbData['role_id'] = null;
+    if (clearRoleId)
+      sbData['role_id'] = null;
     else if (roleId != null) sbData['role_id'] = roleId;
-    if (clearAllowedWarehouses) sbData['allowed_warehouses'] = null;
-    else if (allowedWarehouses != null) sbData['allowed_warehouses'] = allowedWarehouses.join(',');
+    if (clearAllowedWarehouses)
+      sbData['allowed_warehouses'] = null;
+    else if (allowedWarehouses != null)
+      sbData['allowed_warehouses'] = allowedWarehouses.join(',');
     if (isActive != null) sbData['is_active'] = isActive;
-    if (clearPhone) sbData['phone'] = null; else if (phone != null) sbData['phone'] = phone;
-    if (clearInn) sbData['inn'] = null; else if (inn != null) sbData['inn'] = inn;
-    if (clearPassportNumber) sbData['passport_number'] = null; else if (passportNumber != null) sbData['passport_number'] = passportNumber;
-    if (clearPassportIssuedBy) sbData['passport_issued_by'] = null; else if (passportIssuedBy != null) sbData['passport_issued_by'] = passportIssuedBy;
-    if (clearPassportIssuedDate) sbData['passport_issued_date'] = null; else if (passportIssuedDate != null) sbData['passport_issued_date'] = passportIssuedDate;
+    if (clearPhone)
+      sbData['phone'] = null;
+    else if (phone != null) sbData['phone'] = phone;
+    if (clearInn)
+      sbData['inn'] = null;
+    else if (inn != null) sbData['inn'] = inn;
+    if (clearPassportNumber)
+      sbData['passport_number'] = null;
+    else if (passportNumber != null) sbData['passport_number'] = passportNumber;
+    if (clearPassportIssuedBy)
+      sbData['passport_issued_by'] = null;
+    else if (passportIssuedBy != null)
+      sbData['passport_issued_by'] = passportIssuedBy;
+    if (clearPassportIssuedDate)
+      sbData['passport_issued_date'] = null;
+    else if (passportIssuedDate != null)
+      sbData['passport_issued_date'] = passportIssuedDate;
     if (salaryType != null) sbData['salary_type'] = salaryType.name;
     if (salaryAmount != null) sbData['salary_amount'] = salaryAmount;
-    if (salaryAutoDeduct != null) sbData['salary_auto_deduct'] = salaryAutoDeduct;
+    if (salaryAutoDeduct != null)
+      sbData['salary_auto_deduct'] = salaryAutoDeduct;
     sbData['updated_at'] = DateTime.now().toIso8601String();
     await SupabaseSync.update('employees', employeeId, sbData);
   }
@@ -248,8 +336,10 @@ class EmployeeRepository {
   }
 
   /// Check if a PIN code is already used by another employee in the company.
-  Future<bool> isPinCodeTaken(String companyId, String pinCode, {String? excludeEmployeeId}) async {
-    String query = 'SELECT COUNT(*) as cnt FROM employees WHERE company_id = ? AND pin_code = ?';
+  Future<bool> isPinCodeTaken(String companyId, String pinCode,
+      {String? excludeEmployeeId}) async {
+    String query =
+        'SELECT COUNT(*) as cnt FROM employees WHERE company_id = ? AND pin_code = ?';
     final params = <dynamic>[companyId, pinCode];
     if (excludeEmployeeId != null) {
       query += ' AND id != ?';
@@ -260,8 +350,10 @@ class EmployeeRepository {
   }
 
   /// Get analytics/activity for a specific employee.
-  Future<Map<String, dynamic>> getEmployeeActivity(String employeeId, {DateTime? startDate, DateTime? endDate}) async {
-    final start = startDate ?? DateTime.now().subtract(const Duration(days: 30));
+  Future<Map<String, dynamic>> getEmployeeActivity(String employeeId,
+      {DateTime? startDate, DateTime? endDate}) async {
+    final start =
+        startDate ?? DateTime.now().subtract(const Duration(days: 30));
     final end = endDate ?? DateTime.now();
 
     // 1. Total revenue & count from sales
@@ -275,8 +367,9 @@ class EmployeeRepository {
         AND created_at >= ? 
         AND created_at <= ?
     ''';
-    final salesResult = await powerSyncDb.get(salesQuery, [employeeId, start.toIso8601String(), end.toIso8601String()]);
-    
+    final salesResult = await powerSyncDb.get(salesQuery,
+        [employeeId, start.toIso8601String(), end.toIso8601String()]);
+
     // 2. Top 5 sold items (products/services)
     final topItemsQuery = '''
       SELECT 
@@ -293,7 +386,8 @@ class EmployeeRepository {
       ORDER BY total_qty DESC
       LIMIT 5
     ''';
-    final topItemsResult = await powerSyncDb.getAll(topItemsQuery, [employeeId, start.toIso8601String(), end.toIso8601String()]);
+    final topItemsResult = await powerSyncDb.getAll(topItemsQuery,
+        [employeeId, start.toIso8601String(), end.toIso8601String()]);
 
     return {
       'salesCount': salesResult['total_count'] as int? ?? 0,
@@ -320,20 +414,36 @@ class EmployeeRepository {
     await powerSyncDb.execute(
       '''INSERT INTO employee_expenses (id, company_id, warehouse_id, employee_id, employee_name, amount, comment, created_by, status, created_at)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-      [id, companyId, warehouseId, employeeId, employeeName, amount, comment, createdBy, 'active', now],
+      [
+        id,
+        companyId,
+        warehouseId,
+        employeeId,
+        employeeName,
+        amount,
+        comment,
+        createdBy,
+        'active',
+        now
+      ],
     );
 
     await SupabaseSync.upsert('employee_expenses', {
-      'id': id, 'company_id': companyId, 'warehouse_id': warehouseId,
-      'employee_id': employeeId, 'employee_name': employeeName,
-      'amount': amount, 'comment': comment, 'created_by': createdBy,
-      'status': 'active', 'created_at': now,
+      'id': id,
+      'company_id': companyId,
+      'warehouse_id': warehouseId,
+      'employee_id': employeeId,
+      'employee_name': employeeName,
+      'amount': amount,
+      'comment': comment,
+      'created_by': createdBy,
+      'status': 'active',
+      'created_at': now,
     });
   }
 
   /// Get expenses for a specific employee.
-  Future<List<Map<String, dynamic>>> getEmployeeExpenses(
-      String employeeId,
+  Future<List<Map<String, dynamic>>> getEmployeeExpenses(String employeeId,
       {int limit = 50}) async {
     return powerSyncDb.getAll(
       "SELECT * FROM employee_expenses WHERE employee_id = ? AND (status != 'deleted' OR status IS NULL) ORDER BY created_at DESC LIMIT ?",
@@ -350,7 +460,12 @@ class EmployeeRepository {
 
     final result = await powerSyncDb.get(
       "SELECT COALESCE(SUM(amount), 0) as total FROM employee_expenses WHERE company_id = ? AND (status != 'deleted' OR status IS NULL) AND created_at >= ? AND created_at <= ?$whFilter",
-      [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParam],
+      [
+        companyId,
+        startDate.toIso8601String(),
+        endDate.toIso8601String(),
+        ...whParam
+      ],
     );
     return (result['total'] as num?)?.toDouble() ?? 0.0;
   }
@@ -367,7 +482,12 @@ class EmployeeRepository {
          FROM employee_expenses
          WHERE company_id = ? AND (status != 'deleted' OR status IS NULL) AND created_at >= ? AND created_at <= ?$whFilter
          ORDER BY created_at DESC LIMIT 20''',
-      [companyId, startDate.toIso8601String(), endDate.toIso8601String(), ...whParam],
+      [
+        companyId,
+        startDate.toIso8601String(),
+        endDate.toIso8601String(),
+        ...whParam
+      ],
     );
   }
 
@@ -379,7 +499,9 @@ class EmployeeRepository {
       [deletedBy, now, expenseId],
     );
     await SupabaseSync.update('employee_expenses', expenseId, {
-      'status': 'deleted', 'deleted_by': deletedBy, 'deleted_at': now,
+      'status': 'deleted',
+      'deleted_by': deletedBy,
+      'deleted_at': now,
     });
   }
 }

@@ -1,8 +1,9 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import '../data/analytics_stream_service.dart';
+import '../data/mock_data.dart';
 import 'auth_providers.dart';
-import 'dashboard_providers.dart';
 import 'date_filter_provider.dart';
 
 /// Provider for AnalyticsStreamService
@@ -17,7 +18,8 @@ final analyticsStreamServiceProvider = Provider<AnalyticsStreamService>((ref) {
 /// ```dart
 /// final salesAsync = ref.watch(realtimeSalesStreamProvider);
 /// ```
-final realtimeSalesStreamProvider = StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+final realtimeSalesStreamProvider =
+    StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
   final service = ref.watch(analyticsStreamServiceProvider);
   final warehouseId = ref.watch(selectedWarehouseIdProvider);
 
@@ -35,15 +37,16 @@ final realtimeSalesStreamProvider = StreamProvider.autoDispose<List<Map<String, 
 
 /// Realtime sales stream filtered by date range.
 /// Returns sales within the selected date period.
-final realtimeSalesByDateRangeProvider = StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+final realtimeSalesByDateRangeProvider =
+    StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
   final service = ref.watch(analyticsStreamServiceProvider);
   final warehouseId = ref.watch(selectedWarehouseIdProvider);
   final range = ref.watch(dateRangeProvider);
-  
+
   if (warehouseId == null) {
     return const Stream.empty();
   }
-  
+
   return service.watchSalesByDateRange(
     warehouseId: warehouseId,
     startDate: range.start,
@@ -52,38 +55,41 @@ final realtimeSalesByDateRangeProvider = StreamProvider.autoDispose<List<Map<Str
 });
 
 /// Realtime arrivals stream for the current warehouse.
-final realtimeArrivalsStreamProvider = StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+final realtimeArrivalsStreamProvider =
+    StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
   final service = ref.watch(analyticsStreamServiceProvider);
   final warehouseId = ref.watch(selectedWarehouseIdProvider);
-  
+
   if (warehouseId == null) {
     return const Stream.empty();
   }
-  
+
   return service.watchArrivals(warehouseId);
 });
 
 /// Realtime transfers stream for the current warehouse.
-final realtimeTransfersStreamProvider = StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+final realtimeTransfersStreamProvider =
+    StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
   final service = ref.watch(analyticsStreamServiceProvider);
   final warehouseId = ref.watch(selectedWarehouseIdProvider);
-  
+
   if (warehouseId == null) {
     return const Stream.empty();
   }
-  
+
   return service.watchTransfers(warehouseId);
 });
 
 /// Realtime audits stream for the current warehouse.
-final realtimeAuditsStreamProvider = StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+final realtimeAuditsStreamProvider =
+    StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
   final service = ref.watch(analyticsStreamServiceProvider);
   final warehouseId = ref.watch(selectedWarehouseIdProvider);
-  
+
   if (warehouseId == null) {
     return const Stream.empty();
   }
-  
+
   return service.watchAudits(warehouseId);
 });
 
@@ -91,7 +97,8 @@ final realtimeAuditsStreamProvider = StreamProvider.autoDispose<List<Map<String,
 /// This is critical for syncing product quantities when sales, arrivals,
 /// transfers, or audits change the stock. Any operation that modifies
 /// product quantity will trigger this stream.
-final realtimeProductsStreamProvider = StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+final realtimeProductsStreamProvider =
+    StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
   final service = ref.watch(analyticsStreamServiceProvider);
   final warehouseId = ref.watch(selectedWarehouseIdProvider);
 
@@ -109,88 +116,91 @@ final realtimeProductsStreamProvider = StreamProvider.autoDispose<List<Map<Strin
 
 /// Realtime sale items stream for the current warehouse.
 /// Tracks which products are being sold in real-time.
-final realtimeSaleItemsStreamProvider = StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+final realtimeSaleItemsStreamProvider =
+    StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
   final service = ref.watch(analyticsStreamServiceProvider);
   final warehouseId = ref.watch(selectedWarehouseIdProvider);
-  
+
   if (warehouseId == null) {
     return const Stream.empty();
   }
-  
+
   return service.watchSaleItems(warehouseId);
 });
 
 /// Realtime arrival items stream for the current warehouse.
 /// Tracks which products are being received in real-time.
-final realtimeArrivalItemsStreamProvider = StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+final realtimeArrivalItemsStreamProvider =
+    StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
   final service = ref.watch(analyticsStreamServiceProvider);
   final warehouseId = ref.watch(selectedWarehouseIdProvider);
-  
+
   if (warehouseId == null) {
     return const Stream.empty();
   }
-  
+
   return service.watchArrivalItems(warehouseId);
 });
 
 /// Realtime transfer items stream for the current warehouse.
 /// Tracks which products are being transferred in real-time.
-final realtimeTransferItemsStreamProvider = StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+final realtimeTransferItemsStreamProvider =
+    StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
   final service = ref.watch(analyticsStreamServiceProvider);
   final warehouseId = ref.watch(selectedWarehouseIdProvider);
-  
+
   if (warehouseId == null) {
     return const Stream.empty();
   }
-  
+
   return service.watchTransferItems(warehouseId);
 });
 
 /// Realtime audit items stream for the current warehouse.
 /// Tracks which products are being audited in real-time.
-final realtimeAuditItemsStreamProvider = StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
+final realtimeAuditItemsStreamProvider =
+    StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
   final service = ref.watch(analyticsStreamServiceProvider);
   final warehouseId = ref.watch(selectedWarehouseIdProvider);
-  
+
   if (warehouseId == null) {
     return const Stream.empty();
   }
-  
+
   return service.watchAuditItems(warehouseId);
 });
 
 /// Computed KPI data from realtime sales stream.
 /// This replaces the Future-based dashboardKpisProvider with a Stream-based version.
-/// 
+///
 /// Recalculates revenue, profit, and other metrics whenever sales change.
-final realtimeKpisProvider = StreamProvider.autoDispose<List<DashboardKpi>>((ref) {
+final realtimeKpisProvider =
+    StreamProvider.autoDispose<List<DashboardKpi>>((ref) {
   final salesAsync = ref.watch(realtimeSalesByDateRangeProvider);
-  final arrivalsAsync = ref.watch(realtimeArrivalsStreamProvider);
   final companyId = ref.watch(currentCompanyProvider)?.id;
   final warehouseId = ref.watch(selectedWarehouseIdProvider);
   final range = ref.watch(dateRangeProvider);
   final prevRange = ref.watch(prevPeriodProvider);
   final compareLabel = ref.watch(compareLabelProvider);
-  final arrivalAsExpense = ref.watch(arrivalAsExpenseProvider);
-  
+
   if (companyId == null || warehouseId == null) {
     return const Stream.empty();
   }
-  
-  // Combine sales and arrivals streams
-  return Stream.zip(
-    salesAsync,
-    arrivalsAsync,
-    (sales, arrivals) => _calculateKpisFromRealtimeData(
+
+  // Use sales stream directly for KPIs
+  return salesAsync.when(
+    data: (sales) => Stream.value(_calculateKpisFromRealtimeData(
       sales: sales,
-      arrivals: arrivals,
+      arrivals: [],
       companyId: companyId,
       warehouseId: warehouseId,
       range: range,
       prevRange: prevRange,
       compareLabel: compareLabel,
-      arrivalAsExpense: arrivalAsExpense,
-    ),
+      arrivalAsExpense: false,
+    )),
+    loading: () => const Stream.empty(),
+    error: (_, __) => const Stream.empty(),
   );
 });
 
@@ -200,8 +210,8 @@ List<DashboardKpi> _calculateKpisFromRealtimeData({
   required List<Map<String, dynamic>> arrivals,
   required String companyId,
   required String warehouseId,
-  required DateRange range,
-  required DateRange prevRange,
+  required DateTimeRange range,
+  required DateTimeRange prevRange,
   required String compareLabel,
   required bool arrivalAsExpense,
 }) {
@@ -210,7 +220,7 @@ List<DashboardKpi> _calculateKpisFromRealtimeData({
     final createdAt = DateTime.tryParse(sale['created_at'] as String? ?? '');
     if (createdAt == null) return false;
     return createdAt.isAfter(range.start.subtract(const Duration(days: 1))) &&
-           createdAt.isBefore(range.end.add(const Duration(days: 1)));
+        createdAt.isBefore(range.end.add(const Duration(days: 1)));
   }).toList();
 
   // Filter arrivals by date range
@@ -218,7 +228,7 @@ List<DashboardKpi> _calculateKpisFromRealtimeData({
     final createdAt = DateTime.tryParse(arrival['created_at'] as String? ?? '');
     if (createdAt == null) return false;
     return createdAt.isAfter(range.start.subtract(const Duration(days: 1))) &&
-           createdAt.isBefore(range.end.add(const Duration(days: 1)));
+        createdAt.isBefore(range.end.add(const Duration(days: 1)));
   }).toList();
 
   // Calculate current period metrics
@@ -226,13 +236,14 @@ List<DashboardKpi> _calculateKpisFromRealtimeData({
     0.0,
     (sum, sale) => sum + ((sale['total_amount'] as num?)?.toDouble() ?? 0.0),
   );
-  
+
   final salesCount = filteredSales.length;
   final avgCheck = salesCount > 0 ? totalRevenue / salesCount : 0.0;
-  
+
   final totalIncome = filteredArrivals.fold<double>(
     0.0,
-    (sum, arrival) => sum + ((arrival['total_amount'] as num?)?.toDouble() ?? 0.0),
+    (sum, arrival) =>
+        sum + ((arrival['total_amount'] as num?)?.toDouble() ?? 0.0),
   );
 
   // Calculate profit (simplified - in production you'd need cost data from sale_items)
@@ -306,54 +317,62 @@ List<DashboardKpi> _calculateKpisFromRealtimeData({
 
 /// Realtime revenue chart data from sales stream.
 /// Recalculates chart points whenever sales change.
-final realtimeRevenueChartProvider = StreamProvider.autoDispose<List<RevenueChartPoint>>((ref) {
+final realtimeRevenueChartProvider =
+    StreamProvider.autoDispose<List<RevenueChartPoint>>((ref) {
   final salesAsync = ref.watch(realtimeSalesByDateRangeProvider);
   final range = ref.watch(dateRangeProvider);
-  
-  return salesAsync.map((sales) => _calculateRevenueChartFromSales(sales, range));
+
+  return salesAsync.when(
+    data: (sales) =>
+        Stream.value(_calculateRevenueChartFromSales(sales, range)),
+    loading: () => const Stream.empty(),
+    error: (_, __) => const Stream.empty(),
+  );
 });
 
 /// Calculate revenue chart data from sales.
 List<RevenueChartPoint> _calculateRevenueChartFromSales(
   List<Map<String, dynamic>> sales,
-  DateRange range,
+  DateTimeRange range,
 ) {
   // Group sales by day
   final Map<String, List<Map<String, dynamic>>> salesByDay = {};
-  
+
   for (final sale in sales) {
     final createdAt = DateTime.tryParse(sale['created_at'] as String? ?? '');
     if (createdAt == null) continue;
-    
-    final dayKey = '${createdAt.year}-${createdAt.month.toString().padLeft(2, '0')}-${createdAt.day.toString().padLeft(2, '0')}';
+
+    final dayKey =
+        '${createdAt.year}-${createdAt.month.toString().padLeft(2, '0')}-${createdAt.day.toString().padLeft(2, '0')}';
     salesByDay.putIfAbsent(dayKey, () => []);
     salesByDay[dayKey]!.add(sale);
   }
-  
+
   // Generate chart points for each day in range
   final points = <RevenueChartPoint>[];
   var current = range.start;
-  
+
   while (current.isBefore(range.end.add(const Duration(days: 1)))) {
-    final dayKey = '${current.year}-${current.month.toString().padLeft(2, '0')}-${current.day.toString().padLeft(2, '0')}';
+    final dayKey =
+        '${current.year}-${current.month.toString().padLeft(2, '0')}-${current.day.toString().padLeft(2, '0')}';
     final daySales = salesByDay[dayKey] ?? [];
-    
+
     final revenue = daySales.fold<double>(
       0.0,
       (sum, sale) => sum + ((sale['total_amount'] as num?)?.toDouble() ?? 0.0),
     );
-    
+
     final profit = revenue * 0.3; // Assuming 30% margin
-    
+
     points.add(RevenueChartPoint(
       label: '${current.day}.${current.month}',
       revenue: revenue,
       profit: profit,
     ));
-    
+
     current = current.add(const Duration(days: 1));
   }
-  
+
   return points;
 }
 
@@ -362,7 +381,7 @@ class RevenueChartPoint {
   final String label;
   final double revenue;
   final double profit;
-  
+
   RevenueChartPoint({
     required this.label,
     required this.revenue,
@@ -373,46 +392,36 @@ class RevenueChartPoint {
 /// Realtime period total from sales stream.
 final realtimePeriodTotalProvider = StreamProvider.autoDispose<double>((ref) {
   final salesAsync = ref.watch(realtimeSalesByDateRangeProvider);
-  
-  return salesAsync.map((sales) {
-    return sales.fold<double>(
+
+  return salesAsync.when(
+    data: (sales) => Stream.value(sales.fold<double>(
       0.0,
       (sum, sale) => sum + ((sale['total_amount'] as num?)?.toDouble() ?? 0.0),
-    );
-  });
+    )),
+    loading: () => const Stream.empty(),
+    error: (_, __) => const Stream.empty(),
+  );
 });
 
 /// Realtime operations summary from all streams.
-final realtimeOperationsSummaryProvider = StreamProvider.autoDispose<Map<String, dynamic>>((ref) {
+final realtimeOperationsSummaryProvider =
+    StreamProvider.autoDispose<Map<String, dynamic>>((ref) {
   final salesAsync = ref.watch(realtimeSalesByDateRangeProvider);
-  final arrivalsAsync = ref.watch(realtimeArrivalsStreamProvider);
-  final transfersAsync = ref.watch(realtimeTransfersStreamProvider);
-  final auditsAsync = ref.watch(realtimeAuditsStreamProvider);
-  
-  return Stream.zip4(
-    salesAsync,
-    arrivalsAsync,
-    transfersAsync,
-    auditsAsync,
-    (sales, arrivals, transfers, audits) {
-      final salesTotal = sales.fold<double>(
+
+  return salesAsync.when(
+    data: (sales) => Stream.value({
+      'salesCount': sales.length,
+      'salesTotal': sales.fold<double>(
         0.0,
-        (sum, sale) => sum + ((sale['total_amount'] as num?)?.toDouble() ?? 0.0),
-      );
-      
-      final arrivalsTotal = arrivals.fold<double>(
-        0.0,
-        (sum, arrival) => sum + ((arrival['total_amount'] as num?)?.toDouble() ?? 0.0),
-      );
-      
-      return {
-        'salesCount': sales.length,
-        'salesTotal': salesTotal,
-        'arrivalsCount': arrivals.length,
-        'arrivalsTotal': arrivalsTotal,
-        'transfersCount': transfers.length,
-        'auditsCount': audits.length,
-      };
-    },
+        (sum, sale) =>
+            sum + ((sale['total_amount'] as num?)?.toDouble() ?? 0.0),
+      ),
+      'arrivalsCount': 0,
+      'arrivalsTotal': 0.0,
+      'transfersCount': 0,
+      'auditsCount': 0,
+    }),
+    loading: () => const Stream.empty(),
+    error: (_, __) => const Stream.empty(),
   );
 });

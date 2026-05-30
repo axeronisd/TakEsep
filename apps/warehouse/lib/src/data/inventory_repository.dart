@@ -12,29 +12,12 @@ class InventoryRepository {
   final SupabaseClient _supabase = Supabase.instance.client;
 
   /// Fetch products for a specific company (optionally filtered by warehouse)
+  /// Fetches from Supabase directly for real-time sync.
   Future<List<Product>> getProducts(String companyId,
       {String? warehouseId}) async {
     try {
-      String query = 'SELECT * FROM products WHERE company_id = ?';
-      final params = <dynamic>[companyId];
-
-      if (warehouseId != null) {
-        query += ' AND warehouse_id = ?';
-        params.add(warehouseId);
-      }
-
-      query += ' ORDER BY name';
-
-      final results = await _db.getAll(query, params);
-      if (results.isNotEmpty) {
-        return results.map((row) => Product.fromJson(row)).toList();
-      }
-
-      // Fallback to Supabase if local DB is empty (sync not yet completed)
-      var sbQuery = Supabase.instance.client
-          .from('products')
-          .select()
-          .eq('company_id', companyId);
+      var sbQuery =
+          _supabase.from('products').select().eq('company_id', companyId);
 
       if (warehouseId != null) {
         sbQuery = sbQuery.eq('warehouse_id', warehouseId);
@@ -45,7 +28,7 @@ class InventoryRepository {
           .map((row) => Product.fromJson(row as Map<String, dynamic>))
           .toList();
 
-      // Cache in local DB for next time
+      // Cache in local DB for offline support
       for (final p in sbResults) {
         await _db.execute(
           '''INSERT OR REPLACE INTO products (
@@ -86,27 +69,34 @@ class InventoryRepository {
 
       return products;
     } catch (e) {
-      print('InventoryRepository getProducts error: $e');
-      return [];
+      print('InventoryRepository getProducts Supabase error: $e');
+      // Fallback to local DB if Supabase fails
+      String query = 'SELECT * FROM products WHERE company_id = ?';
+      final params = <dynamic>[companyId];
+
+      if (warehouseId != null) {
+        query += ' AND warehouse_id = ?';
+        params.add(warehouseId);
+      }
+
+      query += ' ORDER BY name';
+
+      final results = await _db.getAll(query, params);
+      return results.map((row) => Product.fromJson(row)).toList();
     }
   }
 
   /// Fetch all categories for a specific company
+  /// Fetches from Supabase directly for real-time sync.
   Future<List<Category>> getCategories(String companyId) async {
     try {
-      final results = await _db.getAll(
-        'SELECT * FROM categories WHERE company_id = ? ORDER BY name',
-        [companyId],
-      );
-      if (results.isNotEmpty) {
-        return results.map((row) => Category.fromJson(row)).toList();
-      }
-      // Fallback to Supabase
-      final sbResults = await Supabase.instance.client
+      final sbResults = await _supabase
           .from('categories')
           .select()
           .eq('company_id', companyId)
           .order('name');
+
+      // Cache in local DB for offline support
       for (final c in sbResults) {
         await _db.execute(
           'INSERT OR REPLACE INTO categories (id, company_id, name, parent_id, sort_order, image_url, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
@@ -123,27 +113,27 @@ class InventoryRepository {
       }
       return sbResults.map((row) => Category.fromJson(row)).toList();
     } catch (e) {
-      print('InventoryRepository getCategories error: $e');
-      return [];
+      print('InventoryRepository getCategories Supabase error: $e');
+      // Fallback to local DB if Supabase fails
+      final results = await _db.getAll(
+        'SELECT * FROM categories WHERE company_id = ? ORDER BY name',
+        [companyId],
+      );
+      return results.map((row) => Category.fromJson(row)).toList();
     }
   }
 
   /// Fetch all warehouses for a specific company
+  /// Fetches from Supabase directly for real-time sync.
   Future<List<Warehouse>> getWarehouses(String companyId) async {
     try {
-      final results = await _db.getAll(
-        'SELECT * FROM warehouses WHERE organization_id = ? ORDER BY name',
-        [companyId],
-      );
-      if (results.isNotEmpty) {
-        return results.map((row) => Warehouse.fromJson(row)).toList();
-      }
-      // Fallback to Supabase
-      final sbResults = await Supabase.instance.client
+      final sbResults = await _supabase
           .from('warehouses')
           .select()
           .eq('organization_id', companyId)
           .order('name');
+
+      // Cache in local DB for offline support
       for (final w in sbResults) {
         await _db.execute(
           'INSERT OR REPLACE INTO warehouses (id, organization_id, group_id, name, address, latitude, longitude, floor_info, is_active, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -164,8 +154,13 @@ class InventoryRepository {
       }
       return sbResults.map((row) => Warehouse.fromJson(row)).toList();
     } catch (e) {
-      print('InventoryRepository getWarehouses error: $e');
-      return [];
+      print('InventoryRepository getWarehouses Supabase error: $e');
+      // Fallback to local DB if Supabase fails
+      final results = await _db.getAll(
+        'SELECT * FROM warehouses WHERE organization_id = ? ORDER BY name',
+        [companyId],
+      );
+      return results.map((row) => Warehouse.fromJson(row)).toList();
     }
   }
 
@@ -284,9 +279,11 @@ class InventoryRepository {
           'image_url': product.imageUrl,
           'updated_at': DateTime.now().toIso8601String(),
         }).eq('id', product.id);
-        fd.debugPrint('[InventoryRepository] Product synced to Supabase for realtime: ${product.id}');
+        fd.debugPrint(
+            '[InventoryRepository] Product synced to Supabase for realtime: ${product.id}');
       } catch (e) {
-        fd.debugPrint('[InventoryRepository] Error syncing product to Supabase: $e');
+        fd.debugPrint(
+            '[InventoryRepository] Error syncing product to Supabase: $e');
         // Fallback to PowerSync sync if direct Supabase write fails
         await SupabaseSync.update('products', product.id, {
           'name': product.name,
@@ -296,7 +293,9 @@ class InventoryRepository {
           'description': product.description,
           'image_url': product.imageUrl,
           'updated_at': DateTime.now().toIso8601String(),
-      });
+        });
+        return true;
+      }
 
       return true;
     } catch (e) {

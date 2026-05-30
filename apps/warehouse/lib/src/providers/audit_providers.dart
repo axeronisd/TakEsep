@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takesep_core/takesep_core.dart';
 
 import '../data/audit_repository.dart';
 import '../data/powersync_db.dart';
+import '../data/supabase_realtime_service.dart';
 import 'auth_providers.dart';
 
 // ─── Repository provider ──────────────────────────────────────
@@ -125,7 +127,8 @@ class CurrentAuditNotifier extends StateNotifier<Audit?> {
   /// Scan an item by barcode → find and +1.
   Future<String?> scanBarcode(String barcode) async {
     if (state == null) return 'Нет активной ревизии';
-    final item = state!.items.where((i) => i.productBarcode == barcode).toList();
+    final item =
+        state!.items.where((i) => i.productBarcode == barcode).toList();
     if (item.isEmpty) return 'Товар не найден в ревизии';
 
     await _repo.scanItem(item.first.id);
@@ -158,30 +161,126 @@ class CurrentAuditNotifier extends StateNotifier<Audit?> {
   void clear() => state = null;
 }
 
-// ─── Audit Lists ──────────────────────────────────────────────
+// ─── Audit Lists (Real-time) ──────────────────────────────────────
 
-/// All audits (history).
-final auditsListProvider = FutureProvider<List<Audit>>((ref) async {
-  final auth = ref.watch(authProvider);
-  final companyId = auth.currentCompany?.id;
-  if (companyId == null) return [];
+/// All audits (history) with real-time updates.
+class AuditsListNotifier extends StateNotifier<AsyncValue<List<Audit>>> {
+  final Ref ref;
+  StreamSubscription? _subscription;
 
-  return ref.read(auditRepositoryProvider).getAudits(
-        companyId: companyId,
-        warehouseId: auth.selectedWarehouse?.id,
-      );
+  AuditsListNotifier(this.ref) : super(const AsyncValue.loading()) {
+    _loadAudits();
+    _setupRealtimeSubscription();
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  void _setupRealtimeSubscription() {
+    final auth = ref.read(authProvider);
+    final companyId = auth.currentCompany?.id;
+    final warehouseId = auth.selectedWarehouse?.id;
+    if (companyId == null) return;
+
+    final stream = realtimeService.subscribeToTable(
+      table: 'audits',
+      companyId: companyId,
+      warehouseId: warehouseId,
+    );
+
+    _subscription = stream.listen((data) {
+      _loadAudits();
+    }, onError: (e) {
+      print('AuditsListNotifier realtime error: $e');
+    });
+  }
+
+  Future<void> _loadAudits() async {
+    final auth = ref.read(authProvider);
+    final companyId = auth.currentCompany?.id;
+    if (companyId == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
+    try {
+      state = const AsyncValue.loading();
+      final audits = await ref.read(auditRepositoryProvider).getAudits(
+            companyId: companyId,
+            warehouseId: auth.selectedWarehouse?.id,
+          );
+      state = AsyncValue.data(audits);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+}
+
+final auditsListProvider =
+    StateNotifierProvider<AuditsListNotifier, AsyncValue<List<Audit>>>((ref) {
+  return AuditsListNotifier(ref);
 });
 
-/// Draft / in-progress audits.
-final auditDraftsProvider = FutureProvider<List<Audit>>((ref) async {
-  final auth = ref.watch(authProvider);
-  final companyId = auth.currentCompany?.id;
-  if (companyId == null) return [];
+/// Draft / in-progress audits with real-time updates.
+class AuditDraftsNotifier extends StateNotifier<AsyncValue<List<Audit>>> {
+  final Ref ref;
+  StreamSubscription? _subscription;
 
-  return ref.read(auditRepositoryProvider).getDrafts(
-        companyId: companyId,
-        warehouseId: auth.selectedWarehouse?.id,
-      );
+  AuditDraftsNotifier(this.ref) : super(const AsyncValue.loading()) {
+    _loadDrafts();
+    _setupRealtimeSubscription();
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  void _setupRealtimeSubscription() {
+    final auth = ref.read(authProvider);
+    final companyId = auth.currentCompany?.id;
+    final warehouseId = auth.selectedWarehouse?.id;
+    if (companyId == null) return;
+
+    final stream = realtimeService.subscribeToTable(
+      table: 'audits',
+      companyId: companyId,
+      warehouseId: warehouseId,
+    );
+
+    _subscription = stream.listen((data) {
+      _loadDrafts();
+    }, onError: (e) {
+      print('AuditDraftsNotifier realtime error: $e');
+    });
+  }
+
+  Future<void> _loadDrafts() async {
+    final auth = ref.read(authProvider);
+    final companyId = auth.currentCompany?.id;
+    if (companyId == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
+    try {
+      state = const AsyncValue.loading();
+      final drafts = await ref.read(auditRepositoryProvider).getDrafts(
+            companyId: companyId,
+            warehouseId: auth.selectedWarehouse?.id,
+          );
+      state = AsyncValue.data(drafts);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+}
+
+final auditDraftsProvider =
+    StateNotifierProvider<AuditDraftsNotifier, AsyncValue<List<Audit>>>((ref) {
+  return AuditDraftsNotifier(ref);
 });
 
 // ─── Audit search / filter on count screen ────────────────────

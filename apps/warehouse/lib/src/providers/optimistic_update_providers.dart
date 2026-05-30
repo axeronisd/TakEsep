@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takesep_core/takesep_core.dart';
 import '../data/realtime_products_repository.dart';
+import 'realtime_products_providers.dart';
 
 /// State for optimistic updates
 class OptimisticUpdateState<T> {
@@ -37,7 +38,8 @@ class OptimisticUpdateState<T> {
 
 /// Notifier for handling optimistic updates
 /// This allows the UI to update immediately while the backend sync happens in the background
-class OptimisticProductNotifier extends StateNotifier<OptimisticUpdateState<Product>> {
+class OptimisticProductNotifier
+    extends StateNotifier<OptimisticUpdateState<Product>> {
   final RealtimeProductsRepository _repository;
 
   OptimisticProductNotifier(this._repository, Product initialProduct)
@@ -176,22 +178,39 @@ class OptimisticProductNotifier extends StateNotifier<OptimisticUpdateState<Prod
 /// final productNotifier = ref.watch(optimisticProductProvider(productId));
 /// productNotifier.updateQuantity(10); // UI updates immediately
 /// ```
-final optimisticProductProvider =
-    StateNotifierProvider.family<OptimisticProductNotifier,
-        OptimisticUpdateState<Product>, String>((ref, productId) {
+final optimisticProductProvider = StateNotifierProvider.family<
+    OptimisticProductNotifier,
+    OptimisticUpdateState<Product>,
+    String>((ref, productId) {
   final repository = ref.watch(realtimeProductsRepositoryProvider);
-  
+
   // Get initial product data from the stream provider
   final productAsync = ref.watch(productProvider(productId));
-  
+
   // Create notifier with initial data or empty product
-  final initialProduct = productAsync.value ?? Product.empty();
-  
+  final initialProduct = productAsync.value ??
+      Product(
+        id: '',
+        companyId: '',
+        warehouseId: '',
+        categoryId: '',
+        name: '',
+        sku: '',
+        barcode: '',
+        price: 0.0,
+        quantity: 0,
+        unit: '',
+        minQuantity: 0,
+        createdAt: DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
   return OptimisticProductNotifier(repository, initialProduct);
 });
 
 /// Notifier for optimistic batch operations (e.g., bulk quantity updates)
-class OptimisticBatchUpdateNotifier extends StateNotifier<OptimisticUpdateState<List<Product>>> {
+class OptimisticBatchUpdateNotifier
+    extends StateNotifier<OptimisticUpdateState<List<Product>>> {
   final RealtimeProductsRepository _repository;
 
   OptimisticBatchUpdateNotifier(this._repository)
@@ -255,9 +274,8 @@ class OptimisticBatchUpdateNotifier extends StateNotifier<OptimisticUpdateState<
 }
 
 /// Provider for batch optimistic updates
-final optimisticBatchUpdateProvider =
-    StateNotifierProvider<OptimisticBatchUpdateNotifier,
-        OptimisticUpdateState<List<Product>>>((ref) {
+final optimisticBatchUpdateProvider = StateNotifierProvider<
+    OptimisticBatchUpdateNotifier, OptimisticUpdateState<List<Product>>>((ref) {
   final repository = ref.watch(realtimeProductsRepositoryProvider);
   return OptimisticBatchUpdateNotifier(repository);
 });

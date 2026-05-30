@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takesep_core/takesep_core.dart';
 import 'package:uuid/uuid.dart';
@@ -7,10 +8,12 @@ import 'inventory_providers.dart';
 import 'sales_providers.dart' show SearchType;
 import '../data/transfer_repository.dart';
 import '../data/powersync_db.dart';
+import '../data/supabase_realtime_service.dart';
 
 // ═══════════════ ENUMS ═══════════════
 
 enum TransferSortType { name, costPriceAsc, costPriceDesc, stockAsc, stockDesc }
+
 enum TransferPricingMode { cost, selling, simple }
 
 // ═══════════════ PROVIDERS ═══════════════
@@ -181,28 +184,133 @@ final filteredTransferProductsProvider =
   });
 });
 
-// ═══════════════ TRANSFERS LIST ═══════════════
+// ═══════════════ TRANSFERS LIST (Real-time) ═══════════════
 
-/// List of all transfers for the current warehouse.
-final transfersListProvider = FutureProvider<List<Transfer>>((ref) async {
-  final repo = ref.watch(transferRepositoryProvider);
-  final authState = ref.watch(authProvider);
-  final companyId = authState.currentCompany?.id;
-  final warehouseId = authState.selectedWarehouseId;
-  if (companyId == null) return [];
-  return repo.getTransfers(companyId: companyId, warehouseId: warehouseId);
+/// List of all transfers for the current warehouse with real-time updates.
+class TransfersListNotifier extends StateNotifier<AsyncValue<List<Transfer>>> {
+  final Ref ref;
+  StreamSubscription? _subscription;
+
+  TransfersListNotifier(this.ref) : super(const AsyncValue.loading()) {
+    _loadTransfers();
+    _setupRealtimeSubscription();
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  void _setupRealtimeSubscription() {
+    final authState = ref.read(authProvider);
+    final companyId = authState.currentCompany?.id;
+    final warehouseId = authState.selectedWarehouseId;
+    if (companyId == null) return;
+
+    final stream = realtimeService.subscribeToTable(
+      table: 'transfers',
+      companyId: companyId,
+      warehouseId: warehouseId,
+    );
+
+    _subscription = stream.listen((data) {
+      _loadTransfers();
+    }, onError: (e) {
+      print('TransfersListNotifier realtime error: $e');
+    });
+  }
+
+  Future<void> _loadTransfers() async {
+    final repo = ref.read(transferRepositoryProvider);
+    final authState = ref.read(authProvider);
+    final companyId = authState.currentCompany?.id;
+    final warehouseId = authState.selectedWarehouseId;
+    if (companyId == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
+    try {
+      state = const AsyncValue.loading();
+      final transfers = await repo.getTransfers(
+        companyId: companyId,
+        warehouseId: warehouseId,
+      );
+      state = AsyncValue.data(transfers);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+}
+
+final transfersListProvider =
+    StateNotifierProvider<TransfersListNotifier, AsyncValue<List<Transfer>>>(
+        (ref) {
+  return TransfersListNotifier(ref);
 });
 
-/// Pending incoming transfers awaiting acceptance.
-final pendingIncomingTransfersProvider =
-    FutureProvider<List<Transfer>>((ref) async {
-  final repo = ref.watch(transferRepositoryProvider);
-  final authState = ref.watch(authProvider);
-  final companyId = authState.currentCompany?.id;
-  final warehouseId = authState.selectedWarehouseId;
-  if (companyId == null || warehouseId == null) return [];
-  return repo.getPendingIncoming(
-      companyId: companyId, warehouseId: warehouseId);
+/// Pending incoming transfers awaiting acceptance with real-time updates.
+class PendingIncomingTransfersNotifier
+    extends StateNotifier<AsyncValue<List<Transfer>>> {
+  final Ref ref;
+  StreamSubscription? _subscription;
+
+  PendingIncomingTransfersNotifier(this.ref)
+      : super(const AsyncValue.loading()) {
+    _loadTransfers();
+    _setupRealtimeSubscription();
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  void _setupRealtimeSubscription() {
+    final authState = ref.read(authProvider);
+    final companyId = authState.currentCompany?.id;
+    final warehouseId = authState.selectedWarehouseId;
+    if (companyId == null || warehouseId == null) return;
+
+    final stream = realtimeService.subscribeToTable(
+      table: 'transfers',
+      companyId: companyId,
+      warehouseId: warehouseId,
+    );
+
+    _subscription = stream.listen((data) {
+      _loadTransfers();
+    }, onError: (e) {
+      print('PendingIncomingTransfersNotifier realtime error: $e');
+    });
+  }
+
+  Future<void> _loadTransfers() async {
+    final repo = ref.read(transferRepositoryProvider);
+    final authState = ref.read(authProvider);
+    final companyId = authState.currentCompany?.id;
+    final warehouseId = authState.selectedWarehouseId;
+    if (companyId == null || warehouseId == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
+    try {
+      state = const AsyncValue.loading();
+      final transfers = await repo.getPendingIncoming(
+        companyId: companyId,
+        warehouseId: warehouseId,
+      );
+      state = AsyncValue.data(transfers);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+}
+
+final pendingIncomingTransfersProvider = StateNotifierProvider<
+    PendingIncomingTransfersNotifier, AsyncValue<List<Transfer>>>((ref) {
+  return PendingIncomingTransfersNotifier(ref);
 });
 
 /// Badge count for pending incoming transfers.
@@ -216,16 +324,68 @@ final pendingTransferCountProvider = FutureProvider<int>((ref) async {
       companyId: companyId, warehouseId: warehouseId);
 });
 
-/// Pending outgoing transfers (sent from this warehouse, awaiting acceptance).
-final pendingOutgoingTransfersProvider =
-    FutureProvider<List<Transfer>>((ref) async {
-  final repo = ref.watch(transferRepositoryProvider);
-  final authState = ref.watch(authProvider);
-  final companyId = authState.currentCompany?.id;
-  final warehouseId = authState.selectedWarehouseId;
-  if (companyId == null || warehouseId == null) return [];
-  return repo.getPendingOutgoing(
-      companyId: companyId, warehouseId: warehouseId);
+/// Pending outgoing transfers with real-time updates.
+class PendingOutgoingTransfersNotifier
+    extends StateNotifier<AsyncValue<List<Transfer>>> {
+  final Ref ref;
+  StreamSubscription? _subscription;
+
+  PendingOutgoingTransfersNotifier(this.ref)
+      : super(const AsyncValue.loading()) {
+    _loadTransfers();
+    _setupRealtimeSubscription();
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  void _setupRealtimeSubscription() {
+    final authState = ref.read(authProvider);
+    final companyId = authState.currentCompany?.id;
+    final warehouseId = authState.selectedWarehouseId;
+    if (companyId == null || warehouseId == null) return;
+
+    final stream = realtimeService.subscribeToTable(
+      table: 'transfers',
+      companyId: companyId,
+      warehouseId: warehouseId,
+    );
+
+    _subscription = stream.listen((data) {
+      _loadTransfers();
+    }, onError: (e) {
+      print('PendingOutgoingTransfersNotifier realtime error: $e');
+    });
+  }
+
+  Future<void> _loadTransfers() async {
+    final repo = ref.read(transferRepositoryProvider);
+    final authState = ref.read(authProvider);
+    final companyId = authState.currentCompany?.id;
+    final warehouseId = authState.selectedWarehouseId;
+    if (companyId == null || warehouseId == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
+    try {
+      state = const AsyncValue.loading();
+      final transfers = await repo.getPendingOutgoing(
+        companyId: companyId,
+        warehouseId: warehouseId,
+      );
+      state = AsyncValue.data(transfers);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+}
+
+final pendingOutgoingTransfersProvider = StateNotifierProvider<
+    PendingOutgoingTransfersNotifier, AsyncValue<List<Transfer>>>((ref) {
+  return PendingOutgoingTransfersNotifier(ref);
 });
 
 // ═══════════════ AVAILABLE WAREHOUSES IN SAME GROUP ═══════════════
@@ -233,7 +393,8 @@ final pendingOutgoingTransfersProvider =
 /// Warehouses in the same group as the currently selected warehouse,
 /// excluding the current warehouse (valid transfer destinations).
 /// Uses local PowerSync DB for reliable data.
-final transferDestinationsProvider = FutureProvider<List<Warehouse>>((ref) async {
+final transferDestinationsProvider =
+    FutureProvider<List<Warehouse>>((ref) async {
   final authState = ref.watch(authProvider);
   final warehouseId = authState.selectedWarehouseId;
   final companyId = authState.currentCompany?.id;
@@ -284,36 +445,33 @@ Future<bool> sendTransfer(WidgetRef ref) async {
     'SELECT name FROM warehouses WHERE id = ?',
     [destinationId],
   );
-  final fromWarehouseName = fromRow?['name'] as String? ??
-      authState.selectedWarehouse?.name;
+  final fromWarehouseName =
+      fromRow?['name'] as String? ?? authState.selectedWarehouse?.name;
   final destWarehouseName = destRow?['name'] as String?;
-
 
   final uuid = const Uuid();
   final now = DateTime.now();
 
   final pricingMode = ref.read(transferPricingModeProvider);
 
-  final transferItems = items
-      .map((draft) {
-        // Select cost based on pricing mode
-        final price = switch (pricingMode) {
-          TransferPricingMode.cost => draft.product.costPrice ?? 0,
-          TransferPricingMode.selling => draft.product.price,
-          TransferPricingMode.simple => 0.0,
-        };
-        return TransferItem(
-              id: uuid.v4(),
-              transferId: '',
-              productId: draft.product.id,
-              productName: draft.product.name,
-              productSku: draft.product.sku,
-              productBarcode: draft.product.barcode,
-              quantitySent: draft.quantity,
-              costPrice: price,
-            );
-      })
-      .toList();
+  final transferItems = items.map((draft) {
+    // Select cost based on pricing mode
+    final price = switch (pricingMode) {
+      TransferPricingMode.cost => draft.product.costPrice ?? 0,
+      TransferPricingMode.selling => draft.product.price,
+      TransferPricingMode.simple => 0.0,
+    };
+    return TransferItem(
+      id: uuid.v4(),
+      transferId: '',
+      productId: draft.product.id,
+      productName: draft.product.name,
+      productSku: draft.product.sku,
+      productBarcode: draft.product.barcode,
+      quantitySent: draft.quantity,
+      costPrice: price,
+    );
+  }).toList();
 
   final transfer = Transfer(
     id: uuid.v4(),
@@ -341,7 +499,8 @@ Future<bool> sendTransfer(WidgetRef ref) async {
     ref.read(transferDestinationProvider.notifier).state = null;
     ref.read(transferCommentProvider.notifier).state = '';
     ref.read(transferPhotosProvider.notifier).state = [];
-    ref.read(transferPricingModeProvider.notifier).state = TransferPricingMode.cost;
+    ref.read(transferPricingModeProvider.notifier).state =
+        TransferPricingMode.cost;
 
     // Refresh lists
     ref.invalidate(transfersListProvider);

@@ -12,13 +12,78 @@ class ArrivalRepository {
   PowerSyncDatabase get _db => powerSyncDb;
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  /// Fetch list of arrivals
+  /// Fetch list of arrivals (fetches from Supabase directly for real-time sync)
   Future<List<Arrival>> getArrivals(
       {required String companyId,
       String? warehouseId,
       int page = 1,
       int limit = 20}) async {
     try {
+      final offset = (page - 1) * limit;
+
+      var query =
+          _supabase.from('arrivals').select().eq('company_id', companyId);
+
+      if (warehouseId != null) {
+        query = query.eq('warehouse_id', warehouseId);
+      }
+
+      final arrivals = await query
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
+
+      final result = <Arrival>[];
+      for (final arrivalJson in arrivals) {
+        // Fetch items from Supabase
+        final items = await _supabase
+            .from('arrival_items')
+            .select()
+            .eq('arrival_id', arrivalJson['id']);
+
+        final arrival = Arrival.fromJson({
+          ...arrivalJson,
+          'items': items,
+        });
+        result.add(arrival);
+
+        // Cache in local DB for offline support
+        await _db.execute(
+          'INSERT OR REPLACE INTO arrivals (id, company_id, employee_id, warehouse_id, supplier, status, total_amount, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+          [
+            arrivalJson['id'],
+            arrivalJson['company_id'],
+            arrivalJson['employee_id'],
+            arrivalJson['warehouse_id'],
+            arrivalJson['supplier'],
+            arrivalJson['status'],
+            arrivalJson['total_amount'],
+            arrivalJson['notes'],
+            arrivalJson['created_at'],
+            arrivalJson['updated_at'],
+          ],
+        );
+
+        // Cache items in local DB
+        for (final item in items) {
+          await _db.execute(
+            'INSERT OR REPLACE INTO arrival_items (id, arrival_id, product_id, product_name, quantity, cost_price, selling_price, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+            [
+              item['id'],
+              item['arrival_id'],
+              item['product_id'],
+              item['product_name'],
+              item['quantity'],
+              item['cost_price'],
+              item['selling_price'],
+              item['created_at'],
+            ],
+          );
+        }
+      }
+      return result;
+    } catch (e) {
+      print('ArrivalRepository getArrivals Supabase error: $e');
+      // Fallback to local DB if Supabase fails
       final offset = (page - 1) * limit;
       final whFilter = warehouseId != null ? ' AND warehouse_id = ?' : '';
       final whParam = warehouseId != null ? [warehouseId] : <String>[];
@@ -40,9 +105,6 @@ class ArrivalRepository {
         result.add(arrival);
       }
       return result;
-    } catch (e) {
-      print('ArrivalRepository getArrivals error: $e');
-      return [];
     }
   }
 

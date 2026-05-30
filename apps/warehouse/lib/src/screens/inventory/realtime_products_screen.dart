@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takesep_core/takesep_core.dart';
-import 'package:takesep_design_system/takesep_design_system.dart';
-import '../../data/realtime_products_repository.dart';
 import '../../providers/realtime_products_providers.dart';
 import '../../providers/optimistic_update_providers.dart';
 
@@ -20,7 +18,8 @@ class RealtimeProductsScreen extends ConsumerStatefulWidget {
       _RealtimeProductsScreenState();
 }
 
-class _RealtimeProductsScreenState extends ConsumerState<RealtimeProductsScreen> {
+class _RealtimeProductsScreenState
+    extends ConsumerState<RealtimeProductsScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
 
@@ -195,14 +194,16 @@ class RealtimeProductTile extends ConsumerWidget {
                 IconButton(
                   icon: const Icon(Icons.remove),
                   onPressed: () {
-                    final newQuantity = (displayProduct.quantity - 1).clamp(0, 9999);
+                    final newQuantity =
+                        (displayProduct.quantity - 1).clamp(0, 9999);
                     ref
                         .read(optimisticProductProvider(product.id).notifier)
                         .updateQuantity(newQuantity);
                   },
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                   decoration: BoxDecoration(
                     border: Border.all(
                       color: isOptimistic ? Colors.orange : Colors.grey,
@@ -220,7 +221,8 @@ class RealtimeProductTile extends ConsumerWidget {
                 IconButton(
                   icon: const Icon(Icons.add),
                   onPressed: () {
-                    final newQuantity = (displayProduct.quantity + 1).clamp(0, 9999);
+                    final newQuantity =
+                        (displayProduct.quantity + 1).clamp(0, 9999);
                     ref
                         .read(optimisticProductProvider(product.id).notifier)
                         .updateQuantity(newQuantity);
@@ -308,7 +310,7 @@ class ProductDetailScreen extends ConsumerWidget {
                     Expanded(
                       child: _InfoCard(
                         label: 'SKU',
-                        value: displayProduct.sku,
+                        value: displayProduct.sku ?? 'N/A',
                         icon: Icons.tag,
                       ),
                     ),
@@ -316,7 +318,7 @@ class ProductDetailScreen extends ConsumerWidget {
                     Expanded(
                       child: _InfoCard(
                         label: 'Barcode',
-                        value: displayProduct.barcode,
+                        value: displayProduct.barcode ?? 'N/A',
                         icon: Icons.qr_code,
                       ),
                     ),
@@ -351,19 +353,20 @@ class ProductDetailScreen extends ConsumerWidget {
                 // Cost price
                 _InfoCard(
                   label: 'Cost Price',
-                  value: '${(displayProduct.costPrice ?? 0).toStringAsFixed(2)} KGS',
+                  value:
+                      '${(displayProduct.costPrice ?? 0).toStringAsFixed(2)} KGS',
                   icon: Icons.price_change,
                 ),
                 const SizedBox(height: 16),
 
                 // Description
-                if (displayProduct.description.isNotEmpty) ...[
+                if ((displayProduct.description?.isNotEmpty ?? false)) ...[
                   Text(
                     'Description',
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),
-                  Text(displayProduct.description),
+                  Text(displayProduct.description ?? ''),
                   const SizedBox(height: 16),
                 ],
 
@@ -426,14 +429,16 @@ class ProductDetailScreen extends ConsumerWidget {
                                 SizedBox(
                                   width: 16,
                                   height: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
                                 ),
                                 SizedBox(width: 8),
                                 Text('Syncing...'),
                               ],
                             );
                           }
-                          return const Icon(Icons.check_circle, color: Colors.green);
+                          return const Icon(Icons.check_circle,
+                              color: Colors.green);
                         },
                       ),
                     ],

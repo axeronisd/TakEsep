@@ -1,11 +1,15 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takesep_core/takesep_core.dart';
 import '../data/client_repository.dart';
+import '../data/supabase_realtime_service.dart';
 import 'auth_providers.dart';
 
-final clientRepositoryProvider = Provider<ClientRepository>((_) => ClientRepository());
+final clientRepositoryProvider =
+    Provider<ClientRepository>((_) => ClientRepository());
 
-/// Clients list for the current company.
+/// Clients list for the current company with real-time updates.
+/// Uses Supabase Realtime to automatically refresh when data changes on other devices.
 final clientListProvider =
     StateNotifierProvider<ClientListNotifier, AsyncValue<List<Client>>>((ref) {
   final repo = ref.read(clientRepositoryProvider);
@@ -16,14 +20,42 @@ final clientListProvider =
 class ClientListNotifier extends StateNotifier<AsyncValue<List<Client>>> {
   final ClientRepository _repo;
   final String? _companyId;
+  StreamSubscription? _subscription;
 
   ClientListNotifier(this._repo, this._companyId)
       : super(const AsyncValue.loading()) {
     load();
+    _setupRealtimeSubscription();
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  void _setupRealtimeSubscription() {
+    if (_companyId == null) return;
+
+    // Subscribe to real-time changes from Supabase
+    final stream = realtimeService.subscribeToTable(
+      table: 'clients',
+      companyId: _companyId,
+    );
+
+    _subscription = stream.listen((data) {
+      // When data changes, reload from repository (which fetches from Supabase)
+      load();
+    }, onError: (e) {
+      print('ClientListNotifier realtime error: $e');
+    });
   }
 
   Future<void> load() async {
-    if (_companyId == null) { state = const AsyncValue.data([]); return; }
+    if (_companyId == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
     try {
       state = const AsyncValue.loading();
       final items = await _repo.getClients(_companyId);
@@ -43,8 +75,12 @@ class ClientListNotifier extends StateNotifier<AsyncValue<List<Client>>> {
     if (_companyId == null) return null;
     try {
       final client = await _repo.createClient(
-        companyId: _companyId, name: name, phone: phone,
-        email: email, type: type, notes: notes,
+        companyId: _companyId,
+        name: name,
+        phone: phone,
+        email: email,
+        type: type,
+        notes: notes,
       );
       await load();
       return client;
@@ -53,12 +89,26 @@ class ClientListNotifier extends StateNotifier<AsyncValue<List<Client>>> {
     }
   }
 
-  Future<bool> update({required String clientId, String? name, String? phone, String? email, String? type, bool? isActive}) async {
+  Future<bool> update(
+      {required String clientId,
+      String? name,
+      String? phone,
+      String? email,
+      String? type,
+      bool? isActive}) async {
     try {
-      await _repo.updateClient(clientId: clientId, name: name, phone: phone, email: email, type: type, isActive: isActive);
+      await _repo.updateClient(
+          clientId: clientId,
+          name: name,
+          phone: phone,
+          email: email,
+          type: type,
+          isActive: isActive);
       await load();
       return true;
-    } catch (_) { return false; }
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<bool> delete(String clientId) async {
@@ -66,12 +116,16 @@ class ClientListNotifier extends StateNotifier<AsyncValue<List<Client>>> {
       await _repo.deleteClient(clientId);
       await load();
       return true;
-    } catch (_) { return false; }
+    } catch (_) {
+      return false;
+    }
   }
 }
 
 /// Fetch sales history for a specific client
-final clientSalesProvider = FutureProvider.family<List<Map<String, dynamic>>, String>((ref, clientId) async {
+final clientSalesProvider =
+    FutureProvider.family<List<Map<String, dynamic>>, String>(
+        (ref, clientId) async {
   final repo = ref.read(clientRepositoryProvider);
   return repo.getClientSales(clientId);
 });

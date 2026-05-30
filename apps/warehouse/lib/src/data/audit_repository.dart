@@ -329,55 +329,207 @@ class AuditRepository {
 
   // ═══════════════ QUERIES ═══════════════
 
-  /// Get all audits for the company (optionally filter by warehouse).
+  /// Get all audits for the company (fetches from Supabase directly for real-time sync).
   Future<List<Audit>> getAudits({
     required String companyId,
     String? warehouseId,
   }) async {
-    String query = 'SELECT * FROM audits WHERE company_id = ?';
-    final params = <dynamic>[companyId];
-    if (warehouseId != null) {
-      query += ' AND warehouse_id = ?';
-      params.add(warehouseId);
+    try {
+      var query = _supabase.from('audits').select().eq('company_id', companyId);
+
+      if (warehouseId != null) {
+        query = query.eq('warehouse_id', warehouseId);
+      }
+
+      final results = await query.order('created_at', ascending: false);
+
+      // Cache in local DB for offline support
+      for (final audit in results) {
+        await _db.execute(
+          '''INSERT OR REPLACE INTO audits (id, company_id, warehouse_id, warehouse_name,
+             employee_id, employee_name, type, status, category_id, category_name,
+             started_at, completed_at, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          [
+            audit['id'],
+            audit['company_id'],
+            audit['warehouse_id'],
+            audit['warehouse_name'],
+            audit['employee_id'],
+            audit['employee_name'],
+            audit['type'],
+            audit['status'],
+            audit['category_id'],
+            audit['category_name'],
+            audit['started_at'],
+            audit['completed_at'],
+            audit['created_at'],
+            audit['updated_at'],
+          ],
+        );
+      }
+
+      return results.map((r) => Audit.fromJson(r)).toList();
+    } catch (e) {
+      print('AuditRepository getAudits Supabase error: $e');
+      // Fallback to local DB if Supabase fails
+      String query = 'SELECT * FROM audits WHERE company_id = ?';
+      final params = <dynamic>[companyId];
+      if (warehouseId != null) {
+        query += ' AND warehouse_id = ?';
+        params.add(warehouseId);
+      }
+      query += ' ORDER BY created_at DESC';
+
+      final rows = await _db.getAll(query, params);
+      return rows.map((r) => Audit.fromJson(r)).toList();
     }
-    query += ' ORDER BY created_at DESC';
-
-    final rows = await _db.getAll(query, params);
-    return rows.map((r) => Audit.fromJson(r)).toList();
   }
 
-  /// Get a single audit with all its items.
+  /// Get a single audit with all its items (fetches from Supabase directly for real-time sync).
   Future<Audit?> getAuditWithItems(String auditId) async {
-    final auditRows =
-        await _db.getAll('SELECT * FROM audits WHERE id = ?', [auditId]);
-    if (auditRows.isEmpty) return null;
+    try {
+      final auditRows =
+          await _supabase.from('audits').select().eq('id', auditId).single();
 
-    final audit = Audit.fromJson(auditRows.first);
-    final itemRows = await _db.getAll(
-      'SELECT * FROM audit_items WHERE audit_id = ? ORDER BY product_name',
-      [auditId],
-    );
-    final items = itemRows.map((r) => AuditItem.fromJson(r)).toList();
+      final itemRows = await _supabase
+          .from('audit_items')
+          .select()
+          .eq('audit_id', auditId)
+          .order('product_name');
 
-    return audit.copyWith(items: items);
+      // Cache in local DB for offline support
+      await _db.execute(
+        '''INSERT OR REPLACE INTO audits (id, company_id, warehouse_id, warehouse_name,
+           employee_id, employee_name, type, status, category_id, category_name,
+           started_at, completed_at, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+        [
+          auditRows['id'],
+          auditRows['company_id'],
+          auditRows['warehouse_id'],
+          auditRows['warehouse_name'],
+          auditRows['employee_id'],
+          auditRows['employee_name'],
+          auditRows['type'],
+          auditRows['status'],
+          auditRows['category_id'],
+          auditRows['category_name'],
+          auditRows['started_at'],
+          auditRows['completed_at'],
+          auditRows['created_at'],
+          auditRows['updated_at'],
+        ],
+      );
+
+      for (final item in itemRows) {
+        await _db.execute(
+          '''INSERT OR REPLACE INTO audit_items (id, audit_id, product_id, product_name,
+             product_sku, product_barcode, product_image_url,
+             snapshot_quantity, movements_during_audit,
+             actual_quantity, cost_price, is_checked, comment, photos, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          [
+            item['id'],
+            item['audit_id'],
+            item['product_id'],
+            item['product_name'],
+            item['product_sku'],
+            item['product_barcode'],
+            item['product_image_url'],
+            item['snapshot_quantity'],
+            item['movements_during_audit'],
+            item['actual_quantity'],
+            item['cost_price'],
+            item['is_checked'] == true ? 1 : 0,
+            item['comment'],
+            item['photos'],
+            item['created_at'],
+          ],
+        );
+      }
+
+      final audit = Audit.fromJson(auditRows);
+      final items = itemRows.map((r) => AuditItem.fromJson(r)).toList();
+      return audit.copyWith(items: items);
+    } catch (e) {
+      print('AuditRepository getAuditWithItems Supabase error: $e');
+      // Fallback to local DB if Supabase fails
+      final auditRows =
+          await _db.getAll('SELECT * FROM audits WHERE id = ?', [auditId]);
+      if (auditRows.isEmpty) return null;
+
+      final audit = Audit.fromJson(auditRows.first);
+      final itemRows = await _db.getAll(
+        'SELECT * FROM audit_items WHERE audit_id = ? ORDER BY product_name',
+        [auditId],
+      );
+      final items = itemRows.map((r) => AuditItem.fromJson(r)).toList();
+
+      return audit.copyWith(items: items);
+    }
   }
 
-  /// Get draft audits for the current warehouse.
+  /// Get draft audits for the current warehouse (fetches from Supabase directly for real-time sync).
   Future<List<Audit>> getDrafts({
     required String companyId,
     String? warehouseId,
   }) async {
-    String query =
-        "SELECT * FROM audits WHERE company_id = ? AND status IN ('draft', 'inProgress')";
-    final params = <dynamic>[companyId];
-    if (warehouseId != null) {
-      query += ' AND warehouse_id = ?';
-      params.add(warehouseId);
-    }
-    query += ' ORDER BY updated_at DESC';
+    try {
+      var query = _supabase
+          .from('audits')
+          .select()
+          .eq('company_id', companyId)
+          .or('status.eq.draft,status.eq.inProgress');
 
-    final rows = await _db.getAll(query, params);
-    return rows.map((r) => Audit.fromJson(r)).toList();
+      if (warehouseId != null) {
+        query = query.eq('warehouse_id', warehouseId);
+      }
+
+      final results = await query.order('updated_at', ascending: false);
+
+      // Cache in local DB for offline support
+      for (final audit in results) {
+        await _db.execute(
+          '''INSERT OR REPLACE INTO audits (id, company_id, warehouse_id, warehouse_name,
+             employee_id, employee_name, type, status, category_id, category_name,
+             started_at, completed_at, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          [
+            audit['id'],
+            audit['company_id'],
+            audit['warehouse_id'],
+            audit['warehouse_name'],
+            audit['employee_id'],
+            audit['employee_name'],
+            audit['type'],
+            audit['status'],
+            audit['category_id'],
+            audit['category_name'],
+            audit['started_at'],
+            audit['completed_at'],
+            audit['created_at'],
+            audit['updated_at'],
+          ],
+        );
+      }
+
+      return results.map((r) => Audit.fromJson(r)).toList();
+    } catch (e) {
+      print('AuditRepository getDrafts Supabase error: $e');
+      // Fallback to local DB if Supabase fails
+      String query =
+          "SELECT * FROM audits WHERE company_id = ? AND status IN ('draft', 'inProgress')";
+      final params = <dynamic>[companyId];
+      if (warehouseId != null) {
+        query += ' AND warehouse_id = ?';
+        params.add(warehouseId);
+      }
+      query += ' ORDER BY updated_at DESC';
+
+      final rows = await _db.getAll(query, params);
+      return rows.map((r) => Audit.fromJson(r)).toList();
+    }
   }
 
   /// Recalculate movements that occurred during the audit for each item.

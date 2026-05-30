@@ -1,13 +1,17 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takesep_core/takesep_core.dart';
 import '../data/service_repository.dart';
+import '../data/supabase_realtime_service.dart';
 import 'auth_providers.dart';
 
-final serviceRepositoryProvider = Provider<ServiceRepository>((_) => ServiceRepository());
+final serviceRepositoryProvider =
+    Provider<ServiceRepository>((_) => ServiceRepository());
 
-/// Services list for the current company.
+/// Services list for the current company with real-time updates.
 final serviceListProvider =
-    StateNotifierProvider<ServiceListNotifier, AsyncValue<List<Service>>>((ref) {
+    StateNotifierProvider<ServiceListNotifier, AsyncValue<List<Service>>>(
+        (ref) {
   final repo = ref.read(serviceRepositoryProvider);
   final companyId = ref.watch(currentCompanyProvider)?.id;
   return ServiceListNotifier(repo, companyId);
@@ -16,14 +20,40 @@ final serviceListProvider =
 class ServiceListNotifier extends StateNotifier<AsyncValue<List<Service>>> {
   final ServiceRepository _repo;
   final String? _companyId;
+  StreamSubscription? _subscription;
 
   ServiceListNotifier(this._repo, this._companyId)
       : super(const AsyncValue.loading()) {
     load();
+    _setupRealtimeSubscription();
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  void _setupRealtimeSubscription() {
+    if (_companyId == null) return;
+
+    final stream = realtimeService.subscribeToTable(
+      table: 'services',
+      companyId: _companyId,
+    );
+
+    _subscription = stream.listen((data) {
+      load();
+    }, onError: (e) {
+      print('ServiceListNotifier realtime error: $e');
+    });
   }
 
   Future<void> load() async {
-    if (_companyId == null) { state = const AsyncValue.data([]); return; }
+    if (_companyId == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
     try {
       state = const AsyncValue.loading();
       final items = await _repo.getServices(_companyId);
@@ -44,8 +74,12 @@ class ServiceListNotifier extends StateNotifier<AsyncValue<List<Service>>> {
     if (_companyId == null) return null;
     try {
       final svc = await _repo.createService(
-        companyId: _companyId, name: name, category: category,
-        description: description, price: price, durationMinutes: durationMinutes,
+        companyId: _companyId,
+        name: name,
+        category: category,
+        description: description,
+        price: price,
+        durationMinutes: durationMinutes,
         imageUrl: imageUrl,
       );
       await load();
@@ -55,12 +89,28 @@ class ServiceListNotifier extends StateNotifier<AsyncValue<List<Service>>> {
     }
   }
 
-  Future<bool> update({required String serviceId, String? name, double? price, String? category, bool? isActive, String? imageUrl, bool clearImage = false}) async {
+  Future<bool> update(
+      {required String serviceId,
+      String? name,
+      double? price,
+      String? category,
+      bool? isActive,
+      String? imageUrl,
+      bool clearImage = false}) async {
     try {
-      await _repo.updateService(serviceId: serviceId, name: name, price: price, category: category, isActive: isActive, imageUrl: imageUrl, clearImage: clearImage);
+      await _repo.updateService(
+          serviceId: serviceId,
+          name: name,
+          price: price,
+          category: category,
+          isActive: isActive,
+          imageUrl: imageUrl,
+          clearImage: clearImage);
       await load();
       return true;
-    } catch (_) { return false; }
+    } catch (_) {
+      return false;
+    }
   }
 
   Future<bool> delete(String serviceId) async {
@@ -68,6 +118,8 @@ class ServiceListNotifier extends StateNotifier<AsyncValue<List<Service>>> {
       await _repo.deleteService(serviceId);
       await load();
       return true;
-    } catch (_) { return false; }
+    } catch (_) {
+      return false;
+    }
   }
 }

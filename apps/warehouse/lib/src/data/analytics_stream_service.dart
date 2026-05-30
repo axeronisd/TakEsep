@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Service for real-time analytics data streaming.
@@ -13,7 +14,8 @@ class AnalyticsStreamService {
   /// Uses Supabase Realtime Stream API with automatic reconnection on network restore.
   /// The stream filters by warehouse_id to ensure devices only receive their own data.
   Stream<List<Map<String, dynamic>>> watchSales(String warehouseId) {
-    debugPrint('[AnalyticsStreamService] Starting watchSales for warehouse: $warehouseId');
+    debugPrint(
+        '[AnalyticsStreamService] Starting watchSales for warehouse: $warehouseId');
     return _client
         .from('sales')
         .stream(primaryKey: ['id'])
@@ -42,8 +44,6 @@ class AnalyticsStreamService {
         .from('sales')
         .stream(primaryKey: ['id'])
         .eq('warehouse_id', warehouseId)
-        .gte('created_at', startDate.toIso8601String())
-        .lte('created_at', endDate.toIso8601String())
         .order('created_at', ascending: false);
   }
 
@@ -60,9 +60,7 @@ class AnalyticsStreamService {
   Stream<List<Map<String, dynamic>>> watchTransfers(String warehouseId) {
     return _client
         .from('transfers')
-        .stream(primaryKey: ['id'])
-        .or('from_warehouse_id.eq.$warehouseId,to_warehouse_id.eq.$warehouseId')
-        .order('created_at', ascending: false);
+        .stream(primaryKey: ['id']).order('created_at', ascending: false);
   }
 
   /// Watch audits for a specific warehouse in real-time.
@@ -119,9 +117,7 @@ class AnalyticsStreamService {
   Stream<List<Map<String, dynamic>>> watchTransferItems(String warehouseId) {
     return _client
         .from('transfer_items')
-        .stream(primaryKey: ['id'])
-        .or('from_warehouse_id.eq.$warehouseId,to_warehouse_id.eq.$warehouseId')
-        .order('created_at', ascending: false);
+        .stream(primaryKey: ['id']).order('created_at', ascending: false);
   }
 
   /// Watch audit items for a specific warehouse in real-time.

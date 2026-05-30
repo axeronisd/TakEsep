@@ -6,19 +6,19 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 enum ConflictResolutionStrategy {
   /// Last write wins (LWW) - most recent update based on timestamp
   lastWriteWins,
-  
+
   /// First write wins - ignore subsequent updates
   firstWriteWins,
-  
+
   /// Server wins - server data always takes precedence
   serverWins,
-  
+
   /// Client wins - client data always takes precedence
   clientWins,
-  
+
   /// Merge - attempt to merge conflicting fields
   merge,
-  
+
   /// Manual - require user intervention
   manual,
 }
@@ -49,7 +49,8 @@ class ConflictResolutionService {
   Future<ConflictResolutionResult<Product>> resolveProductQuantity(
     Product localProduct,
     Product remoteProduct, {
-    ConflictResolutionStrategy strategy = ConflictResolutionStrategy.lastWriteWins,
+    ConflictResolutionStrategy strategy =
+        ConflictResolutionStrategy.lastWriteWins,
   }) async {
     final wasConflict = localProduct.quantity != remoteProduct.quantity;
 
@@ -66,8 +67,9 @@ class ConflictResolutionService {
         // Compare updated_at timestamps
         final localTime = localProduct.updatedAt ?? DateTime(1970);
         final remoteTime = remoteProduct.updatedAt ?? DateTime(1970);
-        
-        final resolved = remoteTime.isAfter(localTime) ? remoteProduct : localProduct;
+
+        final resolved =
+            remoteTime.isAfter(localTime) ? remoteProduct : localProduct;
         return ConflictResolutionResult(
           resolvedData: resolved,
           strategy: strategy,
@@ -97,7 +99,7 @@ class ConflictResolutionService {
         final mergedQuantity = localProduct.quantity > remoteProduct.quantity
             ? localProduct.quantity
             : remoteProduct.quantity;
-        
+
         final merged = localProduct.copyWith(quantity: mergedQuantity);
         return ConflictResolutionResult(
           resolvedData: merged,
@@ -129,7 +131,8 @@ class ConflictResolutionService {
   Future<ConflictResolutionResult<Product>> resolveProductPrice(
     Product localProduct,
     Product remoteProduct, {
-    ConflictResolutionStrategy strategy = ConflictResolutionStrategy.lastWriteWins,
+    ConflictResolutionStrategy strategy =
+        ConflictResolutionStrategy.lastWriteWins,
   }) async {
     final wasConflict = localProduct.price != remoteProduct.price;
 
@@ -145,8 +148,9 @@ class ConflictResolutionService {
       case ConflictResolutionStrategy.lastWriteWins:
         final localTime = localProduct.updatedAt ?? DateTime(1970);
         final remoteTime = remoteProduct.updatedAt ?? DateTime(1970);
-        
-        final resolved = remoteTime.isAfter(localTime) ? remoteProduct : localProduct;
+
+        final resolved =
+            remoteTime.isAfter(localTime) ? remoteProduct : localProduct;
         return ConflictResolutionResult(
           resolvedData: resolved,
           strategy: strategy,
@@ -202,7 +206,8 @@ class ConflictResolutionService {
   Future<ConflictResolutionResult<Product>> resolveProductConflict(
     Product localProduct,
     Product remoteProduct, {
-    ConflictResolutionStrategy strategy = ConflictResolutionStrategy.lastWriteWins,
+    ConflictResolutionStrategy strategy =
+        ConflictResolutionStrategy.lastWriteWins,
   }) async {
     // Check if there's any conflict
     final hasConflict = localProduct.name != remoteProduct.name ||
@@ -222,8 +227,9 @@ class ConflictResolutionService {
       case ConflictResolutionStrategy.lastWriteWins:
         final localTime = localProduct.updatedAt ?? DateTime(1970);
         final remoteTime = remoteProduct.updatedAt ?? DateTime(1970);
-        
-        final resolved = remoteTime.isAfter(localTime) ? remoteProduct : localProduct;
+
+        final resolved =
+            remoteTime.isAfter(localTime) ? remoteProduct : localProduct;
         return ConflictResolutionResult(
           resolvedData: resolved,
           strategy: strategy,
@@ -254,23 +260,34 @@ class ConflictResolutionService {
           companyId: remoteProduct.companyId,
           warehouseId: remoteProduct.warehouseId,
           categoryId: remoteProduct.categoryId,
-          name: localProduct.name.isNotEmpty ? localProduct.name : remoteProduct.name,
-          sku: localProduct.sku.isNotEmpty ? localProduct.sku : remoteProduct.sku,
-          barcode: localProduct.barcode.isNotEmpty ? localProduct.barcode : remoteProduct.barcode,
-          description: localProduct.description.isNotEmpty ? localProduct.description : remoteProduct.description,
+          name: (localProduct.name?.isNotEmpty ?? false)
+              ? localProduct.name
+              : remoteProduct.name,
+          sku: (localProduct.sku?.isNotEmpty ?? false)
+              ? localProduct.sku
+              : remoteProduct.sku,
+          barcode: (localProduct.barcode?.isNotEmpty ?? false)
+              ? localProduct.barcode
+              : remoteProduct.barcode,
+          description: (localProduct.description?.isNotEmpty ?? false)
+              ? localProduct.description
+              : remoteProduct.description,
           price: (localProduct.price + remoteProduct.price) / 2,
           costPrice: localProduct.costPrice ?? remoteProduct.costPrice,
-          quantity: localProduct.quantity > remoteProduct.quantity ? localProduct.quantity : remoteProduct.quantity,
+          quantity: localProduct.quantity > remoteProduct.quantity
+              ? localProduct.quantity
+              : remoteProduct.quantity,
           unit: localProduct.unit,
           minQuantity: localProduct.minQuantity,
           maxQuantity: localProduct.maxQuantity,
-          stockZone: localProduct.stockZone,
-          imageUrl: localProduct.imageUrl.isNotEmpty ? localProduct.imageUrl : remoteProduct.imageUrl,
+          imageUrl: (localProduct.imageUrl?.isNotEmpty ?? false)
+              ? localProduct.imageUrl
+              : remoteProduct.imageUrl,
           isPublic: localProduct.isPublic,
           createdAt: remoteProduct.createdAt,
           updatedAt: DateTime.now(),
         );
-        
+
         return ConflictResolutionResult(
           resolvedData: merged,
           strategy: strategy,
@@ -303,7 +320,7 @@ class ConflictResolutionService {
           .select()
           .eq('id', productId)
           .maybeSingle();
-      
+
       if (data == null) return null;
       return Product.fromJson(data as Map<String, dynamic>);
     } catch (e) {
@@ -326,7 +343,7 @@ class ConflictResolutionService {
         'image_url': product.imageUrl,
         'updated_at': now,
       }).eq('id', product.id);
-      
+
       return true;
     } catch (e) {
       print('❌ Error applying resolved product: $e');

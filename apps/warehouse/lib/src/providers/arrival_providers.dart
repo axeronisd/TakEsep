@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takesep_core/takesep_core.dart';
 import 'package:uuid/uuid.dart';
@@ -7,6 +8,7 @@ import 'dashboard_providers.dart';
 import 'inventory_providers.dart';
 import 'sales_providers.dart' show SearchType;
 import '../data/arrival_repository.dart';
+import '../data/supabase_realtime_service.dart';
 
 // ═══════════════ ENUMS ═══════════════
 
@@ -23,6 +25,68 @@ final arrivalRepoProvider = Provider<ArrivalRepository>((ref) {
   return ref.watch(arrivalRepositoryProvider);
 });
 
+// ═══════════════ ARRIVALS LIST (Real-time) ═══════════════
+
+class ArrivalsListNotifier extends StateNotifier<AsyncValue<List<Arrival>>> {
+  final Ref ref;
+  StreamSubscription? _subscription;
+
+  ArrivalsListNotifier(this.ref) : super(const AsyncValue.loading()) {
+    _loadArrivals();
+    _setupRealtimeSubscription();
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  void _setupRealtimeSubscription() {
+    final companyId = ref.read(currentCompanyProvider)?.id;
+    final warehouseId = ref.read(selectedWarehouseIdProvider);
+    if (companyId == null) return;
+
+    final stream = realtimeService.subscribeToTable(
+      table: 'arrivals',
+      companyId: companyId,
+      warehouseId: warehouseId,
+    );
+
+    _subscription = stream.listen((data) {
+      _loadArrivals();
+    }, onError: (e) {
+      print('ArrivalsListNotifier realtime error: $e');
+    });
+  }
+
+  Future<void> _loadArrivals() async {
+    final companyId = ref.read(currentCompanyProvider)?.id;
+    final warehouseId = ref.read(selectedWarehouseIdProvider);
+    if (companyId == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
+    try {
+      state = const AsyncValue.loading();
+      final repo = ref.read(arrivalRepositoryProvider);
+      final arrivals = await repo.getArrivals(
+        companyId: companyId,
+        warehouseId: warehouseId,
+      );
+      state = AsyncValue.data(arrivals);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+}
+
+final arrivalsListProvider =
+    StateNotifierProvider<ArrivalsListNotifier, AsyncValue<List<Arrival>>>(
+        (ref) {
+  return ArrivalsListNotifier(ref);
+});
+
 // Scanner focus request
 final scannerFocusRequestProvider =
     StateProvider<DateTime>((ref) => DateTime.now());
@@ -33,8 +97,10 @@ void requestScannerFocus(WidgetRef ref) {
 
 // Search & Sort
 final arrivalSearchQueryProvider = StateProvider<String>((ref) => '');
-final arrivalSearchTypeProvider = StateProvider<SearchType>((ref) => SearchType.name);
-final arrivalSortProvider = StateProvider<ArrivalSortType>((ref) => ArrivalSortType.name);
+final arrivalSearchTypeProvider =
+    StateProvider<SearchType>((ref) => SearchType.name);
+final arrivalSortProvider =
+    StateProvider<ArrivalSortType>((ref) => ArrivalSortType.name);
 final arrivalSupplierProvider = StateProvider<String>((ref) => '');
 final arrivalCommentProvider = StateProvider<String>((ref) => '');
 final arrivalPhotosProvider = StateProvider<List<String>>((ref) => []);
@@ -48,7 +114,8 @@ class CurrentArrivalNotifier extends StateNotifier<Arrival> {
   final String _warehouseId;
   final Uuid _uuid = const Uuid();
 
-  CurrentArrivalNotifier(this._repository, this._companyId, this._employeeId, this._warehouseId)
+  CurrentArrivalNotifier(
+      this._repository, this._companyId, this._employeeId, this._warehouseId)
       : super(
           Arrival(
             id: const Uuid().v4(),
@@ -252,4 +319,3 @@ final arrivalProductsSearchProvider =
 
   return filtered;
 });
-

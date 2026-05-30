@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takesep_core/takesep_core.dart';
 import 'auth_providers.dart';
 import 'inventory_repository_provider.dart';
+import '../data/supabase_realtime_service.dart';
 
 // --- Category Zone Settings --------------------------------
 
@@ -34,35 +36,191 @@ final categoryZoneProvider = StateNotifierProvider<CategoryZoneNotifier,
   return CategoryZoneNotifier();
 });
 
-// --- Category Data (Async) -----------------------------------
+// --- Category Data (Real-time) -----------------------------------
 
-final categoriesProvider = FutureProvider<List<Category>>((ref) async {
-  final companyId = ref.watch(currentCompanyProvider)?.id;
-  if (companyId == null) return [];
+class CategoriesNotifier extends StateNotifier<AsyncValue<List<Category>>> {
+  final Ref ref;
+  StreamSubscription? _subscription;
 
-  final repo = ref.read(inventoryRepositoryProvider);
-  return repo.getCategories(companyId);
+  CategoriesNotifier(this.ref) : super(const AsyncValue.loading()) {
+    _loadCategories();
+    _setupRealtimeSubscription();
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  void _setupRealtimeSubscription() {
+    final companyId = ref.read(currentCompanyProvider)?.id;
+    if (companyId == null) return;
+
+    final stream = realtimeService.subscribeToTable(
+      table: 'categories',
+      companyId: companyId,
+    );
+
+    _subscription = stream.listen((data) {
+      _loadCategories();
+    }, onError: (e) {
+      print('CategoriesNotifier realtime error: $e');
+    });
+  }
+
+  Future<void> _loadCategories() async {
+    final companyId = ref.read(currentCompanyProvider)?.id;
+    if (companyId == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
+    try {
+      state = const AsyncValue.loading();
+      final repo = ref.read(inventoryRepositoryProvider);
+      final categories = await repo.getCategories(companyId);
+      state = AsyncValue.data(categories);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+}
+
+final categoriesProvider =
+    StateNotifierProvider<CategoriesNotifier, AsyncValue<List<Category>>>(
+        (ref) {
+  return CategoriesNotifier(ref);
 });
 
-// --- Warehouses (Async) -----------------------------------
+// --- Warehouses (Real-time) -----------------------------------
 
-final warehousesProvider = FutureProvider<List<Warehouse>>((ref) async {
-  final companyId = ref.watch(currentCompanyProvider)?.id;
-  if (companyId == null) return [];
+class WarehousesNotifier extends StateNotifier<AsyncValue<List<Warehouse>>> {
+  final Ref ref;
+  StreamSubscription? _subscription;
 
-  final repo = ref.read(inventoryRepositoryProvider);
-  return repo.getWarehouses(companyId);
+  WarehousesNotifier(this.ref) : super(const AsyncValue.loading()) {
+    _loadWarehouses();
+    _setupRealtimeSubscription();
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  void _setupRealtimeSubscription() {
+    final companyId = ref.read(currentCompanyProvider)?.id;
+    if (companyId == null) return;
+
+    final stream = realtimeService.subscribeToTable(
+      table: 'warehouses',
+      companyId: companyId,
+    );
+
+    _subscription = stream.listen((data) {
+      _loadWarehouses();
+    }, onError: (e) {
+      print('WarehousesNotifier realtime error: $e');
+    });
+  }
+
+  Future<void> _loadWarehouses() async {
+    final companyId = ref.read(currentCompanyProvider)?.id;
+    if (companyId == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
+    try {
+      state = const AsyncValue.loading();
+      final repo = ref.read(inventoryRepositoryProvider);
+      final warehouses = await repo.getWarehouses(companyId);
+      state = AsyncValue.data(warehouses);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+}
+
+final warehousesProvider =
+    StateNotifierProvider<WarehousesNotifier, AsyncValue<List<Warehouse>>>(
+        (ref) {
+  return WarehousesNotifier(ref);
 });
 
-// --- Inventory (Products) (Async) -----------------------------------
+// --- Inventory (Products) (Real-time) -----------------------------------
 
-final inventoryProvider = FutureProvider<List<Product>>((ref) async {
-  final companyId = ref.watch(currentCompanyProvider)?.id;
-  final warehouseId = ref.watch(selectedWarehouseIdProvider);
-  if (companyId == null) return [];
+class InventoryNotifier extends StateNotifier<AsyncValue<List<Product>>> {
+  final Ref ref;
+  StreamSubscription? _subscription;
 
-  final repo = ref.read(inventoryRepositoryProvider);
-  return repo.getProducts(companyId, warehouseId: warehouseId);
+  InventoryNotifier(this.ref) : super(const AsyncValue.loading()) {
+    _loadProducts();
+    _setupRealtimeSubscription();
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  void _setupRealtimeSubscription() {
+    final companyId = ref.read(currentCompanyProvider)?.id;
+    final warehouseId = ref.read(selectedWarehouseIdProvider);
+    if (companyId == null) return;
+
+    final stream = realtimeService.subscribeToTable(
+      table: 'products',
+      companyId: companyId,
+      warehouseId: warehouseId,
+    );
+
+    _subscription = stream.listen((data) {
+      _loadProducts();
+    }, onError: (e) {
+      print('InventoryNotifier realtime error: $e');
+    });
+  }
+
+  Future<void> _loadProducts() async {
+    final companyId = ref.read(currentCompanyProvider)?.id;
+    final warehouseId = ref.read(selectedWarehouseIdProvider);
+    if (companyId == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
+    try {
+      state = const AsyncValue.loading();
+      final repo = ref.read(inventoryRepositoryProvider);
+      final products =
+          await repo.getProducts(companyId, warehouseId: warehouseId);
+      state = AsyncValue.data(products);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  void refresh() => _loadProducts();
+
+  void updateProduct(Product product) {
+    state = state.whenData((products) {
+      final index = products.indexWhere((p) => p.id == product.id);
+      if (index >= 0) {
+        return [
+          ...products.sublist(0, index),
+          product,
+          ...products.sublist(index + 1)
+        ];
+      }
+      return products;
+    });
+  }
+}
+
+final inventoryProvider =
+    StateNotifierProvider<InventoryNotifier, AsyncValue<List<Product>>>((ref) {
+  return InventoryNotifier(ref);
 });
 
 // --- Search & Filter -----------------------------------------
@@ -129,51 +287,4 @@ final filteredInventoryProvider = Provider<AsyncValue<List<Product>>>((ref) {
 
     return filtered;
   });
-});
-
-// --- Inventory Notifier (StateNotifier for products) -------------------
-
-class InventoryNotifier extends StateNotifier<AsyncValue<List<Product>>> {
-  final Ref ref;
-
-  InventoryNotifier(this.ref) : super(const AsyncLoading()) {
-    _loadProducts();
-  }
-
-  Future<void> _loadProducts() async {
-    final companyId = ref.read(currentCompanyProvider)?.id;
-    final warehouseId = ref.read(selectedWarehouseIdProvider);
-    if (companyId == null) {
-      state = const AsyncData([]);
-      return;
-    }
-    try {
-      final repo = ref.read(inventoryRepositoryProvider);
-      final products = await repo.getProducts(companyId, warehouseId: warehouseId);
-      state = AsyncData(products);
-    } catch (e) {
-      state = AsyncError(e, StackTrace.current);
-    }
-  }
-
-  void refresh() => _loadProducts();
-
-  void updateProduct(Product product) {
-    state = state.whenData((products) {
-      final index = products.indexWhere((p) => p.id == product.id);
-      if (index >= 0) {
-        return [
-          ...products.sublist(0, index),
-          product,
-          ...products.sublist(index + 1)
-        ];
-      }
-      return products;
-    });
-  }
-}
-
-final inventoryNotifierProvider =
-    StateNotifierProvider<InventoryNotifier, AsyncValue<List<Product>>>((ref) {
-  return InventoryNotifier(ref);
 });

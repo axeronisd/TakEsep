@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takesep_core/takesep_core.dart';
 
 import '../data/employee_repository.dart';
 import '../data/powersync_db.dart';
+import '../data/supabase_realtime_service.dart';
 import 'auth_providers.dart';
 
 // ─── Repository ─────────────────────────────────────────
@@ -11,9 +13,10 @@ final employeeRepositoryProvider = Provider<EmployeeRepository>((ref) {
   return EmployeeRepository();
 });
 
-// ─── Employee list ──────────────────────────────────────
+// ─── Employee list (Real-time) ──────────────────────────
 
-/// Provides the list of employees for the current company.
+/// Provides the list of employees for the current company with real-time updates.
+/// Uses Supabase Realtime to automatically refresh when data changes on other devices.
 final employeeListProvider =
     StateNotifierProvider<EmployeeListNotifier, AsyncValue<List<Employee>>>(
         (ref) {
@@ -22,14 +25,38 @@ final employeeListProvider =
   return EmployeeListNotifier(repo, companyId);
 });
 
-class EmployeeListNotifier
-    extends StateNotifier<AsyncValue<List<Employee>>> {
+class EmployeeListNotifier extends StateNotifier<AsyncValue<List<Employee>>> {
   final EmployeeRepository _repo;
   final String? _companyId;
+  StreamSubscription? _subscription;
 
   EmployeeListNotifier(this._repo, this._companyId)
       : super(const AsyncValue.loading()) {
     load();
+    _setupRealtimeSubscription();
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  void _setupRealtimeSubscription() {
+    if (_companyId == null) return;
+
+    // Subscribe to real-time changes from Supabase
+    final stream = realtimeService.subscribeToTable(
+      table: 'employees',
+      companyId: _companyId,
+    );
+
+    _subscription = stream.listen((data) {
+      // When data changes, reload from repository (which fetches from Supabase)
+      load();
+    }, onError: (e) {
+      print('EmployeeListNotifier realtime error: $e');
+    });
   }
 
   Future<void> load() async {
@@ -151,7 +178,8 @@ class EmployeeListNotifier
     }
   }
 
-  Future<bool> isPinCodeTaken(String pinCode, {String? excludeEmployeeId}) async {
+  Future<bool> isPinCodeTaken(String pinCode,
+      {String? excludeEmployeeId}) async {
     if (_companyId == null) return false;
     return _repo.isPinCodeTaken(_companyId, pinCode,
         excludeEmployeeId: excludeEmployeeId);
@@ -174,7 +202,9 @@ final rolesListProvider = FutureProvider<List<Role>>((ref) async {
 // ─── Analytics ────────────────────────────────────────
 
 /// Provides analytics data (sales, revenue, top items) for a given employee.
-final employeeActivityProvider = FutureProvider.family<Map<String, dynamic>, String>((ref, employeeId) async {
+final employeeActivityProvider =
+    FutureProvider.family<Map<String, dynamic>, String>(
+        (ref, employeeId) async {
   final repo = ref.read(employeeRepositoryProvider);
   return repo.getEmployeeActivity(employeeId);
 });
@@ -182,7 +212,9 @@ final employeeActivityProvider = FutureProvider.family<Map<String, dynamic>, Str
 // ─── Employee Expenses ──────────────────────────────────
 
 /// Provides expense records for a given employee.
-final employeeExpensesProvider = FutureProvider.family<List<Map<String, dynamic>>, String>((ref, employeeId) async {
+final employeeExpensesProvider =
+    FutureProvider.family<List<Map<String, dynamic>>, String>(
+        (ref, employeeId) async {
   final repo = ref.read(employeeRepositoryProvider);
   return repo.getEmployeeExpenses(employeeId);
 });
