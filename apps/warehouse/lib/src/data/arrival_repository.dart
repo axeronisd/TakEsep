@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:powersync/powersync.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:takesep_core/takesep_core.dart';
 import 'package:uuid/uuid.dart';
 import 'powersync_db.dart';
@@ -8,6 +10,7 @@ class ArrivalRepository {
   ArrivalRepository();
 
   PowerSyncDatabase get _db => powerSyncDb;
+  final SupabaseClient _supabase = Supabase.instance.client;
 
   /// Fetch list of arrivals
   Future<List<Arrival>> getArrivals(
@@ -122,33 +125,69 @@ class ArrivalRepository {
         }
       }
 
-      // Sync to Supabase
-      await SupabaseSync.upsert('arrivals', {
-        'id': arrivalId,
-        'company_id': arrival.companyId,
-        'employee_id': arrival.employeeId,
-        'warehouse_id': arrival.warehouseId,
-        'supplier': arrival.supplierName,
-        'status': arrival.status.name,
-        'total_amount': arrival.totalAmount,
-        'notes': arrival.notes,
-        'created_at': now,
-        'updated_at': now,
-      });
-      final arrivalItemsSync = <Map<String, dynamic>>[];
-      for (final item in arrival.items) {
-        arrivalItemsSync.add({
-          'id': item.id.isEmpty ? const Uuid().v4() : item.id,
-          'arrival_id': arrivalId,
-          'product_id': item.productId,
-          'product_name': item.productName,
-          'quantity': item.quantity,
-          'cost_price': item.costPrice,
-          'selling_price': item.sellingPrice,
+      // Sync to Supabase (for realtime)
+      // Write directly to Supabase for immediate realtime sync
+      try {
+        await _supabase.from('arrivals').insert({
+          'id': arrivalId,
+          'company_id': arrival.companyId,
+          'employee_id': arrival.employeeId,
+          'warehouse_id': arrival.warehouseId,
+          'supplier': arrival.supplierName,
+          'status': arrival.status.name,
+          'total_amount': arrival.totalAmount,
+          'notes': arrival.notes,
           'created_at': now,
+          'updated_at': now,
         });
+
+        final arrivalItemsSync = <Map<String, dynamic>>[];
+        for (final item in arrival.items) {
+          arrivalItemsSync.add({
+            'id': item.id.isEmpty ? const Uuid().v4() : item.id,
+            'arrival_id': arrivalId,
+            'product_id': item.productId,
+            'product_name': item.productName,
+            'quantity': item.quantity,
+            'cost_price': item.costPrice,
+            'selling_price': item.sellingPrice,
+            'created_at': now,
+          });
+        }
+        await _supabase.from('arrival_items').insert(arrivalItemsSync);
+
+        debugPrint(
+            '[ArrivalRepository] Arrival synced to Supabase for realtime: $arrivalId');
+      } catch (e) {
+        debugPrint('[ArrivalRepository] Error syncing arrival to Supabase: $e');
+        // Fallback to PowerSync sync if direct Supabase write fails
+        await SupabaseSync.upsert('arrivals', {
+          'id': arrivalId,
+          'company_id': arrival.companyId,
+          'employee_id': arrival.employeeId,
+          'warehouse_id': arrival.warehouseId,
+          'supplier': arrival.supplierName,
+          'status': arrival.status.name,
+          'total_amount': arrival.totalAmount,
+          'notes': arrival.notes,
+          'created_at': now,
+          'updated_at': now,
+        });
+        final arrivalItemsSync = <Map<String, dynamic>>[];
+        for (final item in arrival.items) {
+          arrivalItemsSync.add({
+            'id': item.id.isEmpty ? const Uuid().v4() : item.id,
+            'arrival_id': arrivalId,
+            'product_id': item.productId,
+            'product_name': item.productName,
+            'quantity': item.quantity,
+            'cost_price': item.costPrice,
+            'selling_price': item.sellingPrice,
+            'created_at': now,
+          });
+        }
+        await SupabaseSync.upsertAll('arrival_items', arrivalItemsSync);
       }
-      await SupabaseSync.upsertAll('arrival_items', arrivalItemsSync);
 
       return arrival.copyWith(
         id: arrivalId,

@@ -624,7 +624,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       key: const ValueKey('owner'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _FieldLabel(label: 'Лицензионный ключ', icon: Icons.vpn_key_outlined),
+        const _FieldLabel(label: 'Код авторизации филиала', icon: Icons.vpn_key_outlined),
         const SizedBox(height: 8),
         TextFormField(
           controller: _keyController,

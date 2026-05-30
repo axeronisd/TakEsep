@@ -9,10 +9,11 @@ class AnalyticsStreamService {
 
   /// Watch sales for a specific warehouse in real-time.
   /// Returns a Stream that emits the full list of sales whenever changes occur.
-  /// 
+  ///
   /// Uses Supabase Realtime Stream API with automatic reconnection on network restore.
   /// The stream filters by warehouse_id to ensure devices only receive their own data.
   Stream<List<Map<String, dynamic>>> watchSales(String warehouseId) {
+    debugPrint('[AnalyticsStreamService] Starting watchSales for warehouse: $warehouseId');
     return _client
         .from('sales')
         .stream(primaryKey: ['id'])

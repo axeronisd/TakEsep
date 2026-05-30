@@ -369,7 +369,7 @@ class SettingsScreen extends ConsumerWidget {
                   cs, Icons.business_rounded, 'Название',
                   company?.title ?? 'Не указано'),
               _sheetInfoRow(
-                  cs, Icons.vpn_key_rounded, 'Лицензионный ключ',
+                  cs, Icons.vpn_key_rounded, 'Код авторизации филиала',
                   company?.licenseKey ?? '—'),
               _sheetInfoRow(
                   cs, Icons.person_rounded, 'Владелец',

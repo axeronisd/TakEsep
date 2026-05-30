@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:powersync/powersync.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'powersync_db.dart';
 import 'supabase_sync.dart';
@@ -7,6 +9,7 @@ class SalesRepository {
   SalesRepository();
 
   PowerSyncDatabase get _db => powerSyncDb;
+  final SupabaseClient _supabase = Supabase.instance.client;
 
   /// Create a completed sale: inserts into sales + sale_items,
   /// decrements product stock, updates sold_last_30_days.
@@ -146,43 +149,88 @@ class SalesRepository {
       );
     }
 
-    // ── Sync to Supabase ──
-    await SupabaseSync.upsert('sales', {
-      'id': saleId,
-      'company_id': companyId,
-      'employee_id': employeeId,
-      'warehouse_id': warehouseId,
-      'total_amount': totalAmount,
-      'discount_amount': discountAmount,
-      'payment_method': paymentMethod,
-      'status': 'completed',
-      'notes': notes,
-      'client_id': clientId,
-      'client_name': clientName,
-      'received_amount': actualReceived,
-      'sale_type': 'pos',
-      'created_at': now,
-      'updated_at': now,
-    });
-
-    final saleItemsForSupabase = <Map<String, dynamic>>[];
-    for (final item in items) {
-      saleItemsForSupabase.add({
-        'id': const Uuid().v4(),
-        'sale_id': saleId,
-        'product_id': item.productId,
-        'product_name': item.productName,
-        'quantity': item.quantity,
-        'selling_price': item.sellingPrice,
-        'cost_price': item.costPrice,
-        'discount_amount': item.discountAmount,
-        'item_type': item.itemType,
-        'executor_id': item.executorId,
-        'executor_name': item.executorName,
+    // ── Sync to Supabase (for realtime) ──
+    // Write directly to Supabase for immediate realtime sync
+    try {
+      await _supabase.from('sales').insert({
+        'id': saleId,
+        'company_id': companyId,
+        'employee_id': employeeId,
+        'warehouse_id': warehouseId,
+        'total_amount': totalAmount,
+        'discount_amount': discountAmount,
+        'payment_method': paymentMethod,
+        'status': 'completed',
+        'notes': notes,
+        'client_id': clientId,
+        'client_name': clientName,
+        'received_amount': actualReceived,
+        'sale_type': 'pos',
         'created_at': now,
+        'updated_at': now,
       });
+
+      final saleItemsForSupabase = <Map<String, dynamic>>[];
+      for (final item in items) {
+        saleItemsForSupabase.add({
+          'id': const Uuid().v4(),
+          'sale_id': saleId,
+          'product_id': item.productId,
+          'product_name': item.productName,
+          'quantity': item.quantity,
+          'selling_price': item.sellingPrice,
+          'cost_price': item.costPrice,
+          'discount_amount': item.discountAmount,
+          'item_type': item.itemType,
+          'executor_id': item.executorId,
+          'executor_name': item.executorName,
+          'created_at': now,
+        });
+      }
+      await _supabase.from('sale_items').insert(saleItemsForSupabase);
+
+      debugPrint(
+          '[SalesRepository] Sale synced to Supabase for realtime: $saleId');
+    } catch (e) {
+      debugPrint('[SalesRepository] Error syncing sale to Supabase: $e');
+      // Fallback to PowerSync sync if direct Supabase write fails
+      await SupabaseSync.upsert('sales', {
+        'id': saleId,
+        'company_id': companyId,
+        'employee_id': employeeId,
+        'warehouse_id': warehouseId,
+        'total_amount': totalAmount,
+        'discount_amount': discountAmount,
+        'payment_method': paymentMethod,
+        'status': 'completed',
+        'notes': notes,
+        'client_id': clientId,
+        'client_name': clientName,
+        'received_amount': actualReceived,
+        'sale_type': 'pos',
+        'created_at': now,
+        'updated_at': now,
+      });
+
+      final saleItemsForSupabase = <Map<String, dynamic>>[];
+      for (final item in items) {
+        saleItemsForSupabase.add({
+          'id': const Uuid().v4(),
+          'sale_id': saleId,
+          'product_id': item.productId,
+          'product_name': item.productName,
+          'quantity': item.quantity,
+          'selling_price': item.sellingPrice,
+          'cost_price': item.costPrice,
+          'discount_amount': item.discountAmount,
+          'item_type': item.itemType,
+          'executor_id': item.executorId,
+          'executor_name': item.executorName,
+          'created_at': now,
+        });
+      }
+      await SupabaseSync.upsertAll('sale_items', saleItemsForSupabase);
     }
-    await SupabaseSync.upsertAll('sale_items', saleItemsForSupabase);
 
     return saleId;
   }

@@ -12,7 +12,7 @@ final analyticsStreamServiceProvider = Provider<AnalyticsStreamService>((ref) {
 
 /// Realtime sales stream for the current warehouse.
 /// Automatically updates when new sales are created on any device.
-/// 
+///
 /// Usage:
 /// ```dart
 /// final salesAsync = ref.watch(realtimeSalesStreamProvider);
@@ -20,12 +20,17 @@ final analyticsStreamServiceProvider = Provider<AnalyticsStreamService>((ref) {
 final realtimeSalesStreamProvider = StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
   final service = ref.watch(analyticsStreamServiceProvider);
   final warehouseId = ref.watch(selectedWarehouseIdProvider);
-  
+
   if (warehouseId == null) {
+    debugPrint('[Realtime] warehouseId is null, returning empty sales stream');
     return const Stream.empty();
   }
-  
-  return service.watchSales(warehouseId);
+
+  debugPrint('[Realtime] Watching sales for warehouse: $warehouseId');
+  return service.watchSales(warehouseId).handleError((error, stack) {
+    debugPrint('[Realtime] Error watching sales: $error');
+    debugPrint('[Realtime] Stack trace: $stack');
+  });
 });
 
 /// Realtime sales stream filtered by date range.
@@ -89,12 +94,17 @@ final realtimeAuditsStreamProvider = StreamProvider.autoDispose<List<Map<String,
 final realtimeProductsStreamProvider = StreamProvider.autoDispose<List<Map<String, dynamic>>>((ref) {
   final service = ref.watch(analyticsStreamServiceProvider);
   final warehouseId = ref.watch(selectedWarehouseIdProvider);
-  
+
   if (warehouseId == null) {
+    debugPrint('[Realtime] warehouseId is null, returning empty stream');
     return const Stream.empty();
   }
-  
-  return service.watchProducts(warehouseId);
+
+  debugPrint('[Realtime] Watching products for warehouse: $warehouseId');
+  return service.watchProducts(warehouseId).handleError((error, stack) {
+    debugPrint('[Realtime] Error watching products: $error');
+    debugPrint('[Realtime] Stack trace: $stack');
+  });
 });
 
 /// Realtime sale items stream for the current warehouse.
