@@ -170,17 +170,22 @@ class InventoryNotifier extends StateNotifier<AsyncValue<List<Product>>> {
     final warehouseId = ref.read(selectedWarehouseIdProvider);
     if (companyId == null) return;
 
-    final stream = realtimeService.subscribeToTable(
-      table: 'products',
-      companyId: companyId,
-      warehouseId: warehouseId,
-    );
+    try {
+      final stream = realtimeService.subscribeToTable(
+        table: 'products',
+        companyId: companyId,
+        warehouseId: warehouseId,
+      );
 
-    _subscription = stream.listen((data) {
-      _loadProducts();
-    }, onError: (e) {
-      print('InventoryNotifier realtime error: $e');
-    });
+      _subscription = stream.listen((data) {
+        _loadProducts();
+      }, onError: (e) {
+        print('InventoryNotifier realtime error: $e');
+        // Don't crash on realtime errors, just log them
+      });
+    } catch (e) {
+      print('InventoryNotifier subscription setup error: $e');
+    }
   }
 
   Future<void> _loadProducts() async {
@@ -191,13 +196,21 @@ class InventoryNotifier extends StateNotifier<AsyncValue<List<Product>>> {
       return;
     }
     try {
-      state = const AsyncValue.loading();
+      // Don't set loading state if we already have data - prevents UI flicker
+      if (state is! AsyncData) {
+        state = const AsyncValue.loading();
+      }
       final repo = ref.read(inventoryRepositoryProvider);
       final products =
           await repo.getProducts(companyId, warehouseId: warehouseId);
       state = AsyncValue.data(products);
     } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      // Don't crash on error, keep existing data if available
+      if (state is AsyncData) {
+        print('InventoryNotifier load error (keeping existing data): $e');
+      } else {
+        state = AsyncValue.error(e, st);
+      }
     }
   }
 

@@ -50,7 +50,8 @@ class CartItem {
     this.discount,
     this.executorId,
     this.executorName,
-  }) : assert(product != null || service != null, 'Must have product or service');
+  }) : assert(
+            product != null || service != null, 'Must have product or service');
 
   bool get isService => service != null;
   String get id => product?.id ?? service!.id;
@@ -70,7 +71,8 @@ class CartItem {
       product: product ?? this.product,
       service: service ?? this.service,
       qty: qty ?? this.qty,
-      discount: discount ?? this.discount, // clear isn't supported yet without wrapper
+      discount: discount ??
+          this.discount, // clear isn't supported yet without wrapper
       executorId: executorId ?? this.executorId,
       executorName: executorName ?? this.executorName,
     );
@@ -129,34 +131,47 @@ final filteredSalesProductsProvider =
   final searchType = ref.watch(salesSearchTypeProvider);
   final sortType = ref.watch(salesSortProvider);
 
-  return productsAsync.whenData((products) {
-    // Filter
-    var filtered = products.where((p) {
-      if (query.isEmpty) return true;
-      if (searchType == SearchType.barcode) {
-        return p.barcode?.toLowerCase().contains(query) ?? false;
-      } else {
-        return p.name.toLowerCase().contains(query) ||
-            (p.sku?.toLowerCase().contains(query) ?? false);
-      }
-    }).toList();
+  return productsAsync.when(
+    data: (products) {
+      try {
+        // Filter
+        var filtered = products.where((p) {
+          if (query.isEmpty) return true;
+          if (searchType == SearchType.barcode) {
+            return p.barcode?.toLowerCase().contains(query) ?? false;
+          } else {
+            return p.name.toLowerCase().contains(query) ||
+                (p.sku?.toLowerCase().contains(query) ?? false);
+          }
+        }).toList();
 
-    // Sort
-    filtered.sort((a, b) {
-      switch (sortType) {
-        case SortType.popularity:
-          return b.soldLast30Days.compareTo(a.soldLast30Days); // Highest first
-        case SortType.name:
-          return a.name.compareTo(b.name);
-        case SortType.priceAsc:
-          return a.price.compareTo(b.price);
-        case SortType.priceDesc:
-          return b.price.compareTo(a.price);
-      }
-    });
+        // Sort
+        filtered.sort((a, b) {
+          switch (sortType) {
+            case SortType.popularity:
+              return b.soldLast30Days
+                  .compareTo(a.soldLast30Days); // Highest first
+            case SortType.name:
+              return a.name.compareTo(b.name);
+            case SortType.priceAsc:
+              return a.price.compareTo(b.price);
+            case SortType.priceDesc:
+              return b.price.compareTo(a.price);
+          }
+        });
 
-    return filtered;
-  });
+        return AsyncValue.data(filtered);
+      } catch (e) {
+        print('Error filtering products: $e');
+        return AsyncValue.data(products); // Return unfiltered on error
+      }
+    },
+    loading: () => const AsyncValue.loading(),
+    error: (e, st) {
+      print('Error in products provider: $e');
+      return const AsyncValue.data([]); // Return empty list on error
+    },
+  );
 });
 
 // Cart State Management
@@ -188,7 +203,8 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
   bool addService(Service service, String? executorId, String? executorName) {
     // For services, we don't increment quantity of the same entry because they might have different executors.
     // However, if the exact same service and executor exist, we can bump qty.
-    final index = state.indexWhere((c) => c.service?.id == service.id && c.executorId == executorId);
+    final index = state.indexWhere(
+        (c) => c.service?.id == service.id && c.executorId == executorId);
     if (index >= 0) {
       final existing = state[index];
       state = [
@@ -197,7 +213,14 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
         ...state.sublist(index + 1),
       ];
     } else {
-      state = [...state, CartItem(service: service, qty: 1, executorId: executorId, executorName: executorName)];
+      state = [
+        ...state,
+        CartItem(
+            service: service,
+            qty: 1,
+            executorId: executorId,
+            executorName: executorName)
+      ];
     }
     return true;
   }
@@ -210,7 +233,8 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
     final index = state.indexWhere((c) => c.id == itemId);
     if (index >= 0) {
       final existing = state[index];
-      if (existing.isService || (existing.product != null && newQty <= existing.product!.quantity)) {
+      if (existing.isService ||
+          (existing.product != null && newQty <= existing.product!.quantity)) {
         state = [
           ...state.sublist(0, index),
           existing.copyWith(qty: newQty),
