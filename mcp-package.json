@@ -1,0 +1,14 @@
+{
+  "name": "takesep-supabase-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP server for TakEsep Supabase integration",
+  "type": "module",
+  "main": "mcp-supabase-server.js",
+  "scripts": {
+    "start": "node mcp-supabase-server.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "@supabase/supabase-js": "^2.39.0"
+  }
+}
