@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:powersync/powersync.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:takesep_core/takesep_core.dart';
 import 'package:uuid/uuid.dart';
 import 'powersync_db.dart';
@@ -8,6 +10,7 @@ class TransferRepository {
   TransferRepository();
 
   PowerSyncDatabase get _db => powerSyncDb;
+  final SupabaseClient _supabase = Supabase.instance.client;
 
   /// Fetch transfers for a warehouse (both outgoing and incoming).
   Future<List<Transfer>> getTransfers({
@@ -208,24 +211,51 @@ class TransferRepository {
         }
       }
 
-      // Sync to Supabase
-      await SupabaseSync.upsert('transfers', {
-        'id': transferId,
-        'company_id': transfer.companyId,
-        'from_warehouse_id': transfer.fromWarehouseId,
-        'to_warehouse_id': transfer.toWarehouseId,
-        'from_warehouse_name': transfer.fromWarehouseName,
-        'to_warehouse_name': transfer.toWarehouseName,
-        'sender_employee_id': transfer.senderEmployeeId,
-        'sender_employee_name': transfer.senderEmployeeName,
-        'status': 'pending',
-        'total_amount': costTotal,
-        'sender_notes': transfer.senderNotes,
-        'sender_photos': transfer.senderPhotos.join(','),
-        'pricing_mode': transfer.pricingMode,
-        'created_at': now,
-        'updated_at': now,
-      });
+      // Sync to Supabase (for realtime)
+      // Write directly to Supabase for immediate realtime sync
+      try {
+        await _supabase.from('transfers').insert({
+          'id': transferId,
+          'company_id': transfer.companyId,
+          'from_warehouse_id': transfer.fromWarehouseId,
+          'to_warehouse_id': transfer.toWarehouseId,
+          'from_warehouse_name': transfer.fromWarehouseName,
+          'to_warehouse_name': transfer.toWarehouseName,
+          'sender_employee_id': transfer.senderEmployeeId,
+          'sender_employee_name': transfer.senderEmployeeName,
+          'status': 'pending',
+          'total_amount': costTotal,
+          'sender_notes': transfer.senderNotes,
+          'sender_photos': transfer.senderPhotos.join(','),
+          'pricing_mode': transfer.pricingMode,
+          'created_at': now,
+          'updated_at': now,
+        });
+
+        debugPrint(
+            '[TransferRepository] Transfer synced to Supabase for realtime: $transferId');
+      } catch (e) {
+        debugPrint(
+            '[TransferRepository] Error syncing transfer to Supabase: $e');
+        // Fallback to PowerSync sync if direct Supabase write fails
+        await SupabaseSync.upsert('transfers', {
+          'id': transferId,
+          'company_id': transfer.companyId,
+          'from_warehouse_id': transfer.fromWarehouseId,
+          'to_warehouse_id': transfer.toWarehouseId,
+          'from_warehouse_name': transfer.fromWarehouseName,
+          'to_warehouse_name': transfer.toWarehouseName,
+          'sender_employee_id': transfer.senderEmployeeId,
+          'sender_employee_name': transfer.senderEmployeeName,
+          'status': 'pending',
+          'total_amount': costTotal,
+          'sender_notes': transfer.senderNotes,
+          'sender_photos': transfer.senderPhotos.join(','),
+          'pricing_mode': transfer.pricingMode,
+          'created_at': now,
+          'updated_at': now,
+        });
+      }
 
       return transfer.copyWith(
         id: transferId,

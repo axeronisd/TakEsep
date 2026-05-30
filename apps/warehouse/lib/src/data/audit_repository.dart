@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:powersync/powersync.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:takesep_core/takesep_core.dart';
 import 'package:uuid/uuid.dart';
 
@@ -10,6 +12,7 @@ class AuditRepository {
   final _uuid = const Uuid();
 
   PowerSyncDatabase get _db => powerSyncDb;
+  final SupabaseClient _supabase = Supabase.instance.client;
 
   // ═══════════════ CREATE ═══════════════
 
@@ -109,22 +112,46 @@ class AuditRepository {
       ));
     }
 
-    // Sync audit to Supabase
-    await SupabaseSync.upsert('audits', {
-      'id': auditId,
-      'company_id': companyId,
-      'warehouse_id': warehouseId,
-      'warehouse_name': warehouseName,
-      'employee_id': employeeId,
-      'employee_name': employeeName,
-      'type': type.name,
-      'status': AuditStatus.inProgress.name,
-      'category_id': categoryId,
-      'category_name': categoryName,
-      'started_at': now.toIso8601String(),
-      'created_at': now.toIso8601String(),
-      'updated_at': now.toIso8601String(),
-    });
+    // Sync audit to Supabase (for realtime)
+    // Write directly to Supabase for immediate realtime sync
+    try {
+      await _supabase.from('audits').insert({
+        'id': auditId,
+        'company_id': companyId,
+        'warehouse_id': warehouseId,
+        'warehouse_name': warehouseName,
+        'employee_id': employeeId,
+        'employee_name': employeeName,
+        'type': type.name,
+        'status': AuditStatus.inProgress.name,
+        'category_id': categoryId,
+        'category_name': categoryName,
+        'started_at': now.toIso8601String(),
+        'created_at': now.toIso8601String(),
+        'updated_at': now.toIso8601String(),
+      });
+
+      debugPrint(
+          '[AuditRepository] Audit synced to Supabase for realtime: $auditId');
+    } catch (e) {
+      debugPrint('[AuditRepository] Error syncing audit to Supabase: $e');
+      // Fallback to PowerSync sync if direct Supabase write fails
+      await SupabaseSync.upsert('audits', {
+        'id': auditId,
+        'company_id': companyId,
+        'warehouse_id': warehouseId,
+        'warehouse_name': warehouseName,
+        'employee_id': employeeId,
+        'employee_name': employeeName,
+        'type': type.name,
+        'status': AuditStatus.inProgress.name,
+        'category_id': categoryId,
+        'category_name': categoryName,
+        'started_at': now.toIso8601String(),
+        'created_at': now.toIso8601String(),
+        'updated_at': now.toIso8601String(),
+      });
+    }
 
     return Audit(
       id: auditId,
@@ -211,11 +238,20 @@ class AuditRepository {
           [actualQty, now, productId],
         );
 
-        // Sync updated product to Supabase
-        await SupabaseSync.update('products', productId, {
-          'quantity': actualQty,
-          'updated_at': now,
-        });
+        // Sync updated product to Supabase (for realtime)
+        try {
+          await _supabase.from('products').update({
+            'quantity': actualQty,
+            'updated_at': now,
+          }).eq('id', productId);
+        } catch (e) {
+          debugPrint('[AuditRepository] Error syncing product to Supabase: $e');
+          // Fallback to PowerSync sync if direct Supabase write fails
+          await SupabaseSync.update('products', productId, {
+            'quantity': actualQty,
+            'updated_at': now,
+          });
+        }
       }
 
       // Update audit status
@@ -225,12 +261,23 @@ class AuditRepository {
         [AuditStatus.completed.name, now, now, auditId],
       );
 
-      // Sync status
-      await SupabaseSync.update('audits', auditId, {
-        'status': AuditStatus.completed.name,
-        'completed_at': now,
-        'updated_at': now,
-      });
+      // Sync status (for realtime)
+      try {
+        await _supabase.from('audits').update({
+          'status': AuditStatus.completed.name,
+          'completed_at': now,
+          'updated_at': now,
+        }).eq('id', auditId);
+      } catch (e) {
+        debugPrint(
+            '[AuditRepository] Error syncing audit status to Supabase: $e');
+        // Fallback to PowerSync sync if direct Supabase write fails
+        await SupabaseSync.update('audits', auditId, {
+          'status': AuditStatus.completed.name,
+          'completed_at': now,
+          'updated_at': now,
+        });
+      }
 
       return true;
     } catch (e) {
@@ -254,10 +301,22 @@ class AuditRepository {
       'UPDATE audits SET status = ?, updated_at = ? WHERE id = ?',
       [AuditStatus.cancelled.name, now, auditId],
     );
-    await SupabaseSync.update('audits', auditId, {
-      'status': AuditStatus.cancelled.name,
-      'updated_at': now,
-    });
+
+    // Sync status (for realtime)
+    try {
+      await _supabase.from('audits').update({
+        'status': AuditStatus.cancelled.name,
+        'updated_at': now,
+      }).eq('id', auditId);
+    } catch (e) {
+      debugPrint(
+          '[AuditRepository] Error syncing audit cancel to Supabase: $e');
+      // Fallback to PowerSync sync if direct Supabase write fails
+      await SupabaseSync.update('audits', auditId, {
+        'status': AuditStatus.cancelled.name,
+        'updated_at': now,
+      });
+    }
   }
 
   /// Resume an audit from draft → inProgress.

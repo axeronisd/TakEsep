@@ -2,6 +2,41 @@
 
 All notable changes to the TakEsep project will be documented in this file.
 
+## [2.1.8+80] - 2026-05-30
+
+### Fixed
+- **Полная Realtime синхронизация**: ВСЕ операции с базой данных теперь пишут напрямую в Supabase для немедленной синхронизации между устройствами
+  - SalesRepository - продажи
+  - ArrivalRepository - приходы
+  - TransferRepository - перемещения между складами
+  - AuditRepository - ревизии (создание, завершение, отмена)
+  - InventoryRepository - товары и категории
+- **Многопользовательская синхронизация**: Теперь все устройства с одним аккаунтом синхронизируются в реальном времени
+
+### Changed
+- Все репозитории теперь используют прямую запись в Supabase с fallback на PowerSync
+- Добавлено debug логирование во все репозитории для диагностики синхронизации
+- Обновлены версии всех приложений до 2.1.8+80 (warehouse, customer, courier)
+
+### Technical Details
+- Прямая запись в Supabase через `_supabase.from('table').insert()` и `.update()`
+- Fallback на PowerSync если прямая запись не удалась
+- Debug логирование для отслеживания всех операций синхронизации
+- Синхронизация работает в реальном времени для всех типов операций
+
+### Files Modified
+- `apps/warehouse/lib/src/data/sales_repository.dart` - Прямая запись в Supabase
+- `apps/warehouse/lib/src/data/arrival_repository.dart` - Прямая запись в Supabase
+- `apps/warehouse/lib/src/data/transfer_repository.dart` - Прямая запись в Supabase
+- `apps/warehouse/lib/src/data/audit_repository.dart` - Прямая запись в Supabase
+- `apps/warehouse/lib/src/data/inventory_repository.dart` - Прямая запись в Supabase
+- `apps/warehouse/pubspec.yaml` - Обновлена версия до 2.1.8+80
+- `apps/customer/pubspec.yaml` - Обновлена версия до 2.1.8+80
+- `apps/courier/pubspec.yaml` - Обновлена версия до 2.1.8+80
+- `docs/CHANGELOG.md` - Обновлён для v2.1.8+80
+
+---
+
 ## [2.1.8+79] - 2026-05-30
 
 ### Fixed

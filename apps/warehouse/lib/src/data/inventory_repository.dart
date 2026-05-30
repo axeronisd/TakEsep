@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' as fd;
 import 'package:powersync/powersync.dart';
 import 'package:takesep_core/takesep_core.dart';
 import 'powersync_db.dart';
@@ -8,6 +9,7 @@ class InventoryRepository {
   InventoryRepository();
 
   PowerSyncDatabase get _db => powerSyncDb;
+  final SupabaseClient _supabase = Supabase.instance.client;
 
   /// Fetch products for a specific company (optionally filtered by warehouse)
   Future<List<Product>> getProducts(String companyId,
@@ -183,15 +185,31 @@ class InventoryRepository {
         ],
       );
 
-      // Sync to Supabase
-      await SupabaseSync.upsert('categories', {
-        'id': json['id'],
-        'company_id': json['company_id'],
-        'name': json['name'],
-        'parent_id': json['parent_id'],
-        'image_url': json['image_url'],
-        'created_at': json['created_at'] ?? DateTime.now().toIso8601String(),
-      });
+      // Sync to Supabase (for realtime)
+      try {
+        await _supabase.from('categories').insert({
+          'id': json['id'],
+          'company_id': json['company_id'],
+          'name': json['name'],
+          'parent_id': json['parent_id'],
+          'image_url': json['image_url'],
+          'created_at': json['created_at'] ?? DateTime.now().toIso8601String(),
+        });
+        fd.debugPrint(
+            '[InventoryRepository] Category synced to Supabase for realtime: ${json['id']}');
+      } catch (e) {
+        fd.debugPrint(
+            '[InventoryRepository] Error syncing category to Supabase: $e');
+        // Fallback to PowerSync sync if direct Supabase write fails
+        await SupabaseSync.upsert('categories', {
+          'id': json['id'],
+          'company_id': json['company_id'],
+          'name': json['name'],
+          'parent_id': json['parent_id'],
+          'image_url': json['image_url'],
+          'created_at': json['created_at'] ?? DateTime.now().toIso8601String(),
+        });
+      }
 
       return category;
     } catch (e) {
@@ -208,9 +226,24 @@ class InventoryRepository {
         'UPDATE categories SET image_url = ?, updated_at = ? WHERE id = ?',
         [imageUrl, now, categoryId],
       );
-      await SupabaseSync.update('categories', categoryId, {
-        'image_url': imageUrl,
-      });
+
+      // Sync to Supabase (for realtime)
+      try {
+        await _supabase.from('categories').update({
+          'image_url': imageUrl,
+          'updated_at': now,
+        }).eq('id', categoryId);
+        fd.debugPrint(
+            '[InventoryRepository] Category image synced to Supabase for realtime: $categoryId');
+      } catch (e) {
+        fd.debugPrint(
+            '[InventoryRepository] Error syncing category image to Supabase: $e');
+        // Fallback to PowerSync sync if direct Supabase write fails
+        await SupabaseSync.update('categories', categoryId, {
+          'image_url': imageUrl,
+        });
+      }
+
       return true;
     } catch (e) {
       print('InventoryRepository updateCategoryImage error: $e');
@@ -240,15 +273,29 @@ class InventoryRepository {
         ],
       );
 
-      // Sync to Supabase
-      await SupabaseSync.update('products', product.id, {
-        'name': product.name,
-        'selling_price': product.price,
-        'cost_price': product.costPrice,
-        'barcode': product.barcode,
-        'description': product.description,
-        'image_url': product.imageUrl,
-        'updated_at': DateTime.now().toIso8601String(),
+      // Sync to Supabase (for realtime)
+      try {
+        await _supabase.from('products').update({
+          'name': product.name,
+          'selling_price': product.price,
+          'cost_price': product.costPrice,
+          'barcode': product.barcode,
+          'description': product.description,
+          'image_url': product.imageUrl,
+          'updated_at': DateTime.now().toIso8601String(),
+        }).eq('id', product.id);
+        fd.debugPrint('[InventoryRepository] Product synced to Supabase for realtime: ${product.id}');
+      } catch (e) {
+        fd.debugPrint('[InventoryRepository] Error syncing product to Supabase: $e');
+        // Fallback to PowerSync sync if direct Supabase write fails
+        await SupabaseSync.update('products', product.id, {
+          'name': product.name,
+          'selling_price': product.price,
+          'cost_price': product.costPrice,
+          'barcode': product.barcode,
+          'description': product.description,
+          'image_url': product.imageUrl,
+          'updated_at': DateTime.now().toIso8601String(),
       });
 
       return true;
