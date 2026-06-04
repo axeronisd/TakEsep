@@ -114,18 +114,29 @@ class _Header extends ConsumerWidget {
       loading: () => null,
       error: (_, __) => null,
     );
-    return Row(children: [
-      Expanded(
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text('Аналитика',
-            style: AppTypography.displaySmall.copyWith(color: cs.onSurface)),
-        if (nameText != null)
-          Text(nameText,
-              style: AppTypography.bodySmall
-                  .copyWith(color: cs.onSurface.withValues(alpha: 0.4))),
-      ])),
-    ]);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text('Аналитика',
+                style: AppTypography.displaySmall.copyWith(color: cs.onSurface)),
+            if (nameText != null)
+              Text(nameText,
+                  style: AppTypography.bodySmall
+                      .copyWith(color: cs.onSurface.withValues(alpha: 0.4))),
+          ]),
+        ),
+        IconButton(
+          icon: const Icon(Icons.refresh_rounded),
+          color: cs.primary,
+          tooltip: 'Обновить данные',
+          onPressed: () {
+            ref.read(dashboardRefreshProvider.notifier).state++;
+          },
+        ),
+      ],
+    );
   }
 }
 

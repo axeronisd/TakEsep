@@ -19,8 +19,6 @@ import 'src/services/firebase_push_bootstrap.dart';
 import 'src/services/notification_service.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-
   const showErrorScreen = bool.fromEnvironment('dart.vm.product') == false;
 
   FlutterError.onError = (details) {
@@ -49,6 +47,7 @@ void main() {
   };
 
   runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
     try {
       await _bootstrapApp();
     } catch (e, st) {

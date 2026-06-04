@@ -322,7 +322,7 @@ class _EmployeesTab extends ConsumerWidget {
                           : null;
                       final pin = role?.pinCode ?? '';
                       return Text(
-                        '$roleName${pin.isNotEmpty ? ' · PIN: $pin' : ''} · Ключ: ${emp.pinCodeHash}',
+                        '$roleName${pin.isNotEmpty ? ' · PIN: $pin' : ''} · Логин: ${emp.pinCodeHash}',
                         style: AppTypography.bodySmall
                             .copyWith(color: cs.onSurface.withValues(alpha: 0.4)),
                         maxLines: 1,
@@ -374,7 +374,7 @@ class _EmployeesTab extends ConsumerWidget {
     if (employees.isEmpty) return;
 
     final data = <List<String>>[
-      ['Имя', 'Роль', 'Статус', 'Ключ', 'PIN'],
+      ['Имя', 'Роль', 'Статус', 'Логин', 'PIN'],
     ];
 
     for (var emp in employees) {
@@ -466,7 +466,7 @@ class _EmployeesTab extends ConsumerWidget {
                     const SizedBox(height: 14),
 
                     // Unique key
-                    Text('Ключ входа',
+                    Text('Логин для входа',
                         style: AppTypography.labelMedium.copyWith(
                             color: cs.onSurface.withValues(alpha: 0.6))),
                     const SizedBox(height: 4),
@@ -502,7 +502,7 @@ class _EmployeesTab extends ConsumerWidget {
                           onPressed: () {
                             Clipboard.setData(
                                 ClipboardData(text: keyCtrl.text));
-                            showInfoSnackBar(ctx, ref, 'Ключ скопирован', duration: const Duration(seconds: 1));
+                            showInfoSnackBar(ctx, ref, 'Логин скопирован', duration: const Duration(seconds: 1));
                           },
                           icon: const Icon(Icons.copy_rounded, size: 18),
                           tooltip: 'Копировать',
@@ -661,7 +661,7 @@ class _EmployeesTab extends ConsumerWidget {
                   final name = nameCtrl.text.trim();
                   final key = keyCtrl.text.trim();
                   if (name.isEmpty || key.isEmpty) {
-                    showErrorSnackBar(ctx, 'Укажите имя и ключ');
+                    showErrorSnackBar(ctx, 'Укажите имя и логин');
                     return;
                   }
 
@@ -671,7 +671,7 @@ class _EmployeesTab extends ConsumerWidget {
                       .isPinCodeTaken(key,
                           excludeEmployeeId: employee?.id);
                   if (taken && ctx.mounted) {
-                    showErrorSnackBar(ctx, 'Этот ключ уже используется');
+                    showErrorSnackBar(ctx, 'Этот логин уже используется');
                     return;
                   }
 

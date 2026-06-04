@@ -34,7 +34,7 @@ class LocationDisclosure {
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Понятно'),
+            child: const Text('Продолжить'),
           ),
         ],
       ),

@@ -42,7 +42,7 @@ class SupabaseRealtimeService {
     }
 
     // Create new stream controller
-    final controller = StreamController<List<Map<String, dynamic>>>();
+    final controller = StreamController<List<Map<String, dynamic>>>.broadcast();
     _controllers[channelKey] = controller;
 
     // Create or get channel
@@ -88,7 +88,7 @@ class SupabaseRealtimeService {
       return _controllers[channelKey]!.stream.cast<Map<String, dynamic>?>();
     }
 
-    final controller = StreamController<Map<String, dynamic>?>();
+    final controller = StreamController<Map<String, dynamic>?>.broadcast();
     _controllers[channelKey] = controller;
 
     final channel = _client.channel(channelKey);

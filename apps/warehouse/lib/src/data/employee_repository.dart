@@ -445,10 +445,37 @@ class EmployeeRepository {
   /// Get expenses for a specific employee.
   Future<List<Map<String, dynamic>>> getEmployeeExpenses(String employeeId,
       {int limit = 50}) async {
-    return powerSyncDb.getAll(
-      "SELECT * FROM employee_expenses WHERE employee_id = ? AND (status != 'deleted' OR status IS NULL) ORDER BY created_at DESC LIMIT ?",
-      [employeeId, limit],
-    );
+    try {
+      final results = await _supabase
+          .from('employee_expenses')
+          .select()
+          .eq('employee_id', employeeId)
+          .neq('status', 'deleted')
+          .order('created_at', ascending: false)
+          .limit(limit);
+
+      // Cache locally
+      for (final e in results) {
+        await powerSyncDb.execute(
+          '''INSERT OR REPLACE INTO employee_expenses (
+            id, company_id, warehouse_id, employee_id, employee_name,
+            amount, comment, created_by, status, deleted_by, deleted_at, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          [
+            e['id'], e['company_id'], e['warehouse_id'], e['employee_id'],
+            e['employee_name'], e['amount'], e['comment'], e['created_by'],
+            e['status'], e['deleted_by'], e['deleted_at'], e['created_at'],
+          ],
+        );
+      }
+      return results;
+    } catch (e) {
+      print('EmployeeRepository getEmployeeExpenses Supabase error: $e');
+      return powerSyncDb.getAll(
+        "SELECT * FROM employee_expenses WHERE employee_id = ? AND (status != 'deleted' OR status IS NULL) ORDER BY created_at DESC LIMIT ?",
+        [employeeId, limit],
+      );
+    }
   }
 
   /// Get total employee expenses for a company within a date range.

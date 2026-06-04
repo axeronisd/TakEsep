@@ -4,7 +4,7 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 
 import '../../providers/auth_providers.dart';
 
-/// Полноэкранное уведомление при деактивации ключа.
+/// Полноэкранное уведомление при отключении филиала.
 /// Блокирует ВСЕ функции TakEsep.
 /// Показывает сообщение от админа.
 class DeactivatedScreen extends ConsumerWidget {
@@ -134,7 +134,7 @@ class DeactivatedScreen extends ConsumerWidget {
                     ref.read(authProvider.notifier).logout();
                   },
                   child: Text(
-                    'Выйти и ввести другой ключ',
+                    'Выйти и ввести другой код компании',
                     style: TextStyle(color: Colors.grey.shade500),
                   ),
                 ),

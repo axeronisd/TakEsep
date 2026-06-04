@@ -4,6 +4,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../providers/receipt_provider.dart';
 
 /// Data needed to print a sale receipt
@@ -109,7 +110,7 @@ class PrinterService {
       if (list.isNotEmpty) return list;
 
       // Fallback for Windows if `Printing` fails to grab printers
-      if (Platform.isWindows) {
+      if (!kIsWeb && Platform.isWindows) {
         try {
           final result = await Process.run('powershell', ['-Command', 'Get-Printer | Select-Object -ExpandProperty Name']);
           if (result.exitCode == 0) {

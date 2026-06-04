@@ -104,272 +104,277 @@ class _ArrivalCatalogPaneState extends ConsumerState<ArrivalCatalogPane> {
     final searchType = ref.watch(arrivalSearchTypeProvider);
     final sortType = ref.watch(arrivalSortProvider);
 
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // ── Header ──
-          Builder(builder: (context) {
-            final isMobile = MediaQuery.of(context).size.width < 600;
-            return Row(
-              children: [
-                Text('Приход',
-                    style: (isMobile
-                            ? AppTypography.headlineMedium
-                            : AppTypography.displaySmall)
-                        .copyWith(
-                      color: Theme.of(context).colorScheme.onSurface,
-                    )),
-                const Spacer(),
-                // + New Product button
-                OutlinedButton.icon(
-                  onPressed: () => _openCreateDialog(''),
-                  icon: const Icon(Icons.add_rounded, size: 16),
-                  label: Text(isMobile ? 'Новый товар' : 'Новый товар',
-                      style: TextStyle(fontSize: isMobile ? 12 : 14)),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.primary,
-                    side: const BorderSide(color: AppColors.primary),
-                    padding: EdgeInsets.symmetric(
-                        horizontal: isMobile ? 8 : AppSpacing.md,
-                        vertical: isMobile ? 4 : 8),
-                    minimumSize: Size.zero,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 520;
+        return Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Header ──
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text('Приход',
+                        style: (isNarrow
+                                ? AppTypography.headlineMedium
+                                : AppTypography.displaySmall)
+                            .copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        overflow: TextOverflow.ellipsis),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  // + New Product button
+                  OutlinedButton.icon(
+                    onPressed: () => _openCreateDialog(''),
+                    icon: const Icon(Icons.add_rounded, size: 16),
+                    label: Text('Новый товар',
+                        style: TextStyle(fontSize: isNarrow ? 12 : 14)),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.primary),
+                      padding: EdgeInsets.symmetric(
+                          horizontal: isNarrow ? 8 : AppSpacing.md,
+                          vertical: isNarrow ? 4 : 8),
+                      minimumSize: Size.zero,
+                      shape: RoundedRectangleBorder(
+                          borderRadius:
+                              BorderRadius.circular(AppSpacing.radiusFull)),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  // Sort Menu
+                  PopupMenuButton<ArrivalSortType>(
+                    initialValue: sortType,
+                    onSelected: (val) =>
+                        ref.read(arrivalSortProvider.notifier).state = val,
                     shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
+                    color: Theme.of(context).colorScheme.surface,
+                    elevation: 4,
+                    position: PopupMenuPosition.under,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(
+                          horizontal: isNarrow ? 6 : AppSpacing.md,
+                          vertical: isNarrow ? 4 : 8),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest
+                            .withValues(alpha: 0.3),
                         borderRadius:
-                            BorderRadius.circular(AppSpacing.radiusFull)),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                // Sort Menu
-                PopupMenuButton<ArrivalSortType>(
-                  initialValue: sortType,
-                  onSelected: (val) =>
-                      ref.read(arrivalSortProvider.notifier).state = val,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
-                  color: Theme.of(context).colorScheme.surface,
-                  elevation: 4,
-                  position: PopupMenuPosition.under,
-                  child: Container(
-                    padding: EdgeInsets.symmetric(
-                        horizontal: isMobile ? 6 : AppSpacing.md,
-                        vertical: isMobile ? 4 : 8),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerHighest
-                          .withValues(alpha: 0.3),
-                      borderRadius:
-                          BorderRadius.circular(AppSpacing.radiusFull),
-                      border: Border.all(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .outline
-                              .withValues(alpha: 0.5)),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.sort_rounded,
-                            size: 14,
+                            BorderRadius.circular(AppSpacing.radiusFull),
+                        border: Border.all(
                             color: Theme.of(context)
                                 .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.7)),
-                        if (!isMobile) ...[
-                          const SizedBox(width: 6),
-                          Text(
-                            _getSortLabel(sortType),
-                            style: AppTypography.bodySmall
-                                .copyWith(fontWeight: FontWeight.w500),
-                          ),
-                        ],
-                        const SizedBox(width: 4),
-                        Icon(Icons.arrow_drop_down_rounded,
-                            size: 14,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.7)),
-                      ],
-                    ),
-                  ),
-                  itemBuilder: (context) => const [
-                    PopupMenuItem(
-                        value: ArrivalSortType.name,
-                        child: Text('По названию (А-Я)')),
-                    PopupMenuItem(
-                        value: ArrivalSortType.costPriceAsc,
-                        child: Text('Закупка: сначала дешевые')),
-                    PopupMenuItem(
-                        value: ArrivalSortType.costPriceDesc,
-                        child: Text('Закупка: сначала дорогие')),
-                    PopupMenuItem(
-                        value: ArrivalSortType.stockAsc,
-                        child: Text('Остаток: мало → много')),
-                    PopupMenuItem(
-                        value: ArrivalSortType.stockDesc,
-                        child: Text('Остаток: много → мало')),
-                  ],
-                ),
-              ],
-            );
-          }),
-          const SizedBox(height: AppSpacing.lg),
-
-          // ── Search Row ──
-          Builder(builder: (context) {
-            final isMobile = MediaQuery.of(context).size.width < 600;
-            final searchField = Expanded(
-              child: TextField(
-                controller: _searchController,
-                focusNode: _searchFocusNode,
-                onChanged: (v) =>
-                    ref.read(arrivalSearchQueryProvider.notifier).state = v,
-                onSubmitted: _handleScanOrSearch,
-                decoration: InputDecoration(
-                  hintText: searchType == SearchType.name
-                      ? 'Поиск по названию или артикулу...'
-                      : 'Отсканируйте или введите штрихкод...',
-                  prefixIcon: Icon(Icons.search_rounded,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withValues(alpha: 0.5)),
-                  suffixIcon: _searchController.text.isNotEmpty
-                      ? IconButton(
-                          icon: Icon(Icons.clear,
-                              size: 18,
+                                .outline
+                                .withValues(alpha: 0.5)),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.sort_rounded,
+                              size: 14,
                               color: Theme.of(context)
                                   .colorScheme
                                   .onSurface
-                                  .withValues(alpha: 0.5)),
-                          onPressed: () {
-                            _searchController.clear();
-                            ref
-                                .read(arrivalSearchQueryProvider.notifier)
-                                .state = '';
-                            _searchFocusNode.requestFocus();
-                          },
-                        )
-                      : null,
-                ),
-              ),
-            );
-
-            final segmented = SegmentedButton<SearchType>(
-              segments: const [
-                ButtonSegment(
-                    value: SearchType.name,
-                    icon: Icon(Icons.title_rounded, size: 16),
-                    label: Text('Название')),
-                ButtonSegment(
-                    value: SearchType.barcode,
-                    icon: Icon(Icons.qr_code_rounded, size: 16),
-                    label: Text('Штрихкод')),
-              ],
-              selected: {searchType},
-              onSelectionChanged: (set) {
-                ref.read(arrivalSearchTypeProvider.notifier).state = set.first;
-              },
-              style: ButtonStyle(
-                backgroundColor: WidgetStateProperty.resolveWith((states) {
-                  if (states.contains(WidgetState.selected)) {
-                    return AppColors.primary.withValues(alpha: 0.1);
-                  }
-                  return Colors.transparent;
-                }),
-              ),
-            );
-
-            if (isMobile) {
-              return Column(
-                children: [
-                  segmented,
-                  const SizedBox(height: AppSpacing.sm),
-                  Row(children: [searchField]),
+                                  .withValues(alpha: 0.7)),
+                          if (!isNarrow) ...[
+                            const SizedBox(width: 6),
+                            Text(
+                              _getSortLabel(sortType),
+                              style: AppTypography.bodySmall
+                                  .copyWith(fontWeight: FontWeight.w500),
+                            ),
+                          ],
+                          const SizedBox(width: 4),
+                          Icon(Icons.arrow_drop_down_rounded,
+                              size: 14,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurface
+                                  .withValues(alpha: 0.7)),
+                        ],
+                      ),
+                    ),
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(
+                          value: ArrivalSortType.name,
+                          child: Text('По названию (А-Я)')),
+                      PopupMenuItem(
+                          value: ArrivalSortType.costPriceAsc,
+                          child: Text('Закупка: сначала дешевые')),
+                      PopupMenuItem(
+                          value: ArrivalSortType.costPriceDesc,
+                          child: Text('Закупка: сначала дорогие')),
+                      PopupMenuItem(
+                          value: ArrivalSortType.stockAsc,
+                          child: Text('Остаток: мало → много')),
+                      PopupMenuItem(
+                          value: ArrivalSortType.stockDesc,
+                          child: Text('Остаток: много → мало')),
+                    ],
+                  ),
                 ],
-              );
-            }
-            return Row(
-              children: [
-                segmented,
-                const SizedBox(width: AppSpacing.md),
-                searchField,
-              ],
-            );
-          }),
-          const SizedBox(height: AppSpacing.lg),
+              ),
+              const SizedBox(height: AppSpacing.lg),
 
-          // ── Product Grid ──
-          Expanded(
-            child: filteredProducts.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.inventory_2_outlined,
-                            size: 48,
-                            color: Theme.of(context)
-                                .colorScheme
-                                .onSurface
-                                .withValues(alpha: 0.3)),
-                        const SizedBox(height: AppSpacing.md),
-                        Text('Товары не найдены',
-                            style: AppTypography.bodyMedium.copyWith(
+              // ── Search Row ──
+              Builder(builder: (context) {
+                final searchField = Expanded(
+                  child: TextField(
+                    controller: _searchController,
+                    focusNode: _searchFocusNode,
+                    onChanged: (v) =>
+                        ref.read(arrivalSearchQueryProvider.notifier).state = v,
+                    onSubmitted: _handleScanOrSearch,
+                    decoration: InputDecoration(
+                      hintText: searchType == SearchType.name
+                          ? 'Поиск по названию или артикулу...'
+                          : 'Отсканируйте или введите штрихкод...',
+                      prefixIcon: Icon(Icons.search_rounded,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .onSurface
+                              .withValues(alpha: 0.5)),
+                      suffixIcon: _searchController.text.isNotEmpty
+                          ? IconButton(
+                              icon: Icon(Icons.clear,
+                                  size: 18,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha: 0.5)),
+                              onPressed: () {
+                                _searchController.clear();
+                                ref
+                                    .read(arrivalSearchQueryProvider.notifier)
+                                    .state = '';
+                                _searchFocusNode.requestFocus();
+                              },
+                            )
+                          : null,
+                    ),
+                  ),
+                );
+
+                final segmented = SegmentedButton<SearchType>(
+                  segments: const [
+                    ButtonSegment(
+                        value: SearchType.name,
+                        icon: Icon(Icons.title_rounded, size: 16),
+                        label: Text('Название')),
+                    ButtonSegment(
+                        value: SearchType.barcode,
+                        icon: Icon(Icons.qr_code_rounded, size: 16),
+                        label: Text('Штрихкод')),
+                  ],
+                  selected: {searchType},
+                  onSelectionChanged: (set) {
+                    ref.read(arrivalSearchTypeProvider.notifier).state = set.first;
+                  },
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.resolveWith((states) {
+                      if (states.contains(WidgetState.selected)) {
+                        return AppColors.primary.withValues(alpha: 0.1);
+                      }
+                      return Colors.transparent;
+                    }),
+                  ),
+                );
+
+                if (isNarrow) {
+                  return Column(
+                    children: [
+                      segmented,
+                      const SizedBox(height: AppSpacing.sm),
+                      Row(children: [searchField]),
+                    ],
+                  );
+                }
+                return Row(
+                  children: [
+                    segmented,
+                    const SizedBox(width: AppSpacing.md),
+                    searchField,
+                  ],
+                );
+              }),
+              const SizedBox(height: AppSpacing.lg),
+
+              // ── Product Grid ──
+              Expanded(
+                child: filteredProducts.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.inventory_2_outlined,
+                                size: 48,
                                 color: Theme.of(context)
                                     .colorScheme
                                     .onSurface
-                                    .withValues(alpha: 0.5))),
-                        if (_searchController.text.isNotEmpty) ...[
-                          const SizedBox(height: AppSpacing.lg),
-                          OutlinedButton.icon(
-                            onPressed: () => _openCreateDialog(
-                                searchType == SearchType.barcode
-                                    ? _searchController.text
-                                    : ''),
-                            icon: const Icon(Icons.add_rounded),
-                            label: const Text('Создать новый товар'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.primary,
-                              side: const BorderSide(color: AppColors.primary),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  )
-                : GridView.builder(
-                    gridDelegate: MediaQuery.of(context).size.width < 600
-                        ? const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            mainAxisSpacing: AppSpacing.sm,
-                            crossAxisSpacing: AppSpacing.sm,
-                            childAspectRatio: 0.85,
-                          )
-                        : const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 220,
-                            mainAxisSpacing: AppSpacing.sm,
-                            crossAxisSpacing: AppSpacing.sm,
-                            childAspectRatio: 0.85,
-                          ),
-                    itemCount: filteredProducts.length,
-                    itemBuilder: (context, index) {
-                      final p = filteredProducts[index];
-                      return _ArrivalProductTile(
-                        product: p,
-                        currencySymbol: ref.watch(currencyProvider).symbol,
-                        onTap: () {
-                          ref.read(currentArrivalProvider.notifier).addItem(p);
-                          _searchFocusNode.requestFocus();
+                                    .withValues(alpha: 0.3)),
+                            const SizedBox(height: AppSpacing.md),
+                            Text('Товары не найдены',
+                                style: AppTypography.bodyMedium.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurface
+                                        .withValues(alpha: 0.5))),
+                            if (_searchController.text.isNotEmpty) ...[
+                              const SizedBox(height: AppSpacing.lg),
+                              OutlinedButton.icon(
+                                onPressed: () => _openCreateDialog(
+                                    searchType == SearchType.barcode
+                                        ? _searchController.text
+                                        : ''),
+                                icon: const Icon(Icons.add_rounded),
+                                label: const Text('Создать новый товар'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.primary,
+                                  side: const BorderSide(color: AppColors.primary),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      )
+                    : GridView.builder(
+                        gridDelegate: MediaQuery.of(context).size.width < 600
+                            ? const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                mainAxisSpacing: AppSpacing.sm,
+                                crossAxisSpacing: AppSpacing.sm,
+                                childAspectRatio: 0.85,
+                              )
+                            : const SliverGridDelegateWithMaxCrossAxisExtent(
+                                maxCrossAxisExtent: 220,
+                                mainAxisSpacing: AppSpacing.sm,
+                                crossAxisSpacing: AppSpacing.sm,
+                                childAspectRatio: 0.85,
+                              ),
+                        itemCount: filteredProducts.length,
+                        itemBuilder: (context, index) {
+                          final p = filteredProducts[index];
+                          return _ArrivalProductTile(
+                            product: p,
+                            currencySymbol: ref.watch(currencyProvider).symbol,
+                            onTap: () {
+                              ref.read(currentArrivalProvider.notifier).addItem(p);
+                              _searchFocusNode.requestFocus();
+                            },
+                          );
                         },
-                      );
-                    },
-                  ),
+                      ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

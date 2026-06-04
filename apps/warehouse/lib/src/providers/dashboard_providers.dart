@@ -4,6 +4,7 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 import 'package:takesep_core/takesep_core.dart';
 import '../data/dashboard_repository.dart';
 import '../data/mock_data.dart';
+import '../data/supabase_realtime_service.dart';
 import 'auth_providers.dart';
 import 'date_filter_provider.dart';
 import 'inventory_providers.dart';
@@ -12,6 +13,29 @@ import 'owner_settings_provider.dart';
 // --- Dashboard Repository Provider ---
 final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) {
   return DashboardRepository();
+});
+
+/// Refresh counter — increment to force dashboard re-sync from Supabase.
+/// Use: ref.read(dashboardRefreshProvider.notifier).state++;
+final dashboardRefreshProvider = StateProvider<int>((ref) => 0);
+
+/// Syncs dashboard data from Supabase into local SQLite.
+/// Returns true when done. Depends on refresh counter to allow manual re-sync.
+final dashboardSyncProvider = FutureProvider<bool>((ref) async {
+  final companyId = ref.watch(currentCompanyProvider)?.id;
+  if (companyId == null) return false;
+
+  // Watch refresh counter so invalidation triggers re-sync
+  ref.watch(dashboardRefreshProvider);
+
+  final repo = ref.read(dashboardRepositoryProvider);
+  await repo.syncFromSupabase(companyId);
+  return true;
+});
+
+/// Realtime subscription for dashboard (Disabled by user request to prevent screen jumping)
+final dashboardRealtimeProvider = StreamProvider<void>((ref) {
+  return const Stream.empty();
 });
 
 /// Selected warehouse ID. Initially null, gets set when data loads.
@@ -56,6 +80,12 @@ final dashboardKpisProvider =
     FutureProvider<List<DashboardKpi>>((ref) async {
   final companyId = ref.watch(currentCompanyProvider)?.id;
   if (companyId == null) return [];
+
+  // Ensure data is synced from Supabase before querying local DB
+  await ref.watch(dashboardSyncProvider.future);
+
+  // Activate realtime subscription (keeps running while dashboard is active)
+  ref.watch(dashboardRealtimeProvider);
 
   final warehouseId = ref.watch(selectedWarehouseIdProvider);
   final range = ref.watch(dateRangeProvider);
@@ -165,6 +195,8 @@ final revenueChartProvider =
   final companyId = ref.watch(currentCompanyProvider)?.id;
   if (companyId == null) return [];
 
+  await ref.watch(dashboardSyncProvider.future);
+
   final warehouseId = ref.watch(selectedWarehouseIdProvider);
   final range = ref.watch(dateRangeProvider);
   final repo = ref.read(dashboardRepositoryProvider);
@@ -191,6 +223,8 @@ final topProductsProvider =
   final companyId = ref.watch(currentCompanyProvider)?.id;
   if (companyId == null) return [];
 
+  await ref.watch(dashboardSyncProvider.future);
+
   final warehouseId = ref.watch(selectedWarehouseIdProvider);
   final range = ref.watch(dateRangeProvider);
   final limit = ref.watch(topLimitProvider);
@@ -210,6 +244,8 @@ final topExecutorsProvider =
   final companyId = ref.watch(currentCompanyProvider)?.id;
   if (companyId == null) return [];
 
+  await ref.watch(dashboardSyncProvider.future);
+
   final warehouseId = ref.watch(selectedWarehouseIdProvider);
   final range = ref.watch(dateRangeProvider);
   final limit = ref.watch(topLimitProvider);
@@ -228,6 +264,8 @@ final topClientsProvider =
     FutureProvider<List<TopClient>>((ref) async {
   final companyId = ref.watch(currentCompanyProvider)?.id;
   if (companyId == null) return [];
+
+  await ref.watch(dashboardSyncProvider.future);
 
   final warehouseId = ref.watch(selectedWarehouseIdProvider);
   final range = ref.watch(dateRangeProvider);
@@ -250,6 +288,8 @@ final recentOpsProvider =
   final companyId = ref.watch(currentCompanyProvider)?.id;
   if (companyId == null) return [];
 
+  await ref.watch(dashboardSyncProvider.future);
+
   final warehouseId = ref.watch(selectedWarehouseIdProvider);
   final range = ref.watch(dateRangeProvider);
   final repo = ref.read(dashboardRepositoryProvider);
@@ -271,6 +311,8 @@ final stockAlertsProvider = FutureProvider<List<Product>>((ref) async {
   final companyId = ref.watch(currentCompanyProvider)?.id;
   if (companyId == null) return [];
 
+  await ref.watch(dashboardSyncProvider.future);
+
   final warehouseId = ref.watch(selectedWarehouseIdProvider);
   final range = ref.watch(dateRangeProvider);
   final repo = ref.read(dashboardRepositoryProvider);
@@ -291,6 +333,8 @@ final operationsSummaryProvider =
     FutureProvider<Map<String, dynamic>>((ref) async {
   final companyId = ref.watch(currentCompanyProvider)?.id;
   if (companyId == null) return {};
+
+  await ref.watch(dashboardSyncProvider.future);
 
   final warehouseId = ref.watch(selectedWarehouseIdProvider);
   final range = ref.watch(dateRangeProvider);
@@ -340,6 +384,8 @@ final kpiBreakdownProvider = FutureProvider<KpiBreakdown>((ref) async {
   final companyId = ref.watch(currentCompanyProvider)?.id;
   if (companyId == null) return const KpiBreakdown();
 
+  await ref.watch(dashboardSyncProvider.future);
+
   final warehouseId = ref.watch(selectedWarehouseIdProvider);
   final range = ref.watch(dateRangeProvider);
   final repo = ref.read(dashboardRepositoryProvider);
@@ -388,6 +434,8 @@ final goodsServicesProvider = FutureProvider<GoodsServicesBreakdown>((ref) async
   try {
     final companyId = ref.watch(currentCompanyProvider)?.id;
     if (companyId == null) return const GoodsServicesBreakdown();
+
+    await ref.watch(dashboardSyncProvider.future);
 
     final warehouseId = ref.watch(selectedWarehouseIdProvider);
     final range = ref.watch(dateRangeProvider);

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -75,7 +76,7 @@ class _EditServiceSheetState extends State<_EditServiceSheet> {
 
   Future<void> _pickImage(ImageSource source) async {
     try {
-      if (Platform.isWindows && source == ImageSource.camera) {
+      if (!kIsWeb && Platform.isWindows && source == ImageSource.camera) {
         if (!mounted) return;
         showErrorSnackBar(context, 'Камера не поддерживается на ПК (Windows)');
         return;

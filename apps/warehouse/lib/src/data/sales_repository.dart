@@ -57,6 +57,9 @@ class SalesRepository {
     final finalTotal = totalAmount - discountAmount;
     final actualReceived = receivedAmount ?? finalTotal;
 
+    // Sanitize owner ID for Supabase UUID columns
+    final safeEmployeeId = employeeId?.startsWith('owner-') == true ? null : employeeId;
+
     // Insert sale record
     await _db.execute(
       '''INSERT INTO sales (
@@ -67,7 +70,7 @@ class SalesRepository {
       [
         saleId,
         companyId,
-        employeeId,
+        safeEmployeeId,
         warehouseId,
         totalAmount,
         discountAmount,
@@ -84,8 +87,10 @@ class SalesRepository {
     );
 
     // Insert each sale item + update stock
+    final itemIds = <String>[];
     for (final item in items) {
       final itemId = const Uuid().v4();
+      itemIds.add(itemId);
       await _db.execute(
         '''INSERT INTO sale_items (
             id, sale_id, product_id, product_name,
@@ -102,7 +107,7 @@ class SalesRepository {
           item.costPrice,
           item.discountAmount,
           item.itemType,
-          item.executorId,
+          item.executorId?.startsWith('owner-') == true ? null : item.executorId,
           item.executorName,
           now,
         ],
@@ -155,7 +160,7 @@ class SalesRepository {
       await _supabase.from('sales').insert({
         'id': saleId,
         'company_id': companyId,
-        'employee_id': employeeId,
+        'employee_id': safeEmployeeId,
         'warehouse_id': warehouseId,
         'total_amount': totalAmount,
         'discount_amount': discountAmount,
@@ -171,9 +176,10 @@ class SalesRepository {
       });
 
       final saleItemsForSupabase = <Map<String, dynamic>>[];
-      for (final item in items) {
+      for (int i = 0; i < items.length; i++) {
+        final item = items[i];
         saleItemsForSupabase.add({
-          'id': const Uuid().v4(),
+          'id': itemIds[i],
           'sale_id': saleId,
           'product_id': item.productId,
           'product_name': item.productName,
@@ -182,7 +188,7 @@ class SalesRepository {
           'cost_price': item.costPrice,
           'discount_amount': item.discountAmount,
           'item_type': item.itemType,
-          'executor_id': item.executorId,
+          'executor_id': item.executorId?.startsWith('owner-') == true ? null : item.executorId,
           'executor_name': item.executorName,
           'created_at': now,
         });
@@ -213,9 +219,10 @@ class SalesRepository {
       });
 
       final saleItemsForSupabase = <Map<String, dynamic>>[];
-      for (final item in items) {
+      for (int i = 0; i < items.length; i++) {
+        final item = items[i];
         saleItemsForSupabase.add({
-          'id': const Uuid().v4(),
+          'id': itemIds[i],
           'sale_id': saleId,
           'product_id': item.productId,
           'product_name': item.productName,

@@ -1,4 +1,5 @@
 import 'package:powersync/powersync.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:takesep_core/takesep_core.dart';
 import 'mock_data.dart';
 import 'powersync_db.dart';
@@ -7,6 +8,376 @@ class DashboardRepository {
   DashboardRepository();
 
   PowerSyncDatabase get _db => powerSyncDb;
+  SupabaseClient get _supabase => Supabase.instance.client;
+
+  /// Sync dashboard-relevant data from Supabase into the local SQLite database.
+  /// This ensures that sales, arrivals, and other operations created on OTHER
+  /// devices become visible on THIS device's dashboard.
+  ///
+  /// Call this before querying KPI/dashboard data to guarantee fresh numbers.
+  Future<void> syncFromSupabase(String companyId) async {
+    // ── Sales ──
+    try {
+      final sales = await _supabase
+          .from('sales')
+          .select()
+          .eq('company_id', companyId);
+      for (final s in sales) {
+        await _db.execute(
+          '''INSERT OR REPLACE INTO sales (
+            id, company_id, employee_id, client_id, client_name,
+            warehouse_id, total_amount, discount_amount, received_amount,
+            payment_method, status, notes, sale_type, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          [
+            s['id'], s['company_id'], s['employee_id'], s['client_id'],
+            s['client_name'], s['warehouse_id'], s['total_amount'],
+            s['discount_amount'], s['received_amount'], s['payment_method'],
+            s['status'], s['notes'], s['sale_type'],
+            s['created_at'], s['updated_at'],
+          ],
+        );
+      }
+    } catch (e) {
+      print('[DashboardSync] ⚠️ Error syncing Sales: $e');
+    }
+
+    // ── Sale Items ──
+    try {
+      final saleItems = await _supabase
+          .from('sale_items')
+          .select('*, sales!inner(company_id)')
+          .eq('sales.company_id', companyId);
+      for (final si in saleItems) {
+        await _db.execute(
+          '''INSERT OR REPLACE INTO sale_items (
+            id, sale_id, product_id, product_name, quantity,
+            selling_price, cost_price, discount_amount,
+            item_type, executor_id, executor_name, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          [
+            si['id'], si['sale_id'], si['product_id'], si['product_name'],
+            si['quantity'], si['selling_price'], si['cost_price'],
+            si['discount_amount'], si['item_type'],
+            si['executor_id'], si['executor_name'], si['created_at'],
+          ],
+        );
+      }
+    } catch (e) {
+      print('[DashboardSync] ⚠️ Error syncing Sale Items: $e');
+    }
+
+    // ── Arrivals ──
+    try {
+      final arrivals = await _supabase
+          .from('arrivals')
+          .select()
+          .eq('company_id', companyId);
+      for (final a in arrivals) {
+        await _db.execute(
+          '''INSERT OR REPLACE INTO arrivals (
+            id, company_id, employee_id, warehouse_id, supplier,
+            status, total_amount, notes, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          [
+            a['id'], a['company_id'], a['employee_id'], a['warehouse_id'],
+            a['supplier'], a['status'], a['total_amount'], a['notes'],
+            a['created_at'], a['updated_at'],
+          ],
+        );
+      }
+    } catch (e) {
+      print('[DashboardSync] ⚠️ Error syncing Arrivals: $e');
+    }
+
+    // ── Arrival Items ──
+    try {
+      final arrivalItems = await _supabase
+          .from('arrival_items')
+          .select('*, arrivals!inner(company_id)')
+          .eq('arrivals.company_id', companyId);
+      for (final ai in arrivalItems) {
+        await _db.execute(
+          '''INSERT OR REPLACE INTO arrival_items (
+            id, arrival_id, product_id, product_name,
+            quantity, cost_price, selling_price, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+          [
+            ai['id'], ai['arrival_id'], ai['product_id'], ai['product_name'],
+            ai['quantity'], ai['cost_price'], ai['selling_price'],
+            ai['created_at'],
+          ],
+        );
+      }
+    } catch (e) {
+      print('[DashboardSync] ⚠️ Error syncing Arrival Items: $e');
+    }
+
+    // ── Transfers ──
+    try {
+      final transfers = await _supabase
+          .from('transfers')
+          .select()
+          .eq('company_id', companyId);
+      for (final t in transfers) {
+        await _db.execute(
+          '''INSERT OR REPLACE INTO transfers (
+            id, company_id, from_warehouse_id, to_warehouse_id,
+            from_warehouse_name, to_warehouse_name,
+            sender_employee_id, sender_employee_name,
+            receiver_employee_id, receiver_employee_name,
+            status, total_amount, sender_notes, receiver_notes,
+            sender_photos, receiver_photos, pricing_mode,
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          [
+            t['id'], t['company_id'], t['from_warehouse_id'],
+            t['to_warehouse_id'], t['from_warehouse_name'],
+            t['to_warehouse_name'], t['sender_employee_id'],
+            t['sender_employee_name'], t['receiver_employee_id'],
+            t['receiver_employee_name'], t['status'], t['total_amount'],
+            t['sender_notes'], t['receiver_notes'], t['sender_photos'],
+            t['receiver_photos'], t['pricing_mode'],
+            t['created_at'], t['updated_at'],
+          ],
+        );
+      }
+    } catch (e) {
+      print('[DashboardSync] ⚠️ Error syncing Transfers: $e');
+    }
+
+    // ── Transfer Items ──
+    try {
+      final transferItems = await _supabase
+          .from('transfer_items')
+          .select('*, transfers!inner(company_id)')
+          .eq('transfers.company_id', companyId);
+      for (final ti in transferItems) {
+        await _db.execute(
+          '''INSERT OR REPLACE INTO transfer_items (
+            id, transfer_id, product_id, product_name, product_sku,
+            product_barcode, quantity_sent, quantity_received,
+            cost_price, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          [
+            ti['id'], ti['transfer_id'], ti['product_id'], ti['product_name'],
+            ti['product_sku'], ti['product_barcode'], ti['quantity_sent'],
+            ti['quantity_received'], ti['cost_price'], ti['created_at'],
+          ],
+        );
+      }
+    } catch (e) {
+      print('[DashboardSync] ⚠️ Error syncing Transfer Items: $e');
+    }
+
+    // ── Audits ──
+    try {
+      final audits = await _supabase
+          .from('audits')
+          .select()
+          .eq('company_id', companyId);
+      for (final a in audits) {
+        await _db.execute(
+          '''INSERT OR REPLACE INTO audits (
+            id, company_id, warehouse_id, warehouse_name,
+            employee_id, employee_name, type, status,
+            category_id, category_name, notes,
+            started_at, completed_at, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          [
+            a['id'], a['company_id'], a['warehouse_id'], a['warehouse_name'],
+            a['employee_id'], a['employee_name'], a['type'], a['status'],
+            a['category_id'], a['category_name'], a['notes'],
+            a['started_at'], a['completed_at'], a['created_at'],
+            a['updated_at'],
+          ],
+        );
+      }
+    } catch (e) {
+      print('[DashboardSync] ⚠️ Error syncing Audits: $e');
+    }
+
+    // ── Audit Items ──
+    try {
+      final auditItems = await _supabase
+          .from('audit_items')
+          .select('*, audits!inner(company_id)')
+          .eq('audits.company_id', companyId);
+      for (final ai in auditItems) {
+        await _db.execute(
+          '''INSERT OR REPLACE INTO audit_items (
+            id, audit_id, product_id, product_name, product_sku,
+            product_barcode, product_image_url, snapshot_quantity,
+            movements_during_audit, actual_quantity, cost_price,
+            is_checked, comment, photos, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          [
+            ai['id'], ai['audit_id'], ai['product_id'], ai['product_name'],
+            ai['product_sku'], ai['product_barcode'], ai['product_image_url'],
+            ai['snapshot_quantity'], ai['movements_during_audit'],
+            ai['actual_quantity'], ai['cost_price'], ai['is_checked'],
+            ai['comment'], ai['photos'], ai['created_at'],
+          ],
+        );
+      }
+    } catch (e) {
+      print('[DashboardSync] ⚠️ Error syncing Audit Items: $e');
+    }
+
+    // ── Write-offs ──
+    try {
+      final writeOffs = await _supabase
+          .from('write_offs')
+          .select()
+          .eq('company_id', companyId);
+      for (final wo in writeOffs) {
+        await _db.execute(
+          '''INSERT OR REPLACE INTO write_offs (
+            id, company_id, warehouse_id, employee_id, employee_name,
+            total_cost, items_count, status, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          [
+            wo['id'], wo['company_id'], wo['warehouse_id'], wo['employee_id'],
+            wo['employee_name'], wo['total_cost'], wo['items_count'],
+            wo['status'], wo['created_at'],
+          ],
+        );
+      }
+    } catch (e) {
+      print('[DashboardSync] ⚠️ Error syncing Write-offs: $e');
+    }
+
+    // ── Write-off Items ──
+    try {
+      final writeOffItems = await _supabase
+          .from('write_off_items')
+          .select('*, write_offs!inner(company_id)')
+          .eq('write_offs.company_id', companyId);
+      for (final woi in writeOffItems) {
+        await _db.execute(
+          '''INSERT OR REPLACE INTO write_off_items (
+            id, write_off_id, product_id, product_name,
+            quantity, cost_price, reason, comment, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          [
+            woi['id'], woi['write_off_id'], woi['product_id'],
+            woi['product_name'], woi['quantity'], woi['cost_price'],
+            woi['reason'], woi['comment'], woi['created_at'],
+          ],
+        );
+      }
+    } catch (e) {
+      print('[DashboardSync] ⚠️ Error syncing Write-off Items: $e');
+    }
+
+    // ── Employee Expenses ──
+    try {
+      final expenses = await _supabase
+          .from('employee_expenses')
+          .select()
+          .eq('company_id', companyId);
+      for (final e in expenses) {
+        await _db.execute(
+          '''INSERT OR REPLACE INTO employee_expenses (
+            id, company_id, warehouse_id, employee_id, employee_name,
+            amount, comment, created_by, status, deleted_by, deleted_at,
+            created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          [
+            e['id'], e['company_id'], e['warehouse_id'], e['employee_id'],
+            e['employee_name'], e['amount'], e['comment'], e['created_by'],
+            e['status'], e['deleted_by'], e['deleted_at'], e['created_at'],
+          ],
+        );
+      }
+    } catch (e) {
+      print('[DashboardSync] ⚠️ Error syncing Employee Expenses: $e');
+    }
+
+    // ── Employees (for names in dashboard) ──
+    try {
+      final employees = await _supabase
+          .from('employees')
+          .select()
+          .eq('company_id', companyId);
+      for (final emp in employees) {
+        await _db.execute(
+          '''INSERT OR REPLACE INTO employees (
+            id, company_id, name, role_id, pin_code, allowed_warehouses,
+            is_active, inn, passport_number, passport_issued_by,
+            passport_issued_date, phone, photo_url,
+            salary_type, salary_amount, salary_auto_deduct,
+            created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          [
+            emp['id'], emp['company_id'], emp['name'], emp['role_id'],
+            emp['pin_code'], emp['allowed_warehouses'], emp['is_active'],
+            emp['inn'], emp['passport_number'], emp['passport_issued_by'],
+            emp['passport_issued_date'], emp['phone'], emp['photo_url'],
+            emp['salary_type'], emp['salary_amount'], emp['salary_auto_deduct'],
+            emp['created_at'], emp['updated_at'],
+          ],
+        );
+      }
+    } catch (e) {
+      print('[DashboardSync] ⚠️ Error syncing Employees: $e');
+    }
+
+    // ── Products (for inventory in dashboard) ──
+    try {
+      final products = await _supabase
+          .from('products')
+          .select()
+          .eq('company_id', companyId);
+      for (final p in products) {
+        await _db.execute(
+          '''INSERT OR REPLACE INTO products (
+            id, company_id, warehouse_id, category_id, name, sku, barcode,
+            description, cost_price, selling_price, quantity, unit,
+            min_stock, max_stock, sold_last_30_days, days_of_stock_left,
+            stock_zone, last_sold_at, image_url, is_public, b2c_description,
+            b2c_price, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          [
+            p['id'], p['company_id'], p['warehouse_id'], p['category_id'],
+            p['name'], p['sku'], p['barcode'], p['description'],
+            p['cost_price'], p['selling_price'], p['quantity'], p['unit'],
+            p['min_stock'], p['max_stock'], p['sold_last_30_days'],
+            p['days_of_stock_left'], p['stock_zone'], p['last_sold_at'],
+            p['image_url'], p['is_public'], p['b2c_description'],
+            p['b2c_price'], p['created_at'], p['updated_at'],
+          ],
+        );
+      }
+    } catch (e) {
+      print('[DashboardSync] ⚠️ Error syncing Products: $e');
+    }
+
+    // ── Companies (for owner_name in dashboard) ──
+    try {
+      final companies = await _supabase
+          .from('companies')
+          .select()
+          .eq('id', companyId);
+      for (final c in companies) {
+        await _db.execute(
+          '''INSERT OR REPLACE INTO companies (
+            id, name, license_key, owner_name, subscription_plan,
+            is_active, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+          [
+            c['id'], c['name'], c['license_key'], c['owner_name'],
+            c['subscription_plan'], c['is_active'],
+            c['created_at'], c['updated_at'],
+          ],
+        );
+      }
+    } catch (e) {
+      print('[DashboardSync] ⚠️ Error syncing Companies: $e');
+    }
+
+    print('[DashboardSync] ✅ Dashboard sync complete (with resilient fallback checks)');
+  }
 
   /// Get KPI data for the dashboard within a date range
   Future<Map<String, dynamic>> getKpiData(
@@ -241,12 +612,12 @@ class DashboardRepository {
         final maxHour = isToday ? now.hour + 1 : 24;
 
         for (int h = 0; h < maxHour; h++) {
-          cumRevenue += hourlyRevenue[h] ?? 0;
-          cumCost += hourlyCost[h] ?? 0;
+          final hRev = hourlyRevenue[h] ?? 0;
+          final hCost = hourlyCost[h] ?? 0;
           points.add(ChartPoint(
             label: '${h.toString().padLeft(2, '0')}:00',
-            revenue: cumRevenue,
-            profit: cumRevenue - cumCost,
+            revenue: hRev,
+            profit: hRev - hCost,
           ));
         }
         return points;
@@ -264,20 +635,17 @@ class DashboardRepository {
         }
 
         // Generate daily points with cumulative total
-        final totalDays = endDate.difference(startDate).inDays + 1;
         final points = <ChartPoint>[];
-        double cumRevenue = 0;
-        double cumCost = 0;
-        for (int i = 0; i < totalDays; i++) {
-          final dt = startDate.add(Duration(days: i));
+        for (int d = 0; d <= days; d++) {
+          final dt = startDate.add(Duration(days: d));
           final key = '${dt.year}-${dt.month}-${dt.day}';
-          cumRevenue += dailyRevenue[key] ?? 0;
-          cumCost += dailyCost[key] ?? 0;
+          final dRev = dailyRevenue[key] ?? 0;
+          final dCost = dailyCost[key] ?? 0;
+
           points.add(ChartPoint(
-            label:
-                '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}',
-            revenue: cumRevenue,
-            profit: cumRevenue - cumCost,
+            label: '${dt.day.toString().padLeft(2, '0')}.${dt.month.toString().padLeft(2, '0')}',
+            revenue: dRev,
+            profit: dRev - dCost,
           ));
         }
         return points;

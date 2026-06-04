@@ -662,11 +662,6 @@ class SalesCartPane extends ConsumerWidget {
         final receiptPrinterService = ref.read(printerServiceProvider);
         final receiptPrinterName = ref.read(defaultPrinterNameProvider);
 
-        // Close bottom sheet on mobile/tablet
-        if (!isDesktop && Navigator.of(context).canPop()) {
-          Navigator.of(context).pop();
-        }
-
         showInfoSnackBar(context, ref, 'Покупка успешно завершена!');
 
         // Show receipt print dialog
@@ -722,6 +717,7 @@ class SalesCartPane extends ConsumerWidget {
     final auth = preloadedAuth;
     final cur = preloadedCur;
     final cs = Theme.of(context).colorScheme;
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
     final now = DateTime.now();
     final dateStr =
         '${now.day.toString().padLeft(2, '0')}.${now.month.toString().padLeft(2, '0')}.${now.year}';
@@ -841,12 +837,22 @@ class SalesCartPane extends ConsumerWidget {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx),
+              onPressed: () {
+                Navigator.pop(ctx);
+                if (!isDesktop && context.mounted) {
+                  final nav = Navigator.maybeOf(context);
+                  if (nav != null && nav.canPop()) nav.pop();
+                }
+              },
               child: const Text('Закрыть'),
             ),
             FilledButton.icon(
               onPressed: () async {
                 Navigator.pop(ctx);
+                if (!isDesktop && context.mounted) {
+                  final nav = Navigator.maybeOf(context);
+                  if (nav != null && nav.canPop()) nav.pop();
+                }
                 final warehouseId = preloadedWarehouseId;
                 final activeW = auth.availableWarehouses
                     .where((w) => w.id == warehouseId)

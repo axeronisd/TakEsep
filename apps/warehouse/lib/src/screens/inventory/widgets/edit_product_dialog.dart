@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -152,7 +153,7 @@ class _EditProductSheetState extends State<_EditProductSheet> {
 
     try {
       // image_picker on Windows doesn't support camera natively and crashes
-      if (Platform.isWindows && source == ImageSource.camera) {
+      if (!kIsWeb && Platform.isWindows && source == ImageSource.camera) {
         if (!mounted) return;
         showErrorSnackBar(context, 'Камера не поддерживается на ПК (Windows)');
         return;

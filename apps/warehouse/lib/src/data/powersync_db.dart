@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:powersync/powersync.dart';
@@ -11,8 +12,13 @@ late final PowerSyncDatabase powerSyncDb;
 /// Initialize the PowerSync database as local-only SQLite.
 /// No cloud sync — all writes go directly to Supabase.
 Future<void> initPowerSync() async {
-  final dir = await getApplicationSupportDirectory();
-  final dbPath = join(dir.path, 'takesep.db');
+  String dbPath;
+  if (kIsWeb) {
+    dbPath = 'takesep.db'; // On web, it uses IndexedDB with this name
+  } else {
+    final dir = await getApplicationSupportDirectory();
+    dbPath = join(dir.path, 'takesep.db');
+  }
 
   powerSyncDb = PowerSyncDatabase(
     schema: schema,

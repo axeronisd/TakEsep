@@ -253,7 +253,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       } else {
         state = state.copyWith(
           isLoading: false,
-          error: 'Неверный ключ активации или компания отключена',
+          error: 'Неверный код компании или филиал отключен',
         );
         return false;
       }
@@ -270,7 +270,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     final companyId = state.currentCompany?.id;
     if (companyId == null) {
       state =
-          state.copyWith(error: 'Сначала активируйте терминал ключом компании');
+          state.copyWith(error: 'Сначала войдите в систему с кодом компании');
       return false;
     }
 

@@ -72,16 +72,16 @@ class CategoriesNotifier extends StateNotifier<AsyncValue<List<Category>>> {
   Future<void> _loadCategories() async {
     final companyId = ref.read(currentCompanyProvider)?.id;
     if (companyId == null) {
-      state = const AsyncValue.data([]);
+      if (mounted) state = const AsyncValue.data([]);
       return;
     }
     try {
-      state = const AsyncValue.loading();
+      if (mounted) state = const AsyncValue.loading();
       final repo = ref.read(inventoryRepositoryProvider);
       final categories = await repo.getCategories(companyId);
-      state = AsyncValue.data(categories);
+      if (mounted) state = AsyncValue.data(categories);
     } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      if (mounted) state = AsyncValue.error(e, st);
     }
   }
 }
@@ -128,16 +128,16 @@ class WarehousesNotifier extends StateNotifier<AsyncValue<List<Warehouse>>> {
   Future<void> _loadWarehouses() async {
     final companyId = ref.read(currentCompanyProvider)?.id;
     if (companyId == null) {
-      state = const AsyncValue.data([]);
+      if (mounted) state = const AsyncValue.data([]);
       return;
     }
     try {
-      state = const AsyncValue.loading();
+      if (mounted) state = const AsyncValue.loading();
       final repo = ref.read(inventoryRepositoryProvider);
       final warehouses = await repo.getWarehouses(companyId);
-      state = AsyncValue.data(warehouses);
+      if (mounted) state = AsyncValue.data(warehouses);
     } catch (e, st) {
-      state = AsyncValue.error(e, st);
+      if (mounted) state = AsyncValue.error(e, st);
     }
   }
 }
@@ -192,24 +192,26 @@ class InventoryNotifier extends StateNotifier<AsyncValue<List<Product>>> {
     final companyId = ref.read(currentCompanyProvider)?.id;
     final warehouseId = ref.read(selectedWarehouseIdProvider);
     if (companyId == null) {
-      state = const AsyncValue.data([]);
+      if (mounted) state = const AsyncValue.data([]);
       return;
     }
     try {
       // Don't set loading state if we already have data - prevents UI flicker
-      if (state is! AsyncData) {
+      if (mounted && state is! AsyncData) {
         state = const AsyncValue.loading();
       }
       final repo = ref.read(inventoryRepositoryProvider);
       final products =
           await repo.getProducts(companyId, warehouseId: warehouseId);
-      state = AsyncValue.data(products);
+      if (mounted) state = AsyncValue.data(products);
     } catch (e, st) {
       // Don't crash on error, keep existing data if available
-      if (state is AsyncData) {
-        print('InventoryNotifier load error (keeping existing data): $e');
-      } else {
-        state = AsyncValue.error(e, st);
+      if (mounted) {
+        if (state is AsyncData) {
+          print('InventoryNotifier load error (keeping existing data): $e');
+        } else {
+          state = AsyncValue.error(e, st);
+        }
       }
     }
   }

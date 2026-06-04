@@ -111,21 +111,57 @@ class ArrivalRepository {
   /// Get a single arrival by ID
   Future<Arrival?> getArrivalById(String id) async {
     try {
-      final arrivalJson = await _db.get(
+      // Try Supabase first to get fresh data (might be created on another device)
+      final arrivalJson = await _supabase
+          .from('arrivals')
+          .select()
+          .eq('id', id)
+          .maybeSingle();
+      
+      if (arrivalJson != null) {
+        final items = await _supabase
+            .from('arrival_items')
+            .select()
+            .eq('arrival_id', id);
+        return Arrival.fromJson({
+          ...arrivalJson,
+          'items': items,
+        });
+      }
+      
+      // Fallback to local
+      final localArrival = await _db.get(
         'SELECT * FROM arrivals WHERE id = ?',
         [id],
       );
-      final items = await _db.getAll(
+      final localItems = await _db.getAll(
         'SELECT * FROM arrival_items WHERE arrival_id = ?',
         [id],
       );
       return Arrival.fromJson({
-        ...arrivalJson,
-        'items': items,
+        ...localArrival,
+        'items': localItems,
       });
     } catch (e) {
-      print('ArrivalRepository getArrivalById error: $e');
-      return null;
+      print('ArrivalRepository getArrivalById Supabase error: $e');
+      // Final fallback to local if network is down
+      try {
+        final localArrival = await _db.get(
+          'SELECT * FROM arrivals WHERE id = ?',
+          [id],
+        );
+        final localItems = await _db.getAll(
+          'SELECT * FROM arrival_items WHERE arrival_id = ?',
+          [id],
+        );
+        return Arrival.fromJson({
+          ...localArrival,
+          'items': localItems,
+        });
+      } catch (e2) {
+        print('ArrivalRepository getArrivalById local error: $e2');
+        return null;
+      }
     }
   }
 
@@ -152,8 +188,10 @@ class ArrivalRepository {
       );
 
       // Insert arrival items
+      final itemIds = <String>[];
       for (final item in arrival.items) {
         final itemId = item.id.isEmpty ? const Uuid().v4() : item.id;
+        itemIds.add(itemId);
         await _db.execute(
           'INSERT INTO arrival_items (id, arrival_id, product_id, product_name, quantity, cost_price, selling_price, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
           [
@@ -204,9 +242,10 @@ class ArrivalRepository {
         });
 
         final arrivalItemsSync = <Map<String, dynamic>>[];
-        for (final item in arrival.items) {
+        for (int i = 0; i < arrival.items.length; i++) {
+          final item = arrival.items[i];
           arrivalItemsSync.add({
-            'id': item.id.isEmpty ? const Uuid().v4() : item.id,
+            'id': itemIds[i],
             'arrival_id': arrivalId,
             'product_id': item.productId,
             'product_name': item.productName,
@@ -236,9 +275,10 @@ class ArrivalRepository {
           'updated_at': now,
         });
         final arrivalItemsSync = <Map<String, dynamic>>[];
-        for (final item in arrival.items) {
+        for (int i = 0; i < arrival.items.length; i++) {
+          final item = arrival.items[i];
           arrivalItemsSync.add({
-            'id': item.id.isEmpty ? const Uuid().v4() : item.id,
+            'id': itemIds[i],
             'arrival_id': arrivalId,
             'product_id': item.productId,
             'product_name': item.productName,

@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -56,6 +57,7 @@ class UpdateService {
   }
 
   static String? get _currentPlatform {
+    if (kIsWeb) return 'web';
     try {
       if (Platform.isWindows) return 'windows';
       if (Platform.isAndroid) return 'android';
@@ -341,7 +343,7 @@ class _UpdateDialogState extends State<_UpdateDialog> {
 
     try {
       final dir = await getTemporaryDirectory();
-      final ext = Platform.isWindows ? '.exe' : '.apk';
+      final ext = (!kIsWeb && Platform.isWindows) ? '.exe' : '.apk';
       final filePath = '${dir.path}/TakEsep-update$ext';
       final file = File(filePath);
 
@@ -387,7 +389,7 @@ class _UpdateDialogState extends State<_UpdateDialog> {
       });
 
       // On Android, auto-launch install prompt
-      if (Platform.isAndroid) {
+      if (!kIsWeb && Platform.isAndroid) {
         _launchInstaller();
       }
     } catch (e) {
@@ -402,14 +404,14 @@ class _UpdateDialogState extends State<_UpdateDialog> {
     try {
       final dir = await getTemporaryDirectory();
 
-      if (Platform.isWindows) {
+      if (!kIsWeb && Platform.isWindows) {
         final installerPath = '${dir.path}/TakEsep-update.exe';
         // Launch installer with /SILENT flag → closes app → installs → relaunches
         await Process.start(installerPath, ['/SILENT', '/CLOSEAPPLICATIONS', '/RESTARTAPPLICATIONS'],
             mode: ProcessStartMode.detached);
         // Exit current app so installer can replace files
         exit(0);
-      } else if (Platform.isAndroid) {
+      } else if (!kIsWeb && Platform.isAndroid) {
         // On Android, open the download URL in browser for manual install
         // Direct APK install from temp dir requires FileProvider + content:// URI
         // which needs native channel. Browser download is more reliable.

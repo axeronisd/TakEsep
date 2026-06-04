@@ -624,7 +624,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       key: const ValueKey('owner'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _FieldLabel(label: 'Код авторизации филиала', icon: Icons.vpn_key_outlined),
+        const _FieldLabel(label: 'Код филиала (ID)', icon: Icons.business_outlined),
         const SizedBox(height: 8),
         TextFormField(
           controller: _keyController,
@@ -637,7 +637,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           decoration: _inputDecoration(
             cs,
             hint: 'XXXX-XXXX-XXXX-XXXX',
-            icon: Icons.vpn_key_outlined,
+            icon: Icons.business_outlined,
           ),
           onFieldSubmitted: (_) => _submitOwner(),
           textInputAction: TextInputAction.done,
@@ -651,7 +651,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       key: const ValueKey('employee'),
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _FieldLabel(label: 'Ключ сотрудника', icon: Icons.key_rounded),
+        const _FieldLabel(label: 'Логин сотрудника', icon: Icons.person_outline_rounded),
         const SizedBox(height: 8),
         TextFormField(
           controller: _loginController,
@@ -660,7 +660,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           decoration: _inputDecoration(
             cs,
             hint: 'AB3K-Q7YZ',
-            icon: Icons.key_rounded,
+            icon: Icons.person_outline_rounded,
           ),
           onFieldSubmitted: (_) => _pinFocus.requestFocus(),
           textInputAction: TextInputAction.next,

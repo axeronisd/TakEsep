@@ -36,7 +36,7 @@ class SettingsScreen extends ConsumerWidget {
       ]),
       _SettingsSection('Организация', [
         _SettingsItem('Профиль компании', Icons.business_rounded,
-            'Название, лицензия, статус',
+            'Название, тип аккаунта, статус',
             action: 'company'),
         _SettingsItem(
             'Витрина магазина', Icons.storefront_rounded, 'Логотип, баннер и описание',
