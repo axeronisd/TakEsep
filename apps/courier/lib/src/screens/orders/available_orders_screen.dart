@@ -11,6 +11,8 @@ import '../../services/order_alert_service.dart';
 import '../../providers/courier_providers.dart';
 import '../../theme/akjol_theme.dart';
 import '../../utils/location_disclosure.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 
 // ═══════════════════════════════════════════════════════════════
 // Available Orders Screen — with Cascading Routing
@@ -89,9 +91,9 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
 
     // Check for active delivery first
     try {
-      final active = await _orderService.getActiveDelivery(profile.id);
-      if (active != null && mounted) {
-        context.go('/delivery/${active['id']}');
+      final activeDeliveries = await _orderService.getActiveDeliveries(profile.id);
+      if (activeDeliveries.isNotEmpty && mounted) {
+        context.go('/map');
         return;
       }
     } catch (e) {
@@ -322,7 +324,7 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
                   ),
                 );
                 Future.delayed(const Duration(seconds: 1), () {
-                  if (mounted) context.go('/delivery/$orderId');
+                  if (mounted) context.go('/delivery_queue');
                 });
               }
             }
@@ -339,7 +341,7 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
     setState(() => _acting = true);
     try {
       await _orderService.acceptOrder(order['id'], profile.id);
-      if (mounted) context.go('/delivery/${order['id']}');
+      if (mounted) context.go('/map');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -864,6 +866,9 @@ class _OrderCard extends StatelessWidget {
 
                 // ── Items List ──
                 _buildItemsList(),
+                
+                // ── Mini Map ──
+                _buildMiniMap(),
 
                 const SizedBox(height: 8),
 
@@ -1059,6 +1064,86 @@ class _OrderCard extends StatelessWidget {
             );
           }),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMiniMap() {
+    final storeLat = (order['warehouses']?['latitude'] as num?)?.toDouble();
+    final storeLng = (order['warehouses']?['longitude'] as num?)?.toDouble();
+    final custLat = (order['customers']?['latitude'] as num?)?.toDouble() ?? (order['delivery_lat'] as num?)?.toDouble();
+    final custLng = (order['customers']?['longitude'] as num?)?.toDouble() ?? (order['delivery_lng'] as num?)?.toDouble();
+
+    if (storeLat == null || storeLng == null || custLat == null || custLng == null) {
+      return const SizedBox.shrink();
+    }
+
+    final storePoint = LatLng(storeLat, storeLng);
+    final custPoint = LatLng(custLat, custLng);
+
+    final bounds = LatLngBounds.fromPoints([storePoint, custPoint]);
+
+    return Container(
+      height: 120,
+      margin: const EdgeInsets.only(top: 10, bottom: 4),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: IgnorePointer(
+        child: FlutterMap(
+          options: MapOptions(
+            initialCameraFit: CameraFit.bounds(
+              bounds: bounds,
+              padding: const EdgeInsets.all(20),
+            ),
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+              userAgentPackageName: 'com.takesep.courier',
+            ),
+            PolylineLayer(
+              polylines: [
+                Polyline(
+                  points: [storePoint, custPoint],
+                  strokeWidth: 3,
+                  color: AkJolTheme.primary,
+                  pattern: const StrokePattern.dotted(),
+                ),
+              ],
+            ),
+            MarkerLayer(
+              markers: [
+                Marker(
+                  point: storePoint,
+                  width: 24,
+                  height: 24,
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: Colors.blue,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.storefront, size: 14, color: Colors.white),
+                  ),
+                ),
+                Marker(
+                  point: custPoint,
+                  width: 24,
+                  height: 24,
+                  child: Container(
+                    decoration: const BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.person, size: 14, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

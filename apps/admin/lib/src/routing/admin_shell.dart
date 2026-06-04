@@ -21,6 +21,8 @@ class AdminShell extends StatelessWidget {
     _NavSection('Система', [
       _NavDef(Icons.storage_rounded, 'База данных', '/database', ['/database'],
           AppColors.error),
+      _NavDef(Icons.radar_rounded, 'Зоны экосистемы', '/zones', ['/zones'], 
+          AppColors.warning),
     ]),
   ];
 
@@ -33,6 +35,7 @@ class AdminShell extends StatelessWidget {
     if (location.startsWith('/couriers')) return 'Курьеры';
     if (location.startsWith('/addresses')) return 'Адреса';
     if (location.startsWith('/database')) return 'База данных';
+    if (location.startsWith('/zones')) return 'Зоны экосистемы';
     return 'TakEsep Admin';
   }
 
@@ -48,6 +51,9 @@ class AdminShell extends StatelessWidget {
     }
     if (location.startsWith('/database')) {
       return 'Таблицы, записи и обслуживание';
+    }
+    if (location.startsWith('/zones')) {
+      return 'Глобальные зоны ограничения доставки';
     }
     return 'Панель управления экосистемой';
   }
@@ -298,7 +304,8 @@ class _MobileShell extends StatelessWidget {
     if (location == '/' || location.startsWith('/companies')) return 0;
     if (location.startsWith('/couriers')) return 1;
     if (location.startsWith('/addresses')) return 2;
-    if (location.startsWith('/database')) return 3;
+    if (location.startsWith('/zones')) return 3;
+    if (location.startsWith('/database')) return 4;
     return 0;
   }
 
@@ -308,6 +315,7 @@ class _MobileShell extends StatelessWidget {
       (Icons.business_rounded, 'Компании', '/'),
       (Icons.delivery_dining_rounded, 'Курьеры', '/couriers'),
       (Icons.map_rounded, 'Адреса', '/addresses'),
+      (Icons.radar_rounded, 'Зоны', '/zones'),
       (Icons.storage_rounded, 'База', '/database'),
     ];
 

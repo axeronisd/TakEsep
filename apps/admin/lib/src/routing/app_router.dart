@@ -6,6 +6,7 @@ import '../screens/companies/company_detail_screen.dart';
 import '../screens/couriers/couriers_screen.dart';
 import '../screens/addresses/addresses_screen.dart';
 import '../screens/database/database_manager_screen.dart';
+import '../screens/zones/ecosystem_zones_screen.dart';
 import 'admin_shell.dart';
 
 final adminRouterProvider = Provider<GoRouter>((ref) {
@@ -37,6 +38,10 @@ final adminRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/database',
             builder: (context, state) => const DatabaseManagerScreen(),
+          ),
+          GoRoute(
+            path: '/zones',
+            builder: (context, state) => const EcosystemZonesScreen(),
           ),
         ],
       ),

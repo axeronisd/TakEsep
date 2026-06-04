@@ -177,11 +177,11 @@ class OrderService {
         .single();
   }
 
-  /// Get courier's active delivery (if any)
-  Future<Map<String, dynamic>?> getActiveDelivery(String courierId) async {
-    return await _supabase
+  /// Get courier's active deliveries (up to 5)
+  Future<List<Map<String, dynamic>>> getActiveDeliveries(String courierId) async {
+    final data = await _supabase
         .from('delivery_orders')
-        .select()
+        .select('*, customers(name, phone), warehouses(name, address, latitude, longitude), delivery_order_items(product_id, name, quantity, unit_price, total)')
         .eq('courier_id', courierId)
         .inFilter('status', [
           'courier_assigned',
@@ -192,7 +192,9 @@ class OrderService {
           'picked_up',
           'arrived',
         ])
-        .maybeSingle();
+        .order('created_at', ascending: true)
+        .limit(5);
+    return List<Map<String, dynamic>>.from(data);
   }
 
   /// Get courier's delivery history

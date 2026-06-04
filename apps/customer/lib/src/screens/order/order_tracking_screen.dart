@@ -65,6 +65,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   // Polling fallback timer (in case Realtime doesn't fire)
   Timer? _pollTimer;
   String? _lastKnownStatus;
+  
+  // Courier Multi-Order Support
+  bool _courierHasOtherOrders = false;
 
   @override
   void initState() {
@@ -324,6 +327,25 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               (courier['current_lat'] as num?)?.toDouble();
           _courierLng =
               (courier['current_lng'] as num?)?.toDouble();
+              
+          // Check for multi-orders
+          final courierId = data['courier_id'];
+          if (courierId != null) {
+            _supabase
+                .from('delivery_orders')
+                .select('id')
+                .eq('courier_id', courierId)
+                .inFilter('status', ['courier_assigned', 'picked_up'])
+                .neq('id', widget.orderId)
+                .limit(1)
+                .then((rows) {
+              if (mounted) {
+                setState(() {
+                  _courierHasOtherOrders = rows.isNotEmpty;
+                });
+              }
+            }).catchError((_) {});
+          }
         }
       });
 
@@ -442,6 +464,33 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
           // ── Transport change notification ──
           _buildTransportChangeBanner(),
+          
+          if (_courierHasOtherOrders && (status == 'picked_up' || status == 'courier_assigned'))
+            Container(
+              margin: const EdgeInsets.only(top: 12),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.amber.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.info_outline, color: Colors.amber, size: 24),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Курьер доставляет другой заказ по пути к вам',
+                      style: TextStyle(
+                        color: Colors.amber,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
           // ── QR Payment section (after courier accepts) ──
           if (status == 'courier_assigned')

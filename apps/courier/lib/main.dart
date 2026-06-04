@@ -13,41 +13,41 @@ import 'src/services/firebase_push_bootstrap.dart';
 import 'src/services/notification_service.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-
   const showErrorScreen = bool.fromEnvironment('dart.vm.product') == false;
-
-  FlutterError.onError = (details) {
-    final allText = '${details.exceptionAsString()} ${details.stack ?? ""}';
-    if (_isNetworkErrorString(allText)) {
-      debugPrint(
-        '[AkJol Pro] FlutterError network suppressed: ${details.exceptionAsString()}',
-      );
-      return;
-    }
-    FlutterError.presentError(details);
-    if (showErrorScreen) {
-      _showErrorOnScreen(
-        details.exceptionAsString(),
-        details.stack?.toString(),
-      );
-    }
-  };
-
-  PlatformDispatcher.instance.onError = (error, stack) {
-    if (_isNetworkError(error)) {
-      debugPrint('[AkJol Pro] Network error suppressed: $error');
-      return true;
-    }
-    debugPrint('[AkJol Pro] Platform error: $error');
-    if (showErrorScreen) {
-      _showErrorOnScreen('$error', stack.toString());
-    }
-    return true;
-  };
 
   runZonedGuarded(
     () async {
+      WidgetsFlutterBinding.ensureInitialized();
+
+      FlutterError.onError = (details) {
+        final allText = '${details.exceptionAsString()} ${details.stack ?? ""}';
+        if (_isNetworkErrorString(allText)) {
+          debugPrint(
+            '[AkJol Pro] FlutterError network suppressed: ${details.exceptionAsString()}',
+          );
+          return;
+        }
+        FlutterError.presentError(details);
+        if (showErrorScreen) {
+          _showErrorOnScreen(
+            details.exceptionAsString(),
+            details.stack?.toString(),
+          );
+        }
+      };
+
+      PlatformDispatcher.instance.onError = (error, stack) {
+        if (_isNetworkError(error)) {
+          debugPrint('[AkJol Pro] Network error suppressed: $error');
+          return true;
+        }
+        debugPrint('[AkJol Pro] Platform error: $error');
+        if (showErrorScreen) {
+          _showErrorOnScreen('$error', stack.toString());
+        }
+        return true;
+      };
+
       try {
         await _bootstrapApp();
       } catch (e, st) {
@@ -96,8 +96,12 @@ Future<void> _bootstrapApp() async {
     debugPrint('[AkJol Pro] Firebase initialized ✅');
   } catch (e, st) {
     debugPrint('[AkJol Pro] Firebase init FAILED: $e');
-    _showErrorOnScreen('Firebase init failed: $e', st.toString());
-    return;
+    if (kIsWeb) {
+      debugPrint('[AkJol Pro] Ignoring Firebase error on Web');
+    } else {
+      _showErrorOnScreen('Firebase init failed: $e', st.toString());
+      return;
+    }
   }
 
   // ─── Show app UI IMMEDIATELY ───

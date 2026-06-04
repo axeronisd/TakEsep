@@ -5,6 +5,9 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 
 import '../../providers/auth_providers.dart';
 import '../../utils/snackbar_helper.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import '../../utils/snackbar_helper.dart';
 
 /// Города Кыргызстана для быстрого выбора
 const _kgCities = [
@@ -410,107 +413,253 @@ class _RadiusZoneDialog extends StatefulWidget {
 }
 
 class _RadiusZoneDialogState extends State<_RadiusZoneDialog> {
-  final _nameCtrl = TextEditingController(text: 'Зона доставки');
+  final _nameCtrl = TextEditingController(text: 'Новая зона');
   final _radiusCtrl = TextEditingController(text: '5');
   final _feeCtrl = TextEditingController(text: '100');
   final _freeFromCtrl = TextEditingController(text: '500');
   final _minOrderCtrl = TextEditingController(text: '0');
   final _minutesCtrl = TextEditingController(text: '60');
 
-  Map<String, dynamic>? _selectedCity;
+  final MapController _mapCtrl = MapController();
+  LatLng _center = const LatLng(42.8746, 74.5698);
+  double _radiusKm = 5.0;
+
+  List<Map<String, dynamic>> _ecosystemZones = [];
+  bool _loadingZones = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadEcosystemZones();
+    _radiusCtrl.addListener(() {
+      setState(() {
+        _radiusKm = double.tryParse(_radiusCtrl.text) ?? 5.0;
+      });
+    });
+  }
+
+  Future<void> _loadEcosystemZones() async {
+    try {
+      final data = await Supabase.instance.client
+          .from('ecosystem_zones')
+          .select()
+          .eq('is_active', true);
+      setState(() {
+        _ecosystemZones = List<Map<String, dynamic>>.from(data);
+        _loadingZones = false;
+      });
+      if (_ecosystemZones.isNotEmpty) {
+        final first = _ecosystemZones.first;
+        setState(() {
+          _center = LatLng(first['center_lat'] as double, first['center_lng'] as double);
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading ecosystem zones: $e');
+      setState(() => _loadingZones = false);
+    }
+  }
+
+  bool _isWithinEcosystem() {
+    if (_ecosystemZones.isEmpty) return true; // No restrictions if no zones defined
+    final distanceCalc = const Distance();
+    
+    for (final ecoZone in _ecosystemZones) {
+      final ecoCenter = LatLng(ecoZone['center_lat'] as double, ecoZone['center_lng'] as double);
+      final ecoRadius = (ecoZone['radius_km'] as num).toDouble();
+      
+      final d = distanceCalc.as(LengthUnit.Kilometer, _center, ecoCenter);
+      // Our radius must fit entirely inside the ecosystem radius
+      if (d + _radiusKm <= ecoRadius) {
+        return true;
+      }
+    }
+    return false;
+  }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Row(
-        children: [
-          Icon(Icons.radar_rounded, color: Colors.blue, size: 22),
-          SizedBox(width: 8),
-          Text('Зона по радиусу'),
-        ],
-      ),
-      content: SizedBox(
-        width: 400,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(controller: _nameCtrl,
-                  decoration: const InputDecoration(labelText: 'Название зоны')),
-              const SizedBox(height: 12),
+    final isValid = _isWithinEcosystem();
 
-              // Город как центр
-              const Text('Центр зоны', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
-              const SizedBox(height: 6),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: _kgCities.take(8).map((city) {
-                  final isSelected = _selectedCity?['id'] == city['id'];
-                  return ChoiceChip(
-                    label: Text(city['name'] as String, style: const TextStyle(fontSize: 12)),
-                    selected: isSelected,
-                    selectedColor: Colors.blue.withValues(alpha: 0.15),
-                    onSelected: (v) {
-                      setState(() {
-                        _selectedCity = v ? city : null;
-                        if (v) _nameCtrl.text = '${city['name']} (${_radiusCtrl.text} км)';
-                      });
-                    },
-                  );
-                }).toList(),
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: SizedBox(
+        width: 800,
+        height: 600,
+        child: Row(
+          children: [
+            // Map side
+            Expanded(
+              flex: 3,
+              child: ClipRRect(
+                borderRadius: const BorderRadius.horizontal(left: Radius.circular(16)),
+                child: Stack(
+                  children: [
+                    FlutterMap(
+                      mapController: _mapCtrl,
+                      options: MapOptions(
+                        initialCenter: _center,
+                        initialZoom: 12.0,
+                        onPositionChanged: (pos, hasGesture) {
+                          if (hasGesture && pos.center != null) {
+                            setState(() {
+                              _center = pos.center!;
+                            });
+                          }
+                        },
+                      ),
+                      children: [
+                        TileLayer(
+                          urlTemplate: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+                          subdomains: const ['a', 'b', 'c', 'd'],
+                        ),
+                        CircleLayer(
+                          circles: [
+                            // Ecosystem Zones
+                            ..._ecosystemZones.map((z) => CircleMarker(
+                                  point: LatLng(z['center_lat'] as double, z['center_lng'] as double),
+                                  color: Colors.red.withValues(alpha: 0.1),
+                                  borderColor: Colors.red.withValues(alpha: 0.5),
+                                  borderStrokeWidth: 2,
+                                  useRadiusInMeter: true,
+                                  radius: (z['radius_km'] as num).toDouble() * 1000,
+                                )),
+                            // Business Zone
+                            CircleMarker(
+                              point: _center,
+                              color: isValid
+                                  ? Colors.blue.withValues(alpha: 0.2)
+                                  : Colors.orange.withValues(alpha: 0.4),
+                              borderColor: isValid ? Colors.blue : Colors.orange,
+                              borderStrokeWidth: 2,
+                              useRadiusInMeter: true,
+                              radius: _radiusKm * 1000,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    // Center marker icon
+                    const Center(
+                      child: Padding(
+                        padding: EdgeInsets.only(bottom: 24),
+                        child: Icon(Icons.location_on, color: Colors.blue, size: 36),
+                      ),
+                    ),
+                    // Error message overlay
+                    if (!isValid)
+                      Positioned(
+                        bottom: 16, left: 16, right: 16,
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10)],
+                            border: Border.all(color: Colors.orange),
+                          ),
+                          child: const Row(
+                            children: [
+                              Icon(Icons.warning_amber_rounded, color: Colors.orange),
+                              SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  'Ваша зона выходит за разрешенные пределы экосистемы. '
+                                  'Пожалуйста, уменьшите радиус или переместите центр.',
+                                  style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 12),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 12),
-              TextField(controller: _radiusCtrl, keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Радиус (км)', suffixText: 'км'),
-                  onChanged: (v) {
-                    if (_selectedCity != null) {
-                      _nameCtrl.text = '${_selectedCity!['name']} ($v км)';
-                    }
-                  }),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(child: TextField(controller: _feeCtrl, keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Стоимость', suffixText: 'сом'))),
-                  const SizedBox(width: 8),
-                  Expanded(child: TextField(controller: _freeFromCtrl, keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Бесплатно от', suffixText: 'сом'))),
-                ],
+            ),
+            
+            // Form side
+            Expanded(
+              flex: 2,
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Row(
+                      children: [
+                        Icon(Icons.radar_rounded, color: Colors.blue, size: 24),
+                        SizedBox(width: 8),
+                        Text('Настройка зоны', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Перетащите карту чтобы выбрать центр.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                            const SizedBox(height: 16),
+                            TextField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Название зоны')),
+                            const SizedBox(height: 16),
+                            TextField(controller: _radiusCtrl, keyboardType: TextInputType.number,
+                                decoration: const InputDecoration(labelText: 'Радиус (км)', suffixText: 'км')),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(child: TextField(controller: _feeCtrl, keyboardType: TextInputType.number,
+                                    decoration: const InputDecoration(labelText: 'Стоимость', suffixText: 'сом'))),
+                                const SizedBox(width: 12),
+                                Expanded(child: TextField(controller: _freeFromCtrl, keyboardType: TextInputType.number,
+                                    decoration: const InputDecoration(labelText: 'Бесплатно от', suffixText: 'сом'))),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(child: TextField(controller: _minOrderCtrl, keyboardType: TextInputType.number,
+                                    decoration: const InputDecoration(labelText: 'Мин. заказ', suffixText: 'сом'))),
+                                const SizedBox(width: 12),
+                                Expanded(child: TextField(controller: _minutesCtrl, keyboardType: TextInputType.number,
+                                    decoration: const InputDecoration(labelText: 'Время', suffixText: 'мин'))),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Отмена')),
+                        const SizedBox(width: 12),
+                        FilledButton(
+                          onPressed: isValid && !_loadingZones ? () {
+                            Navigator.pop(context, {
+                              'name': _nameCtrl.text,
+                              'lat': _center.latitude,
+                              'lng': _center.longitude,
+                              'radius': _radiusKm,
+                              'fee': double.tryParse(_feeCtrl.text) ?? 0,
+                              'free_from': double.tryParse(_freeFromCtrl.text) ?? 0,
+                              'min_order': double.tryParse(_minOrderCtrl.text) ?? 0,
+                              'minutes': int.tryParse(_minutesCtrl.text) ?? 60,
+                            });
+                          } : null,
+                          child: const Text('Сохранить'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(child: TextField(controller: _minOrderCtrl, keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Мин. заказ', suffixText: 'сом'))),
-                  const SizedBox(width: 8),
-                  Expanded(child: TextField(controller: _minutesCtrl, keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(labelText: 'Время', suffixText: 'мин'))),
-                ],
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Отмена')),
-        FilledButton(
-          onPressed: _selectedCity == null ? null : () {
-            Navigator.pop(context, {
-              'name': _nameCtrl.text,
-              'lat': _selectedCity!['lat'],
-              'lng': _selectedCity!['lng'],
-              'radius': double.tryParse(_radiusCtrl.text) ?? 5,
-              'fee': double.tryParse(_feeCtrl.text) ?? 0,
-              'free_from': double.tryParse(_freeFromCtrl.text) ?? 0,
-              'min_order': double.tryParse(_minOrderCtrl.text) ?? 0,
-              'minutes': int.tryParse(_minutesCtrl.text) ?? 60,
-            });
-          },
-          child: const Text('Добавить'),
-        ),
-      ],
     );
   }
 }

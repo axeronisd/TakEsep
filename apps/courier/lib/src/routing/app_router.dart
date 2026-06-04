@@ -4,10 +4,11 @@ import 'package:go_router/go_router.dart';
 import '../services/firebase_push_bootstrap.dart';
 import '../screens/auth/courier_login_screen.dart';
 import '../screens/orders/available_orders_screen.dart';
-import '../screens/delivery/active_delivery_screen.dart';
+
+import '../screens/delivery/delivery_queue_screen.dart';
 import '../screens/earnings/courier_earnings_screen.dart';
 import '../screens/profile/courier_profile_screen.dart';
-import '../screens/map/courier_map_screen.dart';
+
 import '../providers/courier_providers.dart';
 import '../theme/akjol_theme.dart';
 
@@ -34,12 +35,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: '/analytics',
             builder: (_, __) => const CourierEarningsScreen(),
           ),
-          GoRoute(path: '/map', builder: (_, __) => const CourierMapScreen()),
-          GoRoute(
-            path: '/delivery/:id',
-            builder: (_, state) =>
-                ActiveDeliveryScreen(orderId: state.pathParameters['id']!),
-          ),
+          GoRoute(path: '/map', builder: (_, __) => const DeliveryQueueScreen()),
+
           GoRoute(
             path: '/profile',
             builder: (_, __) => const CourierProfileScreen(),
@@ -59,9 +56,9 @@ class _CourierShell extends StatelessWidget {
     final location = GoRouterState.of(context).matchedLocation;
 
     int currentIndex = 0;
-    if (location.startsWith('/delivery/')) currentIndex = 0;
     if (location.startsWith('/analytics')) currentIndex = 1;
     if (location.startsWith('/map')) currentIndex = 2;
+    if (location.startsWith('/delivery/')) currentIndex = 2; 
     if (location.startsWith('/profile')) currentIndex = 3;
 
     return Scaffold(
