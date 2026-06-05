@@ -30,10 +30,15 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
   LatLng _warehouseLocation = const LatLng(42.8746, 74.5698);
   double _radiusKm = 3.0;
 
+  List<Map<String, dynamic>> _ecosystemZones = [];
+  bool _loadingEco = true;
+  String? _errorLoadingEco;
+
   @override
   void initState() {
     super.initState();
     _loadSettings();
+    _loadEcosystemZones();
   }
 
   @override
@@ -41,6 +46,43 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
     _addressController.dispose();
     _descController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadEcosystemZones() async {
+    try {
+      final data = await _supabase
+          .from('ecosystem_zones')
+          .select()
+          .eq('is_active', true);
+      setState(() {
+        _ecosystemZones = List<Map<String, dynamic>>.from(data);
+        _loadingEco = false;
+        _errorLoadingEco = null;
+      });
+    } catch (e) {
+      debugPrint('Error loading ecosystem zones in settings: $e');
+      setState(() {
+        _errorLoadingEco = e.toString();
+        _loadingEco = false;
+      });
+    }
+  }
+
+  bool _isWithinEcosystem() {
+    if (_errorLoadingEco != null) return false;
+    if (_ecosystemZones.isEmpty) return true; // No restrictions if no zones defined
+    final distanceCalc = const Distance();
+    
+    for (final ecoZone in _ecosystemZones) {
+      final ecoCenter = LatLng(ecoZone['center_lat'] as double, ecoZone['center_lng'] as double);
+      final ecoRadius = (ecoZone['radius_km'] as num).toDouble();
+      
+      final d = distanceCalc.as(LengthUnit.Kilometer, _warehouseLocation, ecoCenter);
+      if (d + _radiusKm <= ecoRadius) {
+        return true;
+      }
+    }
+    return false;
   }
 
   String get _warehouseId => widget.warehouseId;
@@ -143,12 +185,14 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
       );
     }
 
+    final isValid = _isWithinEcosystem();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Настройки доставки'),
         actions: [
           TextButton.icon(
-            onPressed: _saving ? null : _save,
+            onPressed: (_saving || !isValid || _loadingEco) ? null : _save,
             icon: _saving
                 ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.save),
@@ -214,11 +258,25 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
                     userAgentPackageName: 'com.takesep.app',
                   ),
                   CircleLayer(circles: [
+                    // Ecosystem Zones
+                    ..._ecosystemZones.map((z) => CircleMarker(
+                          point: LatLng(z['center_lat'] as double, z['center_lng'] as double),
+                          color: Colors.red.withValues(alpha: 0.1),
+                          borderColor: Colors.red.withValues(alpha: 0.5),
+                          borderStrokeWidth: 2,
+                          useRadiusInMeter: true,
+                          radius: (z['radius_km'] as num).toDouble() * 1000,
+                        )),
+                    // Warehouse delivery area
                     CircleMarker(
                       point: _warehouseLocation,
-                      color: Colors.green.withValues(alpha: 0.15),
-                      borderColor: Colors.green, borderStrokeWidth: 2,
-                      useRadiusInMeter: true, radius: _radiusKm * 1000,
+                      color: isValid
+                          ? Colors.green.withValues(alpha: 0.15)
+                          : Colors.orange.withValues(alpha: 0.35),
+                      borderColor: isValid ? Colors.green : Colors.orange,
+                      borderStrokeWidth: 2,
+                      useRadiusInMeter: true,
+                      radius: _radiusKm * 1000,
                     ),
                   ]),
                   MarkerLayer(markers: [
@@ -248,6 +306,40 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
               ),
             ]),
           ),
+          if (!isValid) ...[
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _errorLoadingEco != null ? Colors.red : Colors.orange),
+                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    _errorLoadingEco != null ? Icons.error_outline : Icons.warning_amber_rounded,
+                    color: _errorLoadingEco != null ? Colors.red : Colors.orange,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      _errorLoadingEco != null
+                          ? 'Ошибка загрузки ограничений экосистемы: $_errorLoadingEco'
+                          : 'Радиус доставки вашего магазина выходит за разрешенные пределы экосистемы. '
+                              'Пожалуйста, уменьшите радиус или скорректируйте положение магазина.',
+                      style: TextStyle(
+                        color: _errorLoadingEco != null ? Colors.red : Colors.orange,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
           const SizedBox(height: 12),
 
           // Radius
