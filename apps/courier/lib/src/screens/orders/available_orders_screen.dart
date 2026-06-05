@@ -40,6 +40,7 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
   bool _loading = true;
   bool _isOnline = false;
   bool _acting = false;
+  int _activeDeliveryCount = 0;
   RealtimeChannel? _channel;
   final _alertService = OrderAlertService();
   int _previousOrderCount = 0;
@@ -89,12 +90,11 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
       if (mounted) setState(() {});
     }
 
-    // Check for active delivery first
+    // Check for active deliveries — show count but do NOT redirect
     try {
       final activeDeliveries = await _orderService.getActiveDeliveries(profile.id);
-      if (activeDeliveries.isNotEmpty && mounted) {
-        context.go('/map');
-        return;
+      if (mounted) {
+        setState(() => _activeDeliveryCount = activeDeliveries.length);
       }
     } catch (e) {
       debugPrint('⚠️ Active delivery check failed: $e');
@@ -324,7 +324,7 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
                   ),
                 );
                 Future.delayed(const Duration(seconds: 1), () {
-                  if (mounted) context.go('/delivery_queue');
+                  if (mounted) context.go('/map');
                 });
               }
             }
@@ -341,7 +341,28 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
     setState(() => _acting = true);
     try {
       await _orderService.acceptOrder(order['id'], profile.id);
-      if (mounted) context.go('/map');
+      if (mounted) {
+        // Update active delivery count
+        setState(() => _activeDeliveryCount++);
+        // Reload orders to remove the accepted order from the list
+        await _loadOrders();
+        // Show success snackbar
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                const SizedBox(width: 10),
+                const Text('Заказ принят!', style: TextStyle(fontWeight: FontWeight.w700)),
+              ],
+            ),
+            backgroundColor: AkJolTheme.primary,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 2),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -368,6 +389,13 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
           children: [
             // ── Status Header ──
             _buildStatusHeader(profile),
+
+            // ── Active Deliveries Banner ──
+            if (_activeDeliveryCount > 0)
+              _ActiveDeliveriesBanner(
+                count: _activeDeliveryCount,
+                onGoToMap: () => context.go('/map'),
+              ),
 
             // ── Content ──
             Expanded(
@@ -628,6 +656,101 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
             textAlign: TextAlign.center,
           ),
         ],
+      ),
+    );
+  }
+
+  String _ordWord(int n) {
+    if (n == 1) return 'заказ';
+    if (n >= 2 && n <= 4) return 'заказа';
+    return 'заказов';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// ACTIVE DELIVERIES BANNER
+// Shows the courier they have orders in progress with a "Go to map" button
+// ═══════════════════════════════════════════════════════════════
+
+class _ActiveDeliveriesBanner extends StatelessWidget {
+  final int count;
+  final VoidCallback onGoToMap;
+  const _ActiveDeliveriesBanner({required this.count, required this.onGoToMap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onGoToMap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              AkJolTheme.primary.withValues(alpha: 0.2),
+              AkJolTheme.primary.withValues(alpha: 0.08),
+            ],
+          ),
+          border: Border(
+            bottom: BorderSide(color: AkJolTheme.primary.withValues(alpha: 0.3)),
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                color: AkJolTheme.primary.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Text(
+                  '$count',
+                  style: const TextStyle(
+                    color: AkJolTheme.primary,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '$count ${_ordWord(count)} в работе',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
+                  Text(
+                    'Нажмите, чтобы перейти на карту',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5),
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.map_rounded,
+              color: AkJolTheme.primary.withValues(alpha: 0.8),
+              size: 24,
+            ),
+            const SizedBox(width: 4),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: Colors.white.withValues(alpha: 0.4),
+              size: 14,
+            ),
+          ],
+        ),
       ),
     );
   }
