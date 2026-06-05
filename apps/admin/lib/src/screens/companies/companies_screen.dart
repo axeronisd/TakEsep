@@ -119,7 +119,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                     child: Text(
                       title,
                       style: const TextStyle(
-                          color: Colors.white,
+                          color: AppColors.darkTextPrimary,
                           fontSize: 18,
                           fontWeight: FontWeight.w700),
                     ),
@@ -129,7 +129,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
               ),
               const SizedBox(height: 16),
               const Text('Лицензионный Ключ',
-                  style: TextStyle(color: Color(0xFF8888AA), fontSize: 12)),
+                  style: TextStyle(color: AppColors.darkTextTertiary, fontSize: 12)),
               const SizedBox(height: 4),
               Row(
                 children: [
@@ -138,13 +138,13 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF12122B),
+                        color: AppColors.darkSurfaceVariant,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: SelectableText(
                         key,
                         style: const TextStyle(
-                            color: Color(0xFFA29BFE),
+                            color: AppColors.primaryLight,
                             fontFamily: 'monospace',
                             fontSize: 13,
                             fontWeight: FontWeight.bold),
@@ -159,9 +159,9 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                         const SnackBar(content: Text('Ключ скопирован')),
                       );
                     },
-                    icon: const Icon(Icons.copy, color: Color(0xFF8888AA), size: 20),
+                    icon: const Icon(Icons.copy_rounded, color: AppColors.darkTextSecondary, size: 20),
                     style: IconButton.styleFrom(
-                      backgroundColor: const Color(0xFF12122B),
+                      backgroundColor: AppColors.darkSurfaceVariant,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),
                     ),
@@ -169,7 +169,8 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              const Divider(color: Color(0xFF2A2A5A)),
+              const Divider(color: AppColors.darkBorder),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
@@ -178,11 +179,11 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         side: BorderSide(
                             color: isActive
-                                ? const Color(0xFFFF6B6B).withOpacity(0.5)
-                                : const Color(0xFF00B894).withOpacity(0.5)),
+                                ? AppColors.error.withValues(alpha: 0.5)
+                                : AppColors.success.withValues(alpha: 0.5)),
                         foregroundColor: isActive
-                            ? const Color(0xFFFF6B6B)
-                            : const Color(0xFF00B894),
+                            ? AppColors.errorLight
+                            : AppColors.successLight,
                       ),
                       icon: Icon(
                           isActive ? Icons.block : Icons.check_circle_outline,
@@ -196,10 +197,10 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 12),
-                        backgroundColor: const Color(0xFFFDAA5E),
-                        foregroundColor: const Color(0xFF2D3436),
+                        backgroundColor: AppColors.warning,
+                        foregroundColor: Colors.white,
                       ),
-                      icon: const Icon(Icons.vpn_key, size: 18),
+                      icon: const Icon(Icons.vpn_key_rounded, size: 18),
                       label: const Text('Сменить'),
                       onPressed: () => _regenerateKeyForCompany(company['id']),
                     ),
@@ -216,9 +217,9 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
   Widget _buildTable(List<Map<String, dynamic>> companies) {
     return Container(
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A3E),
+        color: AppColors.darkSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFF2A2A5A)),
+        border: Border.all(color: AppColors.darkBorder),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -227,13 +228,13 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
           child: SingleChildScrollView(
             child: DataTable(
               headingRowColor:
-                  WidgetStateProperty.all(const Color(0xFF12122B)),
+                  WidgetStateProperty.all(AppColors.darkSurfaceVariant),
               dataRowColor: WidgetStateProperty.all(Colors.transparent),
               columns: const [
-                DataColumn(label: Text('Компания', style: TextStyle(color: Color(0xFF8888AA), fontWeight: FontWeight.w600))),
-                DataColumn(label: Text('Ключ', style: TextStyle(color: Color(0xFF8888AA), fontWeight: FontWeight.w600))),
-                DataColumn(label: Text('Статус', style: TextStyle(color: Color(0xFF8888AA), fontWeight: FontWeight.w600))),
-                DataColumn(label: Text('Действия', style: TextStyle(color: Color(0xFF8888AA), fontWeight: FontWeight.w600))),
+                DataColumn(label: Text('Компания', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600))),
+                DataColumn(label: Text('Ключ', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600))),
+                DataColumn(label: Text('Статус', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600))),
+                DataColumn(label: Text('Действия', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600))),
               ],
               rows: companies.map((c) => _buildRow(c)).toList(),
             ),
@@ -263,13 +264,13 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
             SelectableText(
               key,
               style: const TextStyle(
-                  color: Color(0xFFA29BFE),
+                  color: AppColors.primaryLight,
                   fontFamily: 'monospace',
                   fontSize: 13),
             ),
             const SizedBox(width: 6),
             IconButton(
-              icon: const Icon(Icons.copy, size: 14, color: Color(0xFF8888AA)),
+              icon: const Icon(Icons.copy_rounded, size: 14, color: AppColors.darkTextTertiary),
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: key));
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -293,13 +294,13 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                   isActive ? Icons.block : Icons.check_circle_outline,
                   size: 18,
                   color: isActive
-                      ? const Color(0xFFFF6B6B)
-                      : const Color(0xFF00B894)),
+                      ? AppColors.errorLight
+                      : AppColors.successLight),
               onPressed: () => _toggleCompanyStatus(company['id'], !isActive),
               tooltip: isActive ? 'Деактивировать' : 'Активировать',
             ),
             IconButton(
-              icon: const Icon(Icons.vpn_key, size: 18, color: Color(0xFFFDAA5E)),
+              icon: const Icon(Icons.vpn_key_rounded, size: 18, color: AppColors.warningLight),
               onPressed: () => _regenerateKeyForCompany(company['id']),
               tooltip: 'Перевыпустить ключ',
             ),
@@ -335,10 +336,10 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A3E),
+        backgroundColor: AppColors.darkSurface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Создать компанию',
-            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+            style: TextStyle(color: AppColors.darkTextPrimary, fontWeight: FontWeight.w700)),
         content: SizedBox(
           width: 440,
           child: Column(
@@ -349,25 +350,25 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
                   hintText: 'Название компании',
-                  hintStyle: TextStyle(color: Color(0xFF6666AA)),
-                  prefixIcon: Icon(Icons.business, color: Color(0xFF6666AA)),
+                  hintStyle: TextStyle(color: AppColors.darkTextTertiary),
+                  prefixIcon: Icon(Icons.business_rounded, color: AppColors.darkTextTertiary),
                 ),
               ),
               const SizedBox(height: 14),
               TextField(
                 controller: keyCtrl,
                 style: const TextStyle(
-                  color: Color(0xFFA29BFE),
+                  color: AppColors.primaryLight,
                   fontFamily: 'monospace',
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
                 ),
                 decoration: InputDecoration(
                   hintText: 'XXXX-XXXX-XXXX-XXXX',
-                  hintStyle: const TextStyle(color: Color(0xFF6666AA)),
-                  prefixIcon: const Icon(Icons.vpn_key, color: Color(0xFF6666AA)),
+                  hintStyle: const TextStyle(color: AppColors.darkTextTertiary),
+                  prefixIcon: const Icon(Icons.vpn_key_rounded, color: AppColors.darkTextTertiary),
                   suffixIcon: IconButton(
-                    icon: const Icon(Icons.refresh_rounded, color: Color(0xFFFDAA5E)),
+                    icon: const Icon(Icons.refresh_rounded, color: AppColors.warningLight),
                     tooltip: 'Сгенерировать новый ключ',
                     onPressed: () {
                       keyCtrl.text = repo.generateLicenseKey();
@@ -381,11 +382,11 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Отмена', style: TextStyle(color: Color(0xFF8888AA))),
+            child: const Text('Отмена', style: TextStyle(color: AppColors.darkTextSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6C5CE7),
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
             ),
             onPressed: () async {
@@ -409,7 +410,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                         content: Text('Ошибка при создании компании'),
-                        backgroundColor: Color(0xFFFF6B6B)),
+                        backgroundColor: AppColors.error),
                   );
                 }
               }
@@ -431,14 +432,14 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: (isActive ? const Color(0xFF00B894) : const Color(0xFFFF6B6B))
-            .withOpacity(0.15),
+        color: (isActive ? AppColors.success : AppColors.error)
+            .withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         isActive ? 'АКТИВНА' : 'БЛОК',
         style: TextStyle(
-          color: isActive ? const Color(0xFF00B894) : const Color(0xFFFF6B6B),
+          color: isActive ? AppColors.successLight : AppColors.errorLight,
           fontSize: 12,
           fontWeight: FontWeight.w800,
         ),

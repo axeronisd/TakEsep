@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:takesep_design_system/takesep_design_system.dart';
 import 'dart:math';
 
 /// ═══════════════════════════════════════════════════════════════
@@ -87,8 +88,9 @@ class _CouriersScreenState extends State<CouriersScreen> {
       floatingActionButton: isMobile
           ? FloatingActionButton(
               onPressed: () => _showAddCourierDialog(),
-              backgroundColor: const Color(0xFF2ECC71),
-              child: const Icon(Icons.person_add),
+              backgroundColor: AppColors.success,
+              foregroundColor: Colors.white,
+              child: const Icon(Icons.person_add_rounded),
             )
           : null,
       body: Padding(
@@ -103,12 +105,10 @@ class _CouriersScreenState extends State<CouriersScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF2ECC71), Color(0xFF27AE60)],
-                      ),
+                      gradient: AppColors.successGradient,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(Icons.delivery_dining,
+                    child: const Icon(Icons.delivery_dining_rounded,
                         color: Colors.white, size: 20),
                   ),
                   const SizedBox(width: 12),
@@ -117,10 +117,11 @@ class _CouriersScreenState extends State<CouriersScreen> {
                     children: [
                       const Text('Курьеры Ак Жол',
                           style: TextStyle(
+                              color: AppColors.darkTextPrimary,
                               fontSize: 20, fontWeight: FontWeight.w700)),
                       Text('${_couriers.length} курьеров',
                           style:
-                              TextStyle(color: Colors.grey[400], fontSize: 13)),
+                              TextStyle(color: AppColors.darkTextTertiary, fontSize: 13)),
                     ],
                   ),
                 ],
@@ -132,22 +133,25 @@ class _CouriersScreenState extends State<CouriersScreen> {
                 child: Row(
                   children: [
                     _FilterChip(
-                        label: 'Все',
-                        value: 'all',
-                        current: _filter,
-                        onTap: () => setState(() => _filter = 'all')),
+                      label: 'Все',
+                      value: 'all',
+                      current: _filter,
+                      onTap: () => setState(() => _filter = 'all'),
+                    ),
                     const SizedBox(width: 8),
                     _FilterChip(
-                        label: 'Активные',
-                        value: 'active',
-                        current: _filter,
-                        onTap: () => setState(() => _filter = 'active')),
+                      label: 'Активные',
+                      value: 'active',
+                      current: _filter,
+                      onTap: () => setState(() => _filter = 'active'),
+                    ),
                     const SizedBox(width: 8),
                     _FilterChip(
-                        label: 'Отключённые',
-                        value: 'inactive',
-                        current: _filter,
-                        onTap: () => setState(() => _filter = 'inactive')),
+                      label: 'Отключённые',
+                      value: 'inactive',
+                      current: _filter,
+                      onTap: () => setState(() => _filter = 'inactive'),
+                    ),
                   ],
                 ),
               ),
@@ -157,12 +161,10 @@ class _CouriersScreenState extends State<CouriersScreen> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF2ECC71), Color(0xFF27AE60)],
-                      ),
+                      gradient: AppColors.successGradient,
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.delivery_dining,
+                    child: const Icon(Icons.delivery_dining_rounded,
                         color: Colors.white, size: 24),
                   ),
                   const SizedBox(width: 16),
@@ -171,10 +173,11 @@ class _CouriersScreenState extends State<CouriersScreen> {
                     children: [
                       const Text('Курьеры Ак Жол',
                           style: TextStyle(
+                              color: AppColors.darkTextPrimary,
                               fontSize: 24, fontWeight: FontWeight.w700)),
                       Text('${_couriers.length} курьеров',
                           style:
-                              TextStyle(color: Colors.grey[400], fontSize: 14)),
+                              TextStyle(color: AppColors.darkTextTertiary, fontSize: 14)),
                     ],
                   ),
                   const Spacer(),
@@ -198,10 +201,11 @@ class _CouriersScreenState extends State<CouriersScreen> {
                   const SizedBox(width: 16),
                   ElevatedButton.icon(
                     onPressed: () => _showAddCourierDialog(),
-                    icon: const Icon(Icons.person_add, size: 18),
+                    icon: const Icon(Icons.person_add_rounded, size: 18),
                     label: const Text('Добавить курьера'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF2ECC71),
+                      backgroundColor: AppColors.success,
+                      foregroundColor: Colors.white,
                     ),
                   ),
                 ],
@@ -215,8 +219,9 @@ class _CouriersScreenState extends State<CouriersScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1A1A3E),
+                  color: AppColors.darkSurface,
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.darkBorder),
                 ),
                 child: Row(
                   children: [
@@ -276,12 +281,12 @@ class _CouriersScreenState extends State<CouriersScreen> {
         return Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: const Color(0xFF12122B),
+            color: AppColors.darkSurface,
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
               color: isActive
-                  ? const Color(0xFF2A2A5A)
-                  : Colors.red.withValues(alpha: 0.25),
+                  ? AppColors.darkBorder
+                  : AppColors.error.withValues(alpha: 0.3),
             ),
           ),
           child: Column(
@@ -295,8 +300,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
                     height: 40,
                     decoration: BoxDecoration(
                       color: isActive
-                          ? const Color(0xFF2ECC71).withValues(alpha: 0.15)
-                          : Colors.grey.withValues(alpha: 0.15),
+                          ? AppColors.success.withValues(alpha: 0.15)
+                          : AppColors.darkSurfaceVariant,
                       shape: BoxShape.circle,
                     ),
                     child: Center(
@@ -306,7 +311,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
                           fontWeight: FontWeight.w700,
                           fontSize: 18,
                           color:
-                              isActive ? const Color(0xFF2ECC71) : Colors.grey,
+                              isActive ? AppColors.successLight : AppColors.darkTextTertiary,
                         ),
                       ),
                     ),
@@ -318,6 +323,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
                       children: [
                         Text(courier['name'] ?? '—',
                             style: const TextStyle(
+                                color: AppColors.darkTextPrimary,
                                 fontWeight: FontWeight.w600, fontSize: 16)),
                         const SizedBox(height: 2),
                         Row(children: [
@@ -326,14 +332,14 @@ class _CouriersScreenState extends State<CouriersScreen> {
                             height: 7,
                             decoration: BoxDecoration(
                               color:
-                                  isOnline ? Colors.greenAccent : Colors.grey,
+                                  isOnline ? AppColors.successLight : AppColors.darkTextTertiary,
                               shape: BoxShape.circle,
                             ),
                           ),
                           const SizedBox(width: 5),
                           Text(isOnline ? 'Онлайн' : 'Офлайн',
-                              style: TextStyle(
-                                  fontSize: 12, color: Colors.grey[500])),
+                              style: const TextStyle(
+                                  fontSize: 12, color: AppColors.darkTextSecondary)),
                           const SizedBox(width: 12),
                           Wrap(
                             spacing: 8,
@@ -342,13 +348,13 @@ class _CouriersScreenState extends State<CouriersScreen> {
                                 .map((t) => Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Icon(_transportIcon(t),
-                                            size: 14, color: Colors.grey[500]),
+                                        const Icon(Icons.directions_bike_rounded,
+                                            size: 14, color: AppColors.darkTextTertiary),
                                         const SizedBox(width: 4),
                                         Text(_transportLabel(t),
-                                            style: TextStyle(
+                                            style: const TextStyle(
                                                 fontSize: 12,
-                                                color: Colors.grey[500])),
+                                                color: AppColors.darkTextTertiary)),
                                       ],
                                     ))
                                 .toList(),
@@ -365,9 +371,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 8, vertical: 3),
                         decoration: BoxDecoration(
-                          color: isActive
-                              ? Colors.green.withValues(alpha: 0.12)
-                              : Colors.red.withValues(alpha: 0.12),
+                          color: (isActive ? AppColors.success : AppColors.error)
+                              .withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(6),
                         ),
                         child: Text(
@@ -376,8 +381,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                               color: isActive
-                                  ? Colors.greenAccent
-                                  : Colors.red[300]),
+                                  ? AppColors.successLight
+                                  : AppColors.errorLight),
                         ),
                       ),
                       const SizedBox(height: 4),
@@ -387,8 +392,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 8, vertical: 3),
                           decoration: BoxDecoration(
-                            color:
-                                const Color(0xFF2ECC71).withValues(alpha: 0.1),
+                            color: AppColors.success.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(
@@ -396,7 +400,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
                             style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w700,
-                                color: Color(0xFF2ECC71)),
+                                color: AppColors.success),
                           ),
                         ),
                       ),
@@ -409,18 +413,18 @@ class _CouriersScreenState extends State<CouriersScreen> {
               // Phone + Key row
               Row(
                 children: [
-                  Icon(Icons.phone, size: 13, color: Colors.grey[600]),
+                  const Icon(Icons.phone_rounded, size: 13, color: AppColors.darkTextTertiary),
                   const SizedBox(width: 6),
                   Text(courier['phone'] ?? '—',
-                      style: TextStyle(fontSize: 13, color: Colors.grey[300])),
+                      style: const TextStyle(fontSize: 13, color: AppColors.darkTextSecondary)),
                   const SizedBox(width: 16),
-                  Icon(Icons.vpn_key, size: 13, color: Colors.grey[600]),
+                  const Icon(Icons.vpn_key_rounded, size: 13, color: AppColors.darkTextTertiary),
                   const SizedBox(width: 6),
                   Container(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF6C5CE7).withValues(alpha: 0.15),
+                      color: AppColors.primary.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(accessKey,
@@ -428,7 +432,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
                             fontFamily: 'monospace',
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: Color(0xFFA29BFE),
+                            color: AppColors.primaryLight,
                             letterSpacing: 1)),
                   ),
                   const SizedBox(width: 6),
@@ -441,7 +445,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
                             duration: Duration(seconds: 1)),
                       );
                     },
-                    child: Icon(Icons.copy, size: 14, color: Colors.grey[500]),
+                    child: const Icon(Icons.copy_rounded, size: 14, color: AppColors.darkTextSecondary),
                   ),
                 ],
               ),
@@ -449,19 +453,19 @@ class _CouriersScreenState extends State<CouriersScreen> {
               if (warehouseNames.isNotEmpty) ...[
                 const SizedBox(height: 6),
                 Row(children: [
-                  Icon(Icons.store, size: 13, color: Colors.grey[600]),
+                  const Icon(Icons.store_rounded, size: 13, color: AppColors.darkTextTertiary),
                   const SizedBox(width: 6),
                   Expanded(
                       child: Text(warehouseNames,
                           style:
-                              TextStyle(fontSize: 12, color: Colors.grey[400]),
+                              const TextStyle(fontSize: 12, color: AppColors.darkTextSecondary),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis)),
                 ]),
               ],
 
               const SizedBox(height: 10),
-              const Divider(color: Color(0xFF2A2A5A), height: 1),
+              const Divider(color: AppColors.darkBorder, height: 1),
               const SizedBox(height: 8),
 
               // Actions row
@@ -469,33 +473,33 @@ class _CouriersScreenState extends State<CouriersScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _MobileAction(
-                    icon: Icons.percent,
+                    icon: Icons.percent_rounded,
                     label: 'Ставка',
-                    color: const Color(0xFF2ECC71),
+                    color: AppColors.success,
                     onTap: () => _showEditRateDialog(courier),
                   ),
                   _MobileAction(
-                    icon: Icons.local_shipping,
+                    icon: Icons.local_shipping_rounded,
                     label: 'Транспорт',
-                    color: const Color(0xFF9B59B6),
+                    color: AppColors.infoLight,
                     onTap: () => _showEditTransportDialog(courier),
                   ),
                   _MobileAction(
-                    icon: Icons.refresh,
+                    icon: Icons.refresh_rounded,
                     label: 'Ключ',
-                    color: const Color(0xFF6C5CE7),
+                    color: AppColors.primaryLight,
                     onTap: () => _regenerateKey(courier),
                   ),
                   _MobileAction(
-                    icon: Icons.store,
+                    icon: Icons.store_rounded,
                     label: 'Склады',
-                    color: Colors.blue,
+                    color: AppColors.secondaryLight,
                     onTap: () => _showLinkWarehouseDialog(courier),
                   ),
                   _MobileAction(
-                    icon: isActive ? Icons.block : Icons.check_circle,
+                    icon: isActive ? Icons.block_rounded : Icons.check_circle_rounded,
                     label: isActive ? 'Откл.' : 'Вкл.',
-                    color: isActive ? Colors.orange : Colors.green,
+                    color: isActive ? AppColors.warningLight : AppColors.successLight,
                     onTap: () => _toggleActive(courier),
                   ),
                 ],
@@ -540,12 +544,12 @@ class _CouriersScreenState extends State<CouriersScreen> {
         margin: const EdgeInsets.only(bottom: 4),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
-          color: const Color(0xFF12122B),
+          color: AppColors.darkSurface,
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
             color: isActive
                 ? Colors.transparent
-                : Colors.red.withValues(alpha: 0.2),
+                : AppColors.error.withValues(alpha: 0.2),
           ),
         ),
         child: Row(
@@ -560,8 +564,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
                     height: 36,
                     decoration: BoxDecoration(
                       color: isActive
-                          ? const Color(0xFF2ECC71).withValues(alpha: 0.15)
-                          : Colors.grey.withValues(alpha: 0.15),
+                          ? AppColors.success.withValues(alpha: 0.15)
+                          : AppColors.darkSurfaceVariant,
                       shape: BoxShape.circle,
                     ),
                     child: Center(
@@ -570,7 +574,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
                         style: TextStyle(
                           fontWeight: FontWeight.w700,
                           color:
-                              isActive ? const Color(0xFF2ECC71) : Colors.grey,
+                              isActive ? AppColors.successLight : AppColors.darkTextTertiary,
                         ),
                       ),
                     ),
@@ -582,6 +586,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
                       children: [
                         Text(courier['name'] ?? '—',
                             style: const TextStyle(
+                                color: AppColors.darkTextPrimary,
                                 fontWeight: FontWeight.w600, fontSize: 14)),
                         Row(
                           children: [
@@ -590,14 +595,14 @@ class _CouriersScreenState extends State<CouriersScreen> {
                               height: 6,
                               decoration: BoxDecoration(
                                 color:
-                                    isOnline ? Colors.greenAccent : Colors.grey,
+                                    isOnline ? AppColors.successLight : AppColors.darkTextTertiary,
                                 shape: BoxShape.circle,
                               ),
                             ),
                             const SizedBox(width: 4),
                             Text(isOnline ? 'Онлайн' : 'Офлайн',
-                                style: TextStyle(
-                                    fontSize: 11, color: Colors.grey[500])),
+                                style: const TextStyle(
+                                    fontSize: 11, color: AppColors.darkTextSecondary)),
                           ],
                         ),
                       ],
@@ -611,7 +616,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
             Expanded(
               flex: 2,
               child: Text(courier['phone'] ?? '—',
-                  style: TextStyle(fontSize: 13, color: Colors.grey[300])),
+                  style: const TextStyle(fontSize: 13, color: AppColors.darkTextSecondary)),
             ),
 
             // Access Key
@@ -624,7 +629,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: const Color(0xFF6C5CE7).withValues(alpha: 0.15),
+                        color: AppColors.primary.withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Text(accessKey,
@@ -632,7 +637,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
                               fontFamily: 'monospace',
                               fontSize: 13,
                               fontWeight: FontWeight.w700,
-                              color: Color(0xFFA29BFE),
+                              color: AppColors.primaryLight,
                               letterSpacing: 1),
                           overflow: TextOverflow.ellipsis),
                     ),
@@ -647,7 +652,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
                             duration: Duration(seconds: 1)),
                       );
                     },
-                    child: Icon(Icons.copy, size: 14, color: Colors.grey[500]),
+                    child: const Icon(Icons.copy_rounded, size: 14, color: AppColors.darkTextTertiary),
                   ),
                 ],
               ),
@@ -663,12 +668,12 @@ class _CouriersScreenState extends State<CouriersScreen> {
                     .map((t) => Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(_transportIcon(t),
-                                size: 16, color: Colors.grey[400]),
+                            const Icon(Icons.directions_bike_rounded,
+                                size: 16, color: AppColors.darkTextSecondary),
                             const SizedBox(width: 6),
                             Text(_transportLabel(t),
-                                style: TextStyle(
-                                    fontSize: 12, color: Colors.grey[400])),
+                                style: const TextStyle(
+                                    fontSize: 12, color: AppColors.darkTextSecondary)),
                           ],
                         ))
                     .toList(),
@@ -684,7 +689,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF2ECC71).withValues(alpha: 0.1),
+                    color: AppColors.success.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
@@ -692,7 +697,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w700,
-                      color: Color(0xFF2ECC71),
+                      color: AppColors.success,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -705,7 +710,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
               flex: 2,
               child: Text(
                 warehouseNames.isEmpty ? '—' : warehouseNames,
-                style: TextStyle(fontSize: 12, color: Colors.grey[400]),
+                style: const TextStyle(fontSize: 12, color: AppColors.darkTextSecondary),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -717,9 +722,8 @@ class _CouriersScreenState extends State<CouriersScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
-                  color: isActive
-                      ? Colors.green.withValues(alpha: 0.12)
-                      : Colors.red.withValues(alpha: 0.12),
+                  color: (isActive ? AppColors.success : AppColors.error)
+                      .withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
@@ -727,7 +731,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
-                    color: isActive ? Colors.greenAccent : Colors.red[300],
+                    color: isActive ? AppColors.successLight : AppColors.errorLight,
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -741,37 +745,37 @@ class _CouriersScreenState extends State<CouriersScreen> {
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   _ActionButton(
-                    icon: Icons.percent,
+                    icon: Icons.percent_rounded,
                     tooltip: 'Изменить ставку',
-                    color: const Color(0xFF2ECC71),
+                    color: AppColors.success,
                     onTap: () => _showEditRateDialog(courier),
                   ),
                   const SizedBox(width: 4),
                   _ActionButton(
-                    icon: Icons.local_shipping,
+                    icon: Icons.local_shipping_rounded,
                     tooltip: 'Изменить транспорт',
-                    color: const Color(0xFF9B59B6),
+                    color: AppColors.infoLight,
                     onTap: () => _showEditTransportDialog(courier),
                   ),
                   const SizedBox(width: 4),
                   _ActionButton(
-                    icon: Icons.refresh,
+                    icon: Icons.refresh_rounded,
                     tooltip: 'Новый ключ',
-                    color: const Color(0xFF6C5CE7),
+                    color: AppColors.primaryLight,
                     onTap: () => _regenerateKey(courier),
                   ),
                   const SizedBox(width: 4),
                   _ActionButton(
-                    icon: Icons.store,
+                    icon: Icons.store_rounded,
                     tooltip: 'Привязать склад',
-                    color: Colors.blue,
+                    color: AppColors.secondaryLight,
                     onTap: () => _showLinkWarehouseDialog(courier),
                   ),
                   const SizedBox(width: 4),
                   _ActionButton(
-                    icon: isActive ? Icons.block : Icons.check_circle,
+                    icon: isActive ? Icons.block_rounded : Icons.check_circle_rounded,
                     tooltip: isActive ? 'Отключить' : 'Активировать',
-                    color: isActive ? Colors.orange : Colors.green,
+                    color: isActive ? AppColors.warningLight : AppColors.successLight,
                     onTap: () => _toggleActive(courier),
                   ),
                 ],
@@ -796,7 +800,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: const Color(0xFF1A1A3E),
+          backgroundColor: AppColors.darkSurface,
           title: const Text('Добавить курьера'),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
@@ -901,7 +905,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: const Color(0xFF1A1A3E),
+          backgroundColor: AppColors.darkSurface,
           title: Text('Склады для ${courier['name']}'),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 400, maxHeight: 300),
@@ -950,7 +954,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A3E),
+        backgroundColor: AppColors.darkSurface,
         icon: const Icon(Icons.vpn_key, color: Color(0xFF2ECC71), size: 48),
         title: Text('Ключ для $name'),
         content: Column(
@@ -1012,7 +1016,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: const Color(0xFF1A1A3E),
+          backgroundColor: AppColors.darkSurface,
           title: Text('Ставка: $name'),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 400),
@@ -1149,7 +1153,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: const Color(0xFF1A1A3E),
+          backgroundColor: AppColors.darkSurface,
           title: Text('Транспорт: ${courier['name'] ?? 'Курьер'}'),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
@@ -1419,7 +1423,7 @@ class _CouriersScreenState extends State<CouriersScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A3E),
+        backgroundColor: AppColors.darkSurface,
         title: Row(
           children: [
             Container(
@@ -1932,20 +1936,20 @@ class _FilterChip extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected
-              ? const Color(0xFF6C5CE7).withValues(alpha: 0.2)
+              ? AppColors.primary.withValues(alpha: 0.16)
               : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
             color: isSelected
-                ? const Color(0xFF6C5CE7)
-                : Colors.grey.withValues(alpha: 0.3),
+                ? AppColors.primary
+                : AppColors.darkBorder,
           ),
         ),
         child: Text(label,
             style: TextStyle(
               fontSize: 12,
               fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-              color: isSelected ? const Color(0xFFA29BFE) : Colors.grey[500],
+              color: isSelected ? AppColors.primaryLight : AppColors.darkTextSecondary,
             )),
       ),
     );

@@ -353,6 +353,7 @@ class _MobileShell extends StatelessWidget {
                     const Text(
                       'TakEsep Admin',
                       style: TextStyle(
+                        color: AppColors.darkTextPrimary,
                         fontWeight: FontWeight.w800,
                         fontSize: 16,
                       ),
@@ -360,33 +361,31 @@ class _MobileShell extends StatelessWidget {
                   ],
                 ),
               ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.chat_bubble_outline_rounded),
-                title: const Text('Поддержка WhatsApp'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _openWhatsApp();
-                },
+              const Divider(height: 1, color: AppColors.darkBorder),
+              const SizedBox(height: 12),
+              _buildDrawerItem(
+                context,
+                icon: Icons.chat_bubble_outline_rounded,
+                label: 'Поддержка WhatsApp',
+                onTap: _openWhatsApp,
               ),
-              ListTile(
-                leading: const Icon(Icons.public_rounded),
-                title: const Text('На сайт'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _openSite();
-                },
+              _buildDrawerItem(
+                context,
+                icon: Icons.public_rounded,
+                label: 'На сайт',
+                onTap: _openSite,
               ),
-              ListTile(
-                leading: const Icon(Icons.logout_rounded,
-                    color: AppColors.errorLight),
-                title: const Text('Выйти',
-                    style: TextStyle(color: AppColors.errorLight)),
-                onTap: () {
-                  Navigator.pop(context);
-                  _logout(context);
-                },
+              const Spacer(),
+              const Divider(height: 1, color: AppColors.darkBorder),
+              const SizedBox(height: 12),
+              _buildDrawerItem(
+                context,
+                icon: Icons.logout_rounded,
+                label: 'Выйти',
+                color: AppColors.errorLight,
+                onTap: () => _logout(context),
               ),
+              const SizedBox(height: 12),
             ],
           ),
         ),
@@ -394,6 +393,10 @@ class _MobileShell extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: AppColors.darkSurface,
         surfaceTintColor: Colors.transparent,
+        elevation: 0,
+        shape: const Border(
+          bottom: BorderSide(color: AppColors.darkBorder, width: 0.8),
+        ),
         title: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -435,22 +438,70 @@ class _MobileShell extends StatelessWidget {
         ],
       ),
       body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        backgroundColor: AppColors.darkSurface,
-        indicatorColor: AppColors.primary.withValues(alpha: 0.16),
-        surfaceTintColor: Colors.transparent,
-        height: 68,
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-        onDestinationSelected: (index) => context.go(destinations[index].$3),
-        destinations: [
-          for (final d in destinations)
-            NavigationDestination(
-              icon: Icon(d.$1),
-              selectedIcon: Icon(d.$1, color: AppColors.primaryLight),
-              label: d.$2,
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          border: Border(
+            top: BorderSide(color: AppColors.darkBorder, width: 0.8),
+          ),
+        ),
+        child: NavigationBar(
+          selectedIndex: _currentIndex,
+          backgroundColor: AppColors.darkSurface,
+          indicatorColor: AppColors.primary.withValues(alpha: 0.16),
+          surfaceTintColor: Colors.transparent,
+          height: 68,
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          onDestinationSelected: (index) => context.go(destinations[index].$3),
+          destinations: [
+            for (final d in destinations)
+              NavigationDestination(
+                icon: Icon(d.$1, size: 22, color: AppColors.darkTextSecondary),
+                selectedIcon: Icon(d.$1, size: 22, color: AppColors.primaryLight),
+                label: d.$2,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDrawerItem(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+    Color? color,
+  }) {
+    final displayColor = color ?? AppColors.darkTextSecondary;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: () {
+            Navigator.pop(context);
+            onTap();
+          },
+          borderRadius: BorderRadius.circular(10),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Row(
+              children: [
+                Icon(icon, size: 20, color: displayColor),
+                const SizedBox(width: 14),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: displayColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
-        ],
+          ),
+        ),
       ),
     );
   }

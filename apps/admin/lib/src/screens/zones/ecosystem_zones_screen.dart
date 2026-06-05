@@ -25,6 +25,8 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
   LatLng? _newZoneCenter;
   double _newZoneRadiusKm = 10.0;
   final _nameCtrl = TextEditingController(text: 'Новая зона');
+  bool _showMapOnMobile = true;
+
 
   @override
   void initState() {
@@ -106,229 +108,265 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.darkBackground,
-      body: Row(
-        children: [
-          // Sidebar with zones list
-          Container(
-            width: 320,
-            color: AppColors.darkSurface,
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    border: Border(bottom: BorderSide(color: AppColors.darkBorder.withValues(alpha: 0.5))),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      const Text(
-                        'Зоны Экосистемы',
-                        style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Ограничивают область доставки для складов',
-                        style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
-                      ),
-                      const SizedBox(height: 16),
-                      FilledButton.icon(
-                        onPressed: _isAdding ? null : _startAddingMode,
-                        icon: const Icon(Icons.add),
-                        label: const Text('Добавить зону'),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: _loading && _zones.isEmpty
-                      ? const Center(child: CircularProgressIndicator())
-                      : ListView.builder(
-                          itemCount: _zones.length,
-                          itemBuilder: (context, index) {
-                            final zone = _zones[index];
-                            final id = zone['id'] as String;
-                            final name = zone['name'] as String;
-                            final radius = zone['radius_km'] as num;
-                            final isActive = zone['is_active'] as bool? ?? true;
+    final isMobile = MediaQuery.of(context).size.width < 760;
 
-                            return ListTile(
-                              title: Text(name, style: const TextStyle(color: Colors.white)),
-                              subtitle: Text('Радиус: ${radius} км', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Switch(
-                                    value: isActive,
-                                    onChanged: (v) => _toggleZone(id, v),
-                                    activeColor: AppColors.primary,
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.delete, color: Colors.redAccent),
-                                    onPressed: () => _deleteZone(id),
-                                  ),
-                                ],
-                              ),
-                              onTap: () {
-                                _mapCtrl.move(
-                                  LatLng(zone['center_lat'] as double, zone['center_lng'] as double),
-                                  12.0,
-                                );
-                              },
-                            );
-                          },
-                        ),
+    Widget listPanel = Container(
+      width: isMobile ? double.infinity : 320,
+      color: AppColors.darkSurface,
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: AppColors.darkBorder.withValues(alpha: 0.5))),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Зоны Экосистемы',
+                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Ограничивают область доставки для складов',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
+                ),
+                const SizedBox(height: 16),
+                FilledButton.icon(
+                  onPressed: _isAdding ? null : () {
+                    if (isMobile) {
+                      setState(() {
+                        _showMapOnMobile = true;
+                        _startAddingMode();
+                      });
+                    } else {
+                      _startAddingMode();
+                    }
+                  },
+                  icon: const Icon(Icons.add_rounded),
+                  label: const Text('Добавить зону'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                  ),
                 ),
               ],
             ),
           ),
-          
-          // Map View
           Expanded(
-            child: Stack(
-              children: [
-                FlutterMap(
-                  mapController: _mapCtrl,
-                  options: MapOptions(
-                    initialCenter: _center,
-                    initialZoom: _zoom,
-                    onPositionChanged: (pos, hasGesture) {
-                      if (_isAdding && hasGesture) {
-                        setState(() {
-                          _newZoneCenter = pos.center;
-                        });
-                      }
-                    },
-                    onTap: (tapPos, p) {
-                      if (_isAdding) {
-                        setState(() {
-                          _newZoneCenter = p;
-                        });
-                      }
-                    },
-                  ),
-                  children: [
-                    TileLayer(
-                      urlTemplate: 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
-                      subdomains: const ['a', 'b', 'c', 'd'],
-                    ),
-                    CircleLayer(
-                      circles: [
-                        // Existing zones
-                        ..._zones.map((z) {
-                          final isActive = z['is_active'] as bool? ?? true;
-                          return CircleMarker(
-                            point: LatLng(z['center_lat'] as double, z['center_lng'] as double),
-                            color: isActive ? Colors.blue.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.2),
-                            borderColor: isActive ? Colors.blue : Colors.grey,
-                            borderStrokeWidth: 2,
-                            useRadiusInMeter: true,
-                            radius: (z['radius_km'] as num).toDouble() * 1000,
-                          );
-                        }),
-                        // New zone being added
-                        if (_isAdding && _newZoneCenter != null)
-                          CircleMarker(
-                            point: _newZoneCenter!,
-                            color: Colors.green.withValues(alpha: 0.3),
-                            borderColor: Colors.green,
-                            borderStrokeWidth: 2,
-                            useRadiusInMeter: true,
-                            radius: _newZoneRadiusKm * 1000,
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
+            child: _loading && _zones.isEmpty
+                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                : ListView.builder(
+                    itemCount: _zones.length,
+                    itemBuilder: (context, index) {
+                      final zone = _zones[index];
+                      final id = zone['id'] as String;
+                      final name = zone['name'] as String;
+                      final radius = zone['radius_km'] as num;
+                      final isActive = zone['is_active'] as bool? ?? true;
 
-                // Overlay for adding mode
-                if (_isAdding)
-                  Positioned(
-                    top: 20,
-                    right: 20,
-                    child: Container(
-                      width: 300,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.darkSurface,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.green.withValues(alpha: 0.5)),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Text('Режим добавления зоны', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _nameCtrl,
-                            style: const TextStyle(color: Colors.white),
-                            decoration: const InputDecoration(
-                              labelText: 'Название зоны',
-                              labelStyle: TextStyle(color: Colors.white54),
+                      return ListTile(
+                        title: Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                        subtitle: Text('Радиус: ${radius} км', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Switch(
+                              value: isActive,
+                              onChanged: (v) => _toggleZone(id, v),
+                              activeColor: AppColors.primary,
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
-                            children: [
-                              const Text('Радиус (км): ', style: TextStyle(color: Colors.white54)),
-                              Expanded(
-                                child: Slider(
-                                  value: _newZoneRadiusKm,
-                                  min: 1.0,
-                                  max: 50.0,
-                                  activeColor: Colors.green,
-                                  onChanged: (v) {
-                                    setState(() {
-                                      _newZoneRadiusKm = v;
-                                    });
-                                  },
-                                ),
-                              ),
-                              Text('${_newZoneRadiusKm.toStringAsFixed(1)}', style: const TextStyle(color: Colors.white)),
-                            ],
-                          ),
-                          const SizedBox(height: 16),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              TextButton(
-                                onPressed: () {
-                                  setState(() {
-                                    _isAdding = false;
-                                    _newZoneCenter = null;
-                                  });
-                                },
-                                child: const Text('Отмена', style: TextStyle(color: Colors.white54)),
-                              ),
-                              const SizedBox(width: 8),
-                              FilledButton(
-                                style: FilledButton.styleFrom(backgroundColor: Colors.green),
-                                onPressed: _loading ? null : _saveNewZone,
-                                child: const Text('Сохранить', style: TextStyle(color: Colors.white)),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
+                            IconButton(
+                              icon: const Icon(Icons.delete_rounded, color: AppColors.errorLight),
+                              onPressed: () => _deleteZone(id),
+                            ),
+                          ],
+                        ),
+                        onTap: () {
+                          if (isMobile) {
+                            setState(() {
+                              _showMapOnMobile = true;
+                            });
+                          }
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            _mapCtrl.move(
+                              LatLng(zone['center_lat'] as double, zone['center_lng'] as double),
+                              12.0,
+                            );
+                          });
+                        },
+                      );
+                    },
                   ),
-                  
-                // Center marker
-                if (_isAdding)
-                  const Center(
-                    child: Icon(Icons.location_on, color: Colors.green, size: 40),
-                  ),
-              ],
-            ),
           ),
         ],
       ),
+    );
+
+    Widget mapPanel = Stack(
+      children: [
+        FlutterMap(
+          mapController: _mapCtrl,
+          options: MapOptions(
+            initialCenter: _center,
+            initialZoom: _zoom,
+            onPositionChanged: (pos, hasGesture) {
+              if (_isAdding && hasGesture) {
+                setState(() {
+                  _newZoneCenter = pos.center;
+                });
+              }
+            },
+            onTap: (tapPos, p) {
+              if (_isAdding) {
+                setState(() {
+                  _newZoneCenter = p;
+                });
+              }
+            },
+          ),
+          children: [
+            TileLayer(
+              urlTemplate: 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
+              subdomains: const ['a', 'b', 'c', 'd'],
+            ),
+            CircleLayer(
+              circles: [
+                // Existing zones
+                ..._zones.map((z) {
+                  final isActive = z['is_active'] as bool? ?? true;
+                  return CircleMarker(
+                    point: LatLng(z['center_lat'] as double, z['center_lng'] as double),
+                    color: isActive ? AppColors.info.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.2),
+                    borderColor: isActive ? AppColors.info : Colors.grey,
+                    borderStrokeWidth: 2,
+                    useRadiusInMeter: true,
+                    radius: (z['radius_km'] as num).toDouble() * 1000,
+                  );
+                }),
+                // New zone being added
+                if (_isAdding && _newZoneCenter != null)
+                  CircleMarker(
+                    point: _newZoneCenter!,
+                    color: AppColors.success.withValues(alpha: 0.3),
+                    borderColor: AppColors.success,
+                    borderStrokeWidth: 2,
+                    useRadiusInMeter: true,
+                    radius: _newZoneRadiusKm * 1000,
+                  ),
+              ],
+            ),
+          ],
+        ),
+
+        // Overlay for adding mode
+        if (_isAdding)
+          Positioned(
+            top: 20,
+            right: 20,
+            left: isMobile ? 20 : null,
+            child: Container(
+              width: isMobile ? double.infinity : 300,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.darkSurface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: AppColors.success.withValues(alpha: 0.5)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 10,
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Text('Режим добавления зоны', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _nameCtrl,
+                    style: const TextStyle(color: Colors.white),
+                    decoration: const InputDecoration(
+                      labelText: 'Название зоны',
+                      labelStyle: TextStyle(color: Colors.white54),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      const Text('Радиус (км): ', style: TextStyle(color: Colors.white54)),
+                      Expanded(
+                        child: Slider(
+                          value: _newZoneRadiusKm,
+                          min: 1.0,
+                          max: 50.0,
+                          activeColor: AppColors.success,
+                          inactiveColor: AppColors.darkBorder,
+                          onChanged: (v) {
+                            setState(() {
+                              _newZoneRadiusKm = v;
+                            });
+                          },
+                        ),
+                      ),
+                      Text('${_newZoneRadiusKm.toStringAsFixed(1)}', style: const TextStyle(color: Colors.white)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _isAdding = false;
+                            _newZoneCenter = null;
+                          });
+                        },
+                        child: const Text('Отмена', style: TextStyle(color: Colors.white54)),
+                      ),
+                      const SizedBox(width: 8),
+                      FilledButton(
+                        style: FilledButton.styleFrom(backgroundColor: AppColors.success),
+                        onPressed: _loading ? null : _saveNewZone,
+                        child: const Text('Сохранить', style: TextStyle(color: Colors.white)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          
+        // Center marker
+        if (_isAdding)
+          const Center(
+            child: Icon(Icons.location_on_rounded, color: AppColors.success, size: 40),
+          ),
+      ],
+    );
+
+    return Scaffold(
+      backgroundColor: AppColors.darkBackground,
+      floatingActionButton: isMobile
+          ? FloatingActionButton.extended(
+              onPressed: () => setState(() => _showMapOnMobile = !_showMapOnMobile),
+              icon: Icon(_showMapOnMobile ? Icons.list_rounded : Icons.map_rounded),
+              label: Text(_showMapOnMobile ? 'Список' : 'Карта'),
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+            )
+          : null,
+      body: isMobile
+          ? (_showMapOnMobile ? mapPanel : listPanel)
+          : Row(
+              children: [
+                listPanel,
+                Expanded(child: mapPanel),
+              ],
+            ),
     );
   }
 }

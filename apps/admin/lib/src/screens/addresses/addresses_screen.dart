@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:takesep_design_system/takesep_design_system.dart';
 
 /// Карта-песочница для управления адресами.
 /// Тайлы 2GIS как ориентир. Клик → добавляет точку → редактируем улицу/дом.
@@ -196,7 +197,7 @@ class _AddressesScreenState extends ConsumerState<AddressesScreen> {
   void _showSnack(String msg, {bool isSuccess = false}) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Text(msg),
-      backgroundColor: isSuccess ? const Color(0xFF2ECC71) : const Color(0xFFE74C3C),
+      backgroundColor: isSuccess ? AppColors.success : AppColors.error,
       duration: const Duration(seconds: 2),
     ));
   }
@@ -212,12 +213,12 @@ class _AddressesScreenState extends ConsumerState<AddressesScreen> {
 
   // ── Mobile: full-screen map + draggable bottom sheet ──
   Widget _buildMobileLayout() {
-    const cardBg = Color(0xFF1A1A3E);
-    const accent = Color(0xFF2ECC71);
-    const purple = Color(0xFFA29BFE);
+    const cardBg = AppColors.darkSurface;
+    const accent = AppColors.successLight;
+    const purple = AppColors.primaryLight;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F0F23),
+      backgroundColor: AppColors.darkBackground,
       body: Stack(
         children: [
           FlutterMap(
@@ -306,7 +307,7 @@ class _AddressesScreenState extends ConsumerState<AddressesScreen> {
           decoration: InputDecoration(
             hintText: 'Поиск адреса...', hintStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
             prefixIcon: Icon(Icons.search, color: Colors.grey[600], size: 18),
-            filled: true, fillColor: const Color(0xFF12122B),
+            filled: true, fillColor: AppColors.darkSurfaceVariant,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
             contentPadding: const EdgeInsets.symmetric(vertical: 10),
           ),
@@ -321,9 +322,9 @@ class _AddressesScreenState extends ConsumerState<AddressesScreen> {
         ]),
         const SizedBox(height: 10),
         if (_loading)
-          const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator(color: Color(0xFF2ECC71))))
+          const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator(color: AppColors.successLight)))
         else if (filtered.isEmpty)
-          Center(child: Padding(padding: const EdgeInsets.all(20), child: Text('Нет адресов', style: TextStyle(color: Colors.grey[500]))))
+          Center(child: Padding(padding: const EdgeInsets.all(20), child: Text('Нет адресов', style: TextStyle(color: AppColors.darkTextTertiary))))
         else
           ...filtered.map((addr) {
             final verified = addr['verified'] == true;
@@ -333,9 +334,9 @@ class _AddressesScreenState extends ConsumerState<AddressesScreen> {
                 margin: const EdgeInsets.only(bottom: 6),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF12122B),
+                  color: AppColors.darkSurface,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: const Color(0xFF2A2A4E)),
+                  border: Border.all(color: AppColors.darkBorder),
                 ),
                 child: Row(children: [
                   Icon(verified ? Icons.check_circle : Icons.pending_actions_rounded,
@@ -392,7 +393,7 @@ class _AddressesScreenState extends ConsumerState<AddressesScreen> {
             onPressed: _saveAddress,
             icon: const Icon(Icons.check_rounded, size: 18),
             label: Text(_selectedAddress!['_isNew'] == true ? 'Добавить' : 'Сохранить'),
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2ECC71),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.success,
                 foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
           ),
         ),
@@ -403,8 +404,8 @@ class _AddressesScreenState extends ConsumerState<AddressesScreen> {
               onPressed: _deleteAddress,
               icon: const Icon(Icons.delete_rounded, size: 16),
               label: const Text('Удалить'),
-              style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFFE74C3C),
-                  side: const BorderSide(color: Color(0xFFE74C3C)),
+              style: OutlinedButton.styleFrom(foregroundColor: AppColors.error,
+                  side: const BorderSide(color: AppColors.error),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))),
             ),
           ),
@@ -455,11 +456,11 @@ class _AddressesScreenState extends ConsumerState<AddressesScreen> {
 
   // ── Desktop: original 3-panel layout ──
   Widget _buildDesktopLayout() {
-    const bg = Color(0xFF0F0F23);
-    const cardBg = Color(0xFF1A1A3E);
-    const border = Color(0xFF2A2A4E);
-    const accent = Color(0xFF2ECC71);
-    const purple = Color(0xFFA29BFE);
+    const bg = AppColors.darkBackground;
+    const cardBg = AppColors.darkSurface;
+    const border = AppColors.darkBorder;
+    const accent = AppColors.successLight;
+    const purple = AppColors.primaryLight;
     final filtered = _filteredAddresses;
 
     return Scaffold(
@@ -616,7 +617,7 @@ class _AddressesScreenState extends ConsumerState<AddressesScreen> {
                             Container(
                               margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                               padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(color: const Color(0xFF0F0F23), borderRadius: BorderRadius.circular(8)),
+                              decoration: BoxDecoration(color: AppColors.darkBackground, borderRadius: BorderRadius.circular(8)),
                               child: Row(children: [
                                 Icon(Icons.gps_fixed_rounded, color: Colors.grey[500], size: 14),
                                 const SizedBox(width: 8),
@@ -695,13 +696,13 @@ class _AddressesScreenState extends ConsumerState<AddressesScreen> {
           padding: const EdgeInsets.symmetric(vertical: 7),
           decoration: BoxDecoration(
             color: isActive
-                ? const Color(0xFF2ECC71).withValues(alpha: 0.15)
-                : const Color(0xFF1A1A3E),
+                ? AppColors.success.withValues(alpha: 0.15)
+                : AppColors.darkSurface,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: isActive
-                  ? const Color(0xFF2ECC71)
-                  : const Color(0xFF2A2A4E),
+                  ? AppColors.success
+                  : AppColors.darkBorder,
               width: isActive ? 1 : 0.5,
             ),
           ),
@@ -709,7 +710,7 @@ class _AddressesScreenState extends ConsumerState<AddressesScreen> {
             child: Text(
               '$label ($count)',
               style: TextStyle(
-                color: isActive ? const Color(0xFF2ECC71) : Colors.grey[500],
+                color: isActive ? AppColors.successLight : AppColors.darkTextTertiary,
                 fontSize: 11,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
               ),
@@ -727,21 +728,21 @@ class _AddressesScreenState extends ConsumerState<AddressesScreen> {
       style: const TextStyle(color: Colors.white, fontSize: 13),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: Colors.grey[500], fontSize: 12),
-        prefixIcon: Icon(icon, size: 16, color: Colors.grey[600]),
+        labelStyle: const TextStyle(color: AppColors.darkTextTertiary, fontSize: 12),
+        prefixIcon: Icon(icon, size: 16, color: AppColors.darkTextSecondary),
         filled: true,
-        fillColor: const Color(0xFF12122B),
+        fillColor: AppColors.darkSurfaceVariant,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFF2A2A4E)),
+          borderSide: const BorderSide(color: AppColors.darkBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFF2A2A4E)),
+          borderSide: const BorderSide(color: AppColors.darkBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: Color(0xFF6C5CE7)),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
         ),
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
