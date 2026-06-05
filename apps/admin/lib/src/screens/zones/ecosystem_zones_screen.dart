@@ -41,11 +41,19 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
       setState(() {
         _zones = List<Map<String, dynamic>>.from(data);
         _loading = false;
+        if (_zones.isNotEmpty) {
+          final first = _zones.first;
+          _center = LatLng(first['center_lat'] as double, first['center_lng'] as double);
+        }
       });
       if (_zones.isNotEmpty) {
-        final first = _zones.first;
-        _center = LatLng(first['center_lat'] as double, first['center_lng'] as double);
-        _mapCtrl.move(_center, _zoom);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try {
+            _mapCtrl.move(_center, _zoom);
+          } catch (e) {
+            debugPrint('Load zones map move error: $e');
+          }
+        });
       }
     } catch (e) {
       debugPrint('Load zones error: $e');
@@ -98,9 +106,13 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
   }
 
   void _startAddingMode() {
+    LatLng? cameraCenter;
+    try {
+      cameraCenter = _mapCtrl.camera.center;
+    } catch (_) {}
     setState(() {
       _isAdding = true;
-      _newZoneCenter = _mapCtrl.camera.center;
+      _newZoneCenter = cameraCenter ?? _center;
       _nameCtrl.text = 'Новая зона';
       _newZoneRadiusKm = 10.0;
     });

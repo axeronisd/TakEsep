@@ -426,6 +426,7 @@ class _RadiusZoneDialogState extends State<_RadiusZoneDialog> {
 
   List<Map<String, dynamic>> _ecosystemZones = [];
   bool _loadingZones = true;
+  String? _errorLoadingEco;
 
   @override
   void initState() {
@@ -447,20 +448,32 @@ class _RadiusZoneDialogState extends State<_RadiusZoneDialog> {
       setState(() {
         _ecosystemZones = List<Map<String, dynamic>>.from(data);
         _loadingZones = false;
+        _errorLoadingEco = null;
+        if (_ecosystemZones.isNotEmpty) {
+          final first = _ecosystemZones.first;
+          _center = LatLng(first['center_lat'] as double, first['center_lng'] as double);
+        }
       });
       if (_ecosystemZones.isNotEmpty) {
-        final first = _ecosystemZones.first;
-        setState(() {
-          _center = LatLng(first['center_lat'] as double, first['center_lng'] as double);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          try {
+            _mapCtrl.move(_center, 12.0);
+          } catch (e) {
+            debugPrint('Error moving map in dialog: $e');
+          }
         });
       }
     } catch (e) {
       debugPrint('Error loading ecosystem zones: $e');
-      setState(() => _loadingZones = false);
+      setState(() {
+        _errorLoadingEco = e.toString();
+        _loadingZones = false;
+      });
     }
   }
 
   bool _isWithinEcosystem() {
+    if (_errorLoadingEco != null) return false;
     if (_ecosystemZones.isEmpty) return true; // No restrictions if no zones defined
     final distanceCalc = const Distance();
     
@@ -556,17 +569,26 @@ class _RadiusZoneDialogState extends State<_RadiusZoneDialog> {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(8),
                             boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10)],
-                            border: Border.all(color: Colors.orange),
+                            border: Border.all(color: _errorLoadingEco != null ? Colors.red : Colors.orange),
                           ),
-                          child: const Row(
+                          child: Row(
                             children: [
-                              Icon(Icons.warning_amber_rounded, color: Colors.orange),
-                              SizedBox(width: 8),
+                              Icon(
+                                _errorLoadingEco != null ? Icons.error_outline : Icons.warning_amber_rounded,
+                                color: _errorLoadingEco != null ? Colors.red : Colors.orange,
+                              ),
+                              const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
-                                  'Ваша зона выходит за разрешенные пределы экосистемы. '
-                                  'Пожалуйста, уменьшите радиус или переместите центр.',
-                                  style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 12),
+                                  _errorLoadingEco != null
+                                      ? 'Ошибка загрузки ограничений экосистемы: $_errorLoadingEco'
+                                      : 'Ваша зона выходит за разрешенные пределы экосистемы. '
+                                          'Пожалуйста, уменьшите радиус или переместите центр.',
+                                  style: TextStyle(
+                                    color: _errorLoadingEco != null ? Colors.red : Colors.orange,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ),
                             ],
