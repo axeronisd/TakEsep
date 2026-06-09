@@ -13,8 +13,6 @@ import 'src/services/notification_service.dart';
 import 'src/services/firebase_push_bootstrap.dart';
 
 void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-
   const showErrorScreen = bool.fromEnvironment('dart.vm.product') == false;
 
   FlutterError.onError = (details) {
@@ -46,6 +44,7 @@ void main() {
 
   runZonedGuarded(
     () async {
+      WidgetsFlutterBinding.ensureInitialized();
       try {
         await _bootstrapApp();
       } catch (e, st) {
@@ -93,10 +92,8 @@ Future<void> _bootstrapApp() async {
     firebaseOk = true;
     debugPrint('[AkJol] Firebase initialized ✅');
   } catch (e, st) {
-    debugPrint('[AkJol] Firebase init FAILED: $e');
+    debugPrint('[AkJol] Firebase init FAILED (continuing without push/analytics): $e');
     // Don't crash — Firebase is optional for basic functionality
-    _showErrorOnScreen('Firebase init failed: $e', st.toString());
-    return;
   }
 
   // ─── Show app UI IMMEDIATELY ───

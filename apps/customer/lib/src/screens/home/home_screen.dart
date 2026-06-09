@@ -56,7 +56,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final selectedCategory = ref.watch(selectedStoreCategoryProvider);
     final filteredStores = ref.watch(filteredStoresProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF0D1117) : const Color(0xFFFAFBFC);
+    final bg = isDark ? const Color(0xFF0B0F19) : const Color(0xFFF8FAFC);
 
     return Scaffold(
       backgroundColor: bg,
@@ -162,15 +162,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 color: isActive
                                     ? AkJolTheme.primary
                                     : (isDark
-                                          ? const Color(0xFF161B22)
+                                          ? const Color(0xFF151D30)
                                           : Colors.white),
                                 borderRadius: BorderRadius.circular(20),
                                 border: Border.all(
                                   color: isActive
                                       ? AkJolTheme.primary
                                       : (isDark
-                                            ? const Color(0xFF30363D)
-                                            : const Color(0xFFE5E7EB)),
+                                            ? const Color(0xFF334155)
+                                            : const Color(0xFFE2E8F0)),
                                   width: 1,
                                 ),
                                 boxShadow: isActive
@@ -484,8 +484,8 @@ class _StoresLoadingShimmer extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? const Color(0xFF161B22) : Colors.white;
-    final shimmer = isDark ? const Color(0xFF21262D) : const Color(0xFFF3F4F6);
+    final cardBg = isDark ? const Color(0xFF151D30) : Colors.white;
+    final shimmer = isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),

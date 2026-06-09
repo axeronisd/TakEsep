@@ -30,11 +30,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     final cart = ref.watch(cartProvider);
     final co = ref.watch(checkoutProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF0D1117) : const Color(0xFFFAFBFC);
-    final cardBg = isDark ? const Color(0xFF161B22) : Colors.white;
-    final border = isDark ? const Color(0xFF21262D) : const Color(0xFFE5E7EB);
-    final text = isDark ? Colors.white : const Color(0xFF111827);
-    final muted = isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280);
+    final bg = isDark ? const Color(0xFF0B0F19) : const Color(0xFFF8FAFC);
+    final cardBg = isDark ? const Color(0xFF151D30) : Colors.white;
+    final border = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+    final text = isDark ? Colors.white : const Color(0xFF0F172A);
+    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
 
     if (cart.isEmpty) {
       return Scaffold(
@@ -100,7 +100,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                     icon: Container(
                       width: 34, height: 34,
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF21262D) : const Color(0xFFF3F4F6),
+                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Icon(Icons.arrow_back_ios_new_rounded, size: 15, color: text),
@@ -225,7 +225,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           width: double.infinity,
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF21262D) : const Color(0xFFF3F4F6),
+            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(children: [
@@ -244,7 +244,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             hintText: 'Подъезд, этаж, домофон',
             hintStyle: TextStyle(color: muted, fontSize: 12),
             prefixIcon: Icon(Icons.apartment_rounded, size: 16, color: muted),
-            filled: true, fillColor: isDark ? const Color(0xFF21262D) : const Color(0xFFF9FAFB),
+            filled: true, fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
             contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide(color: border, width: 0.5)),
@@ -278,7 +278,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
               decoration: BoxDecoration(
                 color: sel ? AkJolTheme.primary.withValues(alpha: 0.06)
-                    : (isDark ? const Color(0xFF21262D) : const Color(0xFFF9FAFB)),
+                    : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC)),
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
                   color: sel ? AkJolTheme.primary : Colors.transparent, width: 1.5),
@@ -288,7 +288,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                   width: 36, height: 36,
                   decoration: BoxDecoration(
                     color: sel ? AkJolTheme.primary.withValues(alpha: 0.1)
-                        : (isDark ? const Color(0xFF30363D) : const Color(0xFFEEF0F2)),
+                        : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Center(child: Icon(
@@ -401,7 +401,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
           decoration: InputDecoration(
             hintText: 'Пожелания к заказу...',
             hintStyle: TextStyle(color: muted, fontSize: 12),
-            filled: true, fillColor: isDark ? const Color(0xFF21262D) : const Color(0xFFF9FAFB),
+            filled: true, fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
             contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10),
                 borderSide: BorderSide(color: border, width: 0.5)),
@@ -572,10 +572,10 @@ class _BottomBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = isDark ? const Color(0xFF161B22) : Colors.white;
-    final brd = isDark ? const Color(0xFF21262D) : const Color(0xFFE5E7EB);
-    final text = isDark ? Colors.white : const Color(0xFF111827);
-    final muted = isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280);
+    final bg = isDark ? const Color(0xFF151D30) : Colors.white;
+    final brd = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+    final text = isDark ? Colors.white : const Color(0xFF0F172A);
+    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
 
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
@@ -612,13 +612,13 @@ class _BottomBar extends StatelessWidget {
             SizedBox(height: 48, child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: isReady && !submitting
-                    ? const LinearGradient(colors: [Color(0xFF2ECC71), Color(0xFF1ABC9C)])
+                    ? const LinearGradient(colors: [Color(0xFF00B15E), Color(0xFF10B981)])
                     : null,
                 color: isReady && !submitting ? null
-                    : (isDark ? const Color(0xFF21262D) : const Color(0xFFE5E7EB)),
+                    : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                 borderRadius: BorderRadius.circular(14),
                 boxShadow: isReady && !submitting ? [BoxShadow(
-                    color: const Color(0xFF2ECC71).withValues(alpha: 0.3),
+                    color: const Color(0xFF00B15E).withValues(alpha: 0.3),
                     blurRadius: 10, offset: const Offset(0, 3))] : null,
               ),
               child: Material(color: Colors.transparent, child: InkWell(

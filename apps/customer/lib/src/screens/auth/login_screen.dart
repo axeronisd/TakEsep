@@ -74,14 +74,14 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = _isDark ? Colors.white : const Color(0xFF111827);
+    final textColor = _isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
     final mutedColor = _isDark
-        ? const Color(0xFF8B949E)
-        : const Color(0xFF6B7280);
-    final fieldBg = _isDark ? const Color(0xFF0D1117) : const Color(0xFFF3F4F6);
+        ? const Color(0xFFCBD5E1)
+        : const Color(0xFF475569);
+    final fieldBg = _isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
     final borderColor = _isDark
-        ? const Color(0xFF30363D)
-        : const Color(0xFFE5E7EB);
+        ? const Color(0xFF334155)
+        : const Color(0xFFE2E8F0);
 
     return Scaffold(
       body: Stack(
@@ -94,13 +94,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 end: Alignment.bottomRight,
                 colors: _isDark
                     ? [
-                        const Color(0xFF0D1117),
-                        const Color(0xFF0A0F14),
-                        const Color(0xFF0D1117),
+                        const Color(0xFF0B0F19),
+                        const Color(0xFF0B0F19),
+                        const Color(0xFF0B0F19),
                       ]
                     : [
                         const Color(0xFFF0FFF4),
-                        const Color(0xFFF7F8FA),
+                        const Color(0xFFF8FAFC),
                         const Color(0xFFECFDF5),
                       ],
               ),
@@ -118,9 +118,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 gradient: RadialGradient(
                   colors: [
                     const Color(
-                      0xFF2ECC71,
+                      0xFF00B15E,
                     ).withValues(alpha: _isDark ? 0.08 : 0.12),
-                    const Color(0xFF2ECC71).withValues(alpha: 0),
+                    const Color(0xFF00B15E).withValues(alpha: 0),
                   ],
                 ),
               ),
@@ -138,9 +138,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 gradient: RadialGradient(
                   colors: [
                     const Color(
-                      0xFF1ABC9C,
+                      0xFF10B981,
                     ).withValues(alpha: _isDark ? 0.06 : 0.08),
-                    const Color(0xFF1ABC9C).withValues(alpha: 0),
+                    const Color(0xFF10B981).withValues(alpha: 0),
                   ],
                 ),
               ),
@@ -175,7 +175,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             decoration: BoxDecoration(
                               color: _isDark
                                   ? const Color(
-                                      0xFF0D1117,
+                                      0xFF151D30,
                                     ).withValues(alpha: 0.7)
                                   : Colors.white.withValues(alpha: 0.85),
                               borderRadius: BorderRadius.circular(28),
@@ -264,7 +264,7 @@ class _LoginScreenState extends State<LoginScreen> {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: const Color(0xFF2ECC71).withValues(alpha: 0.2),
+                color: const Color(0xFF00B15E).withValues(alpha: 0.2),
                 blurRadius: 24,
                 spreadRadius: -4,
               ),
@@ -278,7 +278,7 @@ class _LoginScreenState extends State<LoginScreen> {
               errorBuilder: (_, __, ___) => Container(
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
-                    colors: [Color(0xFF2ECC71), Color(0xFF27AE60)],
+                    colors: [Color(0xFF00B15E), Color(0xFF10B981)],
                   ),
                   borderRadius: BorderRadius.circular(20),
                 ),
@@ -306,7 +306,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             ShaderMask(
               shaderCallback: (bounds) => const LinearGradient(
-                colors: [Color(0xFF2ECC71), Color(0xFF1ABC9C)],
+                colors: [Color(0xFF00B15E), Color(0xFF10B981)],
               ).createShader(bounds),
               child: const Text(
                 'JOL',
@@ -612,10 +612,13 @@ class _LoginScreenState extends State<LoginScreen> {
         Container(
           decoration: BoxDecoration(
             color: fieldBg,
-            borderRadius: BorderRadius.circular(12),
-            border: hasError
-                ? Border.all(color: const Color(0xFFEF4444), width: 1.5)
-                : null,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: hasError
+                  ? const Color(0xFFEF4444)
+                  : (_isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+              width: hasError ? 1.5 : 1,
+            ),
           ),
           child: TextField(
             controller: controller,
@@ -686,10 +689,13 @@ class _LoginScreenState extends State<LoginScreen> {
         Container(
           decoration: BoxDecoration(
             color: fieldBg,
-            borderRadius: BorderRadius.circular(12),
-            border: hasError
-                ? Border.all(color: const Color(0xFFEF4444), width: 1.5)
-                : null,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: hasError
+                  ? const Color(0xFFEF4444)
+                  : (_isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
+              width: hasError ? 1.5 : 1,
+            ),
           ),
           child: Row(
             children: [
@@ -777,12 +783,12 @@ class _LoginScreenState extends State<LoginScreen> {
       child: DecoratedBox(
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            colors: [Color(0xFF2ECC71), Color(0xFF27AE60)],
+            colors: [Color(0xFF00B15E), Color(0xFF10B981)],
           ),
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF2ECC71).withValues(alpha: 0.3),
+              color: const Color(0xFF00B15E).withValues(alpha: 0.3),
               blurRadius: 12,
               offset: const Offset(0, 4),
             ),
@@ -796,7 +802,7 @@ class _LoginScreenState extends State<LoginScreen> {
             foregroundColor: Colors.white,
             disabledBackgroundColor: Colors.transparent,
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(16),
             ),
             elevation: 0,
           ),
@@ -841,7 +847,7 @@ class _LoginScreenState extends State<LoginScreen> {
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF2ECC71),
+              color: Color(0xFF00B15E),
             ),
           ),
         ),

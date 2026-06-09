@@ -199,7 +199,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: _isDark ? const Color(0xFF161B22) : Colors.white,
+        backgroundColor: _isDark ? const Color(0xFF151D30) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Выйти из аккаунта?'),
         content: const Text('Вы сможете войти снова в любое время.'),
@@ -210,8 +210,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               'Отмена',
               style: TextStyle(
                 color: _isDark
-                    ? const Color(0xFF8B949E)
-                    : const Color(0xFF6B7280),
+                    ? const Color(0xFFCBD5E1)
+                    : const Color(0xFF475569),
               ),
             ),
           ),
@@ -237,7 +237,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: _isDark ? const Color(0xFF161B22) : Colors.white,
+        backgroundColor: _isDark ? const Color(0xFF151D30) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Удалить аккаунт?', style: TextStyle(color: AkJolTheme.error)),
         content: const Text(
@@ -251,8 +251,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
               'Отмена',
               style: TextStyle(
                 color: _isDark
-                    ? const Color(0xFF8B949E)
-                    : const Color(0xFF6B7280),
+                    ? const Color(0xFFCBD5E1)
+                    : const Color(0xFF475569),
               ),
             ),
           ),
@@ -276,7 +276,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: _isDark ? const Color(0xFF161B22) : Colors.white,
+        backgroundColor: _isDark ? const Color(0xFF151D30) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Подтверждение удаления'),
         content: Column(
@@ -289,9 +289,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               controller: confirmCtrl,
               decoration: InputDecoration(
                 filled: true,
-                fillColor: _isDark ? const Color(0xFF0D1117) : const Color(0xFFF3F4F6),
+                fillColor: _isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
                 ),
                 hintText: 'УДАЛИТЬ',
@@ -373,11 +373,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final user = _supabase.auth.currentUser;
-    final bg = _isDark ? const Color(0xFF0D1117) : const Color(0xFFF8F9FA);
-    final cardBg = _isDark ? const Color(0xFF161B22) : Colors.white;
-    final text = _isDark ? Colors.white : const Color(0xFF111827);
-    final muted = _isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280);
-    final border = _isDark ? const Color(0xFF30363D) : const Color(0xFFE5E7EB);
+    final bg = _isDark ? const Color(0xFF0B0F19) : const Color(0xFFF8FAFC);
+    final cardBg = _isDark ? const Color(0xFF151D30) : Colors.white;
+    final text = _isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
+    final muted = _isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569);
+    final border = _isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
 
     if (_loading) {
       return Scaffold(
@@ -386,7 +386,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircularProgressIndicator(color: AkJolTheme.primary),
+              const CircularProgressIndicator(color: AkJolTheme.primary),
               const SizedBox(height: 16),
               Text(
                 'Загрузка профиля...',
@@ -418,8 +418,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       color: cardBg,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: border, width: 0.5),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: border, width: 1),
+                      boxShadow: _isDark
+                          ? null
+                          : [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.04),
+                                blurRadius: 18,
+                                offset: const Offset(0, 8),
+                                spreadRadius: -2,
+                              )
+                            ],
                     ),
                     child: Column(
                       children: [
@@ -434,7 +444,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         Divider(color: border, height: 1, indent: 56),
                         _ActionTile(
                           icon: Icons.lock_outline,
-                          color: const Color(0xFF3498DB),
+                          color: const Color(0xFF3B82F6),
                           title: 'Пароль',
                           subtitle: 'Изменить текущий пароль',
                           isDark: _isDark,
@@ -450,8 +460,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     padding: const EdgeInsets.all(4),
                     decoration: BoxDecoration(
                       color: cardBg,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: border, width: 0.5),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: border, width: 1),
+                      boxShadow: _isDark
+                          ? null
+                          : [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.04),
+                                blurRadius: 18,
+                                offset: const Offset(0, 8),
+                                spreadRadius: -2,
+                              )
+                            ],
                     ),
                     child: Column(
                       children: [
@@ -501,8 +521,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: _isDark
-              ? [const Color(0xFF0D1A12), const Color(0xFF0D1117)]
-              : [const Color(0xFFE8F8ED), const Color(0xFFF8F9FA)],
+              ? [const Color(0xFF062B16), const Color(0xFF0B0F19)]
+              : [const Color(0xFFE8FDF0), const Color(0xFFF8FAFC)],
         ),
       ),
       child: SafeArea(
@@ -512,18 +532,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             children: [
               Container(
-                width: 90,
-                height: 90,
+                width: 96,
+                height: 96,
+                padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF2ECC71), Color(0xFF1ABC9C)],
+                  border: Border.all(
+                    color: _isDark ? const Color(0xFF1E293B) : Colors.white,
+                    width: 3,
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: AkJolTheme.primary.withValues(alpha: 0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 6),
+                      color: const Color(0xFF00B15E).withValues(alpha: 0.2),
+                      blurRadius: 24,
+                      offset: const Offset(0, 8),
                     ),
                   ],
                 ),
@@ -607,7 +629,7 @@ class _ActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final muted = isDark ? const Color(0xFF8B949E) : const Color(0xFF9CA3AF);
+    final muted = isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569);
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       leading: Container(
@@ -625,14 +647,14 @@ class _ActionTile extends StatelessWidget {
           fontWeight: FontWeight.w700,
           fontSize: 15,
           color:
-              titleColor ?? (isDark ? Colors.white : const Color(0xFF111827)),
+              titleColor ?? (isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A)),
         ),
       ),
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 2),
         child: Text(subtitle, style: TextStyle(fontSize: 13, color: muted)),
       ),
-      trailing: trailing ?? Icon(Icons.chevron_right, color: muted, size: 22),
+      trailing: trailing ?? Icon(Icons.chevron_right, color: muted.withValues(alpha: 0.6), size: 22),
       onTap: onTap,
     );
   }
@@ -655,10 +677,10 @@ class _EditDataSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = isDark ? const Color(0xFF161B22) : Colors.white;
-    final fieldBg = isDark ? const Color(0xFF21262D) : const Color(0xFFF3F4F6);
-    final text = isDark ? Colors.white : const Color(0xFF111827);
-    final muted = isDark ? const Color(0xFF8B949E) : const Color(0xFF9CA3AF);
+    final bg = isDark ? const Color(0xFF151D30) : Colors.white;
+    final fieldBg = isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
+    final text = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
+    final muted = isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
 
     return Container(
       padding: EdgeInsets.only(
@@ -725,12 +747,12 @@ class _EditDataSheet extends StatelessWidget {
             child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF2ECC71), Color(0xFF27AE60)],
+                  colors: [Color(0xFF00B15E), Color(0xFF10B981)],
                 ),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF2ECC71).withValues(alpha: 0.3),
+                    color: const Color(0xFF00B15E).withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -747,7 +769,7 @@ class _EditDataSheet extends StatelessWidget {
                   shadowColor: Colors.transparent,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
                 child: const Text(
@@ -787,7 +809,11 @@ class _EditDataSheet extends StatelessWidget {
         Container(
           decoration: BoxDecoration(
             color: fieldBg,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              width: 1,
+            ),
           ),
           child: TextField(
             controller: ctrl,
@@ -802,24 +828,26 @@ class _EditDataSheet extends StatelessWidget {
               ),
               hintStyle: TextStyle(color: muted.withValues(alpha: 0.4)),
               prefixIcon: isPhone
-                  ? const Padding(
-                      padding: EdgeInsets.fromLTRB(16, 14, 8, 14),
+                  ? Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
                       child: Text(
                         '+996',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
+                          color: text,
                         ),
                       ),
                     )
                   : isUsername
-                  ? const Padding(
-                      padding: EdgeInsets.fromLTRB(16, 14, 8, 14),
+                  ? Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
                       child: Text(
                         '@',
                         style: TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
+                          color: text,
                         ),
                       ),
                     )
@@ -862,14 +890,14 @@ class _EditPasswordSheetState extends State<_EditPasswordSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bg = widget.isDark ? const Color(0xFF161B22) : Colors.white;
+    final bg = widget.isDark ? const Color(0xFF151D30) : Colors.white;
     final fieldBg = widget.isDark
-        ? const Color(0xFF21262D)
-        : const Color(0xFFF3F4F6);
-    final text = widget.isDark ? Colors.white : const Color(0xFF111827);
+        ? const Color(0xFF1E293B)
+        : const Color(0xFFF1F5F9);
+    final text = widget.isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
     final muted = widget.isDark
-        ? const Color(0xFF8B949E)
-        : const Color(0xFF9CA3AF);
+        ? const Color(0xFF64748B)
+        : const Color(0xFF94A3B8);
 
     return Container(
       padding: EdgeInsets.only(
@@ -944,12 +972,12 @@ class _EditPasswordSheetState extends State<_EditPasswordSheet> {
             child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF3498DB), Color(0xFF2980B9)],
+                  colors: [Color(0xFF3B82F6), Color(0xFF2563EB)],
                 ),
-                borderRadius: BorderRadius.circular(14),
+                borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF3498DB).withValues(alpha: 0.3),
+                    color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -973,7 +1001,7 @@ class _EditPasswordSheetState extends State<_EditPasswordSheet> {
                   shadowColor: Colors.transparent,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(16),
                   ),
                 ),
                 child: const Text(
@@ -1012,7 +1040,11 @@ class _EditPasswordSheetState extends State<_EditPasswordSheet> {
         Container(
           decoration: BoxDecoration(
             color: fieldBg,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: widget.isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              width: 1,
+            ),
           ),
           child: TextField(
             controller: ctrl,

@@ -95,15 +95,15 @@ class _StoreCategoryChip extends StatelessWidget {
                 color: isSelected
                     ? color.withValues(alpha: 0.15)
                     : (isDark
-                        ? const Color(0xFF161B22)
+                        ? const Color(0xFF151D30)
                         : Colors.white),
                 borderRadius: BorderRadius.circular(18),
                 border: Border.all(
                   color: isSelected
                       ? color
                       : (isDark
-                          ? const Color(0xFF21262D)
-                          : const Color(0xFFE5E7EB)),
+                          ? const Color(0xFF1E293B)
+                          : const Color(0xFFE2E8F0)),
                   width: isSelected ? 2 : 1,
                 ),
                 boxShadow: isSelected
@@ -167,11 +167,11 @@ class MarketplaceStoreCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? const Color(0xFF161B22) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF111827);
-    final muted = isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280);
+    final cardBg = isDark ? const Color(0xFF151D30) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
     final borderColor =
-        isDark ? const Color(0xFF21262D) : const Color(0xFFE5E7EB);
+        isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
 
     return GestureDetector(
       onTap: onTap,
@@ -182,9 +182,9 @@ class MarketplaceStoreCard extends StatelessWidget {
           border: Border.all(color: borderColor, width: 0.5),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.06),
-              blurRadius: 16,
-              offset: const Offset(0, 6),
+              color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.04),
+              blurRadius: 18,
+              offset: const Offset(0, 8),
               spreadRadius: -2,
             ),
           ],
@@ -410,7 +410,7 @@ class MarketplaceStoreCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
-              ? [const Color(0xFF1A2332), const Color(0xFF0D1117)]
+              ? [const Color(0xFF1E293B), const Color(0xFF0B0F19)]
               : [
                   AkJolTheme.primary.withValues(alpha: 0.08),
                   AkJolTheme.primary.withValues(alpha: 0.03),

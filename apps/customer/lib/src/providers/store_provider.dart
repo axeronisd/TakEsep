@@ -25,6 +25,9 @@ class StoreDetail {
   final String? workStart;
   final String? workEnd;
   final bool is24h;
+  final double? latitude;
+  final double? longitude;
+  final double deliveryRadiusKm;
 
   const StoreDetail({
     required this.warehouseId,
@@ -43,6 +46,9 @@ class StoreDetail {
     this.workStart,
     this.workEnd,
     this.is24h = true,
+    this.latitude,
+    this.longitude,
+    this.deliveryRadiusKm = 3.0,
   });
 
   /// Открыт ли магазин сейчас
@@ -139,6 +145,9 @@ final storeDetailProvider =
       workStart: data['work_start'] as String?,
       workEnd: data['work_end'] as String?,
       is24h: data['is_24h'] == true,
+      latitude: (data['latitude'] as num?)?.toDouble(),
+      longitude: (data['longitude'] as num?)?.toDouble(),
+      deliveryRadiusKm: (data['delivery_radius_km'] as num?)?.toDouble() ?? 3.0,
     );
   } catch (e) {
     debugPrint('❌ storeDetailProvider error: $e');
@@ -190,7 +199,8 @@ final storeProductCategoriesProvider =
     final products = await _supabase
         .from('products')
         .select('category_id')
-        .eq('warehouse_id', storeId);
+        .eq('warehouse_id', storeId)
+        .eq('is_public', true);
 
     final countMap = <String, int>{};
     for (final p in products) {
@@ -301,6 +311,7 @@ final storeProductsProvider =
         .from('products')
         .select('*')
         .eq('warehouse_id', storeId)
+        .eq('is_public', true)
         .order('name');
 
     debugPrint('🛍️ Loaded ${(data as List).length} products for store $storeId');

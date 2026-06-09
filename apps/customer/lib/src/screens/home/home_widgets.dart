@@ -43,8 +43,8 @@ class AkJolHeader extends StatelessWidget {
           padding: const EdgeInsets.fromLTRB(20, 0, 16, 0),
           decoration: BoxDecoration(
             color: isDark
-                ? const Color(0xFF131920).withValues(alpha: 0.94)
-                : const Color(0xFFFDFDFD).withValues(alpha: 0.94),
+                ? const Color(0xFF151D30).withValues(alpha: 0.94)
+                : const Color(0xFFFFFFFF).withValues(alpha: 0.94),
             borderRadius: const BorderRadius.vertical(
               bottom: Radius.circular(20),
             ),
@@ -210,12 +210,12 @@ class AkJolHeader extends StatelessWidget {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: Theme.of(context).brightness == Brightness.dark
-                          ? const Color(0xFF161B22)
+                          ? const Color(0xFF151D30)
                           : Colors.white,
                       border: Border.all(
                         color: Theme.of(context).brightness == Brightness.dark
-                            ? const Color(0xFF30363D)
-                            : const Color(0xFFE5E7EB),
+                            ? const Color(0xFF334155)
+                            : const Color(0xFFE2E8F0),
                         width: 1,
                       ),
                     ),
@@ -310,7 +310,7 @@ class BentoGrid extends StatelessWidget {
             // ── Доставка ──
             Expanded(
               child: _AnimatedBentoCard(
-                gradient: const [Color(0xFF2ECC71), Color(0xFF1ABC9C)],
+                gradient: const [Color(0xFF00B15E), Color(0xFF10B981)],
                 icon: Icons.local_shipping_rounded,
                 title: 'Доставка',
                 subtitle: 'Еда и товары\nиз магазинов',
@@ -324,7 +324,7 @@ class BentoGrid extends StatelessWidget {
             // ── Услуги ──
             Expanded(
               child: _AnimatedBentoCard(
-                gradient: const [Color(0xFF6C5CE7), Color(0xFF3498DB)],
+                gradient: const [Color(0xFF6366F1), Color(0xFF3B82F6)],
                 icon: Icons.handyman_rounded,
                 title: 'Услуги',
                 subtitle: 'Мастера\nи сервис',
@@ -671,9 +671,9 @@ class TakEsepStoreCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? const Color(0xFF161B22) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF111827);
-    final muted = isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280);
+    final cardBg = isDark ? const Color(0xFF151D30) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
 
     return GestureDetector(
       onTap: onTap,
@@ -683,7 +683,7 @@ class TakEsepStoreCard extends StatelessWidget {
           color: cardBg,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isDark ? const Color(0xFF21262D) : const Color(0xFFF0F0F0),
+            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
             width: 0.5,
           ),
           boxShadow: [

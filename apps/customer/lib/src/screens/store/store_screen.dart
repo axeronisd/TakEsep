@@ -5,6 +5,8 @@ import '../../theme/akjol_theme.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/store_provider.dart';
 import '../../providers/favorites_provider.dart';
+import '../../providers/location_provider.dart';
+import 'package:latlong2/latlong.dart';
 import 'modifier_sheet.dart';
 
 // ═══════════════════════════════════════════════════════════════
@@ -172,12 +174,13 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
     final categoriesAsync = ref.watch(storeProductCategoriesProvider(storeId));
     final productsAsync = ref.watch(storeProductsProvider(storeId));
     final selectedCat = ref.watch(selectedProductCategoryProvider(storeId));
+    final location = ref.watch(locationProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: isDark
-          ? const Color(0xFF0D1117)
-          : const Color(0xFFF5F5F5),
+          ? const Color(0xFF0B0F19)
+          : const Color(0xFFF8FAFC),
       body: storeAsync.when(
         data: (store) {
           if (store == null) {
@@ -210,10 +213,53 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
             );
           }
 
+          // Calculate if out of delivery zone
+          bool isOutOfZone = false;
+          if (store.latitude != null && store.longitude != null && location.lat != null && location.lng != null) {
+            final distanceMeters = const Distance().as(
+              LengthUnit.Meter,
+              LatLng(location.lat!, location.lng!),
+              LatLng(store.latitude!, store.longitude!),
+            );
+            if (distanceMeters > store.deliveryRadiusKm * 1000) {
+              isOutOfZone = true;
+            }
+          }
+
           return CustomScrollView(
             slivers: [
               // ── 1. Store Header ──
               _StoreHeader(store: store, isDark: isDark),
+
+              // ── 1.5 Out of Zone Banner ──
+              if (isOutOfZone)
+                SliverToBoxAdapter(
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.08),
+                      border: Border.all(color: Colors.amber.withValues(alpha: 0.25)),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.warning_amber_rounded, color: AkJolTheme.accent, size: 24),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Магазин находится вне зоны доставки. Вы можете просматривать меню, но заказ недоступен.',
+                            style: TextStyle(
+                              color: isDark ? const Color(0xFFFBBF24) : const Color(0xFFD97706),
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
               // ── 2. Search bar ──
               SliverToBoxAdapter(
@@ -341,6 +387,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
                           product: filtered[i],
                           storeId: storeId,
                           storeName: store.name,
+                          isOutOfZone: isOutOfZone,
                         ),
                         childCount: filtered.length,
                       ),
@@ -391,15 +438,15 @@ class _SearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = isDark ? const Color(0xFF161B22) : Colors.white;
-    final border = isDark ? const Color(0xFF30363D) : const Color(0xFFE5E7EB);
-    final hint = isDark ? const Color(0xFF484F58) : const Color(0xFF9CA3AF);
+    final bg = isDark ? const Color(0xFF151D30) : Colors.white;
+    final border = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+    final hint = isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
 
     return Container(
       height: 44,
       decoration: BoxDecoration(
         color: bg,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: border, width: 0.5),
         boxShadow: [
           BoxShadow(
@@ -517,11 +564,11 @@ class _CategoryCard extends StatelessWidget {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected
                 ? AkJolTheme.primary
-                : (isDark ? const Color(0xFF21262D) : const Color(0xFFE5E7EB)),
+                : (isDark ? const Color(0xFF1E293B) : const Color(0xFFE2E8F0)),
             width: isSelected ? 2 : 0.5,
           ),
           boxShadow: [
@@ -1024,36 +1071,38 @@ class _ProductCard extends ConsumerWidget {
   final StoreProduct product;
   final String storeId;
   final String storeName;
+  final bool isOutOfZone;
 
   const _ProductCard({
     required this.product,
     required this.storeId,
     required this.storeName,
+    this.isOutOfZone = false,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? const Color(0xFF161B22) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF111827);
+    final cardBg = isDark ? const Color(0xFF151D30) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
     final borderColor = isDark
-        ? const Color(0xFF21262D)
-        : const Color(0xFFE8E8E8);
+        ? const Color(0xFF334155)
+        : const Color(0xFFE2E8F0);
 
     final cart = ref.watch(cartProvider);
     final inCart = cart.items.where((i) => i.productId == product.id).toList();
     final totalInCart = inCart.fold(0, (sum, item) => sum + item.quantity);
 
     return GestureDetector(
-      onTap: () => _handleAdd(context, ref),
+      onTap: isOutOfZone ? null : () => _handleAdd(context, ref),
       child: Container(
         decoration: BoxDecoration(
           color: cardBg,
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: borderColor, width: 0.5),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.04),
+              color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.03),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -1139,49 +1188,68 @@ class _ProductCard extends ConsumerWidget {
             // Bottom: full-width counter or add button
             Padding(
               padding: const EdgeInsets.fromLTRB(4, 3, 4, 4),
-              child: product.isInStock
-                  ? (totalInCart == 0
-                        ? _FullWidthAddBtn(
-                            onTap: () {
-                              if (product.quantity > 0) {
-                                _handleAdd(context, ref);
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text('Товар закончился на складе'),
-                                  ),
-                                );
-                              }
-                            },
-                          )
-                        : _FullWidthCounter(
-                            quantity: totalInCart,
-                            onAdd: () {
-                              if (totalInCart < product.quantity) {
-                                _handleAdd(context, ref);
-                              } else {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Достигнуто максимальное количество на складе',
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
-                            onRemove: () {
-                              if (inCart.isNotEmpty) {
-                                final last = inCart.last;
-                                ref
-                                    .read(cartProvider.notifier)
-                                    .updateQuantity(
-                                      last.cartKey,
-                                      last.quantity - 1,
+              child: isOutOfZone
+                  ? Container(
+                      width: double.infinity,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Недоступно',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                          ),
+                        ),
+                      ),
+                    )
+                  : (product.isInStock
+                      ? (totalInCart == 0
+                            ? _FullWidthAddBtn(
+                                onTap: () {
+                                  if (product.quantity > 0) {
+                                    _handleAdd(context, ref);
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text('Товар закончился на складе'),
+                                      ),
                                     );
-                              }
-                            },
-                          ))
-                  : const SizedBox(height: 26),
+                                  }
+                                },
+                              )
+                            : _FullWidthCounter(
+                                quantity: totalInCart,
+                                onAdd: () {
+                                  if (totalInCart < product.quantity) {
+                                    _handleAdd(context, ref);
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                        content: Text(
+                                          'Достигнуто максимальное количество на складе',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                                onRemove: () {
+                                  if (inCart.isNotEmpty) {
+                                    final last = inCart.last;
+                                    ref
+                                        .read(cartProvider.notifier)
+                                        .updateQuantity(
+                                          last.cartKey,
+                                          last.quantity - 1,
+                                        );
+                                  }
+                                },
+                              ))
+                      : const SizedBox(height: 26)),
             ),
           ],
         ),

@@ -169,8 +169,8 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF0D0D0D) : const Color(0xFFF5F5F5);
-    final cardColor = isDark ? const Color(0xFF1A1A1A) : Colors.white;
+    final bgColor = isDark ? const Color(0xFF0B0F19) : const Color(0xFFF8FAFC);
+    final cardColor = isDark ? const Color(0xFF151D30) : Colors.white;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -336,9 +336,13 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
                   child: Container(
                     decoration: BoxDecoration(
                       color: isDark
-                          ? Colors.white.withValues(alpha: 0.06)
-                          : const Color(0xFFF0F0F0),
+                          ? const Color(0xFF1E293B)
+                          : const Color(0xFFF1F5F9),
                       borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        width: 1,
+                      ),
                     ),
                     child: TextField(
                       controller: _msgCtrl,

@@ -2,38 +2,37 @@ import 'package:flutter/material.dart';
 
 class AkJolTheme {
   // ─── Brand Colors ──────────────────────────────
-  static const Color primary = Color(0xFF2ECC71);       // Зелёный
-  static const Color primaryDark = Color(0xFF27AE60);
-  static const Color accent = Color(0xFFF1C40F);         // Жёлтый
-  static const Color accentDark = Color(0xFFD4AC0D);
+  static const Color primary = Color(0xFF00B15E);       // Изумрудно-зеленый (vibrant emerald)
+  static const Color primaryDark = Color(0xFF008F4C);
+  static const Color accent = Color(0xFFF59E0B);         // Янтарный/Золотой (amber)
+  static const Color accentDark = Color(0xFFD97706);
 
   // ─── Light Neutrals ────────────────────────────
-  static const Color background = Color(0xFFF8F9FA);
+  static const Color background = Color(0xFFF8FAFC);    // Slate 50
   static const Color surface = Colors.white;
-  static const Color surfaceVariant = Color(0xFFF1F3F5);
-  static const Color textPrimary = Color(0xFF1A1D21);
-  static const Color textSecondary = Color(0xFF6C757D);
-  static const Color textTertiary = Color(0xFFADB5BD);
-  static const Color border = Color(0xFFE9ECEF);
-  static const Color error = Color(0xFFE74C3C);
-  static const Color success = Color(0xFF2ECC71);
+  static const Color surfaceVariant = Color(0xFFF1F5F9); // Slate 100
+  static const Color textPrimary = Color(0xFF0F172A);   // Slate 900
+  static const Color textSecondary = Color(0xFF475569); // Slate 600
+  static const Color textTertiary = Color(0xFF94A3B8);  // Slate 400
+  static const Color border = Color(0xFFE2E8F0);        // Slate 200
+  static const Color error = Color(0xFFEF4444);         // Red 500
+  static const Color success = Color(0xFF00B15E);
 
   // ─── Dark Neutrals ─────────────────────────────
-  static const Color _darkBackground = Color(0xFF0D1117);
-  static const Color _darkSurface = Color(0xFF161B22);
-  static const Color _darkSurfaceVariant = Color(0xFF21262D);
-  static const Color _darkTextPrimary = Color(0xFFF0F6FC);
-  // ignore: unused_field
-  static const Color _darkTextSecondary = Color(0xFF8B949E);
-  static const Color _darkTextTertiary = Color(0xFF484F58);
-  static const Color _darkBorder = Color(0xFF30363D);
+  static const Color _darkBackground = Color(0xFF0B0F19); // Глубокий темно-синий
+  static const Color _darkSurface = Color(0xFF151D30);    // Slate-Navy поверхность
+  static const Color _darkSurfaceVariant = Color(0xFF1E293B); // Slate 800
+  static const Color _darkTextPrimary = Color(0xFFF8FAFC);   // Slate 50
+  static const Color _darkTextSecondary = Color(0xFFCBD5E1); // Slate 300
+  static const Color _darkTextTertiary = Color(0xFF64748B);  // Slate 500
+  static const Color _darkBorder = Color(0xFF334155);        // Slate 700
 
   // ─── Status Colors ────────────────────────────
-  static const Color statusPending = Color(0xFFF39C12);
-  static const Color statusAccepted = Color(0xFF3498DB);
-  static const Color statusDelivering = Color(0xFF9B59B6);
-  static const Color statusDelivered = Color(0xFF2ECC71);
-  static const Color statusCancelled = Color(0xFFE74C3C);
+  static const Color statusPending = Color(0xFFF59E0B);
+  static const Color statusAccepted = Color(0xFF3B82F6);
+  static const Color statusDelivering = Color(0xFF8B5CF6);
+  static const Color statusDelivered = Color(0xFF00B15E);
+  static const Color statusCancelled = Color(0xFFEF4444);
 
   // ─── Light Theme ──────────────────────────────
   static ThemeData get lightTheme => ThemeData(
@@ -69,7 +68,7 @@ class AkJolTheme {
       elevation: 0,
       color: surface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         side: const BorderSide(color: border, width: 1),
       ),
     ),
@@ -80,7 +79,7 @@ class AkJolTheme {
         elevation: 0,
         minimumSize: const Size(double.infinity, 52),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
         ),
         textStyle: const TextStyle(
           fontFamily: 'Inter',
@@ -94,7 +93,7 @@ class AkJolTheme {
         foregroundColor: primary,
         minimumSize: const Size(double.infinity, 52),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
         ),
         side: const BorderSide(color: primary, width: 1.5),
         textStyle: const TextStyle(
@@ -110,19 +109,19 @@ class AkJolTheme {
       hintStyle: const TextStyle(color: textTertiary),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         borderSide: const BorderSide(color: primary, width: 2),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         borderSide: const BorderSide(color: error, width: 1),
       ),
     ),
@@ -185,7 +184,7 @@ class AkJolTheme {
       elevation: 0,
       color: _darkSurface,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(20),
         side: const BorderSide(color: _darkBorder, width: 1),
       ),
     ),
@@ -196,7 +195,7 @@ class AkJolTheme {
         elevation: 0,
         minimumSize: const Size(double.infinity, 52),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
         ),
         textStyle: const TextStyle(
           fontFamily: 'Inter',
@@ -210,7 +209,7 @@ class AkJolTheme {
         foregroundColor: primary,
         minimumSize: const Size(double.infinity, 52),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(16),
         ),
         side: const BorderSide(color: primary, width: 1.5),
         textStyle: const TextStyle(
@@ -226,19 +225,19 @@ class AkJolTheme {
       hintStyle: const TextStyle(color: _darkTextTertiary),
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide.none,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         borderSide: BorderSide.none,
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         borderSide: const BorderSide(color: primary, width: 2),
       ),
       errorBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         borderSide: const BorderSide(color: error, width: 1),
       ),
     ),

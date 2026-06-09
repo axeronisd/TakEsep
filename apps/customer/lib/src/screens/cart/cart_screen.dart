@@ -16,13 +16,13 @@ class CartScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cart = ref.watch(cartProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF0D1117) : const Color(0xFFF5F5F5);
-    final cardBg = isDark ? const Color(0xFF161B22) : Colors.white;
+    final bg = isDark ? const Color(0xFF0B0F19) : const Color(0xFFF8FAFC);
+    final cardBg = isDark ? const Color(0xFF151D30) : Colors.white;
     final borderColor = isDark
-        ? const Color(0xFF21262D)
-        : const Color(0xFFE5E7EB);
-    final textColor = isDark ? Colors.white : const Color(0xFF111827);
-    final muted = isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280);
+        ? const Color(0xFF334155)
+        : const Color(0xFFE2E8F0);
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
 
     if (cart.isEmpty) {
       return Scaffold(
@@ -526,9 +526,9 @@ class _CartItemCard extends ConsumerWidget {
             Container(
               decoration: BoxDecoration(
                 color: isDark
-                    ? const Color(0xFF21262D)
-                    : const Color(0xFFF3F4F6),
-                borderRadius: BorderRadius.circular(10),
+                    ? const Color(0xFF1E293B)
+                    : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
@@ -601,11 +601,14 @@ class _CartItemCard extends ConsumerWidget {
   }
 
   Widget _placeholder() {
-    return Center(
-      child: Icon(
-        Icons.image_outlined,
-        size: 22,
-        color: muted.withValues(alpha: 0.4),
+    return Container(
+      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+      child: Center(
+        child: Icon(
+          Icons.image_outlined,
+          size: 22,
+          color: muted.withValues(alpha: 0.4),
+        ),
       ),
     );
   }

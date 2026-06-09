@@ -108,11 +108,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF0D1117) : const Color(0xFFFAFBFC);
-    final cardBg = isDark ? const Color(0xFF161B22) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF111827);
-    final muted = isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280);
-    final border = isDark ? const Color(0xFF30363D) : const Color(0xFFE5E7EB);
+    final bg = isDark ? const Color(0xFF0B0F19) : const Color(0xFFF8FAFC);
+    final cardBg = isDark ? const Color(0xFF151D30) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
+    final border = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
     final filtered = _filteredProducts;
 
     return Scaffold(
@@ -150,8 +150,8 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                           hintStyle: TextStyle(color: muted, fontSize: 14),
                           prefixIcon: Icon(Icons.search_rounded, color: muted, size: 20),
                           filled: true,
-                          fillColor: isDark ? const Color(0xFF21262D) : const Color(0xFFF0F1F3),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+                          fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                           contentPadding: const EdgeInsets.symmetric(vertical: 12),
                         ),
                       ),
@@ -318,9 +318,9 @@ class _CategoryChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bgSelected = AkJolTheme.primary;
-    final bgNormal = isDark ? const Color(0xFF21262D) : const Color(0xFFF0F1F3);
+    final bgNormal = isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
     final textSelected = Colors.white;
-    final textNormal = isDark ? const Color(0xFFCDD9E5) : const Color(0xFF374151);
+    final textNormal = isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569);
 
     return GestureDetector(
       onTap: onTap,
@@ -380,10 +380,10 @@ class _ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cardBg = isDark ? const Color(0xFF161B22) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF111827);
-    final muted = isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280);
-    final border = isDark ? const Color(0xFF30363D) : const Color(0xFFE5E7EB);
+    final cardBg = isDark ? const Color(0xFF151D30) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
+    final border = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
 
     final name = product['name'] as String? ?? '';
     final desc = (product['b2c_description'] as String?) ??
@@ -405,7 +405,7 @@ class _ProductCard extends StatelessWidget {
           border: Border.all(color: border, width: 0.5),
           boxShadow: isDark
               ? null
-              : [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 2))],
+              : [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 12, offset: const Offset(0, 4))],
         ),
         clipBehavior: Clip.antiAlias,
         child: Column(
@@ -471,7 +471,7 @@ class _ProductCard extends StatelessWidget {
 
   Widget _placeholder(Color muted) {
     return Container(
-      color: isDark ? const Color(0xFF21262D) : const Color(0xFFF3F4F6),
+      color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
       child: Center(
         child: Icon(Icons.image_outlined, size: 32, color: muted.withValues(alpha: 0.4)),
       ),
