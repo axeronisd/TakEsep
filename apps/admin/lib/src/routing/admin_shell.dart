@@ -663,21 +663,40 @@ class _NavDef {
 
 Future<void> _openWhatsApp() async {
   final uri = Uri.parse('https://wa.me/996506384666');
-  if (await canLaunchUrl(uri)) {
+  try {
     await launchUrl(uri, mode: LaunchMode.externalApplication);
+  } catch (e) {
+    debugPrint('Could not launch WhatsApp: $e');
   }
 }
 
 Future<void> _openSite() async {
-  final uri = Uri.parse('/TakEsep/');
-  if (await canLaunchUrl(uri)) {
+  final base = Uri.base;
+  final uri = Uri(
+    scheme: base.scheme,
+    host: base.host,
+    port: base.port == 0 ? null : base.port,
+    path: '/TakEsep/',
+  );
+  try {
     await launchUrl(uri, webOnlyWindowName: '_self');
+  } catch (e) {
+    debugPrint('Could not launch site: $e');
   }
 }
 
 Future<void> _logout(BuildContext context) async {
-  final uri = Uri.parse('/TakEsep/admin.html?logout=1');
-  if (await canLaunchUrl(uri)) {
+  final base = Uri.base;
+  final uri = Uri(
+    scheme: base.scheme,
+    host: base.host,
+    port: base.port == 0 ? null : base.port,
+    path: '/TakEsep/admin.html',
+    queryParameters: {'logout': '1'},
+  );
+  try {
     await launchUrl(uri, webOnlyWindowName: '_self');
+  } catch (e) {
+    debugPrint('Could not logout: $e');
   }
 }
