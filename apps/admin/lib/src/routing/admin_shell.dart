@@ -10,8 +10,12 @@ class AdminShell extends StatelessWidget {
   const AdminShell({super.key, required this.child});
 
   static const _sections = [
+    _NavSection('Аналитика', [
+      _NavDef(Icons.dashboard_rounded, 'Дашборд', '/', ['/'],
+          AppColors.primary),
+    ]),
     _NavSection('Панель', [
-      _NavDef(Icons.business_rounded, 'Компании', '/', ['/', '/companies'],
+      _NavDef(Icons.business_rounded, 'Компании', '/companies', ['/companies'],
           AppColors.info),
       _NavDef(Icons.delivery_dining_rounded, 'Курьеры', '/couriers',
           ['/couriers'], AppColors.success),
@@ -27,8 +31,9 @@ class AdminShell extends StatelessWidget {
   ];
 
   static String titleFor(String location) {
-    if (location == '/' || location.startsWith('/companies')) {
-      return location.contains('/') && location != '/'
+    if (location == '/') return 'Дашборд';
+    if (location.startsWith('/companies')) {
+      return location != '/companies'
           ? 'Компания'
           : 'Компании';
     }
@@ -40,7 +45,8 @@ class AdminShell extends StatelessWidget {
   }
 
   static String subtitleFor(String location) {
-    if (location == '/' || location.startsWith('/companies')) {
+    if (location == '/') return 'Общая аналитика и показатели экосистемы';
+    if (location.startsWith('/companies')) {
       return 'Лицензии, ключи и доступ компаний';
     }
     if (location.startsWith('/couriers')) {
@@ -90,8 +96,10 @@ class AdminShell extends StatelessWidget {
   }
 
   static bool _checkActive(String location, _NavDef def) {
-    if (def.route == '/' &&
-        (location == '/' || location.startsWith('/companies'))) {
+    if (def.route == '/' && location == '/') {
+      return true;
+    }
+    if (def.route == '/companies' && location.startsWith('/companies')) {
       return true;
     }
     return def.matches.any((m) => location == m || location.startsWith('$m/'));
@@ -301,21 +309,21 @@ class _MobileShell extends StatelessWidget {
   const _MobileShell({required this.location, required this.child});
 
   int get _currentIndex {
-    if (location == '/' || location.startsWith('/companies')) return 0;
-    if (location.startsWith('/couriers')) return 1;
-    if (location.startsWith('/addresses')) return 2;
-    if (location.startsWith('/zones')) return 3;
-    if (location.startsWith('/database')) return 4;
+    if (location == '/') return 0;
+    if (location.startsWith('/companies')) return 1;
+    if (location.startsWith('/couriers')) return 2;
+    if (location.startsWith('/addresses')) return 3;
+    if (location.startsWith('/database') || location.startsWith('/zones')) return 4;
     return 0;
   }
 
   @override
   Widget build(BuildContext context) {
     final destinations = [
-      (Icons.business_rounded, 'Компании', '/'),
+      (Icons.dashboard_rounded, 'Дашборд', '/'),
+      (Icons.business_rounded, 'Компании', '/companies'),
       (Icons.delivery_dining_rounded, 'Курьеры', '/couriers'),
       (Icons.map_rounded, 'Адреса', '/addresses'),
-      (Icons.radar_rounded, 'Зоны', '/zones'),
       (Icons.storage_rounded, 'База', '/database'),
     ];
 
@@ -363,6 +371,12 @@ class _MobileShell extends StatelessWidget {
               ),
               const Divider(height: 1, color: AppColors.darkBorder),
               const SizedBox(height: 12),
+              _buildDrawerItem(
+                context,
+                icon: Icons.radar_rounded,
+                label: 'Зоны экосистемы',
+                onTap: () => context.go('/zones'),
+              ),
               _buildDrawerItem(
                 context,
                 icon: Icons.chat_bubble_outline_rounded,

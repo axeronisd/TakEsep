@@ -5,34 +5,36 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="theme-color" content="#06080f">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <title>TakEsep — Экосистема для склада, доставки и продаж</title>
+  <title data-translate="pageTitle">TakEsep — Экосистема для склада, доставки и продаж</title>
   <meta name="description" content="TakEsep и AkJol — профессиональная экосистема для складов, магазинов, курьеров и покупателей. Windows, Android, iOS.">
   <link rel="icon" href="logo.png" type="image/png">
+  
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800;900&display=swap" rel="stylesheet">
+  
   <style>
     :root {
       --bg: #06080f;
       --bg-soft: #0b101a;
-      --bg-card: rgba(14, 20, 33, 0.78);
+      --bg-card: rgba(14, 20, 33, 0.48);
       --bg-card-solid: #0e1421;
       --text: #f8fafc;
       --text-secondary: #94a3b8;
       --text-muted: #64748b;
-      --border: rgba(148, 163, 184, 0.1);
-      --border-strong: rgba(148, 163, 184, 0.2);
+      --border: rgba(148, 163, 184, 0.08);
+      --border-strong: rgba(148, 163, 184, 0.16);
       --brand: #3b82f6;
       --brand-2: #6366f1;
       --accent: #f59e0b;
-      --green: #22c55e;
+      --green: #10b981;
       --green-2: #84cc16;
       --radius: 18px;
       --radius-lg: 28px;
-      --shadow: 0 28px 80px rgba(0, 0, 0, 0.45);
-      --glass: blur(18px) saturate(140%);
+      --shadow: 0 32px 80px rgba(0, 0, 0, 0.55);
+      --glass: blur(20px) saturate(140%);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
-      --nav-h: 64px;
+      --nav-h: 68px;
     }
 
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -52,9 +54,9 @@
       position: fixed;
       inset: 0;
       background:
-        radial-gradient(circle at 12% 8%, rgba(59, 130, 246, 0.18), transparent 28%),
-        radial-gradient(circle at 88% 12%, rgba(245, 158, 11, 0.12), transparent 24%),
-        radial-gradient(circle at 50% 100%, rgba(34, 197, 94, 0.08), transparent 32%),
+        radial-gradient(circle at 12% 8%, rgba(59, 130, 246, 0.18), transparent 30%),
+        radial-gradient(circle at 88% 12%, rgba(245, 158, 11, 0.12), transparent 26%),
+        radial-gradient(circle at 50% 100%, rgba(16, 185, 129, 0.08), transparent 34%),
         linear-gradient(180deg, #06080f 0%, #090d16 45%, #06080f 100%);
       pointer-events: none;
       z-index: 0;
@@ -64,8 +66,8 @@
       position: fixed;
       inset: 0;
       background-image:
-        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
       background-size: 72px 72px;
       mask-image: radial-gradient(circle at center, black 30%, transparent 85%);
       pointer-events: none;
@@ -75,9 +77,20 @@
     .container {
       max-width: 1180px;
       margin: 0 auto;
-      padding: 0 20px;
+      padding: 0 24px;
       position: relative;
       z-index: 1;
+    }
+
+    h1, h2, h3 {
+      font-family: 'Outfit', 'Inter', sans-serif;
+    }
+
+    /* Gradient Typography */
+    .gradient-title {
+      background: linear-gradient(135deg, #ffffff 35%, #93c5fd 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
     /* ── Header ── */
@@ -86,8 +99,9 @@
       top: 0;
       z-index: 200;
       backdrop-filter: var(--glass);
-      background: rgba(6, 8, 15, 0.72);
+      background: rgba(6, 8, 15, 0.78);
       border-bottom: 1px solid var(--border);
+      transition: background 0.3s, border-color 0.3s;
     }
 
     nav {
@@ -112,48 +126,81 @@
       height: 38px;
       border-radius: 11px;
       object-fit: cover;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
     }
 
     .brand-name {
-      font-size: 1.02rem;
+      font-size: 1.05rem;
       font-weight: 800;
-      letter-spacing: -0.03em;
+      letter-spacing: -0.02em;
       white-space: nowrap;
     }
 
     .brand-tagline {
-      font-size: 0.66rem;
+      font-size: 0.65rem;
       color: var(--text-muted);
       letter-spacing: 0.08em;
       text-transform: uppercase;
     }
 
+    .nav-right-container {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
     .nav-desktop {
       display: flex;
       align-items: center;
-      gap: 18px;
+      gap: 20px;
     }
 
     .nav-link {
       color: var(--text-secondary);
       text-decoration: none;
       font-size: 0.875rem;
-      font-weight: 500;
+      font-weight: 600;
       transition: color 0.2s;
     }
 
     .nav-link:hover { color: var(--text); }
 
     .nav-badge {
-      font-size: 0.7rem;
-      font-weight: 600;
-      padding: 7px 12px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 6px 12px;
       border-radius: 999px;
       border: 1px solid var(--border-strong);
-      background: rgba(255,255,255,0.03);
+      background: rgba(255,255,255,0.04);
       color: var(--text-secondary);
       white-space: nowrap;
+    }
+
+    /* Language Toggle Switcher */
+    .lang-selector {
+      display: inline-flex;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--border-strong);
+      border-radius: 10px;
+      padding: 2px;
+    }
+
+    .lang-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .lang-btn.active {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
     }
 
     .menu-btn {
@@ -190,10 +237,10 @@
 
     /* ── Hero ── */
     .hero {
-      padding: 56px 0 40px;
+      padding: 68px 0 52px;
       display: grid;
-      grid-template-columns: 1.05fr 0.95fr;
-      gap: 36px;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 48px;
       align-items: center;
     }
 
@@ -201,8 +248,8 @@
       display: inline-flex;
       align-items: center;
       gap: 10px;
-      font-size: 0.72rem;
-      font-weight: 700;
+      font-size: 0.75rem;
+      font-weight: 800;
       letter-spacing: 0.12em;
       text-transform: uppercase;
       color: var(--accent);
@@ -211,17 +258,17 @@
 
     .eyebrow::before {
       content: '';
-      width: 28px;
-      height: 1px;
+      width: 24px;
+      height: 2px;
       background: linear-gradient(90deg, var(--accent), transparent);
     }
 
     .hero h1 {
-      font-size: clamp(2.2rem, 6vw, 4rem);
-      font-weight: 800;
-      letter-spacing: -0.045em;
-      line-height: 1.04;
-      margin-bottom: 18px;
+      font-size: clamp(2.4rem, 6vw, 4.2rem);
+      font-weight: 900;
+      letter-spacing: -0.04em;
+      line-height: 1.05;
+      margin-bottom: 20px;
     }
 
     .hero h1 .muted {
@@ -232,17 +279,17 @@
 
     .hero-lead {
       color: var(--text-secondary);
-      font-size: clamp(1rem, 2.4vw, 1.08rem);
+      font-size: clamp(1rem, 2.4vw, 1.15rem);
       line-height: 1.75;
-      margin-bottom: 28px;
+      margin-bottom: 32px;
       max-width: 540px;
     }
 
     .hero-actions {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
-      margin-bottom: 28px;
+      gap: 14px;
+      margin-bottom: 32px;
     }
 
     .btn {
@@ -250,33 +297,37 @@
       align-items: center;
       justify-content: center;
       gap: 10px;
-      min-height: 48px;
-      padding: 0 20px;
+      min-height: 52px;
+      padding: 0 24px;
       border-radius: 14px;
-      font-size: 0.92rem;
-      font-weight: 600;
+      font-size: 0.95rem;
+      font-weight: 700;
       text-decoration: none;
       border: none;
       cursor: pointer;
-      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+      transition: transform 0.25s, box-shadow 0.25s, background 0.25s;
     }
 
     .btn-primary {
       background: linear-gradient(135deg, #ffffff 0%, #dbeafe 100%);
       color: #0f172a;
-      box-shadow: 0 14px 40px rgba(59, 130, 246, 0.22);
+      box-shadow: 0 16px 40px rgba(59, 130, 246, 0.22), inset 0 -2px 0 rgba(0,0,0,0.1);
     }
 
-    .btn-primary:hover { transform: translateY(-2px); }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 20px 48px rgba(59, 130, 246, 0.32);
+    }
 
     .btn-secondary {
-      background: rgba(255,255,255,0.04);
+      background: rgba(255,255,255,0.03);
       color: var(--text);
       border: 1px solid var(--border-strong);
+      backdrop-filter: var(--glass);
     }
 
     .btn-secondary:hover {
-      background: rgba(255,255,255,0.07);
+      background: rgba(255,255,255,0.06);
       transform: translateY(-2px);
     }
 
@@ -284,11 +335,11 @@
       display: none;
       align-items: center;
       gap: 14px;
-      padding: 14px 16px;
+      padding: 14px 18px;
       border-radius: 16px;
-      border: 1px solid rgba(59, 130, 246, 0.25);
-      background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(99,102,241,0.06));
-      margin-bottom: 24px;
+      border: 1px solid rgba(59, 130, 246, 0.2);
+      background: linear-gradient(135deg, rgba(59,130,246,0.1), rgba(99,102,241,0.05));
+      margin-bottom: 28px;
     }
 
     .device-banner.visible { display: flex; }
@@ -300,17 +351,18 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.06);
       flex-shrink: 0;
+      color: #60a5fa;
     }
 
     .device-banner-title {
-      font-size: 0.88rem;
+      font-size: 0.9rem;
       font-weight: 700;
     }
 
     .device-banner-sub {
-      font-size: 0.76rem;
+      font-size: 0.78rem;
       color: var(--text-muted);
       margin-top: 2px;
     }
@@ -318,37 +370,44 @@
     .hero-metrics {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
+      gap: 16px;
     }
 
     .metric {
-      padding: 16px;
+      padding: 18px;
       border-radius: 16px;
-      background: rgba(255,255,255,0.03);
+      background: rgba(255,255,255,0.02);
       border: 1px solid var(--border);
     }
 
     .metric-value {
-      font-size: 1.35rem;
-      font-weight: 800;
+      font-size: 1.5rem;
+      font-weight: 850;
       letter-spacing: -0.03em;
     }
 
     .metric-label {
-      font-size: 0.74rem;
+      font-size: 0.76rem;
       color: var(--text-muted);
       margin-top: 4px;
+      font-weight: 550;
     }
 
     .hero-panel {
       position: relative;
-      padding: 24px;
+      padding: 28px;
       border-radius: var(--radius-lg);
       border: 1px solid var(--border-strong);
       background: var(--bg-card);
       backdrop-filter: var(--glass);
       box-shadow: var(--shadow);
       overflow: hidden;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    .hero-panel:hover {
+      border-color: rgba(59, 130, 246, 0.25);
+      box-shadow: 0 40px 100px rgba(0, 0, 0, 0.65), 0 0 40px rgba(59, 130, 246, 0.08);
     }
 
     .hero-panel::after {
@@ -356,23 +415,23 @@
       position: absolute;
       inset: auto -20% -40% -20%;
       height: 220px;
-      background: radial-gradient(circle, rgba(59,130,246,0.18), transparent 70%);
+      background: radial-gradient(circle, rgba(59,130,246,0.15), transparent 70%);
       pointer-events: none;
     }
 
     .panel-label {
-      font-size: 0.7rem;
-      font-weight: 700;
+      font-size: 0.72rem;
+      font-weight: 800;
       letter-spacing: 0.12em;
       text-transform: uppercase;
       color: var(--text-muted);
-      margin-bottom: 18px;
+      margin-bottom: 20px;
     }
 
     .app-showcase {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 14px;
       position: relative;
       z-index: 1;
     }
@@ -380,55 +439,55 @@
     .showcase-item {
       display: flex;
       align-items: center;
-      gap: 14px;
-      padding: 14px;
+      gap: 16px;
+      padding: 16px;
       border-radius: 16px;
-      background: rgba(255,255,255,0.03);
+      background: rgba(255,255,255,0.02);
       border: 1px solid var(--border);
       text-decoration: none;
       color: inherit;
-      transition: transform 0.2s, border-color 0.2s, background 0.2s;
+      transition: transform 0.25s, border-color 0.25s, background 0.25s;
     }
 
     .showcase-item:hover {
-      transform: translateX(4px);
+      transform: translateX(6px);
       border-color: var(--border-strong);
-      background: rgba(255,255,255,0.05);
+      background: rgba(255,255,255,0.04);
     }
 
     .showcase-item img {
-      width: 54px;
-      height: 54px;
+      width: 56px;
+      height: 56px;
       border-radius: 14px;
       object-fit: cover;
-      box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.4);
     }
 
     .showcase-name {
-      font-size: 0.95rem;
-      font-weight: 700;
+      font-size: 1rem;
+      font-weight: 800;
     }
 
     .showcase-role {
-      font-size: 0.76rem;
+      font-size: 0.78rem;
       color: var(--text-muted);
       margin-top: 2px;
     }
 
     /* ── Sections ── */
-    section.block { padding: 56px 0; }
+    section.block { padding: 68px 0; }
 
     .section-head {
       max-width: 680px;
-      margin: 0 auto 40px;
+      margin: 0 auto 48px;
       text-align: center;
     }
 
     .section-head h2 {
-      font-size: clamp(1.7rem, 4vw, 2.4rem);
-      font-weight: 800;
+      font-size: clamp(1.9rem, 4vw, 2.6rem);
+      font-weight: 900;
       letter-spacing: -0.04em;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
 
     .section-head p {
@@ -440,14 +499,14 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      margin-top: 14px;
-      padding: 8px 12px;
+      margin-top: 16px;
+      padding: 8px 16px;
       border-radius: 999px;
-      background: rgba(34,197,94,0.1);
-      border: 1px solid rgba(34,197,94,0.22);
-      color: #86efac;
+      background: rgba(16,185,129,0.08);
+      border: 1px solid rgba(16,185,129,0.2);
+      color: #34d399;
       font-size: 0.76rem;
-      font-weight: 600;
+      font-weight: 700;
     }
 
     .release-note.loading {
@@ -456,29 +515,89 @@
       color: var(--text-muted);
     }
 
+    /* ── Dynamic Changelog Dropdown ── */
+    .changelog-box {
+      margin-top: 14px;
+      max-width: 540px;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: left;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.01);
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    
+    .changelog-toggle-btn {
+      width: 100%;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
+      transition: background 0.2s, color 0.2s;
+    }
+    .changelog-toggle-btn:hover {
+      background: rgba(255, 255, 255, 0.02);
+      color: var(--text);
+    }
+    .changelog-toggle-btn svg {
+      transition: transform 0.3s;
+      color: var(--text-muted);
+    }
+    .changelog-toggle-btn.open svg {
+      transform: rotate(180deg);
+    }
+    
+    .changelog-content {
+      display: none;
+      padding: 16px;
+      border-top: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.15);
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      max-height: 250px;
+      overflow-y: auto;
+    }
+    .changelog-content ul {
+      padding-left: 20px;
+    }
+    .changelog-content li {
+      margin-bottom: 6px;
+    }
+
     /* ── App cards ── */
     .apps-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 18px;
+      gap: 24px;
     }
 
     .app-card {
       display: flex;
       flex-direction: column;
-      padding: 24px;
+      padding: 28px;
       border-radius: var(--radius-lg);
       border: 1px solid var(--border);
       background: var(--bg-card);
       backdrop-filter: var(--glass);
-      transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s, border-color 0.35s;
       scroll-margin-top: calc(var(--nav-h) + 16px);
     }
 
     .app-card:hover {
-      transform: translateY(-4px);
-      border-color: var(--border-strong);
-      box-shadow: var(--shadow);
+      transform: translateY(-6px);
+      border-color: rgba(59,130,246,0.3);
+      box-shadow: 0 32px 80px rgba(0, 0, 0, 0.45), 0 0 30px rgba(59, 130, 246, 0.06);
     }
 
     .app-card.warehouse { --accent: var(--brand); }
@@ -486,18 +605,18 @@
     .app-card.courier   { --accent: var(--accent); }
 
     .app-card.recommended {
-      border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
-      box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 18%, transparent), var(--shadow);
+      border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 15%, transparent), var(--shadow);
     }
 
     .recommended-pill {
       display: none;
       align-self: flex-start;
-      margin-bottom: 14px;
-      padding: 5px 10px;
+      margin-bottom: 16px;
+      padding: 5px 12px;
       border-radius: 999px;
       font-size: 0.68rem;
-      font-weight: 700;
+      font-weight: 800;
       letter-spacing: 0.06em;
       text-transform: uppercase;
       background: color-mix(in srgb, var(--accent) 16%, transparent);
@@ -508,8 +627,8 @@
 
     .card-header {
       display: flex;
-      gap: 14px;
-      margin-bottom: 16px;
+      gap: 16px;
+      margin-bottom: 18px;
     }
 
     .app-icon {
@@ -517,13 +636,13 @@
       height: 68px;
       border-radius: 16px;
       object-fit: cover;
-      box-shadow: 0 12px 28px rgba(0,0,0,0.38);
+      box-shadow: 0 12px 28px rgba(0,0,0,0.4);
     }
 
     .app-title {
-      font-size: 1.18rem;
+      font-size: 1.25rem;
       font-weight: 800;
-      letter-spacing: -0.03em;
+      letter-spacing: -0.02em;
       margin-bottom: 8px;
     }
 
@@ -531,13 +650,13 @@
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      font-size: 0.67rem;
-      font-weight: 700;
+      font-size: 0.68rem;
+      font-weight: 800;
       letter-spacing: 0.07em;
       text-transform: uppercase;
-      padding: 5px 10px;
+      padding: 5px 12px;
       border-radius: 999px;
-      background: color-mix(in srgb, var(--accent) 14%, transparent);
+      background: color-mix(in srgb, var(--accent) 12%, transparent);
       color: var(--accent);
     }
 
@@ -551,9 +670,9 @@
 
     .app-desc {
       color: var(--text-secondary);
-      font-size: 0.9rem;
+      font-size: 0.92rem;
       line-height: 1.65;
-      margin-bottom: 16px;
+      margin-bottom: 20px;
       flex: 1;
     }
 
@@ -561,12 +680,13 @@
       display: flex;
       flex-wrap: wrap;
       gap: 6px;
-      margin-bottom: 18px;
+      margin-bottom: 20px;
     }
 
     .tag {
       font-size: 0.72rem;
-      padding: 5px 10px;
+      font-weight: 600;
+      padding: 5px 12px;
       border-radius: 999px;
       border: 1px solid var(--border);
       color: var(--text-secondary);
@@ -576,21 +696,21 @@
     .card-divider {
       height: 1px;
       background: var(--border);
-      margin-bottom: 16px;
+      margin-bottom: 20px;
     }
 
     .download-list {
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
     }
 
     .dl-btn {
       display: flex;
       align-items: center;
-      gap: 12px;
-      min-height: 56px;
-      padding: 12px 14px;
+      justify-content: space-between;
+      min-height: 58px;
+      padding: 12px 16px;
       border-radius: 14px;
       text-decoration: none;
       color: var(--text);
@@ -615,11 +735,6 @@
       pointer-events: none;
     }
 
-    .dl-btn.loading {
-      pointer-events: none;
-      opacity: 0.7;
-    }
-
     .dl-icon {
       width: 36px;
       height: 36px;
@@ -631,11 +746,19 @@
       flex-shrink: 0;
     }
 
-    .dl-text { flex: 1; min-width: 0; }
+    .dl-text-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .dl-text { min-width: 0; }
 
     .dl-title {
-      font-size: 0.88rem;
-      font-weight: 600;
+      font-size: 0.9rem;
+      font-weight: 700;
     }
 
     .dl-sub {
@@ -648,104 +771,229 @@
       font-size: 0.68rem;
       color: var(--text-muted);
       white-space: nowrap;
+      margin-right: 6px;
+    }
+    
+    .dl-btn svg.action-arrow {
+      color: var(--text-muted);
+      flex-shrink: 0;
+      transition: transform 0.2s, color 0.2s;
+    }
+    .dl-btn:hover svg.action-arrow {
+      color: var(--text);
+      transform: translateX(2px);
+    }
+
+    /* ── Interactive Timeline Stepper ── */
+    .timeline-container {
+      position: relative;
+      margin: 48px auto 20px;
+      max-width: 960px;
+    }
+    .timeline-line {
+      position: absolute;
+      top: 36px;
+      left: 15%;
+      right: 15%;
+      height: 3px;
+      background: rgba(255, 255, 255, 0.05);
+      z-index: 1;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    .timeline-progress {
+      height: 100%;
+      width: 50%;
+      background: linear-gradient(90deg, var(--brand) 0%, var(--brand-2) 100%);
+      transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .timeline-steps {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      z-index: 2;
+    }
+    .timeline-step {
+      flex: 1;
+      text-align: center;
+      padding: 0 15px;
+      cursor: pointer;
+    }
+    .step-num {
+      width: 32px;
+      height: 32px;
+      line-height: 30px;
+      border-radius: 50%;
+      background: var(--bg-soft);
+      border: 2px solid rgba(255, 255, 255, 0.1);
+      margin: 0 auto 12px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: var(--text-secondary);
+      transition: all 0.3s;
+    }
+    .step-icon {
+      width: 56px;
+      height: 56px;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      margin: 0 auto 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .timeline-step.active .step-num {
+      background: var(--brand);
+      border-color: var(--brand);
+      color: var(--text);
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.45);
+    }
+    .timeline-step.active .step-icon {
+      background: rgba(59, 130, 246, 0.14);
+      border-color: rgba(59, 130, 246, 0.4);
+      color: #60a5fa;
+      transform: scale(1.1);
+      box-shadow: 0 10px 25px rgba(59, 130, 246, 0.18);
+    }
+    .timeline-step h3 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      color: var(--text-secondary);
+      transition: color 0.3s;
+    }
+    .timeline-step.active h3 {
+      color: var(--text);
+    }
+    .timeline-step p {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+      max-width: 240px;
+      margin: 0 auto;
+      transition: color 0.3s;
+    }
+    .timeline-step.active p {
+      color: var(--text-secondary);
     }
 
     /* ── Features ── */
     .features-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 14px;
+      gap: 20px;
     }
 
     .feature-card {
-      padding: 22px;
+      padding: 24px;
       border-radius: var(--radius);
       border: 1px solid var(--border);
-      background: rgba(255,255,255,0.02);
+      background: rgba(255,255,255,0.015);
+      transition: transform 0.3s, border-color 0.3s, background 0.3s;
+    }
+    
+    .feature-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.03);
     }
 
     .feature-icon {
-      width: 42px;
-      height: 42px;
+      width: 44px;
+      height: 44px;
       border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-bottom: 14px;
+      margin-bottom: 16px;
       background: rgba(59,130,246,0.12);
       color: #60a5fa;
     }
 
-    .feature-card:nth-child(2) .feature-icon { background: rgba(34,197,94,0.12); color: var(--green); }
+    .feature-card:nth-child(2) .feature-icon { background: rgba(16,185,129,0.12); color: var(--green); }
     .feature-card:nth-child(3) .feature-icon { background: rgba(245,158,11,0.12); color: var(--accent); }
     .feature-card:nth-child(4) .feature-icon { background: rgba(168,85,247,0.12); color: #c084fc; }
     .feature-card:nth-child(5) .feature-icon { background: rgba(239,68,68,0.12); color: #f87171; }
     .feature-card:nth-child(6) .feature-icon { background: rgba(6,182,212,0.12); color: #22d3ee; }
 
     .feature-title {
-      font-size: 0.94rem;
-      font-weight: 700;
+      font-size: 1rem;
+      font-weight: 800;
       margin-bottom: 8px;
     }
 
     .feature-desc {
-      font-size: 0.84rem;
+      font-size: 0.86rem;
       color: var(--text-muted);
       line-height: 1.65;
     }
 
     /* ── Support ── */
     .support-card {
-      padding: 48px 28px;
+      padding: 52px 32px;
       border-radius: var(--radius-lg);
       border: 1px solid var(--border-strong);
-      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.01));
+      background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.005));
       text-align: center;
     }
 
     .support-card h2 {
-      font-size: clamp(1.45rem, 3vw, 2rem);
-      font-weight: 800;
+      font-size: clamp(1.6rem, 3vw, 2.2rem);
+      font-weight: 900;
       letter-spacing: -0.03em;
-      margin-bottom: 10px;
+      margin-bottom: 12px;
     }
 
     .support-card p {
       color: var(--text-secondary);
       max-width: 520px;
-      margin: 0 auto 24px;
+      margin: 0 auto 28px;
     }
 
     .support-actions {
       display: flex;
       justify-content: center;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 12px;
     }
 
     .support-btn {
       display: inline-flex;
       align-items: center;
       gap: 10px;
-      min-height: 48px;
-      padding: 0 18px;
+      min-height: 50px;
+      padding: 0 20px;
       border-radius: 14px;
       text-decoration: none;
       color: var(--text);
       border: 1px solid var(--border-strong);
       background: rgba(255,255,255,0.03);
-      font-weight: 600;
+      font-weight: 700;
       font-size: 0.9rem;
+      transition: transform 0.2s, background 0.2s, border-color 0.2s;
+    }
+    
+    .support-btn:hover {
+      transform: translateY(-2px);
+      background: rgba(255, 255, 255, 0.06);
     }
 
     .support-btn.whatsapp {
-      border-color: rgba(34,197,94,0.3);
-      color: #86efac;
+      border-color: rgba(16,185,129,0.3);
+      color: #a7f3d0;
+      background: rgba(16,185,129,0.04);
+    }
+    .support-btn.whatsapp:hover {
+      background: rgba(16,185,129,0.08);
+      border-color: rgba(16,185,129,0.5);
     }
 
     /* ── Footer ── */
     footer {
-      padding: 28px 0 36px;
+      padding: 32px 0 44px;
       border-top: 1px solid var(--border);
       display: flex;
       align-items: center;
@@ -763,22 +1011,22 @@
     }
 
     .footer-brand img {
-      width: 22px;
-      height: 22px;
+      width: 24px;
+      height: 24px;
       border-radius: 6px;
     }
 
     .footer-links {
       display: flex;
       flex-wrap: wrap;
-      gap: 18px;
+      gap: 20px;
     }
 
     .footer-links a {
       color: var(--text-muted);
       text-decoration: none;
-      font-size: 0.84rem;
-      font-weight: 500;
+      font-size: 0.86rem;
+      font-weight: 600;
     }
 
     .footer-links a:hover { color: var(--text); }
@@ -791,7 +1039,7 @@
       right: 0;
       bottom: 0;
       z-index: 300;
-      padding: 12px 16px calc(12px + var(--safe-bottom));
+      padding: 12px 20px calc(12px + var(--safe-bottom));
       background: rgba(6, 8, 15, 0.88);
       backdrop-filter: var(--glass);
       border-top: 1px solid var(--border-strong);
@@ -802,29 +1050,36 @@
     }
 
     /* ── Animations ── */
-    @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(18px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .reveal {
+    .scroll-reveal {
       opacity: 0;
-      animation: fadeUp 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+      transform: translateY(24px);
+      transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
     }
 
-    .delay-1 { animation-delay: 0.05s; }
-    .delay-2 { animation-delay: 0.12s; }
-    .delay-3 { animation-delay: 0.18s; }
+    .scroll-reveal.reveal-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .reveal-delay-1 { transition-delay: 0.05s; }
+    .reveal-delay-2 { transition-delay: 0.12s; }
+    .reveal-delay-3 { transition-delay: 0.2s; }
 
     @media (max-width: 980px) {
       .hero {
         grid-template-columns: 1fr;
-        padding-top: 36px;
+        padding-top: 44px;
+        gap: 36px;
       }
 
       .apps-grid,
       .features-grid {
         grid-template-columns: 1fr;
+        gap: 20px;
+      }
+      
+      .timeline-container {
+        max-width: 600px;
       }
     }
 
@@ -837,15 +1092,15 @@
       }
 
       .hero-metrics {
-        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-columns: repeat(3, 1fr);
       }
 
       .metric {
-        padding: 12px;
+        padding: 14px;
       }
 
       .metric-value {
-        font-size: 1.1rem;
+        font-size: 1.25rem;
       }
 
       .hero-actions .btn {
@@ -855,26 +1110,33 @@
       .mobile-cta { display: block; }
 
       .app-card {
-        padding: 20px;
+        padding: 24px;
       }
 
       .support-card {
-        padding: 36px 20px;
+        padding: 38px 24px;
       }
 
       footer {
         flex-direction: column;
         text-align: center;
-        padding-bottom: 24px;
+        padding-bottom: 28px;
       }
 
       .footer-links {
         justify-content: center;
       }
+      
+      .timeline-line { display: none; }
+      .timeline-steps { flex-direction: column; gap: 32px; align-items: stretch; }
+      .timeline-step { display: flex; text-align: left; align-items: flex-start; gap: 16px; padding: 0; }
+      .step-num { margin: 0; flex-shrink: 0; }
+      .step-icon { margin: 0; flex-shrink: 0; }
+      .timeline-step p { margin: 0; max-width: 100%; }
     }
 
     @media (max-width: 420px) {
-      .container { padding: 0 16px; }
+      .container { padding: 0 20px; }
       .brand-tagline { display: none; }
       .hero-metrics { grid-template-columns: 1fr; }
     }
@@ -894,25 +1156,36 @@
           <img src="logo.png" alt="TakEsep" width="38" height="38">
           <div>
             <div class="brand-name">TakEsep</div>
-            <div class="brand-tagline">Business ecosystem</div>
+            <div class="brand-tagline" data-translate="brandTagline">Бизнес-экосистема</div>
           </div>
         </a>
-        <div class="nav-desktop">
-          <a href="#apps" class="nav-link">Приложения</a>
-          <a href="#features" class="nav-link">Возможности</a>
-          <a href="#support" class="nav-link">Поддержка</a>
-          <a href="https://github.com/axeronisd/TakEsep/releases" target="_blank" rel="noopener" class="nav-link">GitHub</a>
-          <span class="nav-badge" id="nav-version">Загрузка версии…</span>
+        
+        <div class="nav-right-container">
+          <div class="nav-desktop">
+            <a href="#apps" class="nav-link" data-translate="navApps">Приложения</a>
+            <a href="#features" class="nav-link" data-translate="navFeatures">Возможности</a>
+            <a href="#support" class="nav-link" data-translate="navSupport">Поддержка</a>
+            <a href="https://github.com/axeronisd/TakEsep/releases" target="_blank" rel="noopener" class="nav-link">GitHub</a>
+            <span class="nav-badge" id="nav-version" data-translate="navVersion">Загрузка версии…</span>
+          </div>
+          
+          <!-- Language Pill Selector -->
+          <div class="lang-selector">
+            <button class="lang-btn active" id="lang-ru" onclick="switchLanguage('ru')">RU</button>
+            <button class="lang-btn" id="lang-kg" onclick="switchLanguage('kg')">KG</button>
+          </div>
+          
+          <button class="menu-btn" id="menu-btn" aria-label="Меню" aria-expanded="false">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+          </button>
         </div>
-        <button class="menu-btn" id="menu-btn" aria-label="Меню" aria-expanded="false">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-        </button>
       </nav>
+      
       <div class="mobile-menu" id="mobile-menu">
-        <a href="#apps">Приложения</a>
-        <a href="#features">Возможности</a>
-        <a href="#support">Поддержка</a>
-        <a href="admin.html">Веб-панель</a>
+        <a href="#apps" data-translate="navApps">Приложения</a>
+        <a href="#features" data-translate="navFeatures">Возможности</a>
+        <a href="#support" data-translate="navSupport">Поддержка</a>
+        <a href="admin.html" data-translate="navAdmin">Веб-панель</a>
         <a href="https://github.com/axeronisd/TakEsep/releases" target="_blank" rel="noopener">GitHub Releases</a>
       </div>
     </div>
@@ -920,31 +1193,30 @@
 
   <div class="container">
     <section class="hero">
-      <div class="hero-copy reveal delay-1">
-        <div class="eyebrow">Экосистема AkJol</div>
+      <div class="hero-copy scroll-reveal reveal-delay-1">
+        <div class="eyebrow" data-translate="heroEyebrow">Экосистема AkJol</div>
         <h1>
-          Склад, доставка и продажи
-          <span class="muted">в одной платформе</span>
+          <span class="gradient-title" data-translate="heroTitleMain">Склад, доставка и продажи</span>
+          <span class="muted" data-translate="heroTitleSub">в одной платформе</span>
         </h1>
-        <p class="hero-lead">
-          TakEsep для бизнеса. AkJol для клиентов. AkJol Pro для курьеров.
-          Сборки обновляются автоматически из GitHub Releases.
+        <p class="hero-lead" data-translate="heroLead">
+          TakEsep для бизнеса. AkJol для клиентов. AkJol Pro для курьеров. Автоматическое обновление релизов напрямую из GitHub.
         </p>
 
         <div class="device-banner" id="device-banner">
           <div class="device-banner-icon" id="device-banner-icon"></div>
           <div>
-            <div class="device-banner-title" id="device-banner-title">Рекомендуемая версия</div>
-            <div class="device-banner-sub" id="device-banner-sub">Подбираем сборку для вашего устройства</div>
+            <div class="device-banner-title" id="device-banner-title" data-translate="recommendedTitle">Рекомендуемая версия</div>
+            <div class="device-banner-sub" id="device-banner-sub" data-translate="recommendedSub">Подбираем сборку для вашего устройства</div>
           </div>
         </div>
 
         <div class="hero-actions">
-          <a href="#apps" class="btn btn-primary" id="hero-download-btn">
+          <a href="#apps" class="btn btn-primary" id="hero-download-btn" data-translate="btnDownload">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             Скачать приложения
           </a>
-          <a href="admin.html" class="btn btn-secondary">
+          <a href="admin.html" class="btn btn-secondary" data-translate="btnAdmin">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
             Веб-панель
           </a>
@@ -953,41 +1225,41 @@
         <div class="hero-metrics">
           <div class="metric">
             <div class="metric-value">3</div>
-            <div class="metric-label">Приложения</div>
+            <div class="metric-label" data-translate="metricApps">Приложения</div>
           </div>
           <div class="metric">
             <div class="metric-value" id="metric-platforms">5+</div>
-            <div class="metric-label">Платформ</div>
+            <div class="metric-label" data-translate="metricPlatforms">Платформ</div>
           </div>
           <div class="metric">
             <div class="metric-value" id="metric-build">—</div>
-            <div class="metric-label">Текущая сборка</div>
+            <div class="metric-label" data-translate="metricBuild">Сборка</div>
           </div>
         </div>
       </div>
 
-      <div class="hero-panel reveal delay-2">
-        <div class="panel-label">Состав экосистемы</div>
+      <div class="hero-panel scroll-reveal reveal-delay-2">
+        <div class="panel-label" data-translate="panelLabel">Состав экосистемы</div>
         <div class="app-showcase">
           <a href="#app-warehouse" class="showcase-item">
             <img src="logo.png" alt="TakEsep">
             <div>
               <div class="showcase-name">TakEsep</div>
-              <div class="showcase-role">Склад, касса, аналитика</div>
+              <div class="showcase-role" data-translate="showcaseWarehouse">Склад, касса, аналитика</div>
             </div>
           </a>
           <a href="#app-customer" class="showcase-item">
             <img src="akjol_customer.png" alt="AkJol">
             <div>
               <div class="showcase-name">AkJol</div>
-              <div class="showcase-role">Заказы и доставка</div>
+              <div class="showcase-role" data-translate="showcaseCustomer">Заказы и доставка</div>
             </div>
           </a>
           <a href="#app-courier" class="showcase-item">
             <img src="akjol_courier.png" alt="AkJol Pro">
             <div>
               <div class="showcase-name">AkJol Pro</div>
-              <div class="showcase-role">Приложение курьера</div>
+              <div class="showcase-role" data-translate="showcaseCourier">Приложение курьера</div>
             </div>
           </a>
         </div>
@@ -997,24 +1269,33 @@
 
   <div class="container" id="apps">
     <section class="block">
-      <div class="section-head reveal delay-1">
-        <div class="eyebrow" style="justify-content:center;">Загрузка</div>
-        <h2>Приложения экосистемы</h2>
-        <p>Ссылки и размеры файлов подтягиваются из последнего GitHub Release.</p>
-        <div class="release-note loading" id="release-note">Проверяем актуальную сборку…</div>
+      <div class="section-head scroll-reveal">
+        <div class="eyebrow" style="justify-content:center;" data-translate="appsEyebrow">Загрузка</div>
+        <h2 data-translate="appsTitle">Приложения экосистемы</h2>
+        <p data-translate="appsDesc">Ссылки и размеры файлов подтягиваются из последнего релиза на GitHub.</p>
+        <div class="release-note loading" id="release-note" data-translate="releaseLoading">Проверяем актуальную сборку…</div>
+        
+        <!-- Changelog Drawer Dropdown -->
+        <div class="changelog-box scroll-reveal" id="changelog-box" style="display:none;">
+          <button class="changelog-toggle-btn" id="changelog-toggle">
+            <span data-translate="changelogToggle">Список изменений в релизе</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div class="changelog-content" id="changelog-content"></div>
+        </div>
       </div>
 
       <div class="apps-grid">
-        <article class="app-card warehouse reveal delay-2" id="app-warehouse" data-app="warehouse">
-          <span class="recommended-pill">Рекомендуем для вас</span>
+        <article class="app-card warehouse scroll-reveal reveal-delay-1" id="app-warehouse" data-app="warehouse">
+          <span class="recommended-pill" data-translate="recommendedPill">Рекомендуем для вас</span>
           <div class="card-header">
             <img class="app-icon" src="logo.png" alt="TakEsep">
             <div>
               <div class="app-title">TakEsep</div>
-              <span class="role-badge">Склад и касса</span>
+              <span class="role-badge" data-translate="badgeWarehouse">Склад и касса</span>
             </div>
           </div>
-          <p class="app-desc">Управление запасами, касса, отчёты и аналитика для администраторов и сотрудников точки продаж.</p>
+          <p class="app-desc" data-translate="descWarehouse">Управление запасами, касса, отчёты и аналитика для администраторов и сотрудников точки продаж.</p>
           <div class="tag-list">
             <span class="tag">Windows</span>
             <span class="tag">Android</span>
@@ -1024,16 +1305,16 @@
           <div class="download-list" data-downloads="warehouse"></div>
         </article>
 
-        <article class="app-card customer reveal delay-2" id="app-customer" data-app="customer">
-          <span class="recommended-pill">Рекомендуем для вас</span>
+        <article class="app-card customer scroll-reveal reveal-delay-2" id="app-customer" data-app="customer">
+          <span class="recommended-pill" data-translate="recommendedPill">Рекомендуем для вас</span>
           <div class="card-header">
             <img class="app-icon" src="akjol_customer.png" alt="AkJol">
             <div>
               <div class="app-title">AkJol</div>
-              <span class="role-badge">Для покупателей</span>
+              <span class="role-badge" data-translate="badgeCustomer">Для покупателей</span>
             </div>
           </div>
-          <p class="app-desc">Каталог, корзина, оформление заказа и отслеживание доставки на карте в реальном времени.</p>
+          <p class="app-desc" data-translate="descCustomer">Каталог товаров, корзина, оформление заказа и отслеживание доставки на карте в реальном времени.</p>
           <div class="tag-list">
             <span class="tag">Android</span>
             <span class="tag">iOS</span>
@@ -1042,16 +1323,16 @@
           <div class="download-list" data-downloads="customer"></div>
         </article>
 
-        <article class="app-card courier reveal delay-3" id="app-courier" data-app="courier">
-          <span class="recommended-pill">Рекомендуем для вас</span>
+        <article class="app-card courier scroll-reveal reveal-delay-3" id="app-courier" data-app="courier">
+          <span class="recommended-pill" data-translate="recommendedPill">Рекомендуем для вас</span>
           <div class="card-header">
             <img class="app-icon" src="akjol_courier.png" alt="AkJol Pro">
             <div>
               <div class="app-title">AkJol Pro</div>
-              <span class="role-badge">Для курьеров</span>
+              <span class="role-badge" data-translate="badgeCourier">Для курьеров</span>
             </div>
           </div>
-          <p class="app-desc">Активные заказы, маршруты, статусы и push-уведомления для полевой команды.</p>
+          <p class="app-desc" data-translate="descCourier">Активные заказы, прокладка маршрутов, изменение статусов и push-уведомления для курьеров.</p>
           <div class="tag-list">
             <span class="tag">Android</span>
             <span class="tag">iOS</span>
@@ -1063,43 +1344,88 @@
     </section>
   </div>
 
+  <!-- ── Interactive Timeline Stepper ── -->
+  <div class="container scroll-reveal" id="how-it-works">
+    <section class="block">
+      <div class="section-head text-center">
+        <div class="eyebrow" style="justify-content:center;" data-translate="stepEyebrow">Процесс</div>
+        <h2 data-translate="stepMainTitle">Как работает экосистема?</h2>
+        <p data-translate="stepMainDesc">Сквозной процесс обработки заказа от клика покупателя до доставки курьером</p>
+      </div>
+      
+      <div class="timeline-container">
+        <div class="timeline-line">
+          <div class="timeline-progress" id="timeline-progress"></div>
+        </div>
+        <div class="timeline-steps">
+          <div class="timeline-step active" onclick="activateStep(1)">
+            <div class="step-num">1</div>
+            <div class="step-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            </div>
+            <h3 data-translate="step1Title">Заказ клиента</h3>
+            <p data-translate="step1Text">Покупатель выбирает товары и отправляет заказ в приложении AkJol.</p>
+          </div>
+          
+          <div class="timeline-step" onclick="activateStep(2)">
+            <div class="step-num">2</div>
+            <div class="step-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="12" y1="4" x2="12" y2="20"/><line x1="2" y1="12" x2="22" y2="12"/></svg>
+            </div>
+            <h3 data-translate="step2Title">Касса и склад</h3>
+            <p data-translate="step2Text">Заказ мгновенно отображается на ПК/планшете продавца в TakEsep.</p>
+          </div>
+          
+          <div class="timeline-step" onclick="activateStep(3)">
+            <div class="step-num">3</div>
+            <div class="step-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <h3 data-translate="step3Title">Доставка заказа</h3>
+            <p data-translate="step3Text">Курьер принимает заказ в AkJol Pro и везет его по карте реального времени.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
   <div class="container" id="features">
     <section class="block">
-      <div class="section-head reveal delay-1">
-        <div class="eyebrow" style="justify-content:center;">Платформа</div>
-        <h2>Возможности для бизнеса</h2>
-        <p>Единый контур для склада, клиента и курьера — от заказа до доставки.</p>
+      <div class="section-head scroll-reveal">
+        <div class="eyebrow" style="justify-content:center;" data-translate="featEyebrow">Платформа</div>
+        <h2 data-translate="featTitle">Возможности для бизнеса</h2>
+        <p data-translate="featDesc">Единый технологический контур для склада, клиента и курьера — от заказа до доставки.</p>
       </div>
       <div class="features-grid">
-        <div class="feature-card reveal delay-2">
+        <div class="feature-card scroll-reveal">
           <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
-          <div class="feature-title">Синхронизация в реальном времени</div>
-          <div class="feature-desc">Статусы, остатки и заказы обновляются мгновенно на всех устройствах.</div>
+          <div class="feature-title" data-translate="feat1Title">Синхронизация в реальном времени</div>
+          <div class="feature-desc" data-translate="feat1Desc">Статусы заказов, товарные остатки и продажи обновляются мгновенно на всех устройствах.</div>
         </div>
-        <div class="feature-card reveal delay-2">
+        <div class="feature-card scroll-reveal">
           <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s7-4.5 7-10a7 7 0 1 0-14 0c0 5.5 7 10 7 10z"/><circle cx="12" cy="11" r="2.5"/></svg></div>
-          <div class="feature-title">Трекинг на карте</div>
-          <div class="feature-desc">Клиент видит доставку, курьер работает с актуальным маршрутом.</div>
+          <div class="feature-title" data-translate="feat2Title">Трекинг на карте</div>
+          <div class="feature-desc" data-translate="feat2Desc">Клиент видит перемещение курьера, а курьер работает по оптимальному маршруту на карте.</div>
         </div>
-        <div class="feature-card reveal delay-2">
+        <div class="feature-card scroll-reveal">
           <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-5 4 3 5-7"/></svg></div>
-          <div class="feature-title">Аналитика и отчёты</div>
-          <div class="feature-desc">Продажи, склад и эффективность команды в понятных сводках.</div>
+          <div class="feature-title" data-translate="feat3Title">Аналитика и отчёты</div>
+          <div class="feature-desc" data-translate="feat3Desc">Статистика продаж, товарные запасы и эффективность работы курьеров в понятных графиках.</div>
         </div>
-        <div class="feature-card reveal delay-3">
+        <div class="feature-card scroll-reveal">
           <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg></div>
-          <div class="feature-title">Push-уведомления</div>
-          <div class="feature-desc">Оповещения о заказах, статусах и сообщениях в чате.</div>
+          <div class="feature-title" data-translate="feat4Title">Push-уведомления</div>
+          <div class="feature-desc" data-translate="feat4Desc">Быстрые оповещения курьеров о новых заказах, статусах и сообщениях в чате поддержки.</div>
         </div>
-        <div class="feature-card reveal delay-3">
+        <div class="feature-card scroll-reveal">
           <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
-          <div class="feature-title">Безопасность данных</div>
-          <div class="feature-desc">Ролевой доступ и защищённое облачное хранение.</div>
+          <div class="feature-title" data-translate="feat5Title">Безопасность данных</div>
+          <div class="feature-desc" data-translate="feat5Desc">Индивидуальный ролевой доступ для сотрудников и защищенное облачное хранение данных.</div>
         </div>
-        <div class="feature-card reveal delay-3">
+        <div class="feature-card scroll-reveal">
           <div class="feature-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg></div>
-          <div class="feature-title">Мультиплатформа</div>
-          <div class="feature-desc">Windows, Android и iOS — полноценная работа на любом устройстве.</div>
+          <div class="feature-title" data-translate="feat6Title">Мультиплатформа</div>
+          <div class="feature-desc" data-translate="feat6Desc">Полноценная работа на Windows, macOS, Android и iOS — на ПК, планшетах и телефонах.</div>
         </div>
       </div>
     </section>
@@ -1107,9 +1433,9 @@
 
   <div class="container" id="support">
     <section class="block">
-      <div class="support-card reveal delay-1">
-        <h2>Служба поддержки</h2>
-        <p>Поможем с установкой, настройкой и подключением экосистемы к вашему бизнесу.</p>
+      <div class="support-card scroll-reveal">
+        <h2 data-translate="supportTitle">Служба поддержки</h2>
+        <p data-translate="supportDesc">Поможем с установкой, настройкой и подключением экосистемы к вашему бизнесу.</p>
         <div class="support-actions">
           <a href="mailto:uzbekovilgis@gmail.com" class="support-btn">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
@@ -1131,52 +1457,217 @@
         <span>© 2026 TakEsep Ecosystem</span>
       </div>
       <div class="footer-links">
-        <a href="https://github.com/axeronisd/TakEsep/releases" target="_blank" rel="noopener" id="footer-releases">Все версии</a>
-        <a href="admin.html">Админ-панель</a>
-        <a href="privacy.html">Конфиденциальность</a>
+        <a href="https://github.com/axeronisd/TakEsep/releases" target="_blank" rel="noopener" id="footer-releases" data-translate="footReleases">Все версии</a>
+        <a href="admin.html" data-translate="navAdmin">Админ-панель</a>
+        <a href="privacy.html" data-translate="footPrivacy">Конфиденциальность</a>
       </div>
     </footer>
   </div>
 
   <div class="mobile-cta">
-    <a href="#apps" class="btn btn-primary" id="mobile-cta-btn">Скачать для вашего устройства</a>
+    <a href="#apps" class="btn btn-primary" id="mobile-cta-btn" data-translate="btnMobileCTA">Скачать для вашего устройства</a>
   </div>
 
   <script>
     const GITHUB_REPO = 'axeronisd/TakEsep';
     const RELEASES_PAGE = `https://github.com/${GITHUB_REPO}/releases`;
 
+    // ── Translation Dictionaries ──
+    const DICTIONARY = {
+      ru: {
+        pageTitle: "TakEsep — Экосистема для склада, доставки и продаж",
+        brandTagline: "Бизнес-экосистема",
+        navApps: "Приложения",
+        navFeatures: "Возможности",
+        navSupport: "Поддержка",
+        navAdmin: "Веб-панель",
+        navVersion: "Загрузка версии…",
+        heroEyebrow: "Экосистема AkJol",
+        heroTitleMain: "Склад, доставка и продажи",
+        heroTitleSub: "в одной платформе",
+        heroLead: "TakEsep для бизнеса. AkJol для клиентов. AkJol Pro для курьеров. Автоматическое обновление релизов напрямую из GitHub.",
+        recommendedTitle: "Рекомендуемая версия",
+        recommendedSub: "Подбираем сборку для вашего устройства",
+        btnDownload: "Скачать приложения",
+        btnAdmin: "Веб-панель",
+        metricApps: "Приложения",
+        metricPlatforms: "Платформ",
+        metricBuild: "Сборка",
+        panelLabel: "Состав экосистемы",
+        showcaseWarehouse: "Склад, касса, аналитика",
+        showcaseCustomer: "Заказы и доставка",
+        showcaseCourier: "Приложение курьера",
+        appsEyebrow: "Загрузка",
+        appsTitle: "Приложения экосистемы",
+        appsDesc: "Ссылки и размеры файлов подтягиваются из последнего релиза на GitHub.",
+        releaseLoading: "Проверяем актуальную сборку…",
+        changelogToggle: "Список изменений в релизе",
+        recommendedPill: "Рекомендуем для вас",
+        badgeWarehouse: "Склад и касса",
+        badgeCustomer: "Для покупателей",
+        badgeCourier: "Для курьеров",
+        descWarehouse: "Управление запасами, касса, отчёты и аналитика для администраторов и сотрудников точки продаж.",
+        descCustomer: "Каталог товаров, корзина, оформление заказа и отслеживание доставки на карте в реальном времени.",
+        descCourier: "Активные заказы, прокладка маршрутов, изменение статусов и push-уведомления для курьеров.",
+        stepEyebrow: "Процесс",
+        stepMainTitle: "Как работает экосистема?",
+        stepMainDesc: "Сквозной процесс обработки заказа от клика покупателя до доставки курьером",
+        step1Title: "Заказ клиента",
+        step1Text: "Покупатель выбирает товары и отправляет заказ в приложении AkJol.",
+        step2Title: "Касса и склад",
+        step2Text: "Заказ мгновенно отображается на ПК/планшете продавца в TakEsep.",
+        step3Title: "Доставка заказа",
+        step3Text: "Курьер принимает заказ в AkJol Pro и везет его по карте реального времени.",
+        featEyebrow: "Платформа",
+        featTitle: "Возможности для бизнеса",
+        featDesc: "Единый технологический контур для склада, клиента и курьера — от заказа до доставки.",
+        feat1Title: "Синхронизация в реальном времени",
+        feat1Desc: "Статусы заказов, товарные остатки и продажи обновляются мгновенно на всех устройствах.",
+        feat2Title: "Трекинг на карте",
+        feat2Desc: "Клиент видит перемещение курьера, а курьер работает по оптимальному маршруту на карте.",
+        feat3Title: "Аналитика и отчёты",
+        feat3Desc: "Статистика продаж, товарные запасы и эффективность работы курьеров в понятных графиках.",
+        feat4Title: "Push-уведомления",
+        feat4Desc: "Быстрые оповещения курьеров о новых заказах, статусах и сообщениях в чате поддержки.",
+        feat5Title: "Безопасность данных",
+        feat5Desc: "Индивидуальный ролевой доступ для сотрудников и защищенное облачное хранение данных.",
+        feat6Title: "Мультиплатформа",
+        feat6Desc: "Полноценная работа на Windows, macOS, Android и iOS — на ПК, планшетах и телефонах.",
+        supportTitle: "Служба поддержки",
+        supportDesc: "Поможем с установкой, настройкой и подключением экосистемы к вашему бизнесу.",
+        footReleases: "Все версии",
+        footPrivacy: "Конфиденциальность",
+        btnMobileCTA: "Скачать для вашего устройства"
+      },
+      kg: {
+        pageTitle: "TakEsep — Кампа, жеткирүү жана соода экосистемасы",
+        brandTagline: "Бизнес-экосистема",
+        navApps: "Тиркемелер",
+        navFeatures: "Мүмкүнчүлүктөр",
+        navSupport: "Колдоо кызматы",
+        navAdmin: "Веб-панель",
+        navVersion: "Версия жүктөлүүдө…",
+        heroEyebrow: "AkJol Экосистемасы",
+        heroTitleMain: "Кампадагы эсеп, жеткирүү жана сатуу",
+        heroTitleSub: "бир платформада",
+        heroLead: "Бизнес үчүн TakEsep. Кардарлар үчүн AkJol. Курьерлер үчүн AkJol Pro. Релиздерди түздөн-түз GitHub'дан автоматтык түрдө жаңыртуу.",
+        recommendedTitle: "Сунушталган версия",
+        recommendedSub: "Аппаратыңыз үчүн тиркемени тандап жатабыз",
+        btnDownload: "Тиркемелерди жүктөө",
+        btnAdmin: "Веб-панель",
+        metricApps: "Тиркемелер",
+        metricPlatforms: "Платформалар",
+        metricBuild: "Жыйноо",
+        panelLabel: "Экосистеманын курамы",
+        showcaseWarehouse: "Кампа, касса, аналитика",
+        showcaseCustomer: "Буйрутмалар жана жеткирүү",
+        showcaseCourier: "Курьер тиркемеси",
+        appsEyebrow: "Жүктөө",
+        appsTitle: "Экосистема тиркемелери",
+        appsDesc: "Жүктөө шилтемелери жана файл өлчөмдөрү GitHub'дагы акыркы релизден алынат.",
+        releaseLoading: "Акыркы релиз текшерилүүдө…",
+        changelogToggle: "Релиздеги өзгөрүүлөрдүн тизмеси",
+        recommendedPill: "Сизге сунуштайбыз",
+        badgeWarehouse: "Кампа жана касса",
+        badgeCustomer: "Сатып алуучулар үчүн",
+        badgeCourier: "Курьерлер үчүн",
+        descWarehouse: "Кампаны башкаруу, касса, отчеттор жана соода түйүнүнүн кызматкерлери үчүн аналитика.",
+        descCustomer: "Товар каталогу, корзина, буйрутманы тариздөө жана картадан курьерди реалдуу убакытта көзөмөлдөө.",
+        descCourier: "Активдүү буйрутмалар, каттамдарды куруу, статустарды өзгөртүү жана push-билдирүүлөр.",
+        stepEyebrow: "Процесс",
+        stepMainTitle: "Экосистема кандай иштейт?",
+        stepMainDesc: "Кардардын буйрутмасынан баштап курьердин жеткирүүсүнө чейинки толук процесс",
+        step1Title: "Кардардын буйрутмасы",
+        step1Text: "Сатып алуучу AkJol тиркемеси аркылуу товарларды тандап, буйрутма жөнөтөт.",
+        step2Title: "Касса жана кампа",
+        step2Text: "Буйрутма ошол замат TakEsep тиркемесинде сатуучунун экранында пайда болот.",
+        step3Title: "Жеткирүү кызматы",
+        step3Text: "Курьер AkJol Pro аркылуу буйрутманы кабыл алып, карта менен жеткирет.",
+        featEyebrow: "Платформа",
+        featTitle: "Бизнес үчүн мүмкүнчүлүктөр",
+        featDesc: "Кампа, кардар жана курьер үчүн бирдиктүү технологиялык система — буйрутмадан жеткирүүгө чейин.",
+        feat1Title: "Реалдуу убакытта синхрондоштуруу",
+        feat1Desc: "Буйрутма статустары, товар калдыктары жана сатуулар бардык түзмөктөрдө заматта жаңырат.",
+        feat2Title: "Картадан көзөмөлдөө",
+        feat2Desc: "Кардар курьердин кыймылын көрөт, ал эми курьер карта аркылуу оптималдуу жол менен жүрөт.",
+        feat3Title: "Аналитика жана отчеттор",
+        feat3Desc: "Сатуу статистикасы, кампа калдыктары жана курьерлердин иши түшүнүктүү графиктерде.",
+        feat4Title: "Push-билдирүүлөр",
+        feat4Desc: "Жаңы буйрутмалар жана колдоо чатындагы билдирүүлөр жөнүндө курьерлерге тез эскертүү.",
+        feat5Title: "Маалымат коопсуздугу",
+        feat5Desc: "Кызматкерлер үчүн жеке ролдорду бөлүштүрүү жана маалыматтарды булутта коопсуз сактоо.",
+        feat6Title: "Мультиплатформа",
+        feat6Desc: "Windows, macOS, Android жана iOS тутумдарында — компьютер жана телефондордо толук иштөө.",
+        supportTitle: "Колдоо кызматы",
+        supportDesc: "Кампоо, орнотуу жана экосистеманы бизнесиңизге туташтырууга жардам беребиз.",
+        footReleases: "Бардык версиялар",
+        footPrivacy: "Купуялуулук",
+        btnMobileCTA: "Түзмөгүңүз үчүн жүктөп алыңыз"
+      }
+    };
+
+    let currentLang = localStorage.getItem('takesep_lang') || 'ru';
+
+    function switchLanguage(lang) {
+      currentLang = lang;
+      localStorage.setItem('takesep_lang', lang);
+      
+      // Update UI classes
+      document.getElementById('lang-ru').classList.toggle('active', lang === 'ru');
+      document.getElementById('lang-kg').classList.toggle('active', lang === 'kg');
+      
+      // Translate elements
+      document.querySelectorAll('[data-translate]').forEach((el) => {
+        const key = el.getAttribute('data-translate');
+        const translation = DICTIONARY[lang][key];
+        if (translation) {
+          if (el.tagName === 'TITLE') {
+            document.title = translation;
+          } else {
+            el.innerHTML = translation;
+          }
+        }
+      });
+
+      // Update dynamic banners or custom device texts if present
+      if (releaseData) {
+        updateVersionUI(releaseData);
+        updateDeviceBanner();
+      }
+    }
+
+    // ── Icons SVG definitions ──
     const ICONS = {
       windows: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/></svg>',
       android: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.34c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-11.05 0c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm11.41-7.28l1.98-3.44a.42.42 0 0 0-.15-.57.42.42 0 0 0-.57.15l-2.02 3.51C15.6 7.19 13.84 6.5 12 6.5s-3.6.69-5.13 1.72L4.85 4.71a.42.42 0 0 0-.57-.15.42.42 0 0 0-.15.57l1.98 3.44C2.59 10.44.13 14.14 0 18.35h24c-.13-4.21-2.59-7.91-6.12-9.77z"/></svg>',
       ios: '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>',
       store: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>',
-      download: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>'
+      download: '<svg class="action-arrow" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>'
     };
 
     const APP_CONFIG = {
       warehouse: {
         label: 'TakEsep',
         downloads: [
-          { id: 'warehouse-windows', platform: 'windows', file: 'TakEsep_Setup.exe', title: 'Windows', sub: 'Установщик .exe · 64-bit' },
-          { id: 'warehouse-android', platform: 'android', file: 'TakEsep.apk', title: 'Android', sub: 'APK · прямая установка' },
-          { id: 'warehouse-ios-ipa', platform: 'ios', file: 'TakEsep.ipa', title: 'iOS (IPA)', sub: 'Сборка из GitHub Releases' },
+          { id: 'warehouse-windows', platform: 'windows', file: 'TakEsep_Setup.exe', title: 'Windows', sub: 'Установщик .exe · 64-bit', subKg: 'Орнотуучу .exe · 64-bit' },
+          { id: 'warehouse-android', platform: 'android', file: 'TakEsep.apk', title: 'Android', sub: 'APK · прямая установка', subKg: 'APK · түздөн-түз орнотуу' },
+          { id: 'warehouse-ios-ipa', platform: 'ios', file: 'TakEsep.ipa', title: 'iOS (IPA)', sub: 'Сборка из GitHub Releases', subKg: 'GitHub Releases жыйнагы' },
         ]
       },
       customer: {
         label: 'AkJol',
         downloads: [
-          { id: 'customer-android', platform: 'android', file: 'AkJol.apk', title: 'Android', sub: 'APK · прямая установка' },
-          { id: 'customer-ios-ipa', platform: 'ios', file: 'AkJol.ipa', title: 'iOS (IPA)', sub: 'Сборка из GitHub Releases' },
-          { id: 'customer-appstore', platform: 'ios', external: 'https://apps.apple.com/app/akjol/id6745783003', title: 'App Store', sub: 'Официальная установка для iPhone' },
+          { id: 'customer-android', platform: 'android', file: 'AkJol.apk', title: 'Android', sub: 'APK · прямая установка', subKg: 'APK · түздөн-түз орнотуу' },
+          { id: 'customer-ios-ipa', platform: 'ios', file: 'AkJol.ipa', title: 'iOS (IPA)', sub: 'Сборка из GitHub Releases', subKg: 'GitHub Releases жыйнагы' },
+          { id: 'customer-appstore', platform: 'ios', external: 'https://apps.apple.com/app/akjol/id6745783003', title: 'App Store', sub: 'Официальная установка для iPhone', subKg: 'Официалдуу орнотуу iPhone үчүн' },
         ]
       },
       courier: {
         label: 'AkJol Pro',
         downloads: [
-          { id: 'courier-android', platform: 'android', file: 'AkJol_Pro.apk', title: 'Android', sub: 'APK · прямая установка' },
-          { id: 'courier-ios-ipa', platform: 'ios', file: 'AkJol_Pro.ipa', title: 'iOS (IPA)', sub: 'Сборка из GitHub Releases' },
-          { id: 'courier-appstore', platform: 'ios', external: 'https://apps.apple.com/app/akjol-pro/id6745789036', title: 'App Store', sub: 'Официальная установка для iPhone' },
+          { id: 'courier-android', platform: 'android', file: 'AkJol_Pro.apk', title: 'Android', sub: 'APK · прямая установка', subKg: 'APK · түздөн-түз орнотуу' },
+          { id: 'courier-ios-ipa', platform: 'ios', file: 'AkJol_Pro.ipa', title: 'iOS (IPA)', sub: 'Сборка из GitHub Releases', subKg: 'GitHub Releases жыйнагы' },
+          { id: 'courier-appstore', platform: 'ios', external: 'https://apps.apple.com/app/akjol-pro/id6745789036', title: 'App Store', sub: 'Официальная установка для iPhone', subKg: 'Официалдуу орнотуу iPhone үчүн' },
         ]
       }
     };
@@ -1229,6 +1720,7 @@
       const size = asset ? formatBytes(asset.size) : '';
       const icon = item.external ? ICONS.store : ICONS[item.platform] || ICONS.download;
       const disabled = !item.external && !asset;
+      const subLabel = currentLang === 'kg' ? (item.subKg || item.sub) : item.sub;
 
       return `
         <a href="${href}"
@@ -1236,10 +1728,12 @@
            id="${item.id}"
            ${item.external ? 'target="_blank" rel="noopener"' : 'download'}
            data-platform="${item.platform}">
-          <span class="dl-icon">${icon}</span>
-          <span class="dl-text">
-            <div class="dl-title">${item.title}</div>
-            <div class="dl-sub">${item.sub}${size ? ` · ${size}` : ''}</div>
+          <span class="dl-text-wrap">
+            <span class="dl-icon">${icon}</span>
+            <span class="dl-text">
+              <div class="dl-title">${item.title}</div>
+              <div class="dl-sub">${subLabel}${size ? ` · ${size}` : ''}</div>
+            </span>
           </span>
           ${item.external ? ICONS.store : ICONS.download}
         </a>
@@ -1276,21 +1770,64 @@
       const parsed = parseReleaseTag(release.tag_name);
       const buildLabel = parsed.build ? ` · build ${parsed.build}` : '';
       const versionText = `v${parsed.version}${buildLabel}`;
-      const date = release.published_at
-        ? new Date(release.published_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
+      
+      const locale = currentLang === 'kg' ? 'ky-KG' : 'ru-RU';
+      const dateLabel = release.published_at
+        ? new Date(release.published_at).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })
         : '';
 
-      document.getElementById('nav-version').textContent = versionText;
+      const navVersionEl = document.getElementById('nav-version');
+      if (navVersionEl.getAttribute('data-translate') !== 'false') {
+        navVersionEl.textContent = versionText;
+      }
+      
       document.getElementById('metric-build').textContent = parsed.build || parsed.version;
 
       const note = document.getElementById('release-note');
       note.classList.remove('loading');
+      
+      const releaseTitle = release.name || versionText;
+      const prefixText = currentLang === 'kg' ? 'Учурдагы релиз:' : 'Актуальный релиз:';
+      
       note.innerHTML = `
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
-        Актуальный релиз: <strong>${release.name || versionText}</strong>${date ? ` · ${date}` : ''}
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
+        ${prefixText} <strong>${releaseTitle}</strong>${dateLabel ? ` · ${dateLabel}` : ''}
       `;
 
       document.getElementById('footer-releases').href = release.html_url || RELEASES_PAGE;
+
+      // Populate Changelog if body exists
+      if (release.body) {
+        const changelogContent = document.getElementById('changelog-content');
+        const rawLines = release.body.split('\n');
+        let htmlList = '<ul>';
+        let count = 0;
+        
+        rawLines.forEach(line => {
+          const cleanLine = line.trim();
+          if (cleanLine.startsWith('-') || cleanLine.startsWith('*')) {
+            const listText = cleanLine.substring(1).trim();
+            if (listText) {
+              htmlList += `<li>${listText}</li>`;
+              count++;
+            }
+          }
+        });
+        htmlList += '</ul>';
+        
+        if (count > 0) {
+          changelogContent.innerHTML = htmlList;
+          document.getElementById('changelog-box').style.display = 'block';
+        } else {
+          // If no list format, just show paragraphs
+          const paragraphs = rawLines
+            .filter(l => l.trim().length > 0)
+            .map(l => `<p>${l.trim()}</p>`)
+            .join('');
+          changelogContent.innerHTML = paragraphs;
+          document.getElementById('changelog-box').style.display = 'block';
+        }
+      }
     }
 
     function updateDeviceBanner() {
@@ -1302,7 +1839,11 @@
 
       banner.classList.add('visible');
       iconWrap.innerHTML = ICONS[DEVICE.type === 'desktop' ? 'windows' : DEVICE.type] || ICONS.download;
-      title.textContent = `Рекомендуем: ${app.label} для ${DEVICE.label}`;
+      
+      const deviceLabel = currentLang === 'kg' ? (DEVICE.label === 'Desktop' ? 'Компьютер' : DEVICE.label) : DEVICE.label;
+      title.textContent = currentLang === 'kg' 
+        ? `Сунуштайбыз: ${app.label} (${deviceLabel} үчүн)`
+        : `Рекомендуем: ${app.label} для ${DEVICE.label}`;
 
       if (primaryDownload) {
         sub.textContent = primaryDownload.title;
@@ -1317,7 +1858,7 @@
           mobileBtn.setAttribute('rel', 'noopener');
         }
       } else {
-        sub.textContent = 'Выберите приложение и платформу ниже';
+        sub.textContent = currentLang === 'kg' ? 'Төмөндөн тиркемени тандаңыз' : 'Выберите приложение и платформу ниже';
       }
     }
 
@@ -1334,7 +1875,12 @@
       } catch (error) {
         console.warn('[TakEsep landing] Release fetch failed:', error);
         document.getElementById('nav-version').textContent = 'GitHub Releases';
-        document.getElementById('release-note').textContent = 'Не удалось загрузить метаданные релиза. Ссылки ведут на /releases/latest.';
+        
+        const errorText = currentLang === 'kg'
+          ? 'Жыйноо маалыматын жүктөө мүмкүн болгон жок. Шилтемелер түз баракчага багытталат.'
+          : 'Не удалось загрузить метаданные релиза. Ссылки ведут на /releases/latest.';
+        document.getElementById('release-note').textContent = errorText;
+        
         renderFallbackDownloads();
         updateDeviceBanner();
       }
@@ -1348,13 +1894,16 @@
           const href = item.external || `https://github.com/${GITHUB_REPO}/releases/latest/download/${item.file}`;
           const highlight = appKey === DEVICE.app && (DEVICE.type === item.platform || (DEVICE.type === 'desktop' && item.platform === 'windows'));
           if (highlight) primaryDownload = { href, app: appKey, title: `${config.label} · ${item.title}` };
+          const subLabel = currentLang === 'kg' ? (item.subKg || item.sub) : item.sub;
           return `
             <a href="${href}" class="dl-btn ${highlight ? 'highlight' : ''}" id="${item.id}"
                ${item.external ? 'target="_blank" rel="noopener"' : 'download'} data-platform="${item.platform}">
-              <span class="dl-icon">${item.external ? ICONS.store : (ICONS[item.platform] || ICONS.download)}</span>
-              <span class="dl-text">
-                <div class="dl-title">${item.title}</div>
-                <div class="dl-sub">${item.sub}</div>
+              <span class="dl-text-wrap">
+                <span class="dl-icon">${item.external ? ICONS.store : (ICONS[item.platform] || ICONS.download)}</span>
+                <span class="dl-text">
+                  <div class="dl-title">${item.title}</div>
+                  <div class="dl-sub">${subLabel}</div>
+                </span>
               </span>
               ${item.external ? ICONS.store : ICONS.download}
             </a>
@@ -1366,6 +1915,7 @@
       });
     }
 
+    // ── Menu button listeners ──
     document.getElementById('menu-btn').addEventListener('click', () => {
       const menu = document.getElementById('mobile-menu');
       const btn = document.getElementById('menu-btn');
@@ -1380,8 +1930,75 @@
       });
     });
 
-    renderFallbackDownloads();
-    loadRelease();
+    // ── Interactive Stepper Logic ──
+    function activateStep(stepNum) {
+      const steps = document.querySelectorAll('.timeline-step');
+      steps.forEach((step, idx) => {
+        step.classList.toggle('active', idx + 1 === stepNum);
+      });
+      
+      // Calculate progress width
+      const progress = document.getElementById('timeline-progress');
+      const percentage = ((stepNum - 1) / (steps.length - 1)) * 100;
+      progress.style.width = `${percentage}%`;
+    }
+
+    // Auto rotate steps every 6 seconds on desktop
+    let activeStepNum = 1;
+    let stepTimer = setInterval(() => {
+      activeStepNum = (activeStepNum % 3) + 1;
+      activateStep(activeStepNum);
+    }, 6000);
+
+    function stopStepRotation() {
+      clearInterval(stepTimer);
+    }
+    
+    // Add hover clicks to timeline steps to pause rotation
+    document.querySelectorAll('.timeline-step').forEach(step => {
+      step.addEventListener('click', () => {
+        stopStepRotation();
+      });
+    });
+
+    // ── Changelog Toggle dropdown ──
+    document.getElementById('changelog-toggle').addEventListener('click', () => {
+      const btn = document.getElementById('changelog-toggle');
+      const content = document.getElementById('changelog-content');
+      const open = btn.classList.toggle('open');
+      content.style.display = open ? 'block' : 'none';
+    });
+
+    // ── Scroll Reveal Intersection Observer ──
+    const revealCallback = (entries, observer) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('reveal-visible');
+          observer.unobserve(entry.target); // Animates once
+        }
+      });
+    };
+
+    const revealObserver = new IntersectionObserver(revealCallback, {
+      root: null,
+      threshold: 0.1,
+      rootMargin: '0px 0px -50px 0px'
+    });
+
+    // ── Startup ──
+    window.addEventListener('DOMContentLoaded', () => {
+      // Setup language state
+      switchLanguage(currentLang);
+      
+      // Register scroll observers
+      document.querySelectorAll('.scroll-reveal').forEach(el => {
+        revealObserver.observe(el);
+      });
+
+      renderFallbackDownloads();
+      loadRelease();
+      activateStep(1);
+    });
   </script>
 </body>
 </html>

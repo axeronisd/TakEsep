@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../services/firebase_push_bootstrap.dart';
+import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/companies/companies_screen.dart';
 import '../screens/companies/company_detail_screen.dart';
 import '../screens/couriers/couriers_screen.dart';
@@ -19,6 +20,10 @@ final adminRouterProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/',
+            builder: (context, state) => const DashboardScreen(),
+          ),
+          GoRoute(
+            path: '/companies',
             builder: (context, state) => const CompaniesScreen(),
           ),
           GoRoute(

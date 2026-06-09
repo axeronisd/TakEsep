@@ -15,6 +15,8 @@ class AdminRepository {
       final employees = await _supabase.from('employees').select('id');
       final products = await _supabase.from('products').select('id');
       final sales = await _supabase.from('sales').select('total_amount');
+      final couriers = await _supabase.from('couriers').select('id');
+      final deliveryOrders = await _supabase.from('delivery_orders').select('id');
 
       final totalCompanies = (companies as List).length;
       final activeCompanies = (companies).where((c) => c['is_active'] == true).length;
@@ -22,6 +24,8 @@ class AdminRepository {
       final totalProducts = (products as List).length;
       final totalRevenue = (sales as List).fold<double>(
           0.0, (sum, s) => sum + ((s['total_amount'] as num?)?.toDouble() ?? 0.0));
+      final totalCouriers = (couriers as List).length;
+      final totalDeliveryOrders = (deliveryOrders as List).length;
 
       return {
         'totalCompanies': totalCompanies,
@@ -31,6 +35,8 @@ class AdminRepository {
         'totalProducts': totalProducts,
         'totalRevenue': totalRevenue,
         'totalSales': (sales).length,
+        'totalCouriers': totalCouriers,
+        'totalDeliveryOrders': totalDeliveryOrders,
       };
     } catch (e) {
       print('AdminRepository getEcosystemStats error: $e');
