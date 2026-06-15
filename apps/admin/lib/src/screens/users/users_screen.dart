@@ -85,10 +85,10 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
           .select('*, courier_warehouse(warehouse_id, is_active, warehouses(name))')
           .order('created_at', ascending: false);
 
-      // 4. Fetch Employees (joined with warehouse info)
+      // 4. Fetch Employees
       final employeesData = await _supabase
           .from('employees')
-          .select('*, warehouses(name)')
+          .select('*')
           .order('created_at', ascending: false);
 
       // 5. Fetch Warehouses for dropdowns/linkages
@@ -168,7 +168,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       final phone = (e['phone'] ?? '').toString().toLowerCase();
       final email = _getEmailForUserId(e['user_id']).toLowerCase();
       final role = (e['role'] ?? '').toString().toLowerCase();
-      final wh = (e['warehouses']?['name'] ?? '').toString().toLowerCase();
+      final wh = _getEmployeeWarehouseNames(e).toLowerCase();
       return name.contains(_searchQuery) || phone.contains(_searchQuery) || email.contains(_searchQuery) || role.contains(_searchQuery) || wh.contains(_searchQuery);
     }).toList();
   }
@@ -731,7 +731,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
         final name = e['name'] ?? '—';
         final phone = e['phone'] ?? '—';
         final role = _translateRole(e['role']);
-        final wh = e['warehouses']?['name'] ?? '—';
+        final wh = _getEmployeeWarehouseNames(e);
         final isSelected = _selectedEmployeeIds.contains(id);
 
         return DataRow(
@@ -1132,7 +1132,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     final name = e['name'] ?? '—';
     final phone = e['phone'] ?? '—';
     final role = _translateRole(e['role']);
-    final wh = e['warehouses']?['name'] ?? '—';
+    final wh = _getEmployeeWarehouseNames(e);
     final isSelected = _selectedEmployeeIds.contains(id);
 
     return Container(
@@ -1308,7 +1308,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     final phone = e['phone'] ?? '—';
     final email = _getEmailForUserId(e['user_id']);
     final role = _translateRole(e['role']);
-    final wh = e['warehouses']?['name'] ?? '—';
+    final wh = _getEmployeeWarehouseNames(e);
     
     _showDetailDialog(
       title: 'Сотрудник TakEsep Warehouse',
@@ -2820,5 +2820,35 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       default:
         return role;
     }
+  }
+
+  String _getEmployeeWarehouseNames(Map<String, dynamic> e) {
+    final rawWh = e['allowed_warehouses'];
+    List<String> ids = [];
+    if (rawWh is List) {
+      ids = rawWh.map((item) => item.toString()).toList();
+    } else if (rawWh is String && rawWh.isNotEmpty) {
+      ids = rawWh
+          .replaceAll('{', '')
+          .replaceAll('}', '')
+          .split(',')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
+    }
+    if (ids.isEmpty) {
+      // Fallback to single warehouse_id if exists
+      final singleId = e['warehouse_id'];
+      if (singleId != null) {
+        ids.add(singleId.toString());
+      }
+    }
+    
+    final names = ids.map((id) {
+      final wh = _warehouses.firstWhere((w) => w['id'] == id, orElse: () => <String, dynamic>{});
+      return wh['name'] ?? '—';
+    }).where((name) => name != '—').toList();
+    
+    return names.isEmpty ? '—' : names.join(', ');
   }
 }
