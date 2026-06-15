@@ -1094,7 +1094,7 @@ class _ProductCard extends ConsumerWidget {
     final totalInCart = inCart.fold(0, (sum, item) => sum + item.quantity);
 
     return GestureDetector(
-      onTap: isOutOfZone ? null : () => _handleAdd(context, ref),
+      onTap: isOutOfZone ? null : () => _showProductDetail(context, ref),
       child: Container(
         decoration: BoxDecoration(
           color: cardBg,

@@ -1199,23 +1199,61 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
       if (_isAuth) {
         // Clean up dependent tables first (FK constraints)
         for (final uid in _selectedIds) {
-          for (final depTable in ['customers', 'couriers', 'employees']) {
-            try {
-              await _supabase.from(depTable).delete().eq('user_id', uid);
-            } catch (_) {}
-            try {
-              await _supabase.from(depTable).delete().eq('id', uid);
-            } catch (_) {}
+          // 1. Find customer id and courier id to delete their orders/locations
+          final cust = await _supabase.from('customers').select('id').eq('user_id', uid).maybeSingle();
+          if (cust != null) {
+            final custId = cust['id'];
+            await _supabase.from('delivery_orders').delete().eq('customer_id', custId);
           }
-          try {
-            await _supabase.auth.admin.deleteUser(uid);
-          } catch (_) {}
+
+          final cour = await _supabase.from('couriers').select('id').eq('user_id', uid).maybeSingle();
+          if (cour != null) {
+            final courId = cour['id'];
+            await _supabase.from('courier_locations').delete().eq('courier_id', courId);
+            await _supabase.from('delivery_orders').delete().eq('courier_id', courId);
+          }
+
+          final emp = await _supabase.from('employees').select('id').eq('user_id', uid).maybeSingle();
+          if (emp != null) {
+            final empId = emp['id'];
+            await _supabase.from('employee_expenses').delete().eq('employee_id', empId);
+          }
+
+          // 2. Delete the profile records
+          for (final depTable in ['customers', 'couriers', 'employees']) {
+            try { await _supabase.from(depTable).delete().eq('user_id', uid); } catch (_) {}
+            try { await _supabase.from(depTable).delete().eq('id', uid); } catch (_) {}
+          }
+          
+          // 3. Delete auth user
+          try { await _supabase.auth.admin.deleteUser(uid); } catch (_) {}
         }
       } else {
-        await _supabase
-            .from(_selectedTable!)
-            .delete()
-            .inFilter('id', _selectedIds.toList());
+        if (_selectedTable == 'delivery_orders') {
+          for (final id in _selectedIds) {
+            try { await _supabase.from('delivery_order_items').delete().eq('order_id', id); } catch (_) {}
+            try { await _supabase.from('delivery_order_messages').delete().eq('order_id', id); } catch (_) {}
+            try { await _supabase.from('delivery_orders').delete().eq('id', id); } catch (_) {}
+          }
+        } else if (_selectedTable == 'companies') {
+           for (final id in _selectedIds) {
+             // Cascade warehouses
+             final whs = await _supabase.from('warehouses').select('id').eq('company_id', id);
+             for (final w in whs) {
+               final wId = w['id'];
+               try { await _supabase.from('delivery_orders').delete().eq('warehouse_id', wId); } catch (_) {}
+               try { await _supabase.from('products').delete().eq('warehouse_id', wId); } catch (_) {}
+               try { await _supabase.from('employees').delete().eq('warehouse_id', wId); } catch (_) {}
+               try { await _supabase.from('warehouses').delete().eq('id', wId); } catch (_) {}
+             }
+             try { await _supabase.from('companies').delete().eq('id', id); } catch (_) {}
+           }
+        } else {
+          await _supabase
+              .from(_selectedTable!)
+              .delete()
+              .inFilter('id', _selectedIds.toList());
+        }
       }
 
       _selectedIds.clear();

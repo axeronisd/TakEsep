@@ -99,13 +99,28 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
         setState(() {
           _settingsId = data['id'];
           _isActive = data['is_active'] ?? false;
-          _addressController.text = data['address'] ?? '';
           _descController.text = data['description'] ?? '';
           _radiusKm = (data['delivery_radius_km'] ?? 3.0).toDouble();
           final lat = data['latitude'];
           final lng = data['longitude'];
           if (lat != null && lng != null) {
             _warehouseLocation = LatLng((lat as num).toDouble(), (lng as num).toDouble());
+          }
+        });
+      }
+
+      // Always fetch base address from warehouse
+      final wh = await _supabase.from('warehouses').select('address, latitude, longitude').eq('id', _warehouseId).maybeSingle();
+      if (wh != null) {
+        setState(() {
+          _addressController.text = wh['address'] ?? '';
+          // If delivery zone location is not set, use warehouse location
+          if (data == null || data['latitude'] == null) {
+            final wLat = wh['latitude'];
+            final wLng = wh['longitude'];
+            if (wLat != null && wLng != null) {
+              _warehouseLocation = LatLng((wLat as num).toDouble(), (wLng as num).toDouble());
+            }
           }
         });
       }
@@ -362,8 +377,13 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
           const SizedBox(height: 8),
           TextField(
             controller: _addressController,
-            decoration: const InputDecoration(
-              hintText: 'Улица, номер дома', prefixIcon: Icon(Icons.location_on_outlined)),
+            readOnly: true,
+            decoration: InputDecoration(
+              hintText: 'Улица, номер дома',
+              prefixIcon: const Icon(Icons.location_on_outlined),
+              filled: true,
+              fillColor: Colors.grey.withValues(alpha: 0.1),
+            ),
           ),
           const SizedBox(height: 16),
 

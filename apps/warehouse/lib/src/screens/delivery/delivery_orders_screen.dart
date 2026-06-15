@@ -595,11 +595,19 @@ class _OrderCard extends StatelessWidget {
 
                 const Spacer(),
                 // Order number
-                Text(
-                  orderNum,
-                  style: AppTypography.labelSmall.copyWith(
-                    color: cs.onSurface.withValues(alpha: 0.35),
-                    fontWeight: FontWeight.w500,
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: cs.onSurface.withValues(alpha: 0.05),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text(
+                    '#$orderNum',
+                    style: AppTypography.labelMedium.copyWith(
+                      color: cs.onSurface.withValues(alpha: 0.7),
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
               ],

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:go_router/go_router.dart';
@@ -28,6 +29,11 @@ class FirebasePushBootstrap {
 
   /// Call once in main() after Firebase.initializeApp()
   static Future<void> initialize() async {
+    if (kIsWeb) {
+      debugPrint('[Push] Running on Web - skipping Firebase Messaging (only in-app notifs will work)');
+      return;
+    }
+
     FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundHandler);
 
     // 1. Request permission
@@ -134,6 +140,7 @@ class FirebasePushBootstrap {
 
   /// Call on logout
   static Future<void> onLogout() async {
+    if (kIsWeb) return;
     if (_currentToken != null) {
       await _pushService.removeToken(_currentToken!);
       _currentToken = null;
