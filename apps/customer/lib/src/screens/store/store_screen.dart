@@ -1546,7 +1546,7 @@ class _ProductDetailSheet extends ConsumerWidget {
           Text('Цена: ${product.b2cPrice} с', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AkJolTheme.primary)),
           if (product.b2cDescription != null && product.b2cDescription!.isNotEmpty) ...[
             const SizedBox(height: 16),
-            const Text('Описание', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: titleColor)),
+            Text('Описание', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: titleColor)),
             const SizedBox(height: 8),
             Text(product.b2cDescription!, style: TextStyle(fontSize: 14, color: descColor, height: 1.5)),
           ] else ...[
