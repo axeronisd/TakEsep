@@ -11,6 +11,9 @@ import '../../providers/receipt_provider.dart';
 import '../../providers/printer_provider.dart';
 import '../../providers/notification_settings_provider.dart';
 import '../../providers/owner_settings_provider.dart';
+import '../../services/printer_service.dart';
+import 'package:thermal_printer_plus/thermal_printer.dart' hide Printer;
+import 'package:printing/printing.dart';
 import '../../data/powersync_db.dart';
 import '../../utils/snackbar_helper.dart';
 import 'widgets/edit_role_sheet.dart';
@@ -1143,7 +1146,7 @@ class _ReceiptAndPrinterSettingsSheetState
       receiptNumber: '0001',
       dateTime: DateTime.now(),
       items: [
-        const ReceiptLineItem(name: 'Тестовый товар', quantity: 1, price: 100, total: 100)
+        const ReceiptLineItem(name: 'Тестовый товар', quantity: 1, price: 100.0, total: 100.0)
       ],
       totalAmount: 100,
       paymentMethod: 'Наличные',
