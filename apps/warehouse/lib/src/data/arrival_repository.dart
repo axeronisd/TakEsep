@@ -392,8 +392,8 @@ class ArrivalRepository {
       '''INSERT INTO products (
         id, company_id, warehouse_id, category_id, name, sku, barcode, description,
         cost_price, selling_price, quantity, unit, min_stock, max_stock,
-        stock_zone, image_url, is_public, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+        stock_zone, image_url, is_public, b2c_price, b2c_description, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
       [
         product.id,
         product.companyId,
@@ -412,6 +412,8 @@ class ArrivalRepository {
         product.stockZone.name,
         product.imageUrl,
         product.isPublic ? 1 : 0,
+        product.b2cPrice,
+        product.b2cDescription,
         now,
         now,
       ],
@@ -436,6 +438,8 @@ class ArrivalRepository {
       'stock_zone': product.stockZone.name,
       'image_url': product.imageUrl,
       'is_public': product.isPublic,
+      'b2c_price': product.b2cPrice,
+      'b2c_description': product.b2cDescription,
       'created_at': now,
       'updated_at': now,
     });

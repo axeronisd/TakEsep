@@ -1084,11 +1084,13 @@ class _ProductCard extends ConsumerWidget {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useRootNavigator: true,
       backgroundColor: Colors.transparent,
       builder: (_) => _ProductDetailSheet(
         product: product,
         storeId: storeId,
         storeName: storeName,
+        isOutOfZone: isOutOfZone,
       ),
     );
   }
@@ -1492,68 +1494,354 @@ class _ProductDetailSheet extends ConsumerWidget {
   final StoreProduct product;
   final String storeId;
   final String storeName;
+  final bool isOutOfZone;
 
   const _ProductDetailSheet({
     required this.product,
     required this.storeId,
     required this.storeName,
+    this.isOutOfZone = false,
   });
+
+  void _handleAdd(BuildContext context, WidgetRef ref) async {
+    final cart = ref.read(cartProvider);
+
+    if (cart.isDifferentStore(storeId)) {
+      final confirm = await showStoreConflictDialog(
+        context,
+        currentStoreName: cart.warehouseName ?? 'Магазин',
+        newStoreName: storeName,
+      );
+      if (!confirm) return;
+    }
+
+    if (product.hasModifiers) {
+      if (!context.mounted) return;
+      final result = await showModifierSheet(context, product: product);
+      if (result == null) return;
+
+      if (cart.isDifferentStore(storeId)) {
+        ref
+            .read(cartProvider.notifier)
+            .clearAndAddItem(
+              warehouseId: storeId,
+              warehouseName: storeName,
+              productId: product.id,
+              name: product.name,
+              price: product.b2cPrice,
+              imageUrl: product.imageUrl,
+              modifiers: result,
+              maxStock: product.quantity,
+            );
+      } else {
+        final added = ref
+            .read(cartProvider.notifier)
+            .addItem(
+              warehouseId: storeId,
+              warehouseName: storeName,
+              productId: product.id,
+              name: product.name,
+              price: product.b2cPrice,
+              imageUrl: product.imageUrl,
+              modifiers: result,
+              maxStock: product.quantity,
+            );
+        if (!added && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Достигнуто максимальное количество на складе'),
+            ),
+          );
+        }
+      }
+    } else {
+      if (cart.isDifferentStore(storeId)) {
+        ref
+            .read(cartProvider.notifier)
+            .clearAndAddItem(
+              warehouseId: storeId,
+              warehouseName: storeName,
+              productId: product.id,
+              name: product.name,
+              price: product.b2cPrice,
+              imageUrl: product.imageUrl,
+              maxStock: product.quantity,
+            );
+      } else {
+        final added = ref
+            .read(cartProvider.notifier)
+            .addItem(
+              warehouseId: storeId,
+              warehouseName: storeName,
+              productId: product.id,
+              name: product.name,
+              price: product.b2cPrice,
+              imageUrl: product.imageUrl,
+              maxStock: product.quantity,
+            );
+        if (!added && context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Достигнуто максимальное количество на складе'),
+            ),
+          );
+        }
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? const Color(0xFF0F172A) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
-    final titleColor = textColor;
-    final descColor = isDark ? Colors.white70 : Colors.black87;
+    final descColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
+
+    final cart = ref.watch(cartProvider);
+    final inCart = cart.items.where((i) => i.productId == product.id).toList();
+    final totalInCart = inCart.fold(0, (sum, item) => sum + item.quantity);
 
     return Container(
+      constraints: BoxConstraints(
+        maxHeight: MediaQuery.of(context).size.height * 0.85,
+      ),
       decoration: BoxDecoration(
         color: bg,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Drag handle
           Center(
             child: Container(
-              width: 40,
-              height: 4,
-              margin: const EdgeInsets.only(bottom: 24),
+              width: 36,
+              height: 5,
+              margin: const EdgeInsets.only(bottom: 20),
               decoration: BoxDecoration(
-                color: Colors.grey.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(2),
+                color: isDark ? Colors.white24 : Colors.black12,
+                borderRadius: BorderRadius.circular(2.5),
               ),
             ),
           ),
-          if (product.imageUrl != null && product.imageUrl!.isNotEmpty)
-            Center(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Image.network(
-                  product.imageUrl!,
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.contain,
+          
+          // Scrollable content
+          Flexible(
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (product.imageUrl != null && product.imageUrl!.isNotEmpty)
+                    Container(
+                      height: 240,
+                      width: double.infinity,
+                      margin: const EdgeInsets.only(bottom: 20),
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Image.network(
+                          product.imageUrl!,
+                          fit: BoxFit.contain,
+                        ),
+                      ),
+                    ),
+                  Text(
+                    product.name,
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: textColor,
+                      letterSpacing: -0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '${product.b2cPrice.toStringAsFixed(0)} с',
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w800,
+                      color: AkJolTheme.primary,
+                    ),
+                  ),
+                  if (product.b2cDescription != null && product.b2cDescription!.isNotEmpty) ...[
+                    const SizedBox(height: 20),
+                    Text(
+                      'Описание',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: textColor,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      product.b2cDescription!,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: descColor,
+                        height: 1.6,
+                      ),
+                    ),
+                  ] else ...[
+                    const SizedBox(height: 20),
+                    Text(
+                      'Нет описания',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: 24),
+                ],
+              ),
+            ),
+          ),
+          
+          // Bottom button / counter
+          Container(
+            padding: const EdgeInsets.only(top: 16),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                  width: 0.5,
                 ),
               ),
             ),
-          const SizedBox(height: 24),
-          Text(product.name, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: textColor)),
-          const SizedBox(height: 8),
-          Text('Цена: ${product.b2cPrice} с', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AkJolTheme.primary)),
-          if (product.b2cDescription != null && product.b2cDescription!.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Text('Описание', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: titleColor)),
-            const SizedBox(height: 8),
-            Text(product.b2cDescription!, style: TextStyle(fontSize: 14, color: descColor, height: 1.5)),
-          ] else ...[
-            const SizedBox(height: 16),
-            Text('Нет описания', style: TextStyle(fontSize: 14, color: descColor)),
-          ],
-          const SizedBox(height: 32),
+            child: SafeArea(
+              top: false,
+              bottom: true,
+              child: isOutOfZone
+                  ? Container(
+                      width: double.infinity,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Center(
+                        child: Text(
+                          'Недоступно в вашей зоне',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                          ),
+                        ),
+                      ),
+                    )
+                  : (!product.isInStock
+                      ? Container(
+                          width: double.infinity,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'Нет в наличии',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ),
+                        )
+                      : (totalInCart == 0
+                          ? ElevatedButton(
+                              onPressed: () {
+                                if (product.quantity > 0) {
+                                  _handleAdd(context, ref);
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text('Товар закончился на складе'),
+                                    ),
+                                  );
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AkJolTheme.primary,
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size(double.infinity, 52),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              child: const Text(
+                                'Добавить в корзину',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            )
+                          : Container(
+                              height: 52,
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                                  width: 0.5,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: IconButton(
+                                      onPressed: () {
+                                        if (inCart.isNotEmpty) {
+                                          final last = inCart.last;
+                                          ref.read(cartProvider.notifier).updateQuantity(
+                                                last.cartKey,
+                                                last.quantity - 1,
+                                              );
+                                        }
+                                      },
+                                      icon: const Icon(Icons.remove_rounded),
+                                      color: AkJolTheme.primary,
+                                    ),
+                                  ),
+                                  Text(
+                                    '$totalInCart',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: textColor,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: IconButton(
+                                      onPressed: () {
+                                        if (totalInCart < product.quantity) {
+                                          _handleAdd(context, ref);
+                                        } else {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('Достигнуто максимальное количество на складе'),
+                                            ),
+                                          );
+                                        }
+                                      },
+                                      icon: const Icon(Icons.add_rounded),
+                                      color: AkJolTheme.primary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ))),
+            ),
+          ),
         ],
       ),
     );

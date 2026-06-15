@@ -143,6 +143,8 @@ class RealtimeProductsRepository {
         'stock_zone': product.stockZone.name,
         'image_url': product.imageUrl,
         'is_public': product.isPublic,
+        'b2c_price': product.b2cPrice,
+        'b2c_description': product.b2cDescription,
         'created_at': now,
         'updated_at': now,
       };
@@ -168,6 +170,9 @@ class RealtimeProductsRepository {
         'description': product.description,
         'image_url': product.imageUrl,
         'quantity': product.quantity,
+        'b2c_price': product.b2cPrice,
+        'b2c_description': product.b2cDescription,
+        'is_public': product.isPublic,
         'updated_at': now,
       };
 

@@ -12,7 +12,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   powersync_flutter_libs
   printing
   sqlite3_flutter_libs
-  thermal_printer
+  thermal_printer_plus
   url_launcher_windows
 )
 

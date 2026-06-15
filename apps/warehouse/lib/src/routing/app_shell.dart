@@ -90,7 +90,7 @@ const _navSections = <_NavSection>[
         path: '/delivery-settings',
         permissionKey: 'delivery_settings'),
     _NavItem(
-        icon: Icons.storefront_rounded,
+        assetIcon: 'assets/images/akjol_logo.png',
         label: 'Каталог AkJol',
         path: '/akjol-catalog',
         permissionKey: 'akjol_catalog'),
@@ -247,6 +247,7 @@ class _DesktopLayout extends StatelessWidget {
                           // Add badge for delivery orders
                           Widget navItem = _SidebarNavItem(
                             icon: item.icon,
+                            assetIcon: item.assetIcon,
                             label: item.label,
                             isSelected: currentPath.startsWith(item.path),
                             collapsed: collapsed,
@@ -378,6 +379,7 @@ class _TabletLayout extends StatelessWidget {
                   for (final item in section.items)
                     _SidebarNavItem(
                       icon: item.icon,
+                      assetIcon: item.assetIcon,
                       label: item.label,
                       isSelected: currentPath.startsWith(item.path),
                       collapsed: true,
@@ -694,6 +696,7 @@ class _MobileDrawer extends StatelessWidget {
                   for (final item in section.items)
                     _DrawerItem(
                       icon: item.icon,
+                      assetIcon: item.assetIcon,
                       label: item.label,
                       isSelected: currentPath.startsWith(item.path),
                       onTap: () {
@@ -745,13 +748,15 @@ class _MobileDrawer extends StatelessWidget {
 
 /// Compact drawer item
 class _DrawerItem extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
+  final String? assetIcon;
   final String label;
   final bool isSelected;
   final VoidCallback onTap;
 
   const _DrawerItem({
-    required this.icon,
+    this.icon,
+    this.assetIcon,
     required this.label,
     required this.isSelected,
     required this.onTap,
@@ -774,11 +779,24 @@ class _DrawerItem extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             child: Row(
               children: [
-                Icon(icon,
-                    size: 20,
-                    color: isSelected
-                        ? AppColors.primary
-                        : cs.onSurface.withValues(alpha: 0.4)),
+                assetIcon != null
+                    ? Container(
+                        width: 20,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Image.asset(
+                          assetIcon!,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : Icon(icon ?? Icons.help_outline,
+                        size: 20,
+                        color: isSelected
+                            ? AppColors.primary
+                            : cs.onSurface.withValues(alpha: 0.4)),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
@@ -874,14 +892,16 @@ class _SidebarHeader extends StatelessWidget {
 }
 
 class _SidebarNavItem extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
+  final String? assetIcon;
   final String label;
   final bool isSelected;
   final bool collapsed;
   final VoidCallback onTap;
 
   const _SidebarNavItem({
-    required this.icon,
+    this.icon,
+    this.assetIcon,
     required this.label,
     required this.isSelected,
     required this.collapsed,
@@ -920,11 +940,24 @@ class _SidebarNavItem extends StatelessWidget {
                   ? MainAxisAlignment.center
                   : MainAxisAlignment.start,
               children: [
-                Icon(icon,
-                    size: 20,
-                    color: isSelected
-                        ? cs.primary
-                        : cs.onSurface.withValues(alpha: 0.4)),
+                assetIcon != null
+                    ? Container(
+                        width: 20,
+                        height: 20,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Image.asset(
+                          assetIcon!,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : Icon(icon ?? Icons.help_outline,
+                        size: 20,
+                        color: isSelected
+                            ? cs.primary
+                            : cs.onSurface.withValues(alpha: 0.4)),
                 if (!collapsed) ...[
                   const SizedBox(width: AppSpacing.md),
                   Text(label,
@@ -1019,13 +1052,15 @@ class _NavSection {
 }
 
 class _NavItem {
-  final IconData icon;
+  final IconData? icon;
+  final String? assetIcon;
   final String label;
   final String path;
   final String permissionKey;
   final bool hasBadge;
   const _NavItem({
-    required this.icon,
+    this.icon,
+    this.assetIcon,
     required this.label,
     required this.path,
     required this.permissionKey,
