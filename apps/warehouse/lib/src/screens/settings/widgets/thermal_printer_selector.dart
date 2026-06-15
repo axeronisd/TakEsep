@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:thermal_printer/thermal_printer.dart';
+import 'package:thermal_printer_plus/thermal_printer.dart';
 import '../../../providers/printer_provider.dart';
 import '../../../services/thermal_printer_service.dart';
 

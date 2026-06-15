@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:printing/printing.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:thermal_printer/thermal_printer.dart';
+import 'package:thermal_printer_plus/thermal_printer.dart';
 import 'auth_providers.dart';
 import '../services/printer_service.dart';
 import '../services/thermal_printer_service.dart';

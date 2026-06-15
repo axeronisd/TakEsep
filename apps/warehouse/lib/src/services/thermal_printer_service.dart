@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
-import 'package:thermal_printer/thermal_printer.dart';
+import 'package:thermal_printer_plus/thermal_printer.dart';
 import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 import 'printer_service.dart'; // for ReceiptData and ReceiptConfig
 
