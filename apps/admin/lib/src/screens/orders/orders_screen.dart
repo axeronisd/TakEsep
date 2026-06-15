@@ -16,6 +16,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
   bool _loading = true;
   String _searchQuery = '';
   String _statusFilter = 'all'; // all, pending, courier_assigned, picked_up, delivered, cancelled
+  final Set<String> _selectedOrderIds = {};
 
   List<Map<String, dynamic>> _orders = [];
 
@@ -116,6 +117,20 @@ class _OrdersScreenState extends State<OrdersScreen> {
                 ),
               ),
               if (!isMobile) ...[
+                if (_selectedOrderIds.isNotEmpty) ...[
+                  const SizedBox(width: 16),
+                  ElevatedButton.icon(
+                    onPressed: () => _confirmDeleteOrders(_selectedOrderIds.toList()),
+                    icon: const Icon(Icons.delete_sweep_rounded, size: 18),
+                    label: Text('Удалить (${_selectedOrderIds.length})'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.error,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
                 const SizedBox(width: 16),
                 IconButton(
                   tooltip: 'Обновить заказы',
@@ -133,6 +148,22 @@ class _OrdersScreenState extends State<OrdersScreen> {
               ],
             ],
           ),
+          if (isMobile && _selectedOrderIds.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => _confirmDeleteOrders(_selectedOrderIds.toList()),
+                icon: const Icon(Icons.delete_sweep_rounded, size: 18),
+                label: Text('Удалить выбранные (${_selectedOrderIds.length})'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.error,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
+            ),
+          ],
           const SizedBox(height: 16),
 
           // Horizontal scrolling Status chips
@@ -202,10 +233,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
     );
   }
 
-  // ═══════════════════════════════════════════════════════════
-  // DESKTOP TABLE
-  // ═══════════════════════════════════════════════════════════
-
   Widget _buildDesktopTable() {
     return Container(
       width: double.infinity,
@@ -223,6 +250,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
             dataRowColor: WidgetStateProperty.all(Colors.transparent),
             horizontalMargin: 20,
             columnSpacing: 28,
+            showCheckboxColumn: true,
             columns: const [
               DataColumn(label: Text('Номер / ID', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
               DataColumn(label: Text('Клиент', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
@@ -234,14 +262,26 @@ class _OrdersScreenState extends State<OrdersScreen> {
               DataColumn(label: Text('Действия', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
             ],
             rows: _filteredOrders.map((o) {
+              final id = o['id'] as String;
               final number = o['order_number'] ?? '—';
               final customer = o['customers']?['name'] ?? 'Без имени';
               final courier = o['couriers']?['name'] ?? 'Не назначен';
               final warehouse = o['warehouses']?['name'] ?? '—';
               final total = '${o['total'] ?? 0} с';
               final status = o['status'] ?? '—';
+              final isSelected = _selectedOrderIds.contains(id);
 
               return DataRow(
+                selected: isSelected,
+                onSelectChanged: (selected) {
+                  setState(() {
+                    if (selected == true) {
+                      _selectedOrderIds.add(id);
+                    } else {
+                      _selectedOrderIds.remove(id);
+                    }
+                  });
+                },
                 cells: [
                   DataCell(
                     Column(
@@ -250,7 +290,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       children: [
                         Text(number, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
                         Text(
-                          o['id'].toString().substring(0, 8),
+                          id.substring(0, 8),
                           style: const TextStyle(fontFamily: 'monospace', color: AppColors.darkTextTertiary, fontSize: 11),
                         ),
                       ],
@@ -273,7 +313,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         ),
                         IconButton(
                           icon: const Icon(Icons.delete_forever_rounded, color: AppColors.errorLight, size: 20),
-                          onPressed: () => _confirmDeleteOrder(o['id'], number),
+                          onPressed: () => _confirmDeleteOrders([id]),
                           tooltip: 'Удалить заказ',
                         ),
                       ],
@@ -293,17 +333,19 @@ class _OrdersScreenState extends State<OrdersScreen> {
   // ═══════════════════════════════════════════════════════════
 
   Widget _buildMobileCard(Map<String, dynamic> o) {
+    final id = o['id'] as String;
     final number = o['order_number'] ?? '—';
     final customer = o['customers']?['name'] ?? 'Без имени';
     final total = '${o['total'] ?? 0} с';
     final status = o['status'] ?? '—';
+    final isSelected = _selectedOrderIds.contains(id);
 
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.darkSurface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: isSelected ? AppColors.primary : AppColors.darkBorder, width: isSelected ? 1.5 : 1.0),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -311,7 +353,25 @@ class _OrdersScreenState extends State<OrdersScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Заказ $number', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+              Row(
+                children: [
+                  Checkbox(
+                    value: isSelected,
+                    activeColor: AppColors.primary,
+                    onChanged: (val) {
+                      setState(() {
+                        if (val == true) {
+                          _selectedOrderIds.add(id);
+                        } else {
+                          _selectedOrderIds.remove(id);
+                        }
+                      });
+                    },
+                  ),
+                  const SizedBox(width: 4),
+                  Text('Заказ $number', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                ],
+              ),
               _buildStatusBadge(status),
             ],
           ),
@@ -339,7 +399,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(Icons.delete_forever_rounded, color: AppColors.errorLight, size: 18),
-                onPressed: () => _confirmDeleteOrder(o['id'], number),
+                onPressed: () => _confirmDeleteOrders([id]),
                 constraints: const BoxConstraints(),
                 padding: EdgeInsets.zero,
               ),
@@ -629,26 +689,29 @@ class _OrdersScreenState extends State<OrdersScreen> {
   // DELETE ORDER CASCADING
   // ═══════════════════════════════════════════════════════════
 
-  Future<void> _confirmDeleteOrder(String? orderId, String orderNum) async {
-    if (orderId == null) return;
+  Future<void> _confirmDeleteOrders(List<String> ids) async {
+    if (ids.isEmpty) return;
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.darkSurface,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: AppColors.darkBorder)),
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.warning_amber_rounded, color: AppColors.errorLight),
-            SizedBox(width: 10),
-            Text('Удаление заказа', style: TextStyle(color: AppColors.darkTextPrimary, fontWeight: FontWeight.bold)),
+            const Icon(Icons.warning_amber_rounded, color: AppColors.errorLight),
+            const SizedBox(width: 10),
+            Text(ids.length == 1 ? 'Удаление заказа' : 'Удаление заказов', style: const TextStyle(color: AppColors.darkTextPrimary, fontWeight: FontWeight.bold)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Вы действительно хотите удалить заказ № $orderNum?', style: const TextStyle(color: Colors.white)),
+            Text(ids.length == 1 
+                ? 'Вы действительно хотите удалить выбранный заказ?' 
+                : 'Вы действительно хотите удалить ${ids.length} выбранных заказов?', 
+                style: const TextStyle(color: Colors.white)),
             const SizedBox(height: 10),
             Text(
               'Это действие удалит позиции заказа, историю статусов, транзакции, отзывы и переписку в чате.',
@@ -691,7 +754,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               children: [
                 CircularProgressIndicator(color: AppColors.error),
                 SizedBox(width: 20),
-                Text('Удаление заказа...', style: TextStyle(color: Colors.white)),
+                Text('Удаление заказов...', style: TextStyle(color: Colors.white)),
               ],
             ),
           ),
@@ -700,23 +763,33 @@ class _OrdersScreenState extends State<OrdersScreen> {
     );
 
     try {
-      // Cascade deletions for delivery order
-      try { await _supabase.from('delivery_order_items').delete().eq('order_id', orderId); } catch (_) {}
-      try { await _supabase.from('delivery_order_messages').delete().eq('order_id', orderId); } catch (_) {}
-      try { await _supabase.from('delivery_order_ratings').delete().eq('order_id', orderId); } catch (_) {}
-      try { await _supabase.from('delivery_ratings').delete().eq('order_id', orderId); } catch (_) {}
-      try { await _supabase.from('delivery_order_status_history').delete().eq('order_id', orderId); } catch (_) {}
-      try { await _supabase.from('transactions').delete().eq('order_id', orderId); } catch (_) {}
-      
-      // Final order deletion
-      await _supabase.from('delivery_orders').delete().eq('id', orderId);
+      int successCount = 0;
+      for (final orderId in ids) {
+        // Cascade deletions for delivery order
+        try { await _supabase.from('delivery_order_items').delete().eq('order_id', orderId); } catch (_) {}
+        try { await _supabase.from('delivery_order_messages').delete().eq('order_id', orderId); } catch (_) {}
+        try { await _supabase.from('delivery_order_ratings').delete().eq('order_id', orderId); } catch (_) {}
+        try { await _supabase.from('delivery_ratings').delete().eq('order_id', orderId); } catch (_) {}
+        try { await _supabase.from('delivery_order_status_history').delete().eq('order_id', orderId); } catch (_) {}
+        try { await _supabase.from('transactions').delete().eq('order_id', orderId); } catch (_) {}
+        
+        // Final order deletion
+        await _supabase.from('delivery_orders').delete().eq('id', orderId);
+        successCount++;
+      }
 
-      if (mounted) Navigator.pop(context); // Dismiss loading overlay
+      if (mounted) {
+        Navigator.of(context).pop(); // Dismiss loading overlay safely
+      }
+
+      setState(() {
+        _selectedOrderIds.removeAll(ids);
+      });
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Заказ № $orderNum успешно удален'),
+            content: Text('Успешно удалено заказов: $successCount из ${ids.length}'),
             backgroundColor: AppColors.success,
           ),
         );
@@ -724,11 +797,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
       _loadOrders();
     } catch (e) {
-      if (mounted) Navigator.pop(context); // Dismiss loading overlay
       if (mounted) {
+        Navigator.of(context).pop(); // Dismiss loading overlay safely
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Ошибка удаления заказа: $e'),
+            content: Text('Ошибка удаления заказов: $e'),
             backgroundColor: AppColors.error,
           ),
         );
