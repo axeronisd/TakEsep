@@ -23,6 +23,8 @@ class AdminShell extends StatelessWidget {
           AppColors.warning),
       _NavDef(Icons.map_rounded, 'Адреса', '/addresses', ['/addresses'],
           AppColors.secondary),
+      _NavDef(Icons.rule_rounded, 'Модерация адресов', '/moderation', ['/moderation'],
+          AppColors.error),
     ]),
     _NavSection('Система', [
       _NavDef(Icons.storage_rounded, 'База данных', '/database', ['/database'],
@@ -42,6 +44,7 @@ class AdminShell extends StatelessWidget {
     if (location.startsWith('/users')) return 'Пользователи';
     if (location.startsWith('/orders')) return 'Заказы';
     if (location.startsWith('/addresses')) return 'Адреса';
+    if (location.startsWith('/moderation')) return 'Модерация адресов';
     if (location.startsWith('/database')) return 'База данных';
     if (location.startsWith('/zones')) return 'Зоны экосистемы';
     return 'TakEsep Admin';
@@ -60,6 +63,9 @@ class AdminShell extends StatelessWidget {
     }
     if (location.startsWith('/addresses')) {
       return 'База адресов и геоданные';
+    }
+    if (location.startsWith('/moderation')) {
+      return 'Проверка и подтверждение новых координат складов';
     }
     if (location.startsWith('/database')) {
       return 'Таблицы, записи и обслуживание';
@@ -319,10 +325,11 @@ class _MobileShell extends StatelessWidget {
     if (location.startsWith('/companies')) return 1;
     if (location.startsWith('/users')) return 2;
     if (location.startsWith('/addresses')) return 3;
+    if (location.startsWith('/moderation')) return 4;
     if (location.startsWith('/database') ||
         location.startsWith('/zones') ||
         location.startsWith('/orders')) {
-      return 4;
+      return 5;
     }
     return 0;
   }
@@ -334,6 +341,7 @@ class _MobileShell extends StatelessWidget {
       (Icons.business_rounded, 'Компании', '/companies'),
       (Icons.people_alt_rounded, 'Пользователи', '/users'),
       (Icons.map_rounded, 'Адреса', '/addresses'),
+      (Icons.rule_rounded, 'Модерация', '/moderation'),
       (Icons.storage_rounded, 'База', '/database'),
     ];
 

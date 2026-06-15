@@ -51,6 +51,13 @@ class FirebasePushBootstrap {
       return;
     }
 
+    // Enable foreground notifications on iOS
+    await messaging.setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
     // 2. Get FCM token
     _currentToken = await messaging.getToken();
     debugPrint('[Push] FCM Token: ${_currentToken?.substring(0, 20)}...');
@@ -136,6 +143,36 @@ class FirebasePushBootstrap {
     if (type == 'chat_message') return 'chat_message';
     if (type == 'order_cancelled') return 'system_alert';
     return 'order_accepted';
+  }
+
+  /// Re-register token after login (call this when user signs in)
+  /// Tries multiple times with delay to handle slow auth state updates
+  static Future<void> reRegisterToken() async {
+    if (kIsWeb) return;
+    for (int attempt = 0; attempt < 3; attempt++) {
+      try {
+        final messaging = FirebaseMessaging.instance;
+        final token = await messaging.getToken();
+        if (token != null) {
+          _currentToken = token;
+          await _pushService.registerToken(token);
+          debugPrint(
+            '[Push] Token re-registered after login (attempt ${attempt + 1})',
+          );
+          return;
+        } else {
+          debugPrint('[Push] getToken() returned null, attempt ${attempt + 1}');
+        }
+      } catch (e) {
+        debugPrint(
+          '[Push] Re-register token failed (attempt ${attempt + 1}): $e',
+        );
+      }
+      if (attempt < 2) {
+        await Future.delayed(const Duration(seconds: 2));
+      }
+    }
+    debugPrint('[Push] WARNING: Failed to register FCM token after 3 attempts');
   }
 
   /// Call on logout

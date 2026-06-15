@@ -620,7 +620,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           ),
 
           // ── Cancel button ──
-          if (status == 'pending' || status == 'confirmed') ...[
+          if (['pending', 'confirmed', 'courier_assigned', 'payment_sent', 'payment_verified', 'assembling', 'ready'].contains(status)) ...[
             const SizedBox(height: 24),
             OutlinedButton.icon(
               onPressed: () => _cancelOrder(false),

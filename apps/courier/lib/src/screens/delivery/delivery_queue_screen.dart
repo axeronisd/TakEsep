@@ -21,9 +21,9 @@ class DeliveryQueueScreen extends ConsumerStatefulWidget {
   ConsumerState<DeliveryQueueScreen> createState() => _DeliveryQueueScreenState();
 }
 
-class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
   final _orderService = OrderService();
   final _locationService = CourierLocationService();
+  final AudioPlayer _alertPlayer = AudioPlayer();
   
   List<Map<String, dynamic>> _activeOrders = [];
   List<RouteTask> _routeTasks = [];
@@ -31,6 +31,7 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
   bool _loading = true;
   bool _updating = false;
   RealtimeChannel? _channel;
+  final Set<String> _readyOrdersTracked = {};
 
   double _sheetPosition = 0.45;
 
@@ -75,6 +76,7 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
   @override
   void dispose() {
     _channel?.unsubscribe();
+    _alertPlayer.dispose();
     super.dispose();
   }
 
@@ -98,6 +100,32 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
         .subscribe();
   }
 
+  void _playReadyAlert() async {
+    try {
+      await _alertPlayer.setVolume(1.0);
+      await _alertPlayer.setReleaseMode(ReleaseMode.release);
+      await _alertPlayer.play(
+        UrlSource('https://cdn.pixabay.com/audio/2024/02/19/audio_e06e29e1e4.mp3'),
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle, color: Colors.white),
+                const SizedBox(width: 10),
+                const Text('Заказ готов, можете забирать!', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              ],
+            ),
+            backgroundColor: AkJolTheme.success,
+            duration: const Duration(seconds: 5),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (_) {}
+  }
+
   Future<void> _loadData() async {
     try {
       final courierId = ref.read(courierIdProvider);
@@ -116,6 +144,11 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
       // Resolve images
       Set<String> pIds = {};
       for (var o in orders) {
+        if (o['status'] == 'ready' && !_readyOrdersTracked.contains(o['id'])) {
+          _readyOrdersTracked.add(o['id']);
+          _playReadyAlert();
+        }
+
         final items = o['delivery_order_items'] as List? ?? [];
         for (var i in items) {
           final pid = i['product_id'] as String?;
@@ -223,6 +256,46 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
         });
       }
     } catch (_) {}
+  }
+
+  Future<void> _cancelOrder(String orderId) async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: const Color(0xFF161C16),
+        title: const Text('Скинуть заказ?', style: TextStyle(color: Colors.white)),
+        content: const Text('Вы уверены, что хотите отменить этот заказ? Он будет передан другому курьеру.', style: TextStyle(color: Colors.white70)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Нет', style: TextStyle(color: Colors.white70)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Скинуть', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        setState(() => _updating = true);
+        await Supabase.instance.client
+            .from('delivery_orders')
+            .update({
+              'status': 'cancelled_by_courier',
+              'courier_id': null,
+            }).eq('id', orderId);
+        
+        await _loadData();
+      } catch (e) {
+        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Ошибка: $e')));
+      } finally {
+        if (mounted) setState(() => _updating = false);
+      }
+    }
   }
 
   Future<void> _updateOrderStatus(String orderId, String newStatus) async {
@@ -706,6 +779,7 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
     }
 
     Widget actionBtn;
+    bool canCancel = false;
     
     if (task.type == RouteTaskType.pickup) {
       if (status == 'payment_sent') {
@@ -714,6 +788,7 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
         actionBtn = _buildBtn('Забрал заказ', AkJolTheme.statusAccepted, Icons.inventory_rounded, () => _updateOrderStatus(task.orderId, 'picked_up'));
       } else if (status == 'courier_assigned') {
         actionBtn = _buildBtn('Ожидание оплаты...', Colors.grey, Icons.hourglass_top_rounded, null);
+        canCancel = true; // Can cancel while waiting for payment
       } else {
         // Fallback
         actionBtn = _buildBtn('Забрал', AkJolTheme.statusAccepted, Icons.check, () => _updateOrderStatus(task.orderId, 'picked_up'));
@@ -729,26 +804,39 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
       }
     }
 
-    return Row(
+    return Column(
       children: [
-        Expanded(
-          flex: 1,
-          child: ElevatedButton.icon(
-            onPressed: _toggleSheet,
-            icon: Icon(_sheetPosition > 0.3 ? Icons.keyboard_arrow_down_rounded : Icons.keyboard_arrow_up_rounded, size: 24),
-            label: Text(_sheetPosition > 0.3 ? 'На карту' : 'Заказы'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white12,
-              foregroundColor: Colors.white,
-              minimumSize: const Size(0, 52),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        Row(
+          children: [
+            Expanded(
+              flex: 1,
+              child: ElevatedButton.icon(
+                onPressed: _toggleSheet,
+                icon: Icon(_sheetPosition > 0.3 ? Icons.keyboard_arrow_down_rounded : Icons.keyboard_arrow_up_rounded, size: 24),
+                label: Text(_sheetPosition > 0.3 ? 'На карту' : 'Заказы'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.white12,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(0, 52),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
             ),
-          ),
+            const SizedBox(width: 12),
+            Expanded(flex: 2, child: actionBtn),
+          ],
         ),
-        const SizedBox(width: 12),
-        Expanded(flex: 2, child: actionBtn),
+        if (canCancel) ...[
+          const SizedBox(height: 12),
+          TextButton.icon(
+            onPressed: () => _cancelOrder(task.orderId),
+            icon: const Icon(Icons.close_rounded, color: Colors.white54, size: 18),
+            label: const Text('Скинуть заказ', style: TextStyle(color: Colors.white54, fontWeight: FontWeight.bold)),
+          ),
+        ],
       ],
     );
+
   }
 
   Widget _buildBtn(String label, Color color, IconData icon, VoidCallback? onPressed) {

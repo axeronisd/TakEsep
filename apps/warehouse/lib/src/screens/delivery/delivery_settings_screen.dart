@@ -25,6 +25,9 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
   bool _saving = false;
   bool _detectingGeo = false;
   String? _settingsId;
+  String? _addressStatus;
+  bool _isEditingAddress = false;
+  LatLng? _pendingLocation;
 
   final MapController _mapController = MapController();
   LatLng _warehouseLocation = const LatLng(42.8746, 74.5698);
@@ -110,12 +113,21 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
       }
 
       // Always fetch base address from warehouse
-      final wh = await _supabase.from('warehouses').select('address, latitude, longitude').eq('id', _warehouseId).maybeSingle();
+      final wh = await _supabase.from('warehouses').select('address, latitude, longitude, address_status, pending_address, pending_lat, pending_lng').eq('id', _warehouseId).maybeSingle();
       if (wh != null) {
         setState(() {
-          _addressController.text = wh['address'] ?? '';
-          // If delivery zone location is not set, use warehouse location
-          if (data == null || data['latitude'] == null) {
+          _addressStatus = wh['address_status'] ?? 'verified';
+          
+          if (_addressStatus == 'pending') {
+            _addressController.text = wh['pending_address'] ?? wh['address'] ?? '';
+            final pLat = wh['pending_lat'];
+            final pLng = wh['pending_lng'];
+            if (pLat != null && pLng != null) {
+              _warehouseLocation = LatLng((pLat as num).toDouble(), (pLng as num).toDouble());
+              _pendingLocation = _warehouseLocation;
+            }
+          } else {
+            _addressController.text = wh['address'] ?? '';
             final wLat = wh['latitude'];
             final wLng = wh['longitude'];
             if (wLat != null && wLng != null) {
@@ -155,27 +167,41 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
 
   Future<void> _save() async {
     setState(() => _saving = true);
-    final payload = {
+    
+    // 1. Save delivery settings (radius, description, active)
+    final settingsPayload = {
       'warehouse_id': _warehouseId,
       'is_active': _isActive,
-      'address': _addressController.text,
       'delivery_radius_km': _radiusKm,
-      'latitude': _warehouseLocation.latitude,
-      'longitude': _warehouseLocation.longitude,
       'description': _descController.text,
       'use_akjol_couriers': true,
     };
 
     try {
       if (_settingsId != null) {
-        await _supabase.from('delivery_settings').update(payload).eq('id', _settingsId!);
+        await _supabase.from('delivery_settings').update(settingsPayload).eq('id', _settingsId!);
       } else {
         final result = await _supabase
             .from('delivery_settings')
-            .upsert(payload, onConflict: 'warehouse_id')
+            .upsert(settingsPayload, onConflict: 'warehouse_id')
             .select().single();
         _settingsId = result['id'];
       }
+
+      // 2. Save pending address to warehouses if editing
+      if (_isEditingAddress && _addressStatus != 'pending') {
+        await _supabase.from('warehouses').update({
+          'pending_address': _addressController.text,
+          'pending_lat': _pendingLocation?.latitude ?? _warehouseLocation.latitude,
+          'pending_lng': _pendingLocation?.longitude ?? _warehouseLocation.longitude,
+          'address_status': 'pending',
+        }).eq('id', _warehouseId);
+        setState(() {
+          _addressStatus = 'pending';
+          _isEditingAddress = false;
+        });
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Настройки сохранены'), backgroundColor: Colors.green),
@@ -236,21 +262,55 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
           Text('Нажмите на карту или определите по GPS', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
           const SizedBox(height: 12),
 
-          SizedBox(
-            width: double.infinity, height: 44,
-            child: OutlinedButton.icon(
-              onPressed: _detectingGeo ? null : _detectLocation,
-              icon: _detectingGeo
-                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.my_location_rounded, size: 20),
-              label: Text(_detectingGeo ? 'Определяем...' : 'Определить геолокацию'),
+          if (_addressStatus == 'pending')
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.1),
+                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.hourglass_top_rounded, color: Colors.orange),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Ваш новый адрес находится на модерации. Вы не можете изменить его до завершения проверки.',
+                      style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            )
+          else if (!_isEditingAddress)
+            OutlinedButton.icon(
+              onPressed: () => setState(() => _isEditingAddress = true),
+              icon: const Icon(Icons.edit_location_alt_rounded),
+              label: const Text('Изменить адрес или координаты'),
               style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.green,
-                side: const BorderSide(color: Colors.green),
+                foregroundColor: Colors.blue,
+                side: const BorderSide(color: Colors.blue),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
-          ),
+          
+          if (_isEditingAddress)
+            SizedBox(
+              width: double.infinity, height: 44,
+              child: OutlinedButton.icon(
+                onPressed: _detectingGeo ? null : _detectLocation,
+                icon: _detectingGeo
+                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                    : const Icon(Icons.my_location_rounded, size: 20),
+                label: Text(_detectingGeo ? 'Определяем...' : 'Определить геолокацию'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.green,
+                  side: const BorderSide(color: Colors.green),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
           const SizedBox(height: 12),
 
           Container(
@@ -265,7 +325,12 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
                 mapController: _mapController,
                 options: MapOptions(
                   initialCenter: _warehouseLocation, initialZoom: 13,
-                  onTap: (_, point) => setState(() => _warehouseLocation = point),
+                  onTap: _isEditingAddress
+                      ? (_, point) => setState(() {
+                            _warehouseLocation = point;
+                            _pendingLocation = point;
+                          })
+                      : null,
                 ),
                 children: [
                   TileLayer(
@@ -377,11 +442,11 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
           const SizedBox(height: 8),
           TextField(
             controller: _addressController,
-            readOnly: true,
+            readOnly: !_isEditingAddress,
             decoration: InputDecoration(
               hintText: 'Улица, номер дома',
               prefixIcon: const Icon(Icons.location_on_outlined),
-              filled: true,
+              filled: !_isEditingAddress,
               fillColor: Colors.grey.withValues(alpha: 0.1),
             ),
           ),

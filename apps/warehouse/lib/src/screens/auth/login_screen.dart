@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +7,7 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 
 import '../../providers/auth_providers.dart';
 import '../../utils/snackbar_helper.dart';
+import '../../services/firebase_push_bootstrap.dart';
 
 /// Login Screen with two modes: Owner (license key) and Employee (login + pin)
 class LoginScreen extends ConsumerStatefulWidget {
@@ -83,6 +85,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
     final success = await authNotifier.loginCompany(key);
     if (success && mounted) {
+      unawaited(FirebasePushBootstrap.reRegisterToken());
       final state = ref.read(authProvider);
       if (!state.hasWarehouseSelected) {
         context.go('/select-warehouse');
@@ -102,6 +105,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
 
     final success = await authNotifier.loginByNameAndPassword(login, pin);
     if (success && mounted) {
+      unawaited(FirebasePushBootstrap.reRegisterToken());
       final state = ref.read(authProvider);
       if (!state.hasWarehouseSelected) {
         context.go('/select-warehouse');
@@ -152,6 +156,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
       authNotifier.clearError();
       final success = await authNotifier.loginWithSavedCredentials();
       if (success && mounted) {
+        unawaited(FirebasePushBootstrap.reRegisterToken());
         final state = ref.read(authProvider);
         if (!state.hasWarehouseSelected) {
           context.go('/select-warehouse');

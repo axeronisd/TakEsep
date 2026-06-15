@@ -66,7 +66,7 @@ class NotificationService {
       'delivery_orders',
       'Доставка',
       description: 'Уведомления о заказах доставки',
-      importance: Importance.high,
+      importance: Importance.max,
       playSound: true,
       enableVibration: true,
       showBadge: true,
@@ -76,7 +76,7 @@ class NotificationService {
       'chat_messages',
       'Сообщения',
       description: 'Сообщения от клиентов и курьеров',
-      importance: Importance.high,
+      importance: Importance.max,
       playSound: true,
       showBadge: true,
     ));
@@ -104,9 +104,10 @@ class NotificationService {
       _channelName(channelId),
       channelDescription: _channelDesc(channelId),
       importance: channelId == 'delivery_orders' || channelId == 'chat_messages'
-          ? Importance.high
+          ? Importance.max
           : Importance.defaultImportance,
       priority: Priority.high,
+      fullScreenIntent: true,
       showWhen: true,
       enableVibration: true,
       playSound: true,

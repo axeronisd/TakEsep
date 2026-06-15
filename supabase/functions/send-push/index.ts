@@ -143,7 +143,7 @@ async function sendToToken(
         apns: {
           payload: {
             aps: {
-              sound: 'default',
+              sound: soundName === 'default' ? 'default' : `${soundName}.wav`,
               badge: 1,
               "mutable-content": 1,
             },
@@ -332,34 +332,26 @@ async function handleWebhook(accessToken: string, payload: any) {
       if (record.customer_id) {
         const customerUserId = await resolveUserId(record.customer_id, "customers")
         if (customerUserId) {
-          const templates: Record<string, { title: string; body: string; sound: string }> = {
-            accepted: {
-              title: "Курьер принял заказ",
-              body: `Заказ #${num} взят в работу`,
-              sound: "order_accepted",
-            },
-            picked_up: {
-              title: "Заказ забран",
-              body: `Курьер забрал #${num} и уже в пути`,
-              sound: "order_pickup",
-            },
-            delivered: {
-              title: "Заказ доставлен",
-              body: `#${num} — доставка завершена`,
-              sound: "order_delivered",
-            },
-            cancelled: {
-              title: "Заказ отменён",
-              body: `#${num} — заказ отменён`,
-              sound: "order_cancelled",
-            },
+          let pushTemplate = null;
+
+          if (status === "courier_assigned") {
+            pushTemplate = { title: "Курьер принял заказ", body: `Заказ #${num} взят в работу`, sound: "order_accepted" };
+          } else if (status === "assembling") {
+            pushTemplate = { title: "Заказ собирается", body: `Магазин начал сборку заказа #${num}`, sound: "order_accepted" };
+          } else if (status === "ready") {
+            pushTemplate = { title: "Заказ готов", body: `Заказ #${num} ожидает курьера`, sound: "order_accepted" };
+          } else if (status === "picked_up") {
+            pushTemplate = { title: "Заказ забран", body: `Курьер забрал #${num} и уже в пути`, sound: "order_pickup" };
+          } else if (status === "delivered") {
+            pushTemplate = { title: "Заказ доставлен", body: `#${num} — доставка завершена`, sound: "order_delivered" };
+          } else if (status.startsWith("cancelled")) {
+            pushTemplate = { title: "Заказ отменён", body: `#${num} — заказ отменён`, sound: "order_cancelled" };
           }
 
-          const tmpl = templates[status]
-          if (tmpl) {
+          if (pushTemplate) {
             const sent = await sendToUser(
               accessToken, customerUserId, "customer",
-              tmpl.title, tmpl.body, "order_status", tmpl.sound,
+              pushTemplate.title, pushTemplate.body, "order_status", pushTemplate.sound,
               { order_id: record.id, type: "order_status", status }
             )
             results.push(`customer:${sent}`)
@@ -369,14 +361,14 @@ async function handleWebhook(accessToken: string, payload: any) {
         }
       }
 
-      // → Notify COURIER if order cancelled by customer
-      if (status === "cancelled" && record.courier_id) {
+      // → Notify COURIER if order cancelled by customer/store
+      if (status.startsWith("cancelled") && status !== "cancelled_by_courier" && record.courier_id) {
         const courierUserId = await resolveUserId(record.courier_id, "couriers")
         if (courierUserId) {
           const sent = await sendToUser(
             accessToken, courierUserId, "courier",
             "Заказ отменён",
-            `#${num} — клиент отменил заказ`,
+            `#${num} — заказ отменён`,
             "order_status", "order_cancelled",
             { order_id: record.id, type: "order_cancelled" }
           )
@@ -385,11 +377,11 @@ async function handleWebhook(accessToken: string, payload: any) {
       }
 
       // → Notify WAREHOUSE if order cancelled
-      if (status === "cancelled" && record.warehouse_id) {
+      if (status.startsWith("cancelled") && record.warehouse_id) {
         const sent = await sendToAllOfType(
           accessToken, "warehouse",
           "Заказ отменён",
-          `#${num} — заказ отменён клиентом`,
+          `#${num} — заказ отменён`,
           "delivery_orders", "order_cancelled",
           { order_id: record.id, type: "order_cancelled" }
         )

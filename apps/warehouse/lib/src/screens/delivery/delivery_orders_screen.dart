@@ -181,7 +181,31 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
   //                  handles everything else atomically.
   // ═══════════════════════════════════════════════════════════
 
-
+  Future<void> _setOrderStatus(String orderId, String newStatus) async {
+    try {
+      // Show loading overlay
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const Center(child: CircularProgressIndicator()),
+      );
+      await _supabase
+          .from('delivery_orders')
+          .update({'status': newStatus})
+          .eq('id', orderId);
+      if (mounted) {
+        Navigator.pop(context); // close overlay
+        _loadOrders();
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context); // close overlay
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.error),
+        );
+      }
+    }
+  }
 
   // ═══════════════════════════════════════════════════════════
   // BUILD
@@ -326,35 +350,83 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
               statusLabel = 'Курьер приехал';
               statusIcon = Icons.location_on_rounded;
               break;
+            case 'assembling':
+              statusColor = AppColors.info;
+              statusLabel = 'Собирается';
+              statusIcon = Icons.inventory_2_rounded;
+              break;
+            case 'ready':
+              statusColor = AppColors.success;
+              statusLabel = 'Ожидает курьера';
+              statusIcon = Icons.inventory_2_rounded;
+              break;
             default:
               statusColor = AppColors.secondary;
               statusLabel = _statusLabel(status);
               statusIcon = Icons.inventory_2_rounded;
           }
 
-          // Info banner instead of action buttons
-          final Widget infoBanner = Container(
-            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: statusColor.withValues(alpha: 0.08),
-              border: Border.all(color: statusColor.withValues(alpha: 0.2)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.info_outline_rounded, size: 16, color: statusColor),
-                const SizedBox(width: 8),
-                Text(
-                  'Подготовьте товары — курьер заберёт',
-                  style: AppTypography.bodySmall.copyWith(
-                    color: statusColor,
-                    fontWeight: FontWeight.w600,
+          // Dynamic action section
+          Widget actionWidget;
+          if (status == 'assembling' || status == 'payment_verified') {
+            actionWidget = ElevatedButton.icon(
+              onPressed: () => _setOrderStatus(order['id'], 'ready'),
+              icon: const Icon(Icons.check_circle_outline_rounded, color: Colors.white),
+              label: const Text('Заказ готов', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.success,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                minimumSize: const Size(double.infinity, 48),
+              ),
+            );
+          } else if (status == 'ready') {
+            actionWidget = Container(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: AppColors.success.withValues(alpha: 0.1),
+                border: Border.all(color: AppColors.success.withValues(alpha: 0.3)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.check_circle_rounded, size: 18, color: AppColors.success),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Ждем курьера',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: AppColors.success,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-              ],
-            ),
-          );
+                ],
+              ),
+            );
+          } else {
+            actionWidget = Container(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(10),
+                color: statusColor.withValues(alpha: 0.08),
+                border: Border.all(color: statusColor.withValues(alpha: 0.2)),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.info_outline_rounded, size: 16, color: statusColor),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Подготовьте товары — курьер заберёт',
+                    style: AppTypography.bodySmall.copyWith(
+                      color: statusColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
 
           return _OrderCard(
             order: order,
@@ -362,7 +434,10 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
             statusLabel: statusLabel,
             statusIcon: statusIcon,
             showItems: true,
-            actions: infoBanner,
+            actions: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+              child: actionWidget,
+            ),
           );
         },
       ),
