@@ -6241,9 +6241,7 @@ SOFTWARE.
 --------------------------------------------------------------------------------
 flutter_lints
 go_router
-path_provider
 path_provider_linux
-path_provider_platform_interface
 path_provider_windows
 plugin_platform_interface
 shared_preferences_linux
@@ -11640,8 +11638,10 @@ See the License for the specific language governing permissions and
 limitations under the License.
 --------------------------------------------------------------------------------
 google_fonts
+path_provider
 path_provider_android
 path_provider_foundation
+path_provider_platform_interface
 shared_preferences
 shared_preferences_android
 shared_preferences_foundation
