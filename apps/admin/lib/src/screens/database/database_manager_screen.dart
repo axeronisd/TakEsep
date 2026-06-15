@@ -1199,33 +1199,47 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
       if (_isAuth) {
         // Clean up dependent tables first (FK constraints)
         for (final uid in _selectedIds) {
-          // 1. Find customer id and courier id to delete their orders/locations
+          try { await _supabase.from('user_fcm_tokens').delete().eq('user_id', uid); } catch (_) {}
+          try { await _supabase.from('favorites').delete().eq('user_id', uid); } catch (_) {}
+          try { await _supabase.from('cart_drafts').delete().eq('user_id', uid); } catch (_) {}
+          try { await _supabase.from('addresses').update({'created_by': null}).eq('created_by', uid); } catch (_) {}
+          try { await _supabase.from('user_profiles').delete().eq('id', uid); } catch (_) {}
+
           final cust = await _supabase.from('customers').select('id').eq('user_id', uid).maybeSingle();
           if (cust != null) {
             final custId = cust['id'];
-            await _supabase.from('delivery_orders').delete().eq('customer_id', custId);
+            final orders = await _supabase.from('delivery_orders').select('id').eq('customer_id', custId);
+            for (final o in orders) {
+                final oId = o['id'];
+                try { await _supabase.from('delivery_order_items').delete().eq('order_id', oId); } catch (_) {}
+                try { await _supabase.from('delivery_order_messages').delete().eq('order_id', oId); } catch (_) {}
+                try { await _supabase.from('delivery_order_ratings').delete().eq('order_id', oId); } catch (_) {}
+                try { await _supabase.from('delivery_ratings').delete().eq('order_id', oId); } catch (_) {}
+                try { await _supabase.from('delivery_order_status_history').delete().eq('order_id', oId); } catch (_) {}
+                try { await _supabase.from('transactions').delete().eq('order_id', oId); } catch (_) {}
+            }
+            try { await _supabase.from('delivery_ratings').delete().eq('customer_id', custId); } catch (_) {}
+            try { await _supabase.from('delivery_order_ratings').delete().eq('customer_id', custId); } catch (_) {}
+            try { await _supabase.from('delivery_orders').delete().eq('customer_id', custId); } catch (_) {}
+            try { await _supabase.from('customer_addresses').delete().eq('customer_id', custId); } catch (_) {}
+            try { await _supabase.from('customers').delete().eq('id', custId); } catch (_) {}
           }
 
           final cour = await _supabase.from('couriers').select('id').eq('user_id', uid).maybeSingle();
           if (cour != null) {
             final courId = cour['id'];
-            await _supabase.from('courier_locations').delete().eq('courier_id', courId);
-            await _supabase.from('delivery_orders').delete().eq('courier_id', courId);
+            try { await _supabase.from('courier_locations').delete().eq('courier_id', courId); } catch (_) {}
+            try { await _supabase.from('delivery_orders').update({'courier_id': null}).eq('courier_id', courId); } catch (_) {}
+            try { await _supabase.from('couriers').delete().eq('id', courId); } catch (_) {}
           }
 
           final emp = await _supabase.from('employees').select('id').eq('user_id', uid).maybeSingle();
           if (emp != null) {
             final empId = emp['id'];
-            await _supabase.from('employee_expenses').delete().eq('employee_id', empId);
+            try { await _supabase.from('employee_expenses').delete().eq('employee_id', empId); } catch (_) {}
+            try { await _supabase.from('employees').delete().eq('id', empId); } catch (_) {}
           }
 
-          // 2. Delete the profile records
-          for (final depTable in ['customers', 'couriers', 'employees']) {
-            try { await _supabase.from(depTable).delete().eq('user_id', uid); } catch (_) {}
-            try { await _supabase.from(depTable).delete().eq('id', uid); } catch (_) {}
-          }
-          
-          // 3. Delete auth user
           try { await _supabase.auth.admin.deleteUser(uid); } catch (_) {}
         }
       } else {
@@ -1233,18 +1247,41 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
           for (final id in _selectedIds) {
             try { await _supabase.from('delivery_order_items').delete().eq('order_id', id); } catch (_) {}
             try { await _supabase.from('delivery_order_messages').delete().eq('order_id', id); } catch (_) {}
+            try { await _supabase.from('delivery_order_ratings').delete().eq('order_id', id); } catch (_) {}
+            try { await _supabase.from('delivery_ratings').delete().eq('order_id', id); } catch (_) {}
+            try { await _supabase.from('delivery_order_status_history').delete().eq('order_id', id); } catch (_) {}
+            try { await _supabase.from('transactions').delete().eq('order_id', id); } catch (_) {}
             try { await _supabase.from('delivery_orders').delete().eq('id', id); } catch (_) {}
           }
         } else if (_selectedTable == 'companies') {
            for (final id in _selectedIds) {
-             // Cascade warehouses
-             final whs = await _supabase.from('warehouses').select('id').eq('company_id', id);
-             for (final w in whs) {
-               final wId = w['id'];
-               try { await _supabase.from('delivery_orders').delete().eq('warehouse_id', wId); } catch (_) {}
-               try { await _supabase.from('products').delete().eq('warehouse_id', wId); } catch (_) {}
-               try { await _supabase.from('employees').delete().eq('warehouse_id', wId); } catch (_) {}
-               try { await _supabase.from('warehouses').delete().eq('id', wId); } catch (_) {}
+             try { await _supabase.from('categories').delete().eq('company_id', id); } catch (_) {}
+             try { await _supabase.from('products').delete().eq('company_id', id); } catch (_) {}
+             try { await _supabase.from('company_users').delete().eq('company_id', id); } catch (_) {}
+             
+             final groups = await _supabase.from('warehouse_groups').select('id').eq('company_id', id);
+             for (final g in groups) {
+               final gId = g['id'];
+               final whs = await _supabase.from('warehouses').select('id').eq('group_id', gId);
+               for (final w in whs) {
+                 final wId = w['id'];
+                 final orders = await _supabase.from('delivery_orders').select('id').eq('warehouse_id', wId);
+                 for (final o in orders) {
+                   final oId = o['id'];
+                   try { await _supabase.from('delivery_order_items').delete().eq('order_id', oId); } catch (_) {}
+                   try { await _supabase.from('delivery_order_messages').delete().eq('order_id', oId); } catch (_) {}
+                   try { await _supabase.from('delivery_order_ratings').delete().eq('order_id', oId); } catch (_) {}
+                   try { await _supabase.from('delivery_ratings').delete().eq('order_id', oId); } catch (_) {}
+                   try { await _supabase.from('delivery_order_status_history').delete().eq('order_id', oId); } catch (_) {}
+                   try { await _supabase.from('transactions').delete().eq('order_id', oId); } catch (_) {}
+                   try { await _supabase.from('delivery_orders').delete().eq('id', oId); } catch (_) {}
+                 }
+                 try { await _supabase.from('products').delete().eq('warehouse_id', wId); } catch (_) {}
+                 try { await _supabase.from('employees').delete().eq('warehouse_id', wId); } catch (_) {}
+                 try { await _supabase.from('delivery_settings').delete().eq('warehouse_id', wId); } catch (_) {}
+                 try { await _supabase.from('warehouses').delete().eq('id', wId); } catch (_) {}
+               }
+               try { await _supabase.from('warehouse_groups').delete().eq('id', gId); } catch (_) {}
              }
              try { await _supabase.from('companies').delete().eq('id', id); } catch (_) {}
            }
