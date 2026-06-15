@@ -328,6 +328,9 @@ class _QuickCreateProductDialogState
         price: price,
         costPrice: cost > 0 ? cost : null,
         b2cPrice: _isPublic ? price : null,
+        b2cDescription: _isPublic && _descriptionController.text.trim().isNotEmpty
+            ? _descriptionController.text.trim()
+            : null,
         quantity: 0,
         minQuantity: minStock,
         unit: _selectedUnit,

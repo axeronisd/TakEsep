@@ -208,107 +208,115 @@ class _AkjolCatalogScreenState extends ConsumerState<AkjolCatalogScreen> {
         children: [
           // Header
           Container(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 16),
             decoration: BoxDecoration(
               color: cs.surface,
               border: Border(bottom: BorderSide(color: cs.outlineVariant.withValues(alpha: 0.2))),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF2ECC71).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Icon(Icons.storefront_rounded,
-                          color: Color(0xFF2ECC71), size: 22),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Каталог AkJol',
-                              style: AppTypography.headlineSmall
-                                  .copyWith(fontWeight: FontWeight.w700)),
-                          Text(
-                            '$_publicCount из ${_allProducts.length} товаров в каталоге',
-                            style: AppTypography.bodySmall
-                                .copyWith(color: cs.onSurface.withValues(alpha: 0.5)),
+                    Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF2ECC71).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                        ],
-                      ),
-                    ),
-                    // Actions
-                    PopupMenuButton<String>(
-                      icon: Icon(Icons.more_vert, color: cs.onSurface.withValues(alpha: 0.5)),
-                      onSelected: (val) {
-                        if (val == 'enable_all') _enableAll();
-                        if (val == 'disable_all') _disableAll();
-                      },
-                      itemBuilder: (_) => [
-                        const PopupMenuItem(
-                          value: 'enable_all',
-                          child: Row(
+                          clipBehavior: Clip.antiAlias,
+                          child: Image.asset(
+                            'assets/images/akjol_logo.png',
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Icon(Icons.check_circle, color: Color(0xFF2ECC71), size: 18),
-                              SizedBox(width: 8),
-                              Text('Включить все'),
+                              Text('Каталог AkJol',
+                                  style: AppTypography.headlineSmall
+                                      .copyWith(fontWeight: FontWeight.w700)),
+                              Text(
+                                '$_publicCount из ${_allProducts.length} товаров в каталоге',
+                                style: AppTypography.bodySmall
+                                    .copyWith(color: cs.onSurface.withValues(alpha: 0.5)),
+                              ),
                             ],
                           ),
                         ),
-                        const PopupMenuItem(
-                          value: 'disable_all',
-                          child: Row(
-                            children: [
-                              Icon(Icons.cancel, color: Colors.red, size: 18),
-                              SizedBox(width: 8),
-                              Text('Выключить все'),
-                            ],
+                        // Actions
+                        PopupMenuButton<String>(
+                          icon: Icon(Icons.more_vert, color: cs.onSurface.withValues(alpha: 0.5)),
+                          onSelected: (val) {
+                            if (val == 'enable_all') _enableAll();
+                            if (val == 'disable_all') _disableAll();
+                          },
+                          itemBuilder: (_) => [
+                            const PopupMenuItem(
+                              value: 'enable_all',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.check_circle, color: Color(0xFF2ECC71), size: 18),
+                                  SizedBox(width: 8),
+                                  Text('Включить все'),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuItem(
+                              value: 'disable_all',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.cancel, color: Colors.red, size: 18),
+                                  SizedBox(width: 8),
+                                  Text('Выключить все'),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Search + filter
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextField(
+                            onChanged: (val) => setState(() => _search = val),
+                            decoration: InputDecoration(
+                              hintText: 'Поиск товаров...',
+                              prefixIcon: const Icon(Icons.search, size: 20),
+                              filled: true,
+                              fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                              isDense: true,
+                            ),
                           ),
+                        ),
+                        const SizedBox(width: 8),
+                        FilterChip(
+                          label: const Text('Только включённые'),
+                          selected: _showOnlyPublic,
+                          onSelected: (val) => setState(() => _showOnlyPublic = val),
+                          selectedColor: const Color(0xFF2ECC71).withValues(alpha: 0.15),
+                          checkmarkColor: const Color(0xFF2ECC71),
                         ),
                       ],
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-
-                // Search + filter
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        onChanged: (val) => setState(() => _search = val),
-                        decoration: InputDecoration(
-                          hintText: 'Поиск товаров...',
-                          prefixIcon: const Icon(Icons.search, size: 20),
-                          filled: true,
-                          fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.3),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                          isDense: true,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    FilterChip(
-                      label: const Text('Только включённые'),
-                      selected: _showOnlyPublic,
-                      onSelected: (val) => setState(() => _showOnlyPublic = val),
-                      selectedColor: const Color(0xFF2ECC71).withValues(alpha: 0.15),
-                      checkmarkColor: const Color(0xFF2ECC71),
-                    ),
-                  ],
-                ),
-              ],
+              ),
             ),
           ),
 
