@@ -19,6 +19,10 @@ class AdminShell extends StatelessWidget {
           AppColors.info),
       _NavDef(Icons.delivery_dining_rounded, 'Курьеры', '/couriers',
           ['/couriers'], AppColors.success),
+      _NavDef(Icons.people_alt_rounded, 'Пользователи', '/users', ['/users'],
+          AppColors.primary),
+      _NavDef(Icons.receipt_long_rounded, 'Заказы', '/orders', ['/orders'],
+          AppColors.warning),
       _NavDef(Icons.map_rounded, 'Адреса', '/addresses', ['/addresses'],
           AppColors.secondary),
     ]),
@@ -38,6 +42,8 @@ class AdminShell extends StatelessWidget {
           : 'Компании';
     }
     if (location.startsWith('/couriers')) return 'Курьеры';
+    if (location.startsWith('/users')) return 'Пользователи';
+    if (location.startsWith('/orders')) return 'Заказы';
     if (location.startsWith('/addresses')) return 'Адреса';
     if (location.startsWith('/database')) return 'База данных';
     if (location.startsWith('/zones')) return 'Зоны экосистемы';
@@ -51,6 +57,12 @@ class AdminShell extends StatelessWidget {
     }
     if (location.startsWith('/couriers')) {
       return 'Курьеры, ключи доступа и склады';
+    }
+    if (location.startsWith('/users')) {
+      return 'Аккаунты клиентов, курьеров и сотрудников';
+    }
+    if (location.startsWith('/orders')) {
+      return 'Управление B2C заказами на доставку';
     }
     if (location.startsWith('/addresses')) {
       return 'База адресов и геоданные';
@@ -313,7 +325,12 @@ class _MobileShell extends StatelessWidget {
     if (location.startsWith('/companies')) return 1;
     if (location.startsWith('/couriers')) return 2;
     if (location.startsWith('/addresses')) return 3;
-    if (location.startsWith('/database') || location.startsWith('/zones')) return 4;
+    if (location.startsWith('/database') ||
+        location.startsWith('/zones') ||
+        location.startsWith('/users') ||
+        location.startsWith('/orders')) {
+      return 4;
+    }
     return 0;
   }
 
@@ -376,6 +393,18 @@ class _MobileShell extends StatelessWidget {
                 icon: Icons.radar_rounded,
                 label: 'Зоны экосистемы',
                 onTap: () => context.go('/zones'),
+              ),
+              _buildDrawerItem(
+                context,
+                icon: Icons.people_alt_rounded,
+                label: 'Пользователи',
+                onTap: () => context.go('/users'),
+              ),
+              _buildDrawerItem(
+                context,
+                icon: Icons.receipt_long_rounded,
+                label: 'Заказы',
+                onTap: () => context.go('/orders'),
               ),
               _buildDrawerItem(
                 context,

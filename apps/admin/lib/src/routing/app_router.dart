@@ -8,6 +8,8 @@ import '../screens/couriers/couriers_screen.dart';
 import '../screens/addresses/addresses_screen.dart';
 import '../screens/database/database_manager_screen.dart';
 import '../screens/zones/ecosystem_zones_screen.dart';
+import '../screens/users/users_screen.dart';
+import '../screens/orders/orders_screen.dart';
 import 'admin_shell.dart';
 
 final adminRouterProvider = Provider<GoRouter>((ref) {
@@ -39,6 +41,14 @@ final adminRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/addresses',
             builder: (context, state) => const AddressesScreen(),
+          ),
+          GoRoute(
+            path: '/users',
+            builder: (context, state) => const UsersScreen(),
+          ),
+          GoRoute(
+            path: '/orders',
+            builder: (context, state) => const OrdersScreen(),
           ),
           GoRoute(
             path: '/database',
