@@ -5,6 +5,7 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 import '../../providers/theme_provider.dart';
 import '../../providers/currency_provider.dart';
 import '../../providers/auth_providers.dart';
+import 'widgets/thermal_printer_selector.dart';
 import '../../providers/employee_providers.dart';
 import '../../providers/receipt_provider.dart';
 import '../../providers/printer_provider.dart';
@@ -1136,8 +1137,30 @@ class _ReceiptAndPrinterSettingsSheetState
 
   void _testPrint() async {
     final svc = ref.read(printerServiceProvider);
-    final printerName = ref.read(defaultPrinterNameProvider);
-    await svc.printTestPage(_config, printerName: printerName);
+    final config = ref.read(defaultPrinterConfigProvider);
+    final data = ReceiptData(
+      companyName: 'Тестовая печать',
+      receiptNumber: '0001',
+      dateTime: DateTime.now(),
+      items: [
+        const ReceiptLineItem(name: 'Тестовый товар', quantity: 1, price: 100, total: 100)
+      ],
+      totalAmount: 100,
+      paymentMethod: 'Наличные',
+      currencySymbol: 'С',
+      footerText: 'Это тестовый чек',
+    );
+    if (config.isThermal && config.name != null) {
+      final tsvc = ref.read(thermalPrinterServiceProvider);
+      final dev = PrinterDevice(name: 'Printer', address: config.name);
+      final c = await tsvc.connect(dev, config.thermalType);
+      if (c) {
+        await tsvc.printReceipt(data, _config);
+        await tsvc.disconnect();
+      }
+    } else {
+      await svc.printReceipt(data, _config, printerName: config.name);
+    }
   }
 
   @override
@@ -1147,7 +1170,8 @@ class _ReceiptAndPrinterSettingsSheetState
     final cur = ref.read(currencyProvider).symbol;
 
     final printersAsync = ref.watch(availablePrintersProvider);
-    final defaultName = ref.watch(defaultPrinterNameProvider);
+    final printerConfig = ref.watch(defaultPrinterConfigProvider);
+    final defaultName = printerConfig.name;
 
     return DraggableScrollableSheet(
       expand: false,
@@ -1182,10 +1206,13 @@ class _ReceiptAndPrinterSettingsSheetState
             const SizedBox(height: AppSpacing.xl),
 
             // Printer Selection
+            const ThermalPrinterSelector(),
+            const SizedBox(height: AppSpacing.md),
+
             Row(
               children: [
                 Expanded(
-                  child: Text('ЧЕКОВЫЙ ПРИНТЕР',
+                  child: Text('СИСТЕМНЫЕ ПРИНТЕРЫ (PDF / ОБЫЧНАЯ ПЕЧАТЬ)',
                       style: AppTypography.labelSmall.copyWith(
                           color: cs.onSurface.withValues(alpha: 0.4),
                           letterSpacing: 1.2)),
@@ -1230,7 +1257,7 @@ class _ReceiptAndPrinterSettingsSheetState
                               border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
                             ),
                             onChanged: (val) {
-                              ref.read(defaultPrinterNameProvider.notifier).setDefaultPrinter(val.trim().isEmpty ? null : val.trim());
+                              ref.read(defaultPrinterConfigProvider.notifier).setDefaultPrinter(val.trim().isEmpty ? null : val.trim(), isThermal: false);
                             },
                           ),
                         ],
@@ -1242,9 +1269,9 @@ class _ReceiptAndPrinterSettingsSheetState
                       final isDefault = p.name == defaultName;
                       return RadioListTile<String>(
                         value: p.name,
-                        groupValue: defaultName,
+                        groupValue: !printerConfig.isThermal ? defaultName : null,
                         onChanged: (val) {
-                          ref.read(defaultPrinterNameProvider.notifier).setDefaultPrinter(val);
+                          ref.read(defaultPrinterConfigProvider.notifier).setDefaultPrinter(val, isThermal: false);
                         },
                         title: Text(p.name, style: TextStyle(fontWeight: isDefault ? FontWeight.w600 : FontWeight.w400)),
                         subtitle: Text(p.url.isNotEmpty ? p.url : 'Локальный', style: const TextStyle(fontSize: 12)),

@@ -73,6 +73,8 @@ dependencies:
   cached_network_image: ^3.3.1
   printing: ^5.13.3
   pdf: ^3.11.2
+  thermal_printer: ^1.0.5
+  esc_pos_utils_plus: ^2.0.4
 
 dev_dependencies:
   flutter_test:

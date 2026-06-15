@@ -13,6 +13,8 @@ import '../../../data/sales_repository.dart';
 import '../../../providers/receipt_provider.dart';
 import '../../../providers/printer_provider.dart';
 import '../../../services/printer_service.dart';
+import '../../../services/thermal_printer_service.dart';
+import 'package:thermal_printer/thermal_printer.dart';
 import '../../../utils/snackbar_helper.dart';
 import '../../../widgets/cached_image_widget.dart';
 
@@ -660,7 +662,8 @@ class SalesCartPane extends ConsumerWidget {
         final receiptCur = ref.read(currencyProvider).symbol;
         final receiptWarehouseId = ref.read(selectedWarehouseIdProvider);
         final receiptPrinterService = ref.read(printerServiceProvider);
-        final receiptPrinterName = ref.read(defaultPrinterNameProvider);
+        final receiptThermalPrinterService = ref.read(thermalPrinterServiceProvider);
+        final receiptPrinterConfig = ref.read(defaultPrinterConfigProvider);
 
         showInfoSnackBar(context, ref, 'Покупка успешно завершена!');
 
@@ -688,7 +691,8 @@ class SalesCartPane extends ConsumerWidget {
           preloadedCur: receiptCur,
           preloadedWarehouseId: receiptWarehouseId,
           preloadedPrinterService: receiptPrinterService,
-          preloadedPrinterName: receiptPrinterName,
+          preloadedThermalPrinterService: receiptThermalPrinterService,
+          preloadedPrinterConfig: receiptPrinterConfig,
         );
       }
     } catch (e) {
@@ -711,7 +715,8 @@ class SalesCartPane extends ConsumerWidget {
     required String preloadedCur,
     required String? preloadedWarehouseId,
     required PrinterService preloadedPrinterService,
-    required String? preloadedPrinterName,
+    required ThermalPrinterService preloadedThermalPrinterService,
+    required PrinterConfigData preloadedPrinterConfig,
   }) {
     final config = preloadedConfig;
     final auth = preloadedAuth;
@@ -882,9 +887,23 @@ class SalesCartPane extends ConsumerWidget {
                   footerText: config.footerText,
                   currencySymbol: cur,
                 );
-                final success = await preloadedPrinterService.printReceipt(
-                    receiptData, config,
-                    printerName: preloadedPrinterName);
+                bool success = false;
+                if (preloadedPrinterConfig.isThermal && preloadedPrinterConfig.name != null) {
+                  // Connect and print via ThermalPrinterService
+                  final device = PrinterDevice(name: 'Printer', address: preloadedPrinterConfig.name);
+                  final connected = await preloadedThermalPrinterService.connect(device, preloadedPrinterConfig.thermalType);
+                  if (connected) {
+                    success = await preloadedThermalPrinterService.printReceipt(receiptData, config);
+                    await preloadedThermalPrinterService.disconnect();
+                  } else {
+                    success = false;
+                  }
+                } else {
+                  // Fallback to system printer (PDF)
+                  success = await preloadedPrinterService.printReceipt(
+                      receiptData, config,
+                      printerName: preloadedPrinterConfig.name);
+                }
                 if (context.mounted) {
                   if (success) {
                     showInfoSnackBar(context, ref, 'Чек отправлен на печать');
