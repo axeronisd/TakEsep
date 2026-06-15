@@ -14,6 +14,8 @@ import '../../providers/courier_providers.dart';
 import '../../theme/akjol_theme.dart';
 import '../chat/order_chat_screen.dart';
 
+import 'package:audioplayers/audioplayers.dart';
+
 class DeliveryQueueScreen extends ConsumerStatefulWidget {
   const DeliveryQueueScreen({super.key});
 
@@ -21,6 +23,7 @@ class DeliveryQueueScreen extends ConsumerStatefulWidget {
   ConsumerState<DeliveryQueueScreen> createState() => _DeliveryQueueScreenState();
 }
 
+class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
   final _orderService = OrderService();
   final _locationService = CourierLocationService();
   final AudioPlayer _alertPlayer = AudioPlayer();
