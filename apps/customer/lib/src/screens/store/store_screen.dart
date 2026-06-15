@@ -1080,6 +1080,19 @@ class _ProductCard extends ConsumerWidget {
     this.isOutOfZone = false,
   });
 
+  void _showProductDetail(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _ProductDetailSheet(
+        product: product,
+        storeId: storeId,
+        storeName: storeName,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -1470,6 +1483,76 @@ class _FavoriteButton extends ConsumerWidget {
           size: 14,
           color: Colors.white,
         ),
+      ),
+    );
+  }
+}
+
+class _ProductDetailSheet extends ConsumerWidget {
+  final StoreProduct product;
+  final String storeId;
+  final String storeName;
+
+  const _ProductDetailSheet({
+    required this.product,
+    required this.storeId,
+    required this.storeName,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? const Color(0xFF0F172A) : Colors.white;
+    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final descColor = isDark ? Colors.white70 : Colors.black87;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 40,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 24),
+              decoration: BoxDecoration(
+                color: Colors.grey.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          if (product.imageUrl != null && product.imageUrl!.isNotEmpty)
+            Center(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(16),
+                child: Image.network(
+                  product.imageUrl!,
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.contain,
+                ),
+              ),
+            ),
+          const SizedBox(height: 24),
+          Text(product.name, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: textColor)),
+          const SizedBox(height: 8),
+          Text('Цена: ${product.sellingPrice} с', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AkJolTheme.primary)),
+          const SizedBox(height: 16),
+          if (product.description != null && product.description!.isNotEmpty) ...[
+            Text('Описание', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textColor)),
+            const SizedBox(height: 8),
+            Text(product.description!, style: TextStyle(fontSize: 14, color: descColor, height: 1.5)),
+          ] else ...[
+            Text('Нет описания', style: TextStyle(fontSize: 14, color: descColor.withValues(alpha: 0.5))),
+          ],
+          const SizedBox(height: 32),
+        ],
       ),
     );
   }
