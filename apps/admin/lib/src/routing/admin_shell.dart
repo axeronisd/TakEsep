@@ -17,8 +17,6 @@ class AdminShell extends StatelessWidget {
     _NavSection('Панель', [
       _NavDef(Icons.business_rounded, 'Компании', '/companies', ['/companies'],
           AppColors.info),
-      _NavDef(Icons.delivery_dining_rounded, 'Курьеры', '/couriers',
-          ['/couriers'], AppColors.success),
       _NavDef(Icons.people_alt_rounded, 'Пользователи', '/users', ['/users'],
           AppColors.primary),
       _NavDef(Icons.receipt_long_rounded, 'Заказы', '/orders', ['/orders'],
@@ -41,7 +39,6 @@ class AdminShell extends StatelessWidget {
           ? 'Компания'
           : 'Компании';
     }
-    if (location.startsWith('/couriers')) return 'Курьеры';
     if (location.startsWith('/users')) return 'Пользователи';
     if (location.startsWith('/orders')) return 'Заказы';
     if (location.startsWith('/addresses')) return 'Адреса';
@@ -54,9 +51,6 @@ class AdminShell extends StatelessWidget {
     if (location == '/') return 'Общая аналитика и показатели экосистемы';
     if (location.startsWith('/companies')) {
       return 'Лицензии, ключи и доступ компаний';
-    }
-    if (location.startsWith('/couriers')) {
-      return 'Курьеры, ключи доступа и склады';
     }
     if (location.startsWith('/users')) {
       return 'Аккаунты клиентов, курьеров и сотрудников';
@@ -323,11 +317,10 @@ class _MobileShell extends StatelessWidget {
   int get _currentIndex {
     if (location == '/') return 0;
     if (location.startsWith('/companies')) return 1;
-    if (location.startsWith('/couriers')) return 2;
+    if (location.startsWith('/users')) return 2;
     if (location.startsWith('/addresses')) return 3;
     if (location.startsWith('/database') ||
         location.startsWith('/zones') ||
-        location.startsWith('/users') ||
         location.startsWith('/orders')) {
       return 4;
     }
@@ -339,7 +332,7 @@ class _MobileShell extends StatelessWidget {
     final destinations = [
       (Icons.dashboard_rounded, 'Дашборд', '/'),
       (Icons.business_rounded, 'Компании', '/companies'),
-      (Icons.delivery_dining_rounded, 'Курьеры', '/couriers'),
+      (Icons.people_alt_rounded, 'Пользователи', '/users'),
       (Icons.map_rounded, 'Адреса', '/addresses'),
       (Icons.storage_rounded, 'База', '/database'),
     ];

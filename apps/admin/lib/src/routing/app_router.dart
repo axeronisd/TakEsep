@@ -4,7 +4,6 @@ import '../services/firebase_push_bootstrap.dart';
 import '../screens/dashboard/dashboard_screen.dart';
 import '../screens/companies/companies_screen.dart';
 import '../screens/companies/company_detail_screen.dart';
-import '../screens/couriers/couriers_screen.dart';
 import '../screens/addresses/addresses_screen.dart';
 import '../screens/database/database_manager_screen.dart';
 import '../screens/zones/ecosystem_zones_screen.dart';
@@ -33,10 +32,6 @@ final adminRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => CompanyDetailScreen(
               companyId: state.pathParameters['id']!,
             ),
-          ),
-          GoRoute(
-            path: '/couriers',
-            builder: (context, state) => const CouriersScreen(),
           ),
           GoRoute(
             path: '/addresses',

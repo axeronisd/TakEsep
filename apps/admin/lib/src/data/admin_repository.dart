@@ -160,6 +160,104 @@ class AdminRepository {
     }
   }
 
+  Future<bool> deleteCompanyCascade(String companyId) async {
+    try {
+      // 1. Get all warehouses for this company
+      final warehouses = await _supabase
+          .from('warehouses')
+          .select('id')
+          .eq('organization_id', companyId);
+      final warehouseIds = (warehouses as List).map<String>((w) => w['id'] as String).toList();
+
+      // 2. Cascade cleanup for each warehouse
+      for (final wId in warehouseIds) {
+        // Warehouse documents: write-offs, arrivals, transfers, audits
+        try {
+          final writeOffs = await _supabase.from('write_offs').select('id').eq('warehouse_id', wId);
+          for (final doc in writeOffs as List) {
+            await _supabase.from('write_off_items').delete().eq('write_off_id', doc['id']);
+          }
+          await _supabase.from('write_offs').delete().eq('warehouse_id', wId);
+        } catch (_) {}
+
+        try {
+          final arrivals = await _supabase.from('arrivals').select('id').eq('warehouse_id', wId);
+          for (final doc in arrivals as List) {
+            await _supabase.from('arrival_items').delete().eq('arrival_id', doc['id']);
+          }
+          await _supabase.from('arrivals').delete().eq('warehouse_id', wId);
+        } catch (_) {}
+
+        try {
+          final transfers = await _supabase.from('transfers').select('id').or('from_warehouse_id.eq.$wId,to_warehouse_id.eq.$wId');
+          for (final doc in transfers as List) {
+            await _supabase.from('transfer_items').delete().eq('transfer_id', doc['id']);
+          }
+          await _supabase.from('transfers').delete().or('from_warehouse_id.eq.$wId,to_warehouse_id.eq.$wId');
+        } catch (_) {}
+
+        try {
+          final audits = await _supabase.from('audits').select('id').eq('warehouse_id', wId);
+          for (final doc in audits as List) {
+            await _supabase.from('audit_items').delete().eq('audit_id', doc['id']);
+          }
+          await _supabase.from('audits').delete().eq('warehouse_id', wId);
+        } catch (_) {}
+
+        // Settings, categories, courier-warehouse linkages
+        try { await _supabase.from('warehouse_settings').delete().eq('warehouse_id', wId); } catch (_) {}
+        try { await _supabase.from('warehouse_store_categories').delete().eq('warehouse_id', wId); } catch (_) {}
+        try { await _supabase.from('courier_warehouse').delete().eq('warehouse_id', wId); } catch (_) {}
+      }
+
+      // 3. Sales
+      try {
+        final sales = await _supabase.from('sales').select('id').eq('company_id', companyId);
+        for (final sale in sales as List) {
+          await _supabase.from('sale_items').delete().eq('sale_id', sale['id']);
+        }
+        await _supabase.from('sales').delete().eq('company_id', companyId);
+      } catch (_) {}
+
+      // 4. Catalog Products & Modifiers
+      try {
+        final products = await _supabase.from('products').select('id').eq('company_id', companyId);
+        for (final prod in products as List) {
+          final pId = prod['id'];
+          await _supabase.from('product_modifiers').delete().eq('product_id', pId);
+          await _supabase.from('product_modifier_groups').delete().eq('product_id', pId);
+          await _supabase.from('product_images').delete().eq('product_id', pId);
+        }
+        await _supabase.from('products').delete().eq('company_id', companyId);
+      } catch (_) {}
+
+      // 5. Services & CRM Clients
+      try { await _supabase.from('services').delete().eq('company_id', companyId); } catch (_) {}
+      try { await _supabase.from('clients').delete().eq('company_id', companyId); } catch (_) {}
+
+      // 6. Employees
+      try {
+        final employees = await _supabase.from('employees').select('id').eq('company_id', companyId);
+        for (final emp in employees as List) {
+          await _supabase.from('employee_expenses').delete().eq('employee_id', emp['id']);
+        }
+        await _supabase.from('employees').delete().eq('company_id', companyId);
+      } catch (_) {}
+
+      // 7. Warehouses themselves
+      if (warehouseIds.isNotEmpty) {
+        await _supabase.from('warehouses').delete().inFilter('id', warehouseIds);
+      }
+
+      // 8. Finally delete the company
+      await _supabase.from('companies').delete().eq('id', companyId);
+      return true;
+    } catch (e) {
+      print('AdminRepository deleteCompanyCascade error: $e');
+      return false;
+    }
+  }
+
 
   // ═══════════════ EMPLOYEES ═══════════════
 

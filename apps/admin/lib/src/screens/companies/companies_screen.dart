@@ -15,6 +15,7 @@ class CompaniesScreen extends ConsumerStatefulWidget {
 
 class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
   String _searchQuery = '';
+  final Set<String> _selectedCompanyIds = {};
 
   @override
   Widget build(BuildContext context) {
@@ -34,6 +35,20 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                 ),
               ),
               if (!isMobile) ...[
+                if (_selectedCompanyIds.isNotEmpty) ...[
+                  const SizedBox(width: 16),
+                  ElevatedButton.icon(
+                    onPressed: () => _confirmDeleteCompanies(_selectedCompanyIds.toList()),
+                    icon: const Icon(Icons.delete_sweep_rounded, size: 18),
+                    label: Text('Удалить (${_selectedCompanyIds.length})'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.error,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
                 const SizedBox(width: 16),
                 ElevatedButton.icon(
                   onPressed: () => _showCreateCompanyDialog(context),
@@ -45,13 +60,31 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
           ),
           if (isMobile) ...[
             const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => _showCreateCompanyDialog(context),
-                icon: const Icon(Icons.add_rounded, size: 18),
-                label: const Text('Новая компания'),
-              ),
+            Row(
+              children: [
+                if (_selectedCompanyIds.isNotEmpty) ...[
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () => _confirmDeleteCompanies(_selectedCompanyIds.toList()),
+                      icon: const Icon(Icons.delete_sweep_rounded, size: 18),
+                      label: Text('Удалить (${_selectedCompanyIds.length})'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                ],
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _showCreateCompanyDialog(context),
+                    icon: const Icon(Icons.add_rounded, size: 18),
+                    label: const Text('Новая компания'),
+                  ),
+                ),
+              ],
             ),
           ],
           const SizedBox(height: 20),
@@ -98,23 +131,38 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final company = companies[index];
+        final id = company['id'] as String;
         final isActive = company['is_active'] == true;
         final key = company['license_key'] as String? ?? '';
         final title = company['title'] ?? 'Без названия';
+        final isSelected = _selectedCompanyIds.contains(id);
 
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: AppColors.darkSurface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AppColors.darkBorder),
+            border: Border.all(color: isSelected ? AppColors.primary : AppColors.darkBorder, width: isSelected ? 1.5 : 1.0),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
+                  Checkbox(
+                    value: isSelected,
+                    activeColor: AppColors.primary,
+                    onChanged: (val) {
+                      setState(() {
+                        if (val == true) {
+                          _selectedCompanyIds.add(id);
+                        } else {
+                          _selectedCompanyIds.remove(id);
+                        }
+                      });
+                    },
+                  ),
+                  const SizedBox(width: 4),
                   Expanded(
                     child: Text(
                       title,
@@ -189,10 +237,10 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                           isActive ? Icons.block : Icons.check_circle_outline,
                           size: 18),
                       label: Text(isActive ? 'Блок' : 'Активировать'),
-                      onPressed: () => _toggleCompanyStatus(company['id'], !isActive),
+                      onPressed: () => _toggleCompanyStatus(id, !isActive),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 8),
                   Expanded(
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
@@ -202,7 +250,17 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                       ),
                       icon: const Icon(Icons.vpn_key_rounded, size: 18),
                       label: const Text('Сменить'),
-                      onPressed: () => _regenerateKeyForCompany(company['id']),
+                      onPressed: () => _regenerateKeyForCompany(id),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () => _confirmDeleteCompanies([id]),
+                    icon: const Icon(Icons.delete_forever_rounded, color: AppColors.errorLight, size: 22),
+                    style: IconButton.styleFrom(
+                      backgroundColor: AppColors.error.withValues(alpha: 0.15),
+                      padding: const EdgeInsets.all(12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                     ),
                   ),
                 ],
@@ -230,6 +288,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
               headingRowColor:
                   WidgetStateProperty.all(AppColors.darkSurfaceVariant),
               dataRowColor: WidgetStateProperty.all(Colors.transparent),
+              showCheckboxColumn: true,
               columns: const [
                 DataColumn(label: Text('Компания', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600))),
                 DataColumn(label: Text('Ключ', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600))),
@@ -245,14 +304,26 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
   }
 
   DataRow _buildRow(Map<String, dynamic> company) {
+    final id = company['id'] as String;
     final isActive = company['is_active'] == true;
     final key = company['license_key'] as String? ?? '';
+    final isSelected = _selectedCompanyIds.contains(id);
 
     return DataRow(
+      selected: isSelected,
+      onSelectChanged: (selected) {
+        setState(() {
+          if (selected == true) {
+            _selectedCompanyIds.add(id);
+          } else {
+            _selectedCompanyIds.remove(id);
+          }
+        });
+      },
       cells: [
         DataCell(
           InkWell(
-            onTap: () => context.go('/companies/${company['id']}'),
+            onTap: () => context.go('/companies/${id}'),
             child: Text(company['title'] ?? '',
                 style: const TextStyle(
                     color: Colors.white, fontWeight: FontWeight.w500)),
@@ -296,18 +367,137 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                   color: isActive
                       ? AppColors.errorLight
                       : AppColors.successLight),
-              onPressed: () => _toggleCompanyStatus(company['id'], !isActive),
+              onPressed: () => _toggleCompanyStatus(id, !isActive),
               tooltip: isActive ? 'Деактивировать' : 'Активировать',
             ),
             IconButton(
               icon: const Icon(Icons.vpn_key_rounded, size: 18, color: AppColors.warningLight),
-              onPressed: () => _regenerateKeyForCompany(company['id']),
+              onPressed: () => _regenerateKeyForCompany(id),
               tooltip: 'Перевыпустить ключ',
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_forever_rounded, size: 18, color: AppColors.errorLight),
+              onPressed: () => _confirmDeleteCompanies([id]),
+              tooltip: 'Удалить компанию каскадно',
             ),
           ],
         )),
       ],
     );
+  }
+
+  Future<void> _confirmDeleteCompanies(List<String> ids) async {
+    if (ids.isEmpty) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.darkSurface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: AppColors.darkBorder)),
+        title: Row(
+          children: [
+            const Icon(Icons.warning_amber_rounded, color: AppColors.errorLight),
+            const SizedBox(width: 10),
+            Text(ids.length == 1 ? 'Удаление компании' : 'Массовое удаление компаний', style: const TextStyle(color: AppColors.darkTextPrimary, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(ids.length == 1 
+                ? 'Вы действительно хотите удалить выбранную компанию?' 
+                : 'Вы действительно хотите удалить ${ids.length} выбранных компаний?', 
+                style: const TextStyle(color: Colors.white)),
+            const SizedBox(height: 12),
+            Text(
+              'Это действие каскадно удалит все привязанные склады, товары, сотрудников, продажи и CRM-клиентов.',
+              style: TextStyle(color: AppColors.errorLight.withValues(alpha: 0.85), fontSize: 13),
+            ),
+            const SizedBox(height: 10),
+            const Text('Данное действие НЕОБРАТИМО.', style: TextStyle(color: AppColors.errorLight, fontWeight: FontWeight.bold, fontSize: 13)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Отмена', style: TextStyle(color: AppColors.darkTextSecondary)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.error,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Удалить навсегда'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    if (!mounted) return;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => const Center(
+        child: Card(
+          color: AppColors.darkSurface,
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(color: AppColors.error),
+                SizedBox(width: 20),
+                Text('Каскадное удаление...', style: TextStyle(color: Colors.white)),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final repo = ref.read(adminRepositoryProvider);
+      int successCount = 0;
+      for (final id in ids) {
+        final success = await repo.deleteCompanyCascade(id);
+        if (success) successCount++;
+      }
+
+      if (mounted) {
+        Navigator.of(context).pop(); // Закрываем лоадер безопасно
+      }
+
+      setState(() {
+        _selectedCompanyIds.removeAll(ids);
+      });
+
+      ref.invalidate(companiesProvider);
+      ref.invalidate(ecosystemStatsProvider);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Успешно удалено компаний: $successCount из ${ids.length}'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.of(context).pop(); // Закрываем лоадер
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка удаления: $e'),
+            backgroundColor: AppColors.error,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _toggleCompanyStatus(String id, bool newStatus) async {
