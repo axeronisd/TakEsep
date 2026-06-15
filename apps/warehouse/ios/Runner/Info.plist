@@ -74,5 +74,9 @@
 	<string>Для сканирования штрихкодов товаров</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Для загрузки фотографий товаров</string>
+	<key>NSBluetoothPeripheralUsageDescription</key>
+	<string>Для подключения и настройки термопринтеров для печати чеков</string>
+	<key>NSBluetoothAlwaysUsageDescription</key>
+	<string>Приложению требуется доступ к Bluetooth для поиска и печати на термопринтерах</string>
 </dict>
 </plist>
