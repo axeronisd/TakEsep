@@ -1504,6 +1504,7 @@ class _ProductDetailSheet extends ConsumerWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? const Color(0xFF0F172A) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final titleColor = textColor;
     final descColor = isDark ? Colors.white70 : Colors.black87;
 
     return Container(
@@ -1542,14 +1543,15 @@ class _ProductDetailSheet extends ConsumerWidget {
           const SizedBox(height: 24),
           Text(product.name, style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: textColor)),
           const SizedBox(height: 8),
-          Text('Цена: ${product.sellingPrice} с', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AkJolTheme.primary)),
-          const SizedBox(height: 16),
-          if (product.description != null && product.description!.isNotEmpty) ...[
-            Text('Описание', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: textColor)),
+          Text('Цена: ${product.b2cPrice} с', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: AkJolTheme.primary)),
+          if (product.b2cDescription != null && product.b2cDescription!.isNotEmpty) ...[
+            const SizedBox(height: 16),
+            const Text('Описание', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: titleColor)),
             const SizedBox(height: 8),
-            Text(product.description!, style: TextStyle(fontSize: 14, color: descColor, height: 1.5)),
+            Text(product.b2cDescription!, style: TextStyle(fontSize: 14, color: descColor, height: 1.5)),
           ] else ...[
-            Text('Нет описания', style: TextStyle(fontSize: 14, color: descColor.withValues(alpha: 0.5))),
+            const SizedBox(height: 16),
+            Text('Нет описания', style: TextStyle(fontSize: 14, color: descColor)),
           ],
           const SizedBox(height: 32),
         ],
