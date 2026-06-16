@@ -296,6 +296,14 @@ async function handleWebhook(accessToken: string, payload: any) {
   if (table === "delivery_orders") {
     // INSERT: new order → notify all couriers + warehouse
     if (type === "INSERT" && record.status === "pending") {
+      // Re-fetch current status to avoid late pushes if already accepted
+      const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
+      const { data: currentOrder } = await sb.from("delivery_orders").select("status").eq("id", record.id).single()
+      if (currentOrder && currentOrder.status !== "pending") {
+        console.log(`[webhook] Order ${record.id} is no longer pending (${currentOrder.status}), skipping new order push`)
+        return jsonOk({ processed: true, reason: "already_accepted" })
+      }
+
       const num = orderNum(record.id)
       const results: string[] = []
 

@@ -26,6 +26,10 @@ import 'package:latlong2/latlong.dart';
 //                and appear on-screen at the exact second.
 // ═══════════════════════════════════════════════════════════════
 
+// Global set to track orders accepted by THIS courier in the current session
+// to prevent redundant "Order assigned" push notifications.
+final Set<String> recentlyAcceptedOrders = {};
+
 class AvailableOrdersScreen extends ConsumerStatefulWidget {
   const AvailableOrdersScreen({super.key});
 
@@ -311,8 +315,10 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
           callback: (payload) {
             final newStatus = payload.newRecord['status'];
             if (newStatus == 'courier_assigned') {
-              _alertService.playNewOrderAlert();
               final orderId = payload.newRecord['id'];
+              if (orderId != null && !recentlyAcceptedOrders.contains(orderId)) {
+                _alertService.playNewOrderAlert();
+              }
               if (mounted && orderId != null) {
                 // Show snackbar + navigate
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -340,6 +346,7 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
 
     setState(() => _acting = true);
     try {
+      recentlyAcceptedOrders.add(order['id']);
       await _orderService.acceptOrder(order['id'], profile.id);
       if (mounted) {
         // Update active delivery count
