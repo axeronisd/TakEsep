@@ -239,11 +239,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (ctx) => AlertDialog(
         backgroundColor: _isDark ? const Color(0xFF151D30) : Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Удалить аккаунт?', style: TextStyle(color: AkJolTheme.error)),
+        title: const Text(
+          'Удалить аккаунт?',
+          style: TextStyle(color: AkJolTheme.error),
+        ),
         content: const Text(
-            'Вы уверены, что хотите навсегда удалить свой аккаунт? '
-            'Все ваши личные данные будут безвозвратно удалены. '
-            'Ваши заказы также будут удалены из системы.'),
+          'Вы уверены, что хотите навсегда удалить свой аккаунт? '
+          'Все ваши личные данные будут безвозвратно удалены. '
+          'Ваши заказы также будут удалены из системы.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -263,7 +267,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             },
             child: const Text(
               'Удалить навсегда',
-              style: TextStyle(color: AkJolTheme.error, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                color: AkJolTheme.error,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],
@@ -289,7 +296,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
               controller: confirmCtrl,
               decoration: InputDecoration(
                 filled: true,
-                fillColor: _isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                fillColor: _isDark
+                    ? const Color(0xFF1E293B)
+                    : const Color(0xFFF1F5F9),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -322,7 +331,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             },
             child: const Text(
               'Подтвердить',
-              style: TextStyle(color: AkJolTheme.error, fontWeight: FontWeight.w700),
+              style: TextStyle(
+                color: AkJolTheme.error,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ),
         ],
@@ -428,7 +440,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 blurRadius: 18,
                                 offset: const Offset(0, 8),
                                 spreadRadius: -2,
-                              )
+                              ),
                             ],
                     ),
                     child: Column(
@@ -470,7 +482,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                 blurRadius: 18,
                                 offset: const Offset(0, 8),
                                 spreadRadius: -2,
-                              )
+                              ),
                             ],
                     ),
                     child: Column(
@@ -647,14 +659,21 @@ class _ActionTile extends StatelessWidget {
           fontWeight: FontWeight.w700,
           fontSize: 15,
           color:
-              titleColor ?? (isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A)),
+              titleColor ??
+              (isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A)),
         ),
       ),
       subtitle: Padding(
         padding: const EdgeInsets.only(top: 2),
         child: Text(subtitle, style: TextStyle(fontSize: 13, color: muted)),
       ),
-      trailing: trailing ?? Icon(Icons.chevron_right, color: muted.withValues(alpha: 0.6), size: 22),
+      trailing:
+          trailing ??
+          Icon(
+            Icons.chevron_right,
+            color: muted.withValues(alpha: 0.6),
+            size: 22,
+          ),
       onTap: onTap,
     );
   }
@@ -894,7 +913,9 @@ class _EditPasswordSheetState extends State<_EditPasswordSheet> {
     final fieldBg = widget.isDark
         ? const Color(0xFF1E293B)
         : const Color(0xFFF1F5F9);
-    final text = widget.isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
+    final text = widget.isDark
+        ? const Color(0xFFF8FAFC)
+        : const Color(0xFF0F172A);
     final muted = widget.isDark
         ? const Color(0xFF64748B)
         : const Color(0xFF94A3B8);
@@ -1042,7 +1063,9 @@ class _EditPasswordSheetState extends State<_EditPasswordSheet> {
             color: fieldBg,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: widget.isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+              color: widget.isDark
+                  ? const Color(0xFF334155)
+                  : const Color(0xFFE2E8F0),
               width: 1,
             ),
           ),

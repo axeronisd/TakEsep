@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../theme/akjol_theme.dart';
 import '../../services/courier_auth_service.dart';
 import '../../providers/courier_providers.dart';
+import '../../services/firebase_push_bootstrap.dart';
 
 /// Курьерский вход по секретному ключу
 /// Админ генерирует ключ → курьер вводит телефон + ключ
@@ -58,6 +59,11 @@ class _CourierLoginScreenState extends ConsumerState<CourierLoginScreen>
 
         if (profile != null && mounted) {
           ref.read(courierProfileProvider.notifier).state = profile;
+          try {
+            await FirebasePushBootstrap.initialize(); // Register token now that we have a user
+          } catch (e) {
+            debugPrint('Push init failed (ignored on Desktop): $e');
+          }
           context.go('/');
           return;
         }
@@ -484,6 +490,11 @@ class _CourierLoginScreenState extends ConsumerState<CourierLoginScreen>
 
       // Store profile
       ref.read(courierProfileProvider.notifier).state = profile;
+      try {
+        await FirebasePushBootstrap.initialize(); // Register token now that we have a user
+      } catch (e) {
+        debugPrint('Push init failed (ignored on Desktop): $e');
+      }
 
       if (mounted) context.go('/');
     } catch (e) {

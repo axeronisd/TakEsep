@@ -46,7 +46,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     try {
       final data = await _supabase
           .from('delivery_settings')
-          .select('*, warehouses(name, address)')
+          .select('*, warehouses(name, address, latitude, longitude)')
           .eq('is_active', true);
 
       if (!mounted) return;
@@ -134,8 +134,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   void _goToAddress(Map<String, dynamic> addr) {
     double? lat, lng;
     if (addr['_type'] == 'store') {
-      lat = (addr['latitude'] as num?)?.toDouble();
-      lng = (addr['longitude'] as num?)?.toDouble();
+      lat = (addr['warehouses']?['latitude'] as num?)?.toDouble() ?? (addr['latitude'] as num?)?.toDouble();
+      lng = (addr['warehouses']?['longitude'] as num?)?.toDouble() ?? (addr['longitude'] as num?)?.toDouble();
     } else {
       lat = (addr['lat'] as num?)?.toDouble();
       lng = (addr['lng'] as num?)?.toDouble();
@@ -274,8 +274,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               if (!_loading)
                 MarkerLayer(
                   markers: _stores.map((store) {
-                    final lat = (store['latitude'] as num?)?.toDouble();
-                    final lng = (store['longitude'] as num?)?.toDouble();
+                    final lat = (store['warehouses']?['latitude'] as num?)?.toDouble() ?? (store['latitude'] as num?)?.toDouble();
+                    final lng = (store['warehouses']?['longitude'] as num?)?.toDouble() ?? (store['longitude'] as num?)?.toDouble();
                     if (lat == null || lng == null) return null;
                     final logoUrl = store['logo_url'] as String?;
 

@@ -513,12 +513,10 @@ class _RadiusZoneDialogState extends State<_RadiusZoneDialog> {
                       options: MapOptions(
                         initialCenter: _center,
                         initialZoom: 12.0,
-                        onPositionChanged: (pos, hasGesture) {
-                          if (hasGesture && pos.center != null) {
-                            setState(() {
-                              _center = pos.center!;
-                            });
-                          }
+                        onTap: (_, point) {
+                          setState(() {
+                            _center = point;
+                          });
                         },
                       ),
                       children: [
@@ -622,7 +620,7 @@ class _RadiusZoneDialogState extends State<_RadiusZoneDialog> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Перетащите карту чтобы выбрать центр.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                            const Text('Нажмите на карту чтобы выбрать центр.', style: TextStyle(fontSize: 12, color: Colors.grey)),
                             const SizedBox(height: 16),
                             TextField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Название зоны')),
                             const SizedBox(height: 16),

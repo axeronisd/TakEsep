@@ -91,13 +91,15 @@ Future<void> _bootstrapApp() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
+    if (!kIsWeb && defaultTargetPlatform != TargetPlatform.windows && defaultTargetPlatform != TargetPlatform.macOS && defaultTargetPlatform != TargetPlatform.linux) {
+      await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
+    }
     firebaseOk = true;
     debugPrint('[AkJol Pro] Firebase initialized ✅');
   } catch (e, st) {
     debugPrint('[AkJol Pro] Firebase init FAILED: $e');
-    if (kIsWeb) {
-      debugPrint('[AkJol Pro] Ignoring Firebase error on Web');
+    if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows || defaultTargetPlatform == TargetPlatform.macOS || defaultTargetPlatform == TargetPlatform.linux) {
+      debugPrint('[AkJol Pro] Ignoring Firebase error on Desktop/Web');
     } else {
       _showErrorOnScreen('Firebase init failed: $e', st.toString());
       return;

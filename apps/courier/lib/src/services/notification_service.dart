@@ -153,13 +153,21 @@ class NotificationService {
       sound: 'default',
     );
 
-    await _plugin.show(
-      id,
-      title,
-      body,
-      NotificationDetails(android: androidDetails, iOS: iosDetails),
-      payload: payload,
-    );
+    try {
+      if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.android || defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS || defaultTargetPlatform == TargetPlatform.linux)) {
+        await _plugin.show(
+          id,
+          title,
+          body,
+          NotificationDetails(android: androidDetails, iOS: iosDetails),
+          payload: payload,
+        );
+      } else {
+        debugPrint('[Notif] Skipping native notification on unsupported platform');
+      }
+    } catch (e) {
+      debugPrint('[Notif] Error showing notification: $e');
+    }
 
     if (playInAppSound && soundName != null) {
       await playSound(soundName);

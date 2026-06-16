@@ -104,7 +104,7 @@ Future<void> _bootstrapApp() async {
     await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
     firebaseOk = true;
     debugPrint('[TakEsep] Firebase initialized ✅');
-  } catch (e, st) {
+  } catch (e) {
     debugPrint('[TakEsep] Firebase init FAILED: $e');
     // Firebase is optional — continue without it
   }
@@ -131,7 +131,7 @@ Future<void> _initPushInBackground() async {
     await NotificationService().initialize();
     await FirebasePushBootstrap.initialize();
     debugPrint('[TakEsep] Push notifications initialized ✅');
-  } catch (e, st) {
+  } catch (e) {
     debugPrint('[TakEsep] Push init FAILED (non-fatal): $e');
   }
 }
@@ -156,9 +156,10 @@ bool _isNetworkError(Object error) {
 void _showErrorOnScreen(String message, String? stack) {
   debugPrint('═══════════════════════════════════════');
   debugPrint('🔴 ERROR: $message');
-  if (stack != null)
+  if (stack != null) {
     debugPrint(
         'Stack: ${stack.substring(0, stack.length > 500 ? 500 : stack.length)}');
+  }
   debugPrint('═══════════════════════════════════════');
 
   try {

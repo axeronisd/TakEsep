@@ -29,8 +29,9 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
   bool _isEditingAddress = false;
   LatLng? _pendingLocation;
 
-  final MapController _mapController = MapController();
+  final MapController _zoneMapController = MapController();
   LatLng _warehouseLocation = const LatLng(42.8746, 74.5698);
+  LatLng _deliveryCenter = const LatLng(42.8746, 74.5698);
   double _radiusKm = 3.0;
 
   List<Map<String, dynamic>> _ecosystemZones = [];
@@ -80,12 +81,18 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
       final ecoCenter = LatLng(ecoZone['center_lat'] as double, ecoZone['center_lng'] as double);
       final ecoRadius = (ecoZone['radius_km'] as num).toDouble();
       
-      final d = distanceCalc.as(LengthUnit.Kilometer, _warehouseLocation, ecoCenter);
+      final d = distanceCalc.as(LengthUnit.Kilometer, _deliveryCenter, ecoCenter);
       if (d + _radiusKm <= ecoRadius) {
         return true;
       }
     }
     return false;
+  }
+
+  bool _isStoreInsideZone() {
+    final distanceCalc = const Distance();
+    final d = distanceCalc.as(LengthUnit.Kilometer, _deliveryCenter, _warehouseLocation);
+    return d <= _radiusKm;
   }
 
   String get _warehouseId => widget.warehouseId;
@@ -107,39 +114,33 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
           final lat = data['latitude'];
           final lng = data['longitude'];
           if (lat != null && lng != null) {
-            _warehouseLocation = LatLng((lat as num).toDouble(), (lng as num).toDouble());
+            _deliveryCenter = LatLng((lat as num).toDouble(), (lng as num).toDouble());
           }
         });
       }
 
       // Always fetch base address from warehouse
-      final wh = await _supabase.from('warehouses').select('address, latitude, longitude, address_status, pending_address, pending_lat, pending_lng').eq('id', _warehouseId).maybeSingle();
+      final wh = await _supabase.from('warehouses').select('address, latitude, longitude').eq('id', _warehouseId).maybeSingle();
       if (wh != null) {
         setState(() {
-          _addressStatus = wh['address_status'] ?? 'verified';
+          _addressController.text = wh['address'] ?? '';
+          final wLat = wh['latitude'];
+          final wLng = wh['longitude'];
+          if (wLat != null && wLng != null) {
+            _warehouseLocation = LatLng((wLat as num).toDouble(), (wLng as num).toDouble());
+          }
           
-          if (_addressStatus == 'pending') {
-            _addressController.text = wh['pending_address'] ?? wh['address'] ?? '';
-            final pLat = wh['pending_lat'];
-            final pLng = wh['pending_lng'];
-            if (pLat != null && pLng != null) {
-              _warehouseLocation = LatLng((pLat as num).toDouble(), (pLng as num).toDouble());
-              _pendingLocation = _warehouseLocation;
-            }
-          } else {
-            _addressController.text = wh['address'] ?? '';
-            final wLat = wh['latitude'];
-            final wLng = wh['longitude'];
-            if (wLat != null && wLng != null) {
-              _warehouseLocation = LatLng((wLat as num).toDouble(), (wLng as num).toDouble());
-            }
+          if (data == null || data['latitude'] == null) {
+            _deliveryCenter = _warehouseLocation;
           }
         });
       }
     } catch (_) {}
     setState(() => _loading = false);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      try { _mapController.move(_warehouseLocation, 13); } catch (_) {}
+      try { 
+        _zoneMapController.move(_deliveryCenter, 13);
+      } catch (_) {}
     });
   }
 
@@ -156,8 +157,12 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
         return;
       }
       final position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-      setState(() => _warehouseLocation = LatLng(position.latitude, position.longitude));
-      _mapController.move(_warehouseLocation, 15);
+      setState(() {
+        _warehouseLocation = LatLng(position.latitude, position.longitude);
+        _pendingLocation = _warehouseLocation;
+        _isEditingAddress = true;
+      });
+      _zoneMapController.move(_warehouseLocation, 15);
       if (mounted) showInfoSnackBar(context, null, 'Геолокация определена');
     } catch (e) {
       if (mounted) showErrorSnackBar(context, 'Ошибка: $e');
@@ -173,6 +178,8 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
       'warehouse_id': _warehouseId,
       'is_active': _isActive,
       'delivery_radius_km': _radiusKm,
+      'latitude': _deliveryCenter.latitude,
+      'longitude': _deliveryCenter.longitude,
       'description': _descController.text,
       'use_akjol_couriers': true,
     };
@@ -188,16 +195,14 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
         _settingsId = result['id'];
       }
 
-      // 2. Save pending address to warehouses if editing
-      if (_isEditingAddress && _addressStatus != 'pending') {
+      // 2. Save address to warehouses if editing
+      if (_isEditingAddress) {
         await _supabase.from('warehouses').update({
-          'pending_address': _addressController.text,
-          'pending_lat': _pendingLocation?.latitude ?? _warehouseLocation.latitude,
-          'pending_lng': _pendingLocation?.longitude ?? _warehouseLocation.longitude,
-          'address_status': 'pending',
+          'address': _addressController.text,
+          'latitude': _pendingLocation?.latitude ?? _warehouseLocation.latitude,
+          'longitude': _pendingLocation?.longitude ?? _warehouseLocation.longitude,
         }).eq('id', _warehouseId);
         setState(() {
-          _addressStatus = 'pending';
           _isEditingAddress = false;
         });
       }
@@ -226,7 +231,9 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
       );
     }
 
-    final isValid = _isWithinEcosystem();
+    final isEcoValid = _isWithinEcosystem();
+    final isStoreValid = _isStoreInsideZone();
+    final isValid = isEcoValid && isStoreValid;
 
     return Scaffold(
       appBar: AppBar(
@@ -256,65 +263,41 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
           ),
           const SizedBox(height: 16),
 
-          // Map section
-          const Text('Расположение магазина', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 4),
-          Text('Нажмите на карту или определите по GPS', style: TextStyle(fontSize: 12, color: Colors.grey[600])),
-          const SizedBox(height: 12),
-
-          if (_addressStatus == 'pending')
+          if (!isStoreValid)
             Container(
               padding: const EdgeInsets.all(12),
+              margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
-                color: Colors.orange.withValues(alpha: 0.1),
-                border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                color: Colors.red.withValues(alpha: 0.1),
+                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.hourglass_top_rounded, color: Colors.orange),
+                  Icon(Icons.warning_amber_rounded, color: Colors.red),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Ваш новый адрес находится на модерации. Вы не можете изменить его до завершения проверки.',
-                      style: TextStyle(color: Colors.orange, fontWeight: FontWeight.bold, fontSize: 13),
+                      'Маркер магазина находится за пределами зоны доставки!',
+                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13),
                     ),
                   ),
                 ],
               ),
-            )
-          else if (!_isEditingAddress)
-            OutlinedButton.icon(
-              onPressed: () => setState(() => _isEditingAddress = true),
-              icon: const Icon(Icons.edit_location_alt_rounded),
-              label: const Text('Изменить адрес или координаты'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.blue,
-                side: const BorderSide(color: Colors.blue),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
             ),
-          
-          if (_isEditingAddress)
-            SizedBox(
-              width: double.infinity, height: 44,
-              child: OutlinedButton.icon(
-                onPressed: _detectingGeo ? null : _detectLocation,
-                icon: _detectingGeo
-                    ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                    : const Icon(Icons.my_location_rounded, size: 20),
-                label: Text(_detectingGeo ? 'Определяем...' : 'Определить геолокацию'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.green,
-                  side: const BorderSide(color: Colors.green),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-            ),
+
+          // Map Section
+          const Text('Настройка на карте', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 8),
+
+          Text(
+            'Перетаскивайте карту, чтобы переместить зону доставки.\nНажмите на карту, чтобы поставить маркер магазина.',
+            style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          ),
           const SizedBox(height: 12),
 
           Container(
-            height: 300,
+            height: 250,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.grey.shade300),
@@ -322,15 +305,21 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
             clipBehavior: Clip.antiAlias,
             child: Stack(children: [
               FlutterMap(
-                mapController: _mapController,
+                mapController: _zoneMapController,
                 options: MapOptions(
-                  initialCenter: _warehouseLocation, initialZoom: 13,
-                  onTap: _isEditingAddress
-                      ? (_, point) => setState(() {
-                            _warehouseLocation = point;
-                            _pendingLocation = point;
-                          })
-                      : null,
+                  initialCenter: _deliveryCenter, initialZoom: 13,
+                  onPositionChanged: (pos, hasGesture) {
+                    if (hasGesture && pos.center != null) {
+                      setState(() => _deliveryCenter = pos.center!);
+                    }
+                  },
+                  onTap: (_, point) {
+                    setState(() {
+                      _warehouseLocation = point;
+                      _pendingLocation = point;
+                      _isEditingAddress = true;
+                    });
+                  },
                 ),
                 children: [
                   TileLayer(
@@ -338,7 +327,6 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
                     userAgentPackageName: 'com.takesep.app',
                   ),
                   CircleLayer(circles: [
-                    // Ecosystem Zones
                     ..._ecosystemZones.map((z) => CircleMarker(
                           point: LatLng(z['center_lat'] as double, z['center_lng'] as double),
                           color: Colors.red.withValues(alpha: 0.1),
@@ -347,9 +335,8 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
                           useRadiusInMeter: true,
                           radius: (z['radius_km'] as num).toDouble() * 1000,
                         )),
-                    // Warehouse delivery area
                     CircleMarker(
-                      point: _warehouseLocation,
+                      point: _deliveryCenter,
                       color: isValid
                           ? Colors.green.withValues(alpha: 0.15)
                           : Colors.orange.withValues(alpha: 0.35),
@@ -362,7 +349,7 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
                   MarkerLayer(markers: [
                     Marker(point: _warehouseLocation, width: 44, height: 44,
                       alignment: Alignment.topCenter,
-                      child: const Icon(Icons.location_on, color: Colors.red, size: 44)),
+                      child: const Icon(Icons.location_on, color: Colors.green, size: 44)),
                   ]),
                 ],
               ),
@@ -371,21 +358,23 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(6)),
                   child: Text(
-                    '${_warehouseLocation.latitude.toStringAsFixed(4)}, ${_warehouseLocation.longitude.toStringAsFixed(4)}',
+                    'Зона: ${_deliveryCenter.latitude.toStringAsFixed(4)}, ${_deliveryCenter.longitude.toStringAsFixed(4)}\n'
+                    'Магазин: ${_warehouseLocation.latitude.toStringAsFixed(4)}, ${_warehouseLocation.longitude.toStringAsFixed(4)}',
                     style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500)),
                 ),
               ),
               Positioned(right: 12, bottom: 12,
                 child: Column(children: [
-                  FloatingActionButton.small(heroTag: 'zin', child: const Icon(Icons.add),
-                    onPressed: () => _mapController.move(_mapController.camera.center, _mapController.camera.zoom + 1)),
+                  FloatingActionButton.small(heroTag: 'map_in', child: const Icon(Icons.add),
+                    onPressed: () => _zoneMapController.move(_zoneMapController.camera.center, _zoneMapController.camera.zoom + 1)),
                   const SizedBox(height: 8),
-                  FloatingActionButton.small(heroTag: 'zout', child: const Icon(Icons.remove),
-                    onPressed: () => _mapController.move(_mapController.camera.center, _mapController.camera.zoom - 1)),
+                  FloatingActionButton.small(heroTag: 'map_out', child: const Icon(Icons.remove),
+                    onPressed: () => _zoneMapController.move(_zoneMapController.camera.center, _zoneMapController.camera.zoom - 1)),
                 ]),
               ),
             ]),
           ),
+          
           if (!isValid) ...[
             const SizedBox(height: 8),
             Container(
@@ -394,7 +383,7 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: _errorLoadingEco != null ? Colors.red : Colors.orange),
-                boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
+                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
               ),
               child: Row(
                 children: [
@@ -420,9 +409,9 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
               ),
             ),
           ],
+          
           const SizedBox(height: 12),
-
-          // Radius
+          // Radius Slider
           Row(children: [
             const Text('Радиус: ', style: TextStyle(fontWeight: FontWeight.w600)),
             Text('${_radiusKm.toStringAsFixed(1)} км',
@@ -435,7 +424,43 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
               ),
             ),
           ]),
-          const SizedBox(height: 24),
+          
+          const Divider(height: 48),
+
+          if (!_isEditingAddress)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: OutlinedButton.icon(
+                onPressed: () => setState(() => _isEditingAddress = true),
+                icon: const Icon(Icons.edit_location_alt_rounded),
+                label: const Text('Изменить адрес или координаты'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: Colors.blue,
+                  side: const BorderSide(color: Colors.blue),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ),
+
+          if (_isEditingAddress)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: SizedBox(
+                width: double.infinity, height: 44,
+                child: OutlinedButton.icon(
+                  onPressed: _detectingGeo ? null : _detectLocation,
+                  icon: _detectingGeo
+                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                      : const Icon(Icons.my_location_rounded, size: 20),
+                  label: Text(_detectingGeo ? 'Определяем...' : 'Определить геолокацию'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.green,
+                    side: const BorderSide(color: Colors.green),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+            ),
 
           // Address
           const Text('Адрес магазина', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),

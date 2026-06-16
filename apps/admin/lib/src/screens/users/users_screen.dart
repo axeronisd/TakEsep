@@ -13,13 +13,14 @@ class UsersScreen extends StatefulWidget {
   State<UsersScreen> createState() => _UsersScreenState();
 }
 
-class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStateMixin {
+class _UsersScreenState extends State<UsersScreen>
+    with SingleTickerProviderStateMixin {
   final _supabase = Supabase.instance.client;
   late TabController _tabController;
-  
+
   bool _loading = true;
   String _searchQuery = '';
-  
+
   List<Map<String, dynamic>> _customers = [];
   List<Map<String, dynamic>> _couriers = [];
   List<Map<String, dynamic>> _employees = [];
@@ -27,7 +28,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
   List<Map<String, dynamic>> _warehouses = [];
   List<Map<String, dynamic>> _roles = [];
   String? _authError;
-  
+
   final Set<String> _selectedAuthIds = {};
   final Set<String> _selectedCustomerIds = {};
   final Set<String> _selectedCourierIds = {};
@@ -60,14 +61,16 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       List<Map<String, dynamic>> authList = [];
       try {
         final users = await _supabase.auth.admin.listUsers();
-        authList = users.map((u) => {
-          'id': u.id,
-          'email': u.email ?? '',
-          'phone': u.phone ?? '',
-          'created_at': u.createdAt,
-          'last_sign_in': u.lastSignInAt ?? '',
-          'role': u.role ?? '',
-        }).toList();
+        authList = users
+            .map((u) => {
+                  'id': u.id,
+                  'email': u.email ?? '',
+                  'phone': u.phone ?? '',
+                  'created_at': u.createdAt,
+                  'last_sign_in': u.lastSignInAt ?? '',
+                  'role': u.role ?? '',
+                })
+            .toList();
       } catch (e) {
         _authError = 'Нет доступа к Auth Admin API (требуется service_role)';
         debugPrint('Auth Admin API error: $e');
@@ -78,11 +81,12 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
           .from('customers')
           .select()
           .order('created_at', ascending: false);
-      
+
       // 3. Fetch Couriers (joined with warehouses/courier_warehouse)
       final couriersData = await _supabase
           .from('couriers')
-          .select('*, courier_warehouse(warehouse_id, is_active, warehouses(name))')
+          .select(
+              '*, courier_warehouse(warehouse_id, is_active, warehouses(name))')
           .order('created_at', ascending: false);
 
       // 4. Fetch Employees
@@ -146,7 +150,9 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       final name = (c['name'] ?? '').toString().toLowerCase();
       final phone = (c['phone'] ?? '').toString().toLowerCase();
       final email = _getEmailForUserId(c['user_id']).toLowerCase();
-      return name.contains(_searchQuery) || phone.contains(_searchQuery) || email.contains(_searchQuery);
+      return name.contains(_searchQuery) ||
+          phone.contains(_searchQuery) ||
+          email.contains(_searchQuery);
     }).toList();
   }
 
@@ -157,7 +163,10 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       final phone = (c['phone'] ?? '').toString().toLowerCase();
       final email = _getEmailForUserId(c['user_id']).toLowerCase();
       final key = (c['access_key'] ?? '').toString().toLowerCase();
-      return name.contains(_searchQuery) || phone.contains(_searchQuery) || email.contains(_searchQuery) || key.contains(_searchQuery);
+      return name.contains(_searchQuery) ||
+          phone.contains(_searchQuery) ||
+          email.contains(_searchQuery) ||
+          key.contains(_searchQuery);
     }).toList();
   }
 
@@ -169,7 +178,11 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       final email = _getEmailForUserId(e['user_id']).toLowerCase();
       final role = (e['role'] ?? '').toString().toLowerCase();
       final wh = _getEmployeeWarehouseNames(e).toLowerCase();
-      return name.contains(_searchQuery) || phone.contains(_searchQuery) || email.contains(_searchQuery) || role.contains(_searchQuery) || wh.contains(_searchQuery);
+      return name.contains(_searchQuery) ||
+          phone.contains(_searchQuery) ||
+          email.contains(_searchQuery) ||
+          role.contains(_searchQuery) ||
+          wh.contains(_searchQuery);
     }).toList();
   }
 
@@ -179,7 +192,9 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       final email = (u['email'] ?? '').toString().toLowerCase();
       final phone = (u['phone'] ?? '').toString().toLowerCase();
       final id = (u['id'] ?? '').toString().toLowerCase();
-      return email.contains(_searchQuery) || phone.contains(_searchQuery) || id.contains(_searchQuery);
+      return email.contains(_searchQuery) ||
+          phone.contains(_searchQuery) ||
+          id.contains(_searchQuery);
     }).toList();
   }
 
@@ -208,7 +223,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
               Expanded(
                 child: AdminSearchField(
                   hint: _getSearchHint(),
-                  onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+                  onChanged: (v) =>
+                      setState(() => _searchQuery = v.toLowerCase()),
                 ),
               ),
               if (!isMobile) ...[
@@ -221,8 +237,10 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.error,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                 ],
@@ -235,8 +253,10 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.success,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                 ],
@@ -249,8 +269,10 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.success,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
                   ),
                 ],
@@ -258,7 +280,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                 IconButton(
                   tooltip: 'Обновить данные',
                   onPressed: _loadData,
-                  icon: const Icon(Icons.refresh_rounded, color: AppColors.darkTextSecondary),
+                  icon: const Icon(Icons.refresh_rounded,
+                      color: AppColors.darkTextSecondary),
                   style: IconButton.styleFrom(
                     backgroundColor: AppColors.darkSurface,
                     padding: const EdgeInsets.all(14),
@@ -324,7 +347,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
           // Tab Bar navigation
           Container(
             decoration: const BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppColors.darkBorder, width: 1)),
+              border: Border(
+                  bottom: BorderSide(color: AppColors.darkBorder, width: 1)),
             ),
             child: TabBar(
               controller: _tabController,
@@ -384,7 +408,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
           // Tab views
           Expanded(
             child: _loading
-                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                ? const Center(
+                    child: CircularProgressIndicator(color: AppColors.primary))
                 : TabBarView(
                     controller: _tabController,
                     children: [
@@ -438,12 +463,20 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       return ListView.separated(
         itemCount: _filteredAuthUsers.length,
         separatorBuilder: (_, __) => const SizedBox(height: 10),
-        itemBuilder: (context, idx) => _buildAuthUserMobileCard(_filteredAuthUsers[idx]),
+        itemBuilder: (context, idx) =>
+            _buildAuthUserMobileCard(_filteredAuthUsers[idx]),
       );
     }
 
     return _buildDesktopTable(
-      columns: const ['ID', 'Email', 'Телефон', 'Создан', 'Последний вход', 'Действия'],
+      columns: const [
+        'ID',
+        'Email',
+        'Телефон',
+        'Создан',
+        'Последний вход',
+        'Действия'
+      ],
       rows: _filteredAuthUsers.map((u) {
         final id = u['id'] as String;
         final isSelected = _selectedAuthIds.contains(id);
@@ -463,30 +496,42 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
             DataCell(
               SelectableText(
                 id,
-                style: const TextStyle(fontFamily: 'monospace', fontSize: 12, color: AppColors.darkTextSecondary),
+                style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 12,
+                    color: AppColors.darkTextSecondary),
               ),
             ),
-            DataCell(Text(u['email']?.isEmpty == true ? '—' : u['email'], style: const TextStyle(color: Colors.white))),
-            DataCell(Text(u['phone']?.isEmpty == true ? '—' : u['phone'], style: const TextStyle(color: Colors.white))),
-            DataCell(Text(_formatDate(u['created_at']), style: const TextStyle(color: AppColors.darkTextSecondary))),
-            DataCell(Text(_formatDate(u['last_sign_in']), style: const TextStyle(color: AppColors.darkTextSecondary))),
+            DataCell(Text(u['email']?.isEmpty == true ? '—' : u['email'],
+                style: const TextStyle(color: Colors.white))),
+            DataCell(Text(u['phone']?.isEmpty == true ? '—' : u['phone'],
+                style: const TextStyle(color: Colors.white))),
+            DataCell(Text(_formatDate(u['created_at']),
+                style: const TextStyle(color: AppColors.darkTextSecondary))),
+            DataCell(Text(_formatDate(u['last_sign_in']),
+                style: const TextStyle(color: AppColors.darkTextSecondary))),
             DataCell(
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.info_outline_rounded, color: AppColors.primaryLight, size: 20),
+                    icon: const Icon(Icons.info_outline_rounded,
+                        color: AppColors.primaryLight, size: 20),
                     onPressed: () => _showAuthUserDetail(u),
                     tooltip: 'Детали',
                   ),
                   IconButton(
-                    icon: const Icon(Icons.lock_reset_rounded, color: AppColors.warningLight, size: 20),
-                    onPressed: () => _showChangePasswordDialog(id, u['email']?.isEmpty == true ? u['phone'] : u['email']),
+                    icon: const Icon(Icons.lock_reset_rounded,
+                        color: AppColors.warningLight, size: 20),
+                    onPressed: () => _showChangePasswordDialog(id,
+                        u['email']?.isEmpty == true ? u['phone'] : u['email']),
                     tooltip: 'Сменить пароль',
                   ),
                   IconButton(
-                    icon: const Icon(Icons.delete_forever_rounded, color: AppColors.errorLight, size: 20),
-                    onPressed: () => _confirmDeleteUser(id, 'auth', u['email'] ?? u['phone'] ?? 'Без контактов'),
+                    icon: const Icon(Icons.delete_forever_rounded,
+                        color: AppColors.errorLight, size: 20),
+                    onPressed: () => _confirmDeleteUser(id, 'auth',
+                        u['email'] ?? u['phone'] ?? 'Без контактов'),
                     tooltip: 'Удалить аккаунт',
                   ),
                 ],
@@ -511,7 +556,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       return ListView.separated(
         itemCount: _filteredCustomers.length,
         separatorBuilder: (_, __) => const SizedBox(height: 10),
-        itemBuilder: (context, idx) => _buildCustomerMobileCard(_filteredCustomers[idx]),
+        itemBuilder: (context, idx) =>
+            _buildCustomerMobileCard(_filteredCustomers[idx]),
       );
     }
 
@@ -525,7 +571,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
         final email = _getEmailForUserId(userId);
         final displayEmail = email.isEmpty ? '—' : email;
         final isSelected = _selectedCustomerIds.contains(id);
-        
+
         return DataRow(
           selected: isSelected,
           onSelectChanged: (selected) {
@@ -538,28 +584,37 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
             });
           },
           cells: [
-            DataCell(Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500))),
+            DataCell(Text(name,
+                style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.w500))),
             DataCell(Text(phone, style: const TextStyle(color: Colors.white))),
-            DataCell(Text(displayEmail, style: const TextStyle(color: Colors.white))),
-            DataCell(Text(_formatDate(c['created_at']), style: const TextStyle(color: AppColors.darkTextSecondary))),
+            DataCell(Text(displayEmail,
+                style: const TextStyle(color: Colors.white))),
+            DataCell(Text(_formatDate(c['created_at']),
+                style: const TextStyle(color: AppColors.darkTextSecondary))),
             DataCell(
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.info_outline_rounded, color: AppColors.primaryLight, size: 20),
+                    icon: const Icon(Icons.info_outline_rounded,
+                        color: AppColors.primaryLight, size: 20),
                     onPressed: () => _showCustomerDetail(c),
                     tooltip: 'Детали',
                   ),
                   if (userId != null)
                     IconButton(
-                      icon: const Icon(Icons.lock_reset_rounded, color: AppColors.warningLight, size: 20),
-                      onPressed: () => _showChangePasswordDialog(userId, displayEmail.isNotEmpty ? displayEmail : phone),
+                      icon: const Icon(Icons.lock_reset_rounded,
+                          color: AppColors.warningLight, size: 20),
+                      onPressed: () => _showChangePasswordDialog(userId,
+                          displayEmail.isNotEmpty ? displayEmail : phone),
                       tooltip: 'Сменить пароль',
                     ),
                   IconButton(
-                    icon: const Icon(Icons.delete_forever_rounded, color: AppColors.errorLight, size: 20),
-                    onPressed: () => _confirmDeleteUser(userId, 'customer', name),
+                    icon: const Icon(Icons.delete_forever_rounded,
+                        color: AppColors.errorLight, size: 20),
+                    onPressed: () =>
+                        _confirmDeleteUser(userId, 'customer', name),
                     tooltip: 'Удалить клиента',
                   ),
                 ],
@@ -584,18 +639,28 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       return ListView.separated(
         itemCount: _filteredCouriers.length,
         separatorBuilder: (_, __) => const SizedBox(height: 10),
-        itemBuilder: (context, idx) => _buildCourierMobileCard(_filteredCouriers[idx]),
+        itemBuilder: (context, idx) =>
+            _buildCourierMobileCard(_filteredCouriers[idx]),
       );
     }
 
     return _buildDesktopTable(
-      columns: const ['Имя', 'Телефон', 'Ключ', 'Ставка', 'Статус', 'Склады', 'Действия'],
+      columns: const [
+        'Имя',
+        'Телефон',
+        'Ключ',
+        'Ставка',
+        'Статус',
+        'Склады',
+        'Действия'
+      ],
       rows: _filteredCouriers.map((c) {
         final id = c['id'] as String;
         final name = c['name'] ?? '—';
         final phone = c['phone'] ?? '—';
         final key = c['access_key'] ?? '—';
-        final rate = '${((c['earning_rate'] as num?)?.toDouble() ?? 0.90) * 100 ~/ 1}%';
+        final rate =
+            '${((c['earning_rate'] as num?)?.toDouble() ?? 0.90) * 100 ~/ 1}%';
         final isActive = c['is_active'] == true;
         final isSelected = _selectedCourierIds.contains(id);
 
@@ -618,7 +683,9 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
             });
           },
           cells: [
-            DataCell(Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500))),
+            DataCell(Text(name,
+                style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.w500))),
             DataCell(Text(phone, style: const TextStyle(color: Colors.white))),
             DataCell(
               Container(
@@ -627,23 +694,37 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                   color: AppColors.primary.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Text(key, style: const TextStyle(fontFamily: 'monospace', color: AppColors.primaryLight, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                child: Text(key,
+                    style: const TextStyle(
+                        fontFamily: 'monospace',
+                        color: AppColors.primaryLight,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1)),
               ),
             ),
-            DataCell(Text(rate, style: const TextStyle(color: AppColors.successLight, fontWeight: FontWeight.bold))),
+            DataCell(Text(rate,
+                style: const TextStyle(
+                    color: AppColors.successLight,
+                    fontWeight: FontWeight.bold))),
             DataCell(_buildStatusBadge(isActive)),
-            DataCell(Text(warehouseNames.isEmpty ? '—' : warehouseNames, style: const TextStyle(color: AppColors.darkTextSecondary, fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis)),
+            DataCell(Text(warehouseNames.isEmpty ? '—' : warehouseNames,
+                style: const TextStyle(
+                    color: AppColors.darkTextSecondary, fontSize: 13),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis)),
             DataCell(
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.info_outline_rounded, color: AppColors.primaryLight, size: 20),
+                    icon: const Icon(Icons.info_outline_rounded,
+                        color: AppColors.primaryLight, size: 20),
                     onPressed: () => _showCourierDetail(c),
                     tooltip: 'Детали',
                   ),
                   PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert_rounded, color: AppColors.darkTextSecondary),
+                    icon: const Icon(Icons.more_vert_rounded,
+                        color: AppColors.darkTextSecondary),
                     color: AppColors.darkSurface,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -656,7 +737,11 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                       if (val == 'warehouses') _showLinkWarehouseDialog(c);
                       if (val == 'toggle') _toggleActive(c);
                       if (val == 'password' && c['user_id'] != null) {
-                        _showChangePasswordDialog(c['user_id'], _getEmailForUserId(c['user_id']).isNotEmpty ? _getEmailForUserId(c['user_id']) : phone);
+                        _showChangePasswordDialog(
+                            c['user_id'],
+                            _getEmailForUserId(c['user_id']).isNotEmpty
+                                ? _getEmailForUserId(c['user_id'])
+                                : phone);
                       }
                       if (val == 'delete') {
                         _confirmDeleteUser(c['user_id'], 'courier', name);
@@ -665,24 +750,44 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                     itemBuilder: (ctx) => [
                       const PopupMenuItem(
                         value: 'rate',
-                        child: Row(children: [Icon(Icons.percent_rounded, size: 18), SizedBox(width: 10), Text('Изменить ставку')]),
+                        child: Row(children: [
+                          Icon(Icons.percent_rounded, size: 18),
+                          SizedBox(width: 10),
+                          Text('Изменить ставку')
+                        ]),
                       ),
                       const PopupMenuItem(
                         value: 'transport',
-                        child: Row(children: [Icon(Icons.local_shipping_rounded, size: 18), SizedBox(width: 10), Text('Транспорт')]),
+                        child: Row(children: [
+                          Icon(Icons.local_shipping_rounded, size: 18),
+                          SizedBox(width: 10),
+                          Text('Транспорт')
+                        ]),
                       ),
                       const PopupMenuItem(
                         value: 'key',
-                        child: Row(children: [Icon(Icons.vpn_key_rounded, size: 18), SizedBox(width: 10), Text('Новый ключ доступа')]),
+                        child: Row(children: [
+                          Icon(Icons.vpn_key_rounded, size: 18),
+                          SizedBox(width: 10),
+                          Text('Новый ключ доступа')
+                        ]),
                       ),
                       const PopupMenuItem(
                         value: 'warehouses',
-                        child: Row(children: [Icon(Icons.store_rounded, size: 18), SizedBox(width: 10), Text('Привязать склады')]),
+                        child: Row(children: [
+                          Icon(Icons.store_rounded, size: 18),
+                          SizedBox(width: 10),
+                          Text('Привязать склады')
+                        ]),
                       ),
                       PopupMenuItem(
                         value: 'toggle',
                         child: Row(children: [
-                          Icon(isActive ? Icons.block_rounded : Icons.check_circle_rounded, size: 18),
+                          Icon(
+                              isActive
+                                  ? Icons.block_rounded
+                                  : Icons.check_circle_rounded,
+                              size: 18),
                           const SizedBox(width: 10),
                           Text(isActive ? 'Отключить' : 'Активировать')
                         ]),
@@ -690,11 +795,21 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                       if (c['user_id'] != null)
                         const PopupMenuItem(
                           value: 'password',
-                          child: Row(children: [Icon(Icons.lock_reset_rounded, size: 18), SizedBox(width: 10), Text('Сменить пароль')]),
+                          child: Row(children: [
+                            Icon(Icons.lock_reset_rounded, size: 18),
+                            SizedBox(width: 10),
+                            Text('Сменить пароль')
+                          ]),
                         ),
                       const PopupMenuItem(
                         value: 'delete',
-                        child: Row(children: [Icon(Icons.delete_forever_rounded, size: 18, color: AppColors.errorLight), SizedBox(width: 10), Text('Удалить курьера', style: TextStyle(color: AppColors.errorLight))]),
+                        child: Row(children: [
+                          Icon(Icons.delete_forever_rounded,
+                              size: 18, color: AppColors.errorLight),
+                          SizedBox(width: 10),
+                          Text('Удалить курьера',
+                              style: TextStyle(color: AppColors.errorLight))
+                        ]),
                       ),
                     ],
                   ),
@@ -720,7 +835,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       return ListView.separated(
         itemCount: _filteredEmployees.length,
         separatorBuilder: (_, __) => const SizedBox(height: 10),
-        itemBuilder: (context, idx) => _buildEmployeeMobileCard(_filteredEmployees[idx]),
+        itemBuilder: (context, idx) =>
+            _buildEmployeeMobileCard(_filteredEmployees[idx]),
       );
     }
 
@@ -746,7 +862,9 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
             });
           },
           cells: [
-            DataCell(Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w500))),
+            DataCell(Text(name,
+                style: const TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.w500))),
             DataCell(Text(phone, style: const TextStyle(color: Colors.white))),
             DataCell(
               Container(
@@ -755,7 +873,11 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                   color: AppColors.info.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(6),
                 ),
-                child: Text(role, style: const TextStyle(color: AppColors.infoLight, fontSize: 12, fontWeight: FontWeight.bold)),
+                child: Text(role,
+                    style: const TextStyle(
+                        color: AppColors.infoLight,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold)),
               ),
             ),
             DataCell(Text(wh, style: const TextStyle(color: Colors.white))),
@@ -764,12 +886,14 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
-                    icon: const Icon(Icons.info_outline_rounded, color: AppColors.primaryLight, size: 20),
+                    icon: const Icon(Icons.info_outline_rounded,
+                        color: AppColors.primaryLight, size: 20),
                     onPressed: () => _showEmployeeDetail(e),
                     tooltip: 'Детали',
                   ),
                   PopupMenuButton<String>(
-                    icon: const Icon(Icons.more_vert_rounded, color: AppColors.darkTextSecondary),
+                    icon: const Icon(Icons.more_vert_rounded,
+                        color: AppColors.darkTextSecondary),
                     color: AppColors.darkSurface,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -777,7 +901,11 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                     ),
                     onSelected: (val) {
                       if (val == 'password' && e['user_id'] != null) {
-                        _showChangePasswordDialog(e['user_id'], _getEmailForUserId(e['user_id']).isNotEmpty ? _getEmailForUserId(e['user_id']) : phone);
+                        _showChangePasswordDialog(
+                            e['user_id'],
+                            _getEmailForUserId(e['user_id']).isNotEmpty
+                                ? _getEmailForUserId(e['user_id'])
+                                : phone);
                       }
                       if (val == 'delete') {
                         _confirmDeleteUser(e['user_id'], 'employee', name);
@@ -787,11 +915,21 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                       if (e['user_id'] != null)
                         const PopupMenuItem(
                           value: 'password',
-                          child: Row(children: [Icon(Icons.lock_reset_rounded, size: 18), SizedBox(width: 10), Text('Сменить пароль')]),
+                          child: Row(children: [
+                            Icon(Icons.lock_reset_rounded, size: 18),
+                            SizedBox(width: 10),
+                            Text('Сменить пароль')
+                          ]),
                         ),
                       const PopupMenuItem(
                         value: 'delete',
-                        child: Row(children: [Icon(Icons.delete_forever_rounded, size: 18, color: AppColors.errorLight), SizedBox(width: 10), Text('Удалить сотрудника', style: TextStyle(color: AppColors.errorLight))]),
+                        child: Row(children: [
+                          Icon(Icons.delete_forever_rounded,
+                              size: 18, color: AppColors.errorLight),
+                          SizedBox(width: 10),
+                          Text('Удалить сотрудника',
+                              style: TextStyle(color: AppColors.errorLight))
+                        ]),
                       ),
                     ],
                   ),
@@ -804,7 +942,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     );
   }
 
-  Widget _buildDesktopTable({required List<String> columns, required List<DataRow> rows}) {
+  Widget _buildDesktopTable(
+      {required List<String> columns, required List<DataRow> rows}) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -817,16 +956,22 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
-            headingRowColor: WidgetStateProperty.all(AppColors.darkSurfaceVariant),
+            headingRowColor:
+                WidgetStateProperty.all(AppColors.darkSurfaceVariant),
             dataRowColor: WidgetStateProperty.all(Colors.transparent),
             horizontalMargin: 20,
             columnSpacing: 30,
-            columns: columns.map((col) => DataColumn(
-              label: Text(
-                col,
-                style: const TextStyle(color: AppColors.darkTextSecondary, fontSize: 13, fontWeight: FontWeight.w600),
-              ),
-            )).toList(),
+            columns: columns
+                .map((col) => DataColumn(
+                      label: Text(
+                        col,
+                        style: const TextStyle(
+                            color: AppColors.darkTextSecondary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600),
+                      ),
+                    ))
+                .toList(),
             rows: rows,
           ),
         ),
@@ -876,29 +1021,40 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                     Expanded(
                       child: Text(
                         u['email']?.isEmpty == true ? u['phone'] : u['email'],
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 14),
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14),
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.info_outline_rounded, color: AppColors.primaryLight, size: 20),
+                          icon: const Icon(Icons.info_outline_rounded,
+                              color: AppColors.primaryLight, size: 20),
                           onPressed: () => _showAuthUserDetail(u),
                           constraints: const BoxConstraints(),
                           padding: EdgeInsets.zero,
                         ),
                         const SizedBox(width: 12),
                         IconButton(
-                          icon: const Icon(Icons.lock_reset_rounded, color: AppColors.warningLight, size: 20),
-                          onPressed: () => _showChangePasswordDialog(id, u['email']?.isEmpty == true ? u['phone'] : u['email']),
+                          icon: const Icon(Icons.lock_reset_rounded,
+                              color: AppColors.warningLight, size: 20),
+                          onPressed: () => _showChangePasswordDialog(
+                              id,
+                              u['email']?.isEmpty == true
+                                  ? u['phone']
+                                  : u['email']),
                           constraints: const BoxConstraints(),
                           padding: EdgeInsets.zero,
                         ),
                         const SizedBox(width: 12),
                         IconButton(
-                          icon: const Icon(Icons.delete_forever_rounded, color: AppColors.errorLight, size: 20),
-                          onPressed: () => _confirmDeleteUser(id, 'auth', u['email'] ?? u['phone'] ?? 'Без контактов'),
+                          icon: const Icon(Icons.delete_forever_rounded,
+                              color: AppColors.errorLight, size: 20),
+                          onPressed: () => _confirmDeleteUser(id, 'auth',
+                              u['email'] ?? u['phone'] ?? 'Без контактов'),
                           constraints: const BoxConstraints(),
                           padding: EdgeInsets.zero,
                         ),
@@ -907,14 +1063,23 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                   ],
                 ),
                 const SizedBox(height: 8),
-                Text('ID: ${u['id']}', style: const TextStyle(fontFamily: 'monospace', fontSize: 11, color: AppColors.darkTextTertiary)),
+                Text('ID: ${u['id']}',
+                    style: const TextStyle(
+                        fontFamily: 'monospace',
+                        fontSize: 11,
+                        color: AppColors.darkTextTertiary)),
                 const SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('Создан: ${_formatDate(u['created_at'])}', style: const TextStyle(fontSize: 11, color: AppColors.darkTextSecondary)),
+                    Text('Создан: ${_formatDate(u['created_at'])}',
+                        style: const TextStyle(
+                            fontSize: 11, color: AppColors.darkTextSecondary)),
                     if (u['last_sign_in'] != null)
-                      Text('Вход: ${_formatDate(u['last_sign_in'])}', style: const TextStyle(fontSize: 11, color: AppColors.darkTextSecondary)),
+                      Text('Вход: ${_formatDate(u['last_sign_in'])}',
+                          style: const TextStyle(
+                              fontSize: 11,
+                              color: AppColors.darkTextSecondary)),
                   ],
                 ),
               ],
@@ -959,25 +1124,40 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
+                Text(name,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 15)),
                 const SizedBox(height: 4),
-                Text(phone, style: const TextStyle(color: AppColors.darkTextSecondary, fontSize: 13)),
+                Text(phone,
+                    style: const TextStyle(
+                        color: AppColors.darkTextSecondary, fontSize: 13)),
                 const SizedBox(height: 4),
-                Text('Дата: ${_formatDate(c['created_at'])}', style: const TextStyle(color: AppColors.darkTextTertiary, fontSize: 11)),
+                Text('Дата: ${_formatDate(c['created_at'])}',
+                    style: const TextStyle(
+                        color: AppColors.darkTextTertiary, fontSize: 11)),
               ],
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.info_outline_rounded, color: AppColors.primaryLight, size: 20),
+            icon: const Icon(Icons.info_outline_rounded,
+                color: AppColors.primaryLight, size: 20),
             onPressed: () => _showCustomerDetail(c),
           ),
           if (userId != null)
             IconButton(
-              icon: const Icon(Icons.lock_reset_rounded, color: AppColors.warningLight, size: 20),
-              onPressed: () => _showChangePasswordDialog(userId, _getEmailForUserId(userId).isNotEmpty ? _getEmailForUserId(userId) : phone),
+              icon: const Icon(Icons.lock_reset_rounded,
+                  color: AppColors.warningLight, size: 20),
+              onPressed: () => _showChangePasswordDialog(
+                  userId,
+                  _getEmailForUserId(userId).isNotEmpty
+                      ? _getEmailForUserId(userId)
+                      : phone),
             ),
           IconButton(
-            icon: const Icon(Icons.delete_forever_rounded, color: AppColors.errorLight, size: 20),
+            icon: const Icon(Icons.delete_forever_rounded,
+                color: AppColors.errorLight, size: 20),
             onPressed: () => _confirmDeleteUser(userId, 'customer', name),
           ),
         ],
@@ -990,7 +1170,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     final name = c['name'] ?? '—';
     final phone = c['phone'] ?? '—';
     final key = c['access_key'] ?? '—';
-    final rate = '${((c['earning_rate'] as num?)?.toDouble() ?? 0.90) * 100 ~/ 1}%';
+    final rate =
+        '${((c['earning_rate'] as num?)?.toDouble() ?? 0.90) * 100 ~/ 1}%';
     final isActive = c['is_active'] == true;
     final isSelected = _selectedCourierIds.contains(id);
 
@@ -1028,39 +1209,57 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
+                    Text(name,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15)),
                     _buildStatusBadge(isActive),
                   ],
                 ),
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Text(phone, style: const TextStyle(color: AppColors.darkTextSecondary, fontSize: 13)),
+                    Text(phone,
+                        style: const TextStyle(
+                            color: AppColors.darkTextSecondary, fontSize: 13)),
                     const Spacer(),
-                    Text('Ставка: $rate', style: const TextStyle(color: AppColors.successLight, fontWeight: FontWeight.bold, fontSize: 13)),
+                    Text('Ставка: $rate',
+                        style: const TextStyle(
+                            color: AppColors.successLight,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13)),
                   ],
                 ),
                 const SizedBox(height: 10),
                 Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
                         color: AppColors.primary.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: Text('Ключ: $key', style: const TextStyle(fontFamily: 'monospace', color: AppColors.primaryLight, fontSize: 12, fontWeight: FontWeight.bold)),
+                      child: Text('Ключ: $key',
+                          style: const TextStyle(
+                              fontFamily: 'monospace',
+                              color: AppColors.primaryLight,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold)),
                     ),
                     const Spacer(),
                     IconButton(
-                      icon: const Icon(Icons.info_outline_rounded, color: AppColors.primaryLight, size: 18),
+                      icon: const Icon(Icons.info_outline_rounded,
+                          color: AppColors.primaryLight, size: 18),
                       onPressed: () => _showCourierDetail(c),
                       constraints: const BoxConstraints(),
                       padding: EdgeInsets.zero,
                     ),
                     const SizedBox(width: 14),
                     PopupMenuButton<String>(
-                      icon: const Icon(Icons.more_vert_rounded, color: AppColors.darkTextSecondary),
+                      icon: const Icon(Icons.more_vert_rounded,
+                          color: AppColors.darkTextSecondary),
                       color: AppColors.darkSurface,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
@@ -1075,7 +1274,11 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                         if (val == 'warehouses') _showLinkWarehouseDialog(c);
                         if (val == 'toggle') _toggleActive(c);
                         if (val == 'password' && c['user_id'] != null) {
-                          _showChangePasswordDialog(c['user_id'], _getEmailForUserId(c['user_id']).isNotEmpty ? _getEmailForUserId(c['user_id']) : phone);
+                          _showChangePasswordDialog(
+                              c['user_id'],
+                              _getEmailForUserId(c['user_id']).isNotEmpty
+                                  ? _getEmailForUserId(c['user_id'])
+                                  : phone);
                         }
                         if (val == 'delete') {
                           _confirmDeleteUser(c['user_id'], 'courier', name);
@@ -1084,24 +1287,44 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                       itemBuilder: (ctx) => [
                         const PopupMenuItem(
                           value: 'rate',
-                          child: Row(children: [Icon(Icons.percent_rounded, size: 18), SizedBox(width: 10), Text('Изменить ставку')]),
+                          child: Row(children: [
+                            Icon(Icons.percent_rounded, size: 18),
+                            SizedBox(width: 10),
+                            Text('Изменить ставку')
+                          ]),
                         ),
                         const PopupMenuItem(
                           value: 'transport',
-                          child: Row(children: [Icon(Icons.local_shipping_rounded, size: 18), SizedBox(width: 10), Text('Транспорт')]),
+                          child: Row(children: [
+                            Icon(Icons.local_shipping_rounded, size: 18),
+                            SizedBox(width: 10),
+                            Text('Транспорт')
+                          ]),
                         ),
                         const PopupMenuItem(
                           value: 'key',
-                          child: Row(children: [Icon(Icons.vpn_key_rounded, size: 18), SizedBox(width: 10), Text('Новый ключ доступа')]),
+                          child: Row(children: [
+                            Icon(Icons.vpn_key_rounded, size: 18),
+                            SizedBox(width: 10),
+                            Text('Новый ключ доступа')
+                          ]),
                         ),
                         const PopupMenuItem(
                           value: 'warehouses',
-                          child: Row(children: [Icon(Icons.store_rounded, size: 18), SizedBox(width: 10), Text('Привязать склады')]),
+                          child: Row(children: [
+                            Icon(Icons.store_rounded, size: 18),
+                            SizedBox(width: 10),
+                            Text('Привязать склады')
+                          ]),
                         ),
                         PopupMenuItem(
                           value: 'toggle',
                           child: Row(children: [
-                            Icon(isActive ? Icons.block_rounded : Icons.check_circle_rounded, size: 18),
+                            Icon(
+                                isActive
+                                    ? Icons.block_rounded
+                                    : Icons.check_circle_rounded,
+                                size: 18),
                             const SizedBox(width: 10),
                             Text(isActive ? 'Отключить' : 'Активировать')
                           ]),
@@ -1109,11 +1332,21 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                         if (c['user_id'] != null)
                           const PopupMenuItem(
                             value: 'password',
-                            child: Row(children: [Icon(Icons.lock_reset_rounded, size: 18), SizedBox(width: 10), Text('Сменить пароль')]),
+                            child: Row(children: [
+                              Icon(Icons.lock_reset_rounded, size: 18),
+                              SizedBox(width: 10),
+                              Text('Сменить пароль')
+                            ]),
                           ),
                         const PopupMenuItem(
                           value: 'delete',
-                          child: Row(children: [Icon(Icons.delete_forever_rounded, size: 18, color: AppColors.errorLight), SizedBox(width: 10), Text('Удалить курьера', style: TextStyle(color: AppColors.errorLight))]),
+                          child: Row(children: [
+                            Icon(Icons.delete_forever_rounded,
+                                size: 18, color: AppColors.errorLight),
+                            SizedBox(width: 10),
+                            Text('Удалить курьера',
+                                style: TextStyle(color: AppColors.errorLight))
+                          ]),
                         ),
                       ],
                     ),
@@ -1169,37 +1402,53 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
+                    Text(name,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15)),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: AppColors.info.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(6),
                       ),
-                      child: Text(role, style: const TextStyle(color: AppColors.infoLight, fontSize: 11, fontWeight: FontWeight.bold)),
+                      child: Text(role,
+                          style: const TextStyle(
+                              color: AppColors.infoLight,
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold)),
                     ),
                   ],
                 ),
                 const SizedBox(height: 6),
-                Text(phone, style: const TextStyle(color: AppColors.darkTextSecondary, fontSize: 13)),
+                Text(phone,
+                    style: const TextStyle(
+                        color: AppColors.darkTextSecondary, fontSize: 13)),
                 const SizedBox(height: 6),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Expanded(
-                      child: Text('Склад: $wh', style: const TextStyle(color: AppColors.darkTextTertiary, fontSize: 12), overflow: TextOverflow.ellipsis),
+                      child: Text('Склад: $wh',
+                          style: const TextStyle(
+                              color: AppColors.darkTextTertiary, fontSize: 12),
+                          overflow: TextOverflow.ellipsis),
                     ),
                     Row(
                       children: [
                         IconButton(
-                          icon: const Icon(Icons.info_outline_rounded, color: AppColors.primaryLight, size: 18),
+                          icon: const Icon(Icons.info_outline_rounded,
+                              color: AppColors.primaryLight, size: 18),
                           onPressed: () => _showEmployeeDetail(e),
                           constraints: const BoxConstraints(),
                           padding: EdgeInsets.zero,
                         ),
                         const SizedBox(width: 14),
                         PopupMenuButton<String>(
-                          icon: const Icon(Icons.more_vert_rounded, color: AppColors.darkTextSecondary),
+                          icon: const Icon(Icons.more_vert_rounded,
+                              color: AppColors.darkTextSecondary),
                           color: AppColors.darkSurface,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
@@ -1209,21 +1458,37 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                           padding: EdgeInsets.zero,
                           onSelected: (val) {
                             if (val == 'password' && e['user_id'] != null) {
-                              _showChangePasswordDialog(e['user_id'], _getEmailForUserId(e['user_id']).isNotEmpty ? _getEmailForUserId(e['user_id']) : phone);
+                              _showChangePasswordDialog(
+                                  e['user_id'],
+                                  _getEmailForUserId(e['user_id']).isNotEmpty
+                                      ? _getEmailForUserId(e['user_id'])
+                                      : phone);
                             }
                             if (val == 'delete') {
-                              _confirmDeleteUser(e['user_id'], 'employee', name);
+                              _confirmDeleteUser(
+                                  e['user_id'], 'employee', name);
                             }
                           },
                           itemBuilder: (ctx) => [
                             if (e['user_id'] != null)
                               const PopupMenuItem(
                                 value: 'password',
-                                child: Row(children: [Icon(Icons.lock_reset_rounded, size: 18), SizedBox(width: 10), Text('Сменить пароль')]),
+                                child: Row(children: [
+                                  Icon(Icons.lock_reset_rounded, size: 18),
+                                  SizedBox(width: 10),
+                                  Text('Сменить пароль')
+                                ]),
                               ),
                             const PopupMenuItem(
                               value: 'delete',
-                              child: Row(children: [Icon(Icons.delete_forever_rounded, size: 18, color: AppColors.errorLight), SizedBox(width: 10), Text('Удалить сотрудника', style: TextStyle(color: AppColors.errorLight))]),
+                              child: Row(children: [
+                                Icon(Icons.delete_forever_rounded,
+                                    size: 18, color: AppColors.errorLight),
+                                SizedBox(width: 10),
+                                Text('Удалить сотрудника',
+                                    style:
+                                        TextStyle(color: AppColors.errorLight))
+                              ]),
                             ),
                           ],
                         ),
@@ -1261,7 +1526,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     final name = c['name'] ?? '—';
     final phone = c['phone'] ?? '—';
     final email = _getEmailForUserId(c['user_id']);
-    
+
     _showDetailDialog(
       title: 'Профиль клиента AkJol Go',
       details: {
@@ -1281,9 +1546,10 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     final phone = c['phone'] ?? '—';
     final key = c['access_key'] ?? '—';
     final rate = '${((c['earning_rate'] as num?)?.toDouble() ?? 0.90) * 100}%';
-    final transports = (c['transport_types'] as List?)?.join(', ') ?? 'Велосипед';
+    final transports =
+        (c['transport_types'] as List?)?.join(', ') ?? 'Велосипед';
     final email = _getEmailForUserId(c['user_id']);
-    
+
     _showDetailDialog(
       title: 'Профиль курьера AkJol Pro',
       details: {
@@ -1309,7 +1575,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     final email = _getEmailForUserId(e['user_id']);
     final role = _translateRole(e['role']);
     final wh = _getEmployeeWarehouseNames(e);
-    
+
     _showDetailDialog(
       title: 'Сотрудник TakEsep Warehouse',
       details: {
@@ -1331,13 +1597,18 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     );
   }
 
-  void _showDetailDialog({required String title, required Map<String, String> details}) {
+  void _showDetailDialog(
+      {required String title, required Map<String, String> details}) {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.darkSurface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: AppColors.darkBorder)),
-        title: Text(title, style: const TextStyle(color: AppColors.darkTextPrimary, fontWeight: FontWeight.bold)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: AppColors.darkBorder)),
+        title: Text(title,
+            style: const TextStyle(
+                color: AppColors.darkTextPrimary, fontWeight: FontWeight.bold)),
         content: SizedBox(
           width: 500,
           child: Scrollbar(
@@ -1351,14 +1622,21 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(entry.key, style: const TextStyle(color: AppColors.darkTextTertiary, fontSize: 12, fontWeight: FontWeight.w600)),
+                        Text(entry.key,
+                            style: const TextStyle(
+                                color: AppColors.darkTextTertiary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600)),
                         const SizedBox(height: 4),
                         SelectableText(
                           entry.value,
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 14,
-                            fontFamily: entry.key.contains('ID') || entry.key.contains('ключ') ? 'monospace' : null,
+                            fontFamily: entry.key.contains('ID') ||
+                                    entry.key.contains('ключ')
+                                ? 'monospace'
+                                : null,
                           ),
                         ),
                       ],
@@ -1372,7 +1650,10 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Закрыть', style: TextStyle(color: AppColors.primaryLight, fontWeight: FontWeight.bold)),
+            child: const Text('Закрыть',
+                style: TextStyle(
+                    color: AppColors.primaryLight,
+                    fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -1385,53 +1666,147 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
 
   Future<void> _deleteSingleUserCascade(String userId, String userType) async {
     // 1. Core user tables
-    try { await _supabase.from('user_fcm_tokens').delete().eq('user_id', userId); } catch (_) {}
-    try { await _supabase.from('favorites').delete().eq('user_id', userId); } catch (_) {}
-    try { await _supabase.from('cart_drafts').delete().eq('user_id', userId); } catch (_) {}
-    try { await _supabase.from('addresses').update({'created_by': null}).eq('created_by', userId); } catch (_) {}
-    try { await _supabase.from('user_profiles').delete().eq('id', userId); } catch (_) {}
+    try {
+      await _supabase.from('user_fcm_tokens').delete().eq('user_id', userId);
+    } catch (_) {}
+    try {
+      await _supabase.from('favorites').delete().eq('user_id', userId);
+    } catch (_) {}
+    try {
+      await _supabase.from('cart_drafts').delete().eq('user_id', userId);
+    } catch (_) {}
+    try {
+      await _supabase
+          .from('addresses')
+          .update({'created_by': null}).eq('created_by', userId);
+    } catch (_) {}
+    try {
+      await _supabase.from('user_profiles').delete().eq('id', userId);
+    } catch (_) {}
 
     // 2. Customers cascade
     if (userType == 'customer' || userType == 'auth') {
-      final cust = await _supabase.from('customers').select('id').eq('user_id', userId).maybeSingle();
+      final cust = await _supabase
+          .from('customers')
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle();
       if (cust != null) {
         final custId = cust['id'];
-        final orders = await _supabase.from('delivery_orders').select('id').eq('customer_id', custId);
+        final orders = await _supabase
+            .from('delivery_orders')
+            .select('id')
+            .eq('customer_id', custId);
         for (final o in orders) {
           final oId = o['id'];
-          try { await _supabase.from('delivery_order_items').delete().eq('order_id', oId); } catch (_) {}
-          try { await _supabase.from('delivery_order_messages').delete().eq('order_id', oId); } catch (_) {}
-          try { await _supabase.from('delivery_order_ratings').delete().eq('order_id', oId); } catch (_) {}
-          try { await _supabase.from('delivery_ratings').delete().eq('order_id', oId); } catch (_) {}
-          try { await _supabase.from('delivery_order_status_history').delete().eq('order_id', oId); } catch (_) {}
-          try { await _supabase.from('transactions').delete().eq('order_id', oId); } catch (_) {}
+          try {
+            await _supabase
+                .from('delivery_order_items')
+                .delete()
+                .eq('order_id', oId);
+          } catch (_) {}
+          try {
+            await _supabase
+                .from('delivery_order_messages')
+                .delete()
+                .eq('order_id', oId);
+          } catch (_) {}
+          try {
+            await _supabase
+                .from('delivery_order_ratings')
+                .delete()
+                .eq('order_id', oId);
+          } catch (_) {}
+          try {
+            await _supabase
+                .from('delivery_ratings')
+                .delete()
+                .eq('order_id', oId);
+          } catch (_) {}
+          try {
+            await _supabase
+                .from('delivery_order_status_history')
+                .delete()
+                .eq('order_id', oId);
+          } catch (_) {}
+          try {
+            await _supabase.from('transactions').delete().eq('order_id', oId);
+          } catch (_) {}
         }
-        try { await _supabase.from('delivery_ratings').delete().eq('customer_id', custId); } catch (_) {}
-        try { await _supabase.from('delivery_order_ratings').delete().eq('customer_id', custId); } catch (_) {}
-        try { await _supabase.from('delivery_orders').delete().eq('customer_id', custId); } catch (_) {}
-        try { await _supabase.from('customer_addresses').delete().eq('customer_id', custId); } catch (_) {}
-        try { await _supabase.from('customers').delete().eq('id', custId); } catch (_) {}
+        try {
+          await _supabase
+              .from('delivery_ratings')
+              .delete()
+              .eq('customer_id', custId);
+        } catch (_) {}
+        try {
+          await _supabase
+              .from('delivery_order_ratings')
+              .delete()
+              .eq('customer_id', custId);
+        } catch (_) {}
+        try {
+          await _supabase
+              .from('delivery_orders')
+              .delete()
+              .eq('customer_id', custId);
+        } catch (_) {}
+        try {
+          await _supabase
+              .from('customer_addresses')
+              .delete()
+              .eq('customer_id', custId);
+        } catch (_) {}
+        try {
+          await _supabase.from('customers').delete().eq('id', custId);
+        } catch (_) {}
       }
     }
 
     // 3. Couriers cascade
     if (userType == 'courier' || userType == 'auth') {
-      final cour = await _supabase.from('couriers').select('id').eq('user_id', userId).maybeSingle();
+      final cour = await _supabase
+          .from('couriers')
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle();
       if (cour != null) {
         final courId = cour['id'];
-        try { await _supabase.from('courier_locations').delete().eq('courier_id', courId); } catch (_) {}
-        try { await _supabase.from('delivery_orders').update({'courier_id': null}).eq('courier_id', courId); } catch (_) {}
-        try { await _supabase.from('couriers').delete().eq('id', courId); } catch (_) {}
+        try {
+          await _supabase
+              .from('courier_locations')
+              .delete()
+              .eq('courier_id', courId);
+        } catch (_) {}
+        try {
+          await _supabase
+              .from('delivery_orders')
+              .update({'courier_id': null}).eq('courier_id', courId);
+        } catch (_) {}
+        try {
+          await _supabase.from('couriers').delete().eq('id', courId);
+        } catch (_) {}
       }
     }
 
     // 4. Employees cascade
     if (userType == 'employee' || userType == 'auth') {
-      final emp = await _supabase.from('employees').select('id').eq('user_id', userId).maybeSingle();
+      final emp = await _supabase
+          .from('employees')
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle();
       if (emp != null) {
         final empId = emp['id'];
-        try { await _supabase.from('employee_expenses').delete().eq('employee_id', empId); } catch (_) {}
-        try { await _supabase.from('employees').delete().eq('id', empId); } catch (_) {}
+        try {
+          await _supabase
+              .from('employee_expenses')
+              .delete()
+              .eq('employee_id', empId);
+        } catch (_) {}
+        try {
+          await _supabase.from('employees').delete().eq('id', empId);
+        } catch (_) {}
       }
     }
 
@@ -1439,10 +1814,13 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     await _supabase.auth.admin.deleteUser(userId);
   }
 
-  Future<void> _confirmDeleteUser(String? userId, String userType, String userName) async {
+  Future<void> _confirmDeleteUser(
+      String? userId, String userType, String userName) async {
     if (userId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Не удалось определить ID пользователя'), backgroundColor: AppColors.error),
+        const SnackBar(
+            content: Text('Не удалось определить ID пользователя'),
+            backgroundColor: AppColors.error),
       );
       return;
     }
@@ -1451,32 +1829,46 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.darkSurface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: AppColors.darkBorder)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: AppColors.darkBorder)),
         title: Row(
           children: [
-            const Icon(Icons.warning_amber_rounded, color: AppColors.errorLight),
+            const Icon(Icons.warning_amber_rounded,
+                color: AppColors.errorLight),
             const SizedBox(width: 10),
-            const Text('Удаление аккаунта', style: TextStyle(color: AppColors.darkTextPrimary, fontWeight: FontWeight.bold)),
+            const Text('Удаление аккаунта',
+                style: TextStyle(
+                    color: AppColors.darkTextPrimary,
+                    fontWeight: FontWeight.bold)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Вы действительно хотите удалить пользователя "$userName"?', style: const TextStyle(color: Colors.white)),
+            Text('Вы действительно хотите удалить пользователя "$userName"?',
+                style: const TextStyle(color: Colors.white)),
             const SizedBox(height: 12),
             Text(
               'Это действие каскадно удалит профиль, сессии, FCM-токены, корзину, привязки курьера/склада и учетные данные для авторизации в Supabase Auth.',
-              style: TextStyle(color: AppColors.errorLight.withValues(alpha: 0.85), fontSize: 13),
+              style: TextStyle(
+                  color: AppColors.errorLight.withValues(alpha: 0.85),
+                  fontSize: 13),
             ),
             const SizedBox(height: 10),
-            const Text('Данное действие НЕОБРАТИМО.', style: TextStyle(color: AppColors.errorLight, fontWeight: FontWeight.bold, fontSize: 13)),
+            const Text('Данное действие НЕОБРАТИМО.',
+                style: TextStyle(
+                    color: AppColors.errorLight,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13)),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Отмена', style: TextStyle(color: AppColors.darkTextSecondary)),
+            child: const Text('Отмена',
+                style: TextStyle(color: AppColors.darkTextSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -1506,7 +1898,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
               children: [
                 CircularProgressIndicator(color: AppColors.error),
                 SizedBox(width: 20),
-                Text('Выполняется каскадное удаление...', style: TextStyle(color: Colors.white)),
+                Text('Выполняется каскадное удаление...',
+                    style: TextStyle(color: Colors.white)),
               ],
             ),
           ),
@@ -1535,7 +1928,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     } catch (e) {
       // Dismiss loading overlay safely
       if (mounted) Navigator.of(context).pop();
-      
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1552,7 +1945,7 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     List<String> idsToDelete = [];
     String userType = '';
     String title = '';
-    
+
     if (index == 0) {
       idsToDelete = _selectedAuthIds.toList();
       userType = 'auth';
@@ -1570,39 +1963,54 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       userType = 'employee';
       title = 'сотрудников';
     }
-    
+
     if (idsToDelete.isEmpty) return;
-    
+
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.darkSurface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: AppColors.darkBorder)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: AppColors.darkBorder)),
         title: Row(
           children: [
-            const Icon(Icons.warning_amber_rounded, color: AppColors.errorLight),
+            const Icon(Icons.warning_amber_rounded,
+                color: AppColors.errorLight),
             const SizedBox(width: 10),
-            const Text('Групповое удаление', style: TextStyle(color: AppColors.darkTextPrimary, fontWeight: FontWeight.bold)),
+            const Text('Групповое удаление',
+                style: TextStyle(
+                    color: AppColors.darkTextPrimary,
+                    fontWeight: FontWeight.bold)),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Вы действительно хотите удалить выбранные элементы ($title: ${idsToDelete.length} шт.)?', style: const TextStyle(color: Colors.white)),
+            Text(
+                'Вы действительно хотите удалить выбранные элементы ($title: ${idsToDelete.length} шт.)?',
+                style: const TextStyle(color: Colors.white)),
             const SizedBox(height: 12),
             Text(
               'Это действие каскадно удалит профили, сессии, FCM-токены, привязки и учетные данные для авторизации.',
-              style: TextStyle(color: AppColors.errorLight.withValues(alpha: 0.85), fontSize: 13),
+              style: TextStyle(
+                  color: AppColors.errorLight.withValues(alpha: 0.85),
+                  fontSize: 13),
             ),
             const SizedBox(height: 10),
-            const Text('Данное действие НЕОБРАТИМО.', style: TextStyle(color: AppColors.errorLight, fontWeight: FontWeight.bold, fontSize: 13)),
+            const Text('Данное действие НЕОБРАТИМО.',
+                style: TextStyle(
+                    color: AppColors.errorLight,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13)),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Отмена', style: TextStyle(color: AppColors.darkTextSecondary)),
+            child: const Text('Отмена',
+                style: TextStyle(color: AppColors.darkTextSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -1615,9 +2023,9 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
         ],
       ),
     );
-    
+
     if (confirmed != true) return;
-    
+
     if (!mounted) return;
     showDialog(
       context: context,
@@ -1632,60 +2040,99 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
               children: [
                 CircularProgressIndicator(color: AppColors.error),
                 SizedBox(width: 20),
-                Text('Выполняется групповое удаление...', style: TextStyle(color: Colors.white)),
+                Text('Выполняется групповое удаление...',
+                    style: TextStyle(color: Colors.white)),
               ],
             ),
           ),
         ),
       ),
     );
-    
+
     try {
       for (final id in idsToDelete) {
         if (userType == 'auth') {
           await _deleteSingleUserCascade(id, 'auth');
         } else if (userType == 'customer') {
-          final c = _customers.firstWhere((item) => item['id'] == id, orElse: () => {});
+          final c = _customers.firstWhere((item) => item['id'] == id,
+              orElse: () => {});
           final userId = c['user_id'] as String?;
           if (userId != null) {
             await _deleteSingleUserCascade(userId, 'customer');
           } else {
-            try { await _supabase.from('customer_addresses').delete().eq('customer_id', id); } catch (_) {}
-            try { await _supabase.from('delivery_orders').update({'customer_id': null}).eq('customer_id', id); } catch (_) {}
-            try { await _supabase.from('customers').delete().eq('id', id); } catch (_) {}
+            try {
+              await _supabase
+                  .from('customer_addresses')
+                  .delete()
+                  .eq('customer_id', id);
+            } catch (_) {}
+            try {
+              await _supabase
+                  .from('delivery_orders')
+                  .update({'customer_id': null}).eq('customer_id', id);
+            } catch (_) {}
+            try {
+              await _supabase.from('customers').delete().eq('id', id);
+            } catch (_) {}
           }
         } else if (userType == 'courier') {
-          final c = _couriers.firstWhere((item) => item['id'] == id, orElse: () => {});
+          final c = _couriers.firstWhere((item) => item['id'] == id,
+              orElse: () => {});
           final userId = c['user_id'] as String?;
           if (userId != null) {
             await _deleteSingleUserCascade(userId, 'courier');
           } else {
-            try { await _supabase.from('courier_locations').delete().eq('courier_id', id); } catch (_) {}
-            try { await _supabase.from('courier_warehouse').delete().eq('courier_id', id); } catch (_) {}
-            try { await _supabase.from('delivery_orders').update({'courier_id': null}).eq('courier_id', id); } catch (_) {}
-            try { await _supabase.from('couriers').delete().eq('id', id); } catch (_) {}
+            try {
+              await _supabase
+                  .from('courier_locations')
+                  .delete()
+                  .eq('courier_id', id);
+            } catch (_) {}
+            try {
+              await _supabase
+                  .from('courier_warehouse')
+                  .delete()
+                  .eq('courier_id', id);
+            } catch (_) {}
+            try {
+              await _supabase
+                  .from('delivery_orders')
+                  .update({'courier_id': null}).eq('courier_id', id);
+            } catch (_) {}
+            try {
+              await _supabase.from('couriers').delete().eq('id', id);
+            } catch (_) {}
           }
         } else if (userType == 'employee') {
-          final e = _employees.firstWhere((item) => item['id'] == id, orElse: () => {});
+          final e = _employees.firstWhere((item) => item['id'] == id,
+              orElse: () => {});
           final userId = e['user_id'] as String?;
           if (userId != null) {
             await _deleteSingleUserCascade(userId, 'employee');
           } else {
-            try { await _supabase.from('employee_expenses').delete().eq('employee_id', id); } catch (_) {}
-            try { await _supabase.from('employees').delete().eq('id', id); } catch (_) {}
+            try {
+              await _supabase
+                  .from('employee_expenses')
+                  .delete()
+                  .eq('employee_id', id);
+            } catch (_) {}
+            try {
+              await _supabase.from('employees').delete().eq('id', id);
+            } catch (_) {}
           }
         }
       }
-      
+
       setState(() {
         if (index == 0) _selectedAuthIds.clear();
         if (index == 1) _selectedCustomerIds.clear();
         if (index == 2) _selectedCourierIds.clear();
         if (index == 3) _selectedEmployeeIds.clear();
       });
-      
-      if (mounted) Navigator.of(context).pop(); // Dismiss loading overlay safely
-      
+
+      if (mounted)
+        Navigator.of(context).pop(); // Dismiss loading overlay safely
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1696,7 +2143,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       }
       _loadData();
     } catch (e) {
-      if (mounted) Navigator.of(context).pop(); // Dismiss loading overlay safely
+      if (mounted)
+        Navigator.of(context).pop(); // Dismiss loading overlay safely
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -1756,8 +2204,12 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: AppColors.darkSurface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: AppColors.darkBorder)),
-          title: const Text('Добавить курьера', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: AppColors.darkBorder)),
+          title: const Text('Добавить курьера',
+              style:
+                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
             child: Column(
@@ -1782,7 +2234,9 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                 const SizedBox(height: 16),
                 const Align(
                   alignment: Alignment.centerLeft,
-                  child: Text('Транспорт:', style: TextStyle(fontSize: 13, color: AppColors.darkTextSecondary)),
+                  child: Text('Транспорт:',
+                      style: TextStyle(
+                          fontSize: 13, color: AppColors.darkTextSecondary)),
                 ),
                 const SizedBox(height: 8),
                 Wrap(
@@ -1821,7 +2275,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Отмена', style: TextStyle(color: AppColors.darkTextSecondary)),
+              child: const Text('Отмена',
+                  style: TextStyle(color: AppColors.darkTextSecondary)),
             ),
             ElevatedButton.icon(
               onPressed: () async {
@@ -1864,21 +2319,30 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: AppColors.darkSurface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: AppColors.darkBorder)),
-          title: Text('Склады для ${courier['name']}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: AppColors.darkBorder)),
+          title: Text('Склады для ${courier['name']}',
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.bold)),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 400, maxHeight: 300),
             child: _warehouses.isEmpty
-                ? const Center(child: Text('Нет складов', style: TextStyle(color: AppColors.darkTextSecondary)))
+                ? const Center(
+                    child: Text('Нет складов',
+                        style: TextStyle(color: AppColors.darkTextSecondary)))
                 : ListView.builder(
                     itemCount: _warehouses.length,
                     itemBuilder: (_, i) {
                       final wh = _warehouses[i];
                       final isLinked = linkedIds.contains(wh['id']);
                       return CheckboxListTile(
-                        title: Text(wh['name'] ?? '—', style: const TextStyle(color: Colors.white)),
+                        title: Text(wh['name'] ?? '—',
+                            style: const TextStyle(color: Colors.white)),
                         subtitle: Text(wh['address'] ?? '',
-                            style: const TextStyle(fontSize: 12, color: AppColors.darkTextSecondary)),
+                            style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.darkTextSecondary)),
                         value: isLinked,
                         activeColor: AppColors.success,
                         onChanged: (val) async {
@@ -1914,23 +2378,29 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.darkSurface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: AppColors.darkBorder)),
-        icon: const Icon(Icons.vpn_key, color: AppColors.successLight, size: 48),
-        title: Text('Ключ для $name', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: AppColors.darkBorder)),
+        icon:
+            const Icon(Icons.vpn_key, color: AppColors.successLight, size: 48),
+        title: Text('Ключ для $name',
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Text('Передайте этот ключ курьеру для входа в приложение',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: AppColors.darkTextSecondary)),
+                style: TextStyle(
+                    fontSize: 13, color: AppColors.darkTextSecondary)),
             const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               decoration: BoxDecoration(
                 color: AppColors.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.3)),
+                border:
+                    Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
               ),
               child: Text(
                 key,
@@ -1953,8 +2423,10 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                       duration: Duration(seconds: 1)),
                 );
               },
-              icon: const Icon(Icons.copy, size: 16, color: AppColors.primaryLight),
-              label: const Text('Скопировать', style: TextStyle(color: AppColors.primaryLight)),
+              icon: const Icon(Icons.copy,
+                  size: 16, color: AppColors.primaryLight),
+              label: const Text('Скопировать',
+                  style: TextStyle(color: AppColors.primaryLight)),
             ),
           ],
         ),
@@ -1977,8 +2449,12 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: AppColors.darkSurface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: AppColors.darkBorder)),
-          title: Text('Ставка: $name', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: AppColors.darkBorder)),
+          title: Text('Ставка: $name',
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.bold)),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 400),
             child: Column(
@@ -1986,7 +2462,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
               children: [
                 const Text(
                     'Процент от стоимости доставки, который получает курьер',
-                    style: TextStyle(fontSize: 13, color: AppColors.darkTextSecondary)),
+                    style: TextStyle(
+                        fontSize: 13, color: AppColors.darkTextSecondary)),
                 const SizedBox(height: 24),
                 Text(
                   '${(rate * 100).toStringAsFixed(0)}%',
@@ -2030,9 +2507,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                         child: Text('$p%',
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
-                              color: isSelected
-                                  ? AppColors.success
-                                  : Colors.grey,
+                              color:
+                                  isSelected ? AppColors.success : Colors.grey,
                             )),
                       ),
                     );
@@ -2066,7 +2542,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Отмена', style: TextStyle(color: AppColors.darkTextSecondary)),
+              child: const Text('Отмена',
+                  style: TextStyle(color: AppColors.darkTextSecondary)),
             ),
             ElevatedButton.icon(
               onPressed: () async {
@@ -2116,15 +2593,20 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
           backgroundColor: AppColors.darkSurface,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: AppColors.darkBorder)),
-          title: Text('Транспорт: ${courier['name'] ?? 'Курьер'}', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: const BorderSide(color: AppColors.darkBorder)),
+          title: Text('Транспорт: ${courier['name'] ?? 'Курьер'}',
+              style: const TextStyle(
+                  color: Colors.white, fontWeight: FontWeight.bold)),
           content: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 420),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Text('Выберите доступные виды транспорта:',
-                    style: TextStyle(fontSize: 13, color: AppColors.darkTextSecondary)),
+                    style: TextStyle(
+                        fontSize: 13, color: AppColors.darkTextSecondary)),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
@@ -2162,7 +2644,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('Отмена', style: TextStyle(color: AppColors.darkTextSecondary)),
+              child: const Text('Отмена',
+                  style: TextStyle(color: AppColors.darkTextSecondary)),
             ),
             ElevatedButton.icon(
               onPressed: () async {
@@ -2206,7 +2689,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.error),
+          SnackBar(
+              content: Text('Ошибка: $e'), backgroundColor: AppColors.error),
         );
       }
     }
@@ -2224,7 +2708,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.error),
+          SnackBar(
+              content: Text('Ошибка: $e'), backgroundColor: AppColors.error),
         );
       }
     }
@@ -2242,7 +2727,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.error),
+          SnackBar(
+              content: Text('Ошибка: $e'), backgroundColor: AppColors.error),
         );
       }
     }
@@ -2258,7 +2744,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.error),
+          SnackBar(
+              content: Text('Ошибка: $e'), backgroundColor: AppColors.error),
         );
       }
     }
@@ -2314,7 +2801,9 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
   void _showAddEmployeeDialog() {
     if (_warehouses.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Сначала создайте хотя бы один склад'), backgroundColor: AppColors.warning),
+        const SnackBar(
+            content: Text('Сначала создайте хотя бы один склад'),
+            backgroundColor: AppColors.warning),
       );
       return;
     }
@@ -2329,12 +2818,12 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     final salaryAmountCtrl = TextEditingController(text: '0');
 
     Map<String, dynamic>? selectedWarehouse = _warehouses.first;
-    String? selectedCompanyId = selectedWarehouse?['organization_id'] as String?;
-    
-    List<Map<String, dynamic>> companyRoles = _roles
-        .where((r) => r['company_id'] == selectedCompanyId)
-        .toList();
-    Map<String, dynamic>? selectedRole = companyRoles.isNotEmpty ? companyRoles.first : null;
+    String? selectedCompanyId = selectedWarehouse['organization_id'] as String?;
+
+    List<Map<String, dynamic>> companyRoles =
+        _roles.where((r) => r['company_id'] == selectedCompanyId).toList();
+    Map<String, dynamic>? selectedRole =
+        companyRoles.isNotEmpty ? companyRoles.first : null;
 
     String? selectedSalaryType = 'monthly';
 
@@ -2353,8 +2842,12 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
 
           return AlertDialog(
             backgroundColor: AppColors.darkSurface,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: AppColors.darkBorder)),
-            title: const Text('Добавить сотрудника склада', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: const BorderSide(color: AppColors.darkBorder)),
+            title: const Text('Добавить сотрудника склада',
+                style: TextStyle(
+                    color: Colors.white, fontWeight: FontWeight.bold)),
             content: SizedBox(
               width: 500,
               child: Scrollbar(
@@ -2373,14 +2866,15 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                       TextField(
                         controller: phoneCtrl,
                         decoration: const InputDecoration(
-                          labelText: 'Номер телефона (например, +996700123456) *',
+                          labelText:
+                              'Номер телефона (например, +996700123456) *',
                           prefixIcon: Icon(Icons.phone_outlined),
                         ),
                         keyboardType: TextInputType.phone,
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<Map<String, dynamic>>(
-                        value: selectedWarehouse,
+                        initialValue: selectedWarehouse,
                         dropdownColor: AppColors.darkSurface,
                         decoration: const InputDecoration(
                           labelText: 'Склад привязки *',
@@ -2389,19 +2883,21 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                         items: _warehouses.map((wh) {
                           return DropdownMenuItem<Map<String, dynamic>>(
                             value: wh,
-                            child: Text(wh['name'] ?? '—', style: const TextStyle(color: Colors.white)),
+                            child: Text(wh['name'] ?? '—',
+                                style: const TextStyle(color: Colors.white)),
                           );
                         }).toList(),
                         onChanged: (val) {
                           setDialogState(() {
                             selectedWarehouse = val;
-                            selectedCompanyId = val?['organization_id'] as String?;
+                            selectedCompanyId =
+                                val?['organization_id'] as String?;
                           });
                         },
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<Map<String, dynamic>>(
-                        value: selectedRole,
+                        initialValue: selectedRole,
                         dropdownColor: AppColors.darkSurface,
                         decoration: const InputDecoration(
                           labelText: 'Роль *',
@@ -2410,7 +2906,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                         items: companyRoles.map((role) {
                           return DropdownMenuItem<Map<String, dynamic>>(
                             value: role,
-                            child: Text(role['name'] ?? '—', style: const TextStyle(color: Colors.white)),
+                            child: Text(role['name'] ?? '—',
+                                style: const TextStyle(color: Colors.white)),
                           );
                         }).toList(),
                         onChanged: (val) {
@@ -2425,7 +2922,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                           alignment: Alignment.centerLeft,
                           child: Text(
                             'Внимание: У этой компании нет созданных ролей. Сначала добавьте роли.',
-                            style: TextStyle(color: AppColors.warningLight, fontSize: 11),
+                            style: TextStyle(
+                                color: AppColors.warningLight, fontSize: 11),
                           ),
                         ),
                       ],
@@ -2433,7 +2931,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                       TextField(
                         controller: pinCtrl,
                         decoration: const InputDecoration(
-                          labelText: 'Логин-код (PIN) для входа (например, 1234) *',
+                          labelText:
+                              'Логин-код (PIN) для входа (например, 1234) *',
                           prefixIcon: Icon(Icons.pin_outlined),
                         ),
                         keyboardType: TextInputType.number,
@@ -2443,7 +2942,11 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                       const SizedBox(height: 8),
                       const Align(
                         alignment: Alignment.centerLeft,
-                        child: Text('Дополнительные сведения (необязательно)', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.bold, fontSize: 12)),
+                        child: Text('Дополнительные сведения (необязательно)',
+                            style: TextStyle(
+                                color: AppColors.darkTextSecondary,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12)),
                       ),
                       const SizedBox(height: 12),
                       TextField(
@@ -2481,21 +2984,40 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
-                        value: selectedSalaryType,
+                        initialValue: selectedSalaryType,
                         dropdownColor: AppColors.darkSurface,
                         decoration: const InputDecoration(
                           labelText: 'Тип начисления зарплаты',
                           prefixIcon: Icon(Icons.payments_rounded),
                         ),
                         items: const [
-                          DropdownMenuItem(value: 'monthly', child: Text('Месячный оклад', style: TextStyle(color: Colors.white))),
-                          DropdownMenuItem(value: 'hourly', child: Text('Почасовая ставка', style: TextStyle(color: Colors.white))),
-                          DropdownMenuItem(value: 'daily', child: Text('Дневная ставка', style: TextStyle(color: Colors.white))),
-                          DropdownMenuItem(value: 'weekly', child: Text('Недельная ставка', style: TextStyle(color: Colors.white))),
-                          DropdownMenuItem(value: 'percent_sales', child: Text('% от продаж', style: TextStyle(color: Colors.white))),
-                          DropdownMenuItem(value: 'percent_services', child: Text('% от услуг', style: TextStyle(color: Colors.white))),
+                          DropdownMenuItem(
+                              value: 'monthly',
+                              child: Text('Месячный оклад',
+                                  style: TextStyle(color: Colors.white))),
+                          DropdownMenuItem(
+                              value: 'hourly',
+                              child: Text('Почасовая ставка',
+                                  style: TextStyle(color: Colors.white))),
+                          DropdownMenuItem(
+                              value: 'daily',
+                              child: Text('Дневная ставка',
+                                  style: TextStyle(color: Colors.white))),
+                          DropdownMenuItem(
+                              value: 'weekly',
+                              child: Text('Недельная ставка',
+                                  style: TextStyle(color: Colors.white))),
+                          DropdownMenuItem(
+                              value: 'percent_sales',
+                              child: Text('% от продаж',
+                                  style: TextStyle(color: Colors.white))),
+                          DropdownMenuItem(
+                              value: 'percent_services',
+                              child: Text('% от услуг',
+                                  style: TextStyle(color: Colors.white))),
                         ],
-                        onChanged: (val) => setDialogState(() => selectedSalaryType = val),
+                        onChanged: (val) =>
+                            setDialogState(() => selectedSalaryType = val),
                       ),
                       const SizedBox(height: 12),
                       TextField(
@@ -2504,7 +3026,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                           labelText: 'Сумма оклада / процентная ставка',
                           prefixIcon: Icon(Icons.monetization_on_rounded),
                         ),
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
                       ),
                     ],
                   ),
@@ -2514,7 +3037,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
-                child: const Text('Отмена', style: TextStyle(color: AppColors.darkTextSecondary)),
+                child: const Text('Отмена',
+                    style: TextStyle(color: AppColors.darkTextSecondary)),
               ),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
@@ -2528,21 +3052,28 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
 
                   if (name.isEmpty || phone.isEmpty || pin.isEmpty) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Заполните обязательные поля (*)'), backgroundColor: AppColors.warning),
+                      const SnackBar(
+                          content: Text('Заполните обязательные поля (*)'),
+                          backgroundColor: AppColors.warning),
                     );
                     return;
                   }
 
                   if (selectedWarehouse == null || selectedCompanyId == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Выберите склад'), backgroundColor: AppColors.warning),
+                      const SnackBar(
+                          content: Text('Выберите склад'),
+                          backgroundColor: AppColors.warning),
                     );
                     return;
                   }
 
                   if (selectedRole == null) {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Выберите роль (компания должна иметь роли)'), backgroundColor: AppColors.warning),
+                      const SnackBar(
+                          content: Text(
+                              'Выберите роль (компания должна иметь роли)'),
+                          backgroundColor: AppColors.warning),
                     );
                     return;
                   }
@@ -2555,12 +3086,22 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
                     roleId: selectedRole!['id'] as String,
                     warehouseId: selectedWarehouse!['id'] as String,
                     companyId: selectedCompanyId!,
-                    inn: innCtrl.text.trim().isEmpty ? null : innCtrl.text.trim(),
-                    passportNumber: passportNumCtrl.text.trim().isEmpty ? null : passportNumCtrl.text.trim(),
-                    passportIssuedBy: passportIssuedByCtrl.text.trim().isEmpty ? null : passportIssuedByCtrl.text.trim(),
-                    passportIssuedDate: passportIssuedDateCtrl.text.trim().isEmpty ? null : passportIssuedDateCtrl.text.trim(),
+                    inn: innCtrl.text.trim().isEmpty
+                        ? null
+                        : innCtrl.text.trim(),
+                    passportNumber: passportNumCtrl.text.trim().isEmpty
+                        ? null
+                        : passportNumCtrl.text.trim(),
+                    passportIssuedBy: passportIssuedByCtrl.text.trim().isEmpty
+                        ? null
+                        : passportIssuedByCtrl.text.trim(),
+                    passportIssuedDate:
+                        passportIssuedDateCtrl.text.trim().isEmpty
+                            ? null
+                            : passportIssuedDateCtrl.text.trim(),
                     salaryType: selectedSalaryType ?? 'monthly',
-                    salaryAmount: double.tryParse(salaryAmountCtrl.text.trim()) ?? 0.0,
+                    salaryAmount:
+                        double.tryParse(salaryAmountCtrl.text.trim()) ?? 0.0,
                   );
                 },
                 icon: const Icon(Icons.check, size: 18),
@@ -2600,7 +3141,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
               children: [
                 CircularProgressIndicator(color: AppColors.success),
                 SizedBox(width: 20),
-                Text('Создание сотрудника...', style: TextStyle(color: Colors.white)),
+                Text('Создание сотрудника...',
+                    style: TextStyle(color: Colors.white)),
               ],
             ),
           ),
@@ -2629,7 +3171,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
         'updated_at': now,
       });
 
-      if (mounted) Navigator.of(context).pop(); // Dismiss loading overlay safely
+      if (mounted)
+        Navigator.of(context).pop(); // Dismiss loading overlay safely
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2641,7 +3184,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
       }
       _loadData();
     } catch (e) {
-      if (mounted) Navigator.of(context).pop(); // Dismiss loading overlay safely
+      if (mounted)
+        Navigator.of(context).pop(); // Dismiss loading overlay safely
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2659,20 +3203,30 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
 
   void _showChangePasswordDialog(String userId, String userIdentifier) {
     final passwordCtrl = TextEditingController();
-    
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         backgroundColor: AppColors.darkSurface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: AppColors.darkBorder)),
-        title: const Text('Сменить пароль', style: TextStyle(color: AppColors.darkTextPrimary, fontWeight: FontWeight.bold)),
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: AppColors.darkBorder)),
+        title: const Text('Сменить пароль',
+            style: TextStyle(
+                color: AppColors.darkTextPrimary, fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Изменение пароля для пользователя:', style: TextStyle(color: AppColors.darkTextSecondary, fontSize: 13)),
+            const Text('Изменение пароля для пользователя:',
+                style: TextStyle(
+                    color: AppColors.darkTextSecondary, fontSize: 13)),
             const SizedBox(height: 4),
-            Text(userIdentifier, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14)),
+            Text(userIdentifier,
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14)),
             const SizedBox(height: 16),
             TextField(
               controller: passwordCtrl,
@@ -2687,7 +3241,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Отмена', style: TextStyle(color: AppColors.darkTextSecondary)),
+            child: const Text('Отмена',
+                style: TextStyle(color: AppColors.darkTextSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -2698,7 +3253,9 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
               final newPassword = passwordCtrl.text.trim();
               if (newPassword.length < 6) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Пароль должен быть не менее 6 символов'), backgroundColor: AppColors.warning),
+                  const SnackBar(
+                      content: Text('Пароль должен быть не менее 6 символов'),
+                      backgroundColor: AppColors.warning),
                 );
                 return;
               }
@@ -2712,7 +3269,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
     );
   }
 
-  Future<void> _changeUserPassword(String userId, String newPassword, String userIdentifier) async {
+  Future<void> _changeUserPassword(
+      String userId, String newPassword, String userIdentifier) async {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -2726,7 +3284,8 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
               children: [
                 CircularProgressIndicator(color: AppColors.primary),
                 SizedBox(width: 20),
-                Text('Обновление пароля...', style: TextStyle(color: Colors.white)),
+                Text('Обновление пароля...',
+                    style: TextStyle(color: Colors.white)),
               ],
             ),
           ),
@@ -2742,18 +3301,21 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
         ),
       );
 
-      if (mounted) Navigator.of(context).pop(); // Dismiss loading overlay safely
+      if (mounted)
+        Navigator.of(context).pop(); // Dismiss loading overlay safely
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Пароль для пользователя $userIdentifier успешно изменен'),
+            content:
+                Text('Пароль для пользователя $userIdentifier успешно изменен'),
             backgroundColor: AppColors.success,
           ),
         );
       }
     } catch (e) {
-      if (mounted) Navigator.of(context).pop(); // Dismiss loading overlay safely
+      if (mounted)
+        Navigator.of(context).pop(); // Dismiss loading overlay safely
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -2843,12 +3405,16 @@ class _UsersScreenState extends State<UsersScreen> with SingleTickerProviderStat
         ids.add(singleId.toString());
       }
     }
-    
-    final names = ids.map((id) {
-      final wh = _warehouses.firstWhere((w) => w['id'] == id, orElse: () => <String, dynamic>{});
-      return wh['name'] ?? '—';
-    }).where((name) => name != '—').toList();
-    
+
+    final names = ids
+        .map((id) {
+          final wh = _warehouses.firstWhere((w) => w['id'] == id,
+              orElse: () => <String, dynamic>{});
+          return wh['name'] ?? '—';
+        })
+        .where((name) => name != '—')
+        .toList();
+
     return names.isEmpty ? '—' : names.join(', ');
   }
 }

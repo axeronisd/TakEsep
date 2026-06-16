@@ -9,7 +9,8 @@ class EcosystemZonesScreen extends ConsumerStatefulWidget {
   const EcosystemZonesScreen({super.key});
 
   @override
-  ConsumerState<EcosystemZonesScreen> createState() => _EcosystemZonesScreenState();
+  ConsumerState<EcosystemZonesScreen> createState() =>
+      _EcosystemZonesScreenState();
 }
 
 class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
@@ -27,7 +28,6 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
   final _nameCtrl = TextEditingController(text: 'Новая зона');
   bool _showMapOnMobile = true;
 
-
   @override
   void initState() {
     super.initState();
@@ -37,13 +37,15 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
   Future<void> _loadZones() async {
     setState(() => _loading = true);
     try {
-      final data = await _supabase.from('ecosystem_zones').select().order('created_at');
+      final data =
+          await _supabase.from('ecosystem_zones').select().order('created_at');
       setState(() {
         _zones = List<Map<String, dynamic>>.from(data);
         _loading = false;
         if (_zones.isNotEmpty) {
           final first = _zones.first;
-          _center = LatLng(first['center_lat'] as double, first['center_lng'] as double);
+          _center = LatLng(
+              first['center_lat'] as double, first['center_lng'] as double);
         }
       });
       if (_zones.isNotEmpty) {
@@ -97,7 +99,9 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
   Future<void> _toggleZone(String id, bool active) async {
     setState(() => _loading = true);
     try {
-      await _supabase.from('ecosystem_zones').update({'is_active': active}).eq('id', id);
+      await _supabase
+          .from('ecosystem_zones')
+          .update({'is_active': active}).eq('id', id);
       _loadZones();
     } catch (e) {
       debugPrint('Toggle zone error: $e');
@@ -130,32 +134,40 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
           Container(
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppColors.darkBorder.withValues(alpha: 0.5))),
+              border: Border(
+                  bottom: BorderSide(
+                      color: AppColors.darkBorder.withValues(alpha: 0.5))),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Text(
                   'Зоны Экосистемы',
-                  style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'Ограничивают область доставки для складов',
-                  style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
+                  style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.5), fontSize: 12),
                 ),
                 const SizedBox(height: 16),
                 FilledButton.icon(
-                  onPressed: _isAdding ? null : () {
-                    if (isMobile) {
-                      setState(() {
-                        _showMapOnMobile = true;
-                        _startAddingMode();
-                      });
-                    } else {
-                      _startAddingMode();
-                    }
-                  },
+                  onPressed: _isAdding
+                      ? null
+                      : () {
+                          if (isMobile) {
+                            setState(() {
+                              _showMapOnMobile = true;
+                              _startAddingMode();
+                            });
+                          } else {
+                            _startAddingMode();
+                          }
+                        },
                   icon: const Icon(Icons.add_rounded),
                   label: const Text('Добавить зону'),
                   style: FilledButton.styleFrom(
@@ -168,7 +180,8 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
           ),
           Expanded(
             child: _loading && _zones.isEmpty
-                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                ? const Center(
+                    child: CircularProgressIndicator(color: AppColors.primary))
                 : ListView.builder(
                     itemCount: _zones.length,
                     itemBuilder: (context, index) {
@@ -179,18 +192,24 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
                       final isActive = zone['is_active'] as bool? ?? true;
 
                       return ListTile(
-                        title: Text(name, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
-                        subtitle: Text('Радиус: ${radius} км', style: TextStyle(color: Colors.white.withValues(alpha: 0.5))),
+                        title: Text(name,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600)),
+                        subtitle: Text('Радиус: ${radius} км',
+                            style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.5))),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             Switch(
                               value: isActive,
                               onChanged: (v) => _toggleZone(id, v),
-                              activeColor: AppColors.primary,
+                              activeThumbColor: AppColors.primary,
                             ),
                             IconButton(
-                              icon: const Icon(Icons.delete_rounded, color: AppColors.errorLight),
+                              icon: const Icon(Icons.delete_rounded,
+                                  color: AppColors.errorLight),
                               onPressed: () => _deleteZone(id),
                             ),
                           ],
@@ -203,7 +222,8 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
                           }
                           WidgetsBinding.instance.addPostFrameCallback((_) {
                             _mapCtrl.move(
-                              LatLng(zone['center_lat'] as double, zone['center_lng'] as double),
+                              LatLng(zone['center_lat'] as double,
+                                  zone['center_lng'] as double),
                               12.0,
                             );
                           });
@@ -240,7 +260,8 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
           ),
           children: [
             TileLayer(
-              urlTemplate: 'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
+              urlTemplate:
+                  'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
               subdomains: const ['a', 'b', 'c', 'd'],
             ),
             CircleLayer(
@@ -249,8 +270,11 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
                 ..._zones.map((z) {
                   final isActive = z['is_active'] as bool? ?? true;
                   return CircleMarker(
-                    point: LatLng(z['center_lat'] as double, z['center_lng'] as double),
-                    color: isActive ? AppColors.info.withValues(alpha: 0.2) : Colors.grey.withValues(alpha: 0.2),
+                    point: LatLng(
+                        z['center_lat'] as double, z['center_lng'] as double),
+                    color: isActive
+                        ? AppColors.info.withValues(alpha: 0.2)
+                        : Colors.grey.withValues(alpha: 0.2),
                     borderColor: isActive ? AppColors.info : Colors.grey,
                     borderStrokeWidth: 2,
                     useRadiusInMeter: true,
@@ -284,7 +308,8 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
               decoration: BoxDecoration(
                 color: AppColors.darkSurface,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.success.withValues(alpha: 0.5)),
+                border:
+                    Border.all(color: AppColors.success.withValues(alpha: 0.5)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.3),
@@ -295,7 +320,9 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('Режим добавления зоны', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  const Text('Режим добавления зоны',
+                      style: TextStyle(
+                          color: Colors.white, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 12),
                   TextField(
                     controller: _nameCtrl,
@@ -308,7 +335,8 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      const Text('Радиус (км): ', style: TextStyle(color: Colors.white54)),
+                      const Text('Радиус (км): ',
+                          style: TextStyle(color: Colors.white54)),
                       Expanded(
                         child: Slider(
                           value: _newZoneRadiusKm,
@@ -323,7 +351,8 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
                           },
                         ),
                       ),
-                      Text('${_newZoneRadiusKm.toStringAsFixed(1)}', style: const TextStyle(color: Colors.white)),
+                      Text('${_newZoneRadiusKm.toStringAsFixed(1)}',
+                          style: const TextStyle(color: Colors.white)),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -337,13 +366,16 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
                             _newZoneCenter = null;
                           });
                         },
-                        child: const Text('Отмена', style: TextStyle(color: Colors.white54)),
+                        child: const Text('Отмена',
+                            style: TextStyle(color: Colors.white54)),
                       ),
                       const SizedBox(width: 8),
                       FilledButton(
-                        style: FilledButton.styleFrom(backgroundColor: AppColors.success),
+                        style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.success),
                         onPressed: _loading ? null : _saveNewZone,
-                        child: const Text('Сохранить', style: TextStyle(color: Colors.white)),
+                        child: const Text('Сохранить',
+                            style: TextStyle(color: Colors.white)),
                       ),
                     ],
                   ),
@@ -351,11 +383,12 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
               ),
             ),
           ),
-          
+
         // Center marker
         if (_isAdding)
           const Center(
-            child: Icon(Icons.location_on_rounded, color: AppColors.success, size: 40),
+            child: Icon(Icons.location_on_rounded,
+                color: AppColors.success, size: 40),
           ),
       ],
     );
@@ -364,8 +397,10 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
       backgroundColor: AppColors.darkBackground,
       floatingActionButton: isMobile
           ? FloatingActionButton.extended(
-              onPressed: () => setState(() => _showMapOnMobile = !_showMapOnMobile),
-              icon: Icon(_showMapOnMobile ? Icons.list_rounded : Icons.map_rounded),
+              onPressed: () =>
+                  setState(() => _showMapOnMobile = !_showMapOnMobile),
+              icon: Icon(
+                  _showMapOnMobile ? Icons.list_rounded : Icons.map_rounded),
               label: Text(_showMapOnMobile ? 'Список' : 'Карта'),
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,

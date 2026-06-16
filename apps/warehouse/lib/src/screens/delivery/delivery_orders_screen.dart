@@ -182,24 +182,30 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
   // ═══════════════════════════════════════════════════════════
 
   Future<void> _setOrderStatus(String orderId, String newStatus) async {
+    // Show loading overlay
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      useRootNavigator: true,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+
+    await Future.delayed(Duration.zero); // Ensure dialog pushes before async gap
+
     try {
-      // Show loading overlay
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (_) => const Center(child: CircularProgressIndicator()),
-      );
       await _supabase
           .from('delivery_orders')
           .update({'status': newStatus})
           .eq('id', orderId);
+
       if (mounted) {
-        Navigator.pop(context); // close overlay
+        Navigator.of(context, rootNavigator: true).pop(); // close overlay
         _loadOrders();
       }
-    } catch (e) {
+    } catch (e, st) {
+      debugPrint('Error updating order: $e\n$st');
       if (mounted) {
-        Navigator.pop(context); // close overlay
+        Navigator.of(context, rootNavigator: true).pop(); // close overlay
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Ошибка: $e'), backgroundColor: AppColors.error),
         );
