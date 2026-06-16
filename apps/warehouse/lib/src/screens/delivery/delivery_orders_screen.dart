@@ -88,6 +88,8 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
           .from('delivery_orders')
           .select('*, customers(name, phone), delivery_order_items(*, delivery_order_item_modifiers(*))')
           .eq('warehouse_id', warehouseId)
+          .neq('status', 'pending')
+          .neq('status', 'courier_assigned')
           .order('created_at', ascending: false)
           .limit(200);
 

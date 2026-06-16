@@ -316,9 +316,7 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
             final newStatus = payload.newRecord['status'];
             if (newStatus == 'courier_assigned') {
               final orderId = payload.newRecord['id'];
-              if (orderId != null && !recentlyAcceptedOrders.contains(orderId)) {
-                _alertService.playNewOrderAlert();
-              }
+              // Removed _alertService.playNewOrderAlert() to prevent redundant local alerts
               if (mounted && orderId != null) {
                 // Show snackbar + navigate
                 ScaffoldMessenger.of(context).showSnackBar(

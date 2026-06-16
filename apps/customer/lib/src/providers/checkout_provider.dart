@@ -380,12 +380,7 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
           debugPrint('⚠️ Items insert error: $e');
         }
 
-        // Find nearest courier and assign (status stays 'pending')
-        await _findAndAssignCourier(
-          orderId: orderId,
-          transport: state.selectedTransport,
-          warehouseId: cart.warehouseId!,
-        );
+        // Auto-assignment removed to allow manual assignment by couriers
       }
 
       ref.read(cartProvider.notifier).clear();
