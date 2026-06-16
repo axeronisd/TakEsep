@@ -55,5 +55,10 @@ docs/*.apk
 
 # Compiled web app
 docs/app/
-upload-keystore.jks
-upload-keystore.b64
+# Keys, keystores, certificates & provisioning profiles
+*.jks
+*.keystore
+*.p12
+*.p12.b64
+*.mobileprovision
+*.b64
