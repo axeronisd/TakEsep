@@ -601,7 +601,7 @@ class _CourierProfileScreenState extends ConsumerState<CourierProfileScreen> {
               trailing: Switch(
                 value: true,
                 onChanged: (_) {},
-                activeColor: AkJolTheme.primary,
+                activeThumbColor: AkJolTheme.primary,
               ),
             ),
             Divider(

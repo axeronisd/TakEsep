@@ -172,7 +172,7 @@ final nearbyStoresProvider =
       // ФОЛЛБЕК: Загрузить все активные магазины и фильтровать по зонам
       final settingsData = await _supabase
           .from('delivery_settings')
-          .select('*, warehouses(name)')
+          .select('*, warehouses(name, latitude, longitude)')
           .eq('is_active', true);
 
       // Also load delivery_zones for per-zone filtering
@@ -191,8 +191,8 @@ final nearbyStoresProvider =
           
       for (final s in settingsData) {
         final wId = s['warehouse_id'] as String;
-        final storeLat = (s['latitude'] as num?)?.toDouble();
-        final storeLng = (s['longitude'] as num?)?.toDouble();
+        final storeLat = (s['warehouses']?['latitude'] as num?)?.toDouble() ?? (s['latitude'] as num?)?.toDouble();
+        final storeLng = (s['warehouses']?['longitude'] as num?)?.toDouble() ?? (s['longitude'] as num?)?.toDouble();
         final mainRadius = (s['delivery_radius_km'] as num?)?.toDouble() ?? 5.0;
         
         // Check delivery_zones first (if the store has configured them)
@@ -283,7 +283,7 @@ final nearbyStoresProvider =
     // 3. Данные о доставке
     final settingsData = await _supabase
         .from('delivery_settings')
-        .select('*, warehouses(name)')
+        .select('*, warehouses(name, latitude, longitude)')
         .inFilter('warehouse_id', warehouseIds)
         .eq('is_active', true);
 

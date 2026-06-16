@@ -260,7 +260,7 @@ class ConflictResolutionService {
           companyId: remoteProduct.companyId,
           warehouseId: remoteProduct.warehouseId,
           categoryId: remoteProduct.categoryId,
-          name: (localProduct.name?.isNotEmpty ?? false)
+          name: (localProduct.name.isNotEmpty ?? false)
               ? localProduct.name
               : remoteProduct.name,
           sku: (localProduct.sku?.isNotEmpty ?? false)
@@ -322,7 +322,7 @@ class ConflictResolutionService {
           .maybeSingle();
 
       if (data == null) return null;
-      return Product.fromJson(data as Map<String, dynamic>);
+      return Product.fromJson(data);
     } catch (e) {
       print('❌ Error fetching server product: $e');
       return null;

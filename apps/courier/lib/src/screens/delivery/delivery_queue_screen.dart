@@ -207,8 +207,12 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
       }
 
       // Route optimization
-      final currentLat = 42.8746;
-      final currentLng = 74.5698;
+      var pos = _locationService.lastPosition;
+      if (pos == null) {
+        pos = await _locationService.getCurrentHighAccuracyPosition();
+      }
+      final currentLat = pos?.latitude ?? 42.8746;
+      final currentLng = pos?.longitude ?? 74.5698;
       
       final tasks = RouteOptimizer.buildOptimalRoute(currentLat, currentLng, orders);
 
@@ -219,7 +223,10 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
           _loading = false;
         });
 
-        _loadRoadRoute(currentLat, currentLng, tasks);
+        final profile = ref.read(courierProfileProvider);
+        final transportType = profile?.transportType ?? 'bicycle';
+
+        _loadRoadRoute(currentLat, currentLng, tasks, transportType);
 
         if (!_locationService.isTracking) {
           _locationService.startTracking(
@@ -233,14 +240,15 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
     }
   }
 
-  Future<void> _loadRoadRoute(double startLat, double startLng, List<RouteTask> tasks) async {
+  Future<void> _loadRoadRoute(double startLat, double startLng, List<RouteTask> tasks, String transportType) async {
     if (tasks.isEmpty) return;
     try {
+      final String profile = transportType == 'bicycle' ? 'cycling' : 'driving';
       List<LatLng> fullRoute = [];
       final r1 = await RouteService.getRoute(
         LatLng(startLat, startLng), 
         LatLng(tasks.first.lat, tasks.first.lng),
-        profile: 'cycling',
+        profile: profile,
       );
       fullRoute.addAll(r1);
       
@@ -248,7 +256,7 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
         final rN = await RouteService.getRoute(
           LatLng(tasks[i].lat, tasks[i].lng), 
           LatLng(tasks[i+1].lat, tasks[i+1].lng),
-          profile: 'cycling',
+          profile: profile,
         );
         fullRoute.addAll(rN);
       }
@@ -285,12 +293,7 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
     if (confirm == true) {
       try {
         setState(() => _updating = true);
-        await Supabase.instance.client
-            .from('delivery_orders')
-            .update({
-              'status': 'cancelled_by_courier',
-              'courier_id': null,
-            }).eq('id', orderId);
+        await _orderService.declineOrder(orderId);
         
         await _loadData();
       } catch (e) {
@@ -505,7 +508,30 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
             ],
           ),
           MarkerLayer(
-            markers: _routeTasks.asMap().entries.map((entry) {
+            markers: [
+              // Courier marker
+              if (_locationService.lastPosition != null || true) 
+                Marker(
+                  point: LatLng(
+                    _locationService.lastPosition?.latitude ?? 42.8746,
+                    _locationService.lastPosition?.longitude ?? 74.5698,
+                  ),
+                  width: 40,
+                  height: 40,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.black87,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AkJolTheme.primary, width: 2),
+                      boxShadow: [
+                        BoxShadow(color: AkJolTheme.primary.withValues(alpha: 0.5), blurRadius: 8),
+                      ]
+                    ),
+                    child: const Icon(Icons.delivery_dining, color: AkJolTheme.primary, size: 24),
+                  ),
+                ),
+              // Task markers
+              ..._routeTasks.asMap().entries.map((entry) {
               final idx = entry.key;
               final task = entry.value;
               return Marker(
@@ -530,7 +556,7 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
                   ),
                 ),
               );
-            }).toList(),
+            })],
           ),
         ],
       );

@@ -1,7 +1,6 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Splash-экран AkJol — иммерсивная анимация «погружения»
 class SplashScreen extends StatefulWidget {
@@ -47,13 +46,15 @@ class _SplashScreenState extends State<SplashScreen>
 
     // Generate particles
     for (int i = 0; i < 20; i++) {
-      _particles.add(_Particle(
-        x: _random.nextDouble(),
-        y: _random.nextDouble(),
-        size: _random.nextDouble() * 4 + 1,
-        speed: _random.nextDouble() * 0.5 + 0.2,
-        opacity: _random.nextDouble() * 0.4 + 0.1,
-      ));
+      _particles.add(
+        _Particle(
+          x: _random.nextDouble(),
+          y: _random.nextDouble(),
+          size: _random.nextDouble() * 4 + 1,
+          speed: _random.nextDouble() * 0.5 + 0.2,
+          opacity: _random.nextDouble() * 0.4 + 0.1,
+        ),
+      );
     }
 
     // Phase 1: Logo enter
@@ -65,10 +66,16 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _enterController, curve: Curves.easeOutBack),
     );
     _logoOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _enterController, curve: const Interval(0, 0.4, curve: Curves.easeOut)),
+      CurvedAnimation(
+        parent: _enterController,
+        curve: const Interval(0, 0.4, curve: Curves.easeOut),
+      ),
     );
     _glowIntensity = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _enterController, curve: const Interval(0.3, 1.0, curve: Curves.easeInOut)),
+      CurvedAnimation(
+        parent: _enterController,
+        curve: const Interval(0.3, 1.0, curve: Curves.easeInOut),
+      ),
     );
 
     // Phase 2: Text
@@ -83,13 +90,22 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _textController, curve: Curves.easeOutCubic),
     );
     _textOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _textController, curve: const Interval(0, 0.5, curve: Curves.easeOut)),
+      CurvedAnimation(
+        parent: _textController,
+        curve: const Interval(0, 0.5, curve: Curves.easeOut),
+      ),
     );
     _subtitleOpacity = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _textController, curve: const Interval(0.5, 1.0, curve: Curves.easeOut)),
+      CurvedAnimation(
+        parent: _textController,
+        curve: const Interval(0.5, 1.0, curve: Curves.easeOut),
+      ),
     );
     _lineWidth = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _textController, curve: const Interval(0.4, 0.9, curve: Curves.easeOutCubic)),
+      CurvedAnimation(
+        parent: _textController,
+        curve: const Interval(0.4, 0.9, curve: Curves.easeOutCubic),
+      ),
     );
 
     // Phase 3: Dive-in (smooth zoom + fade)
@@ -101,10 +117,16 @@ class _SplashScreenState extends State<SplashScreen>
       CurvedAnimation(parent: _diveController, curve: Curves.easeInQuart),
     );
     _diveOpacity = Tween<double>(begin: 1.0, end: 0.0).animate(
-      CurvedAnimation(parent: _diveController, curve: const Interval(0.2, 0.9, curve: Curves.easeIn)),
+      CurvedAnimation(
+        parent: _diveController,
+        curve: const Interval(0.2, 0.9, curve: Curves.easeIn),
+      ),
     );
     _bgBrightness = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _diveController, curve: const Interval(0.0, 0.6, curve: Curves.easeIn)),
+      CurvedAnimation(
+        parent: _diveController,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeIn),
+      ),
     );
 
     _runSequence();
@@ -144,9 +166,15 @@ class _SplashScreenState extends State<SplashScreen>
     final screenSize = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: isDark ? const Color(0xFF0D1117) : const Color(0xFFFAFAFA),
+      backgroundColor: isDark
+          ? const Color(0xFF0D1117)
+          : const Color(0xFFFAFAFA),
       body: AnimatedBuilder(
-        animation: Listenable.merge([_enterController, _textController, _diveController]),
+        animation: Listenable.merge([
+          _enterController,
+          _textController,
+          _diveController,
+        ]),
         builder: (context, _) {
           return Stack(
             children: [
@@ -158,11 +186,17 @@ class _SplashScreenState extends State<SplashScreen>
                     radius: 1.2,
                     colors: [
                       Color.lerp(
-                        isDark ? const Color(0xFF0D1117) : const Color(0xFFFAFAFA),
-                        isDark ? const Color(0xFF0A1A0F) : const Color(0xFFEBFAF0),
+                        isDark
+                            ? const Color(0xFF0D1117)
+                            : const Color(0xFFFAFAFA),
+                        isDark
+                            ? const Color(0xFF0A1A0F)
+                            : const Color(0xFFEBFAF0),
                         _bgBrightness.value,
                       )!,
-                      isDark ? const Color(0xFF0D1117) : const Color(0xFFFAFAFA),
+                      isDark
+                          ? const Color(0xFF0D1117)
+                          : const Color(0xFFFAFAFA),
                     ],
                   ),
                 ),
@@ -170,12 +204,17 @@ class _SplashScreenState extends State<SplashScreen>
 
               // ── Floating particles ──
               ..._particles.map((p) {
-                final yOffset = (_enterController.value * p.speed * 200) % screenSize.height;
+                final yOffset =
+                    (_enterController.value * p.speed * 200) %
+                    screenSize.height;
                 return Positioned(
                   left: p.x * screenSize.width,
                   top: (p.y * screenSize.height + yOffset) % screenSize.height,
                   child: Opacity(
-                    opacity: p.opacity * _glowIntensity.value * (1 - _diveController.value),
+                    opacity:
+                        p.opacity *
+                        _glowIntensity.value *
+                        (1 - _diveController.value),
                     child: Container(
                       width: p.size,
                       height: p.size,
@@ -227,11 +266,18 @@ class _SplashScreenState extends State<SplashScreen>
                                       gradient: const LinearGradient(
                                         begin: Alignment.topLeft,
                                         end: Alignment.bottomRight,
-                                        colors: [Color(0xFF2ECC71), Color(0xFF1ABC9C)],
+                                        colors: [
+                                          Color(0xFF2ECC71),
+                                          Color(0xFF1ABC9C),
+                                        ],
                                       ),
                                       borderRadius: BorderRadius.circular(26),
                                     ),
-                                    child: const Icon(Icons.local_shipping_rounded, color: Colors.white, size: 44),
+                                    child: const Icon(
+                                      Icons.local_shipping_rounded,
+                                      color: Colors.white,
+                                      size: 44,
+                                    ),
                                   ),
                                 ),
                               ),
@@ -255,16 +301,23 @@ class _SplashScreenState extends State<SplashScreen>
                                     fontSize: 52,
                                     fontWeight: FontWeight.w200,
                                     letterSpacing: 4,
-                                    color: isDark ? Colors.white : const Color(0xFF111827),
+                                    color: isDark
+                                        ? Colors.white
+                                        : const Color(0xFF111827),
                                   ),
                                 ),
                               ),
                               Transform.translate(
                                 offset: Offset(_jolSlide.value, 0),
                                 child: ShaderMask(
-                                  shaderCallback: (bounds) => const LinearGradient(
-                                    colors: [Color(0xFF2ECC71), Color(0xFF1ABC9C), Color(0xFF16A085)],
-                                  ).createShader(bounds),
+                                  shaderCallback: (bounds) =>
+                                      const LinearGradient(
+                                        colors: [
+                                          Color(0xFF2ECC71),
+                                          Color(0xFF1ABC9C),
+                                          Color(0xFF16A085),
+                                        ],
+                                      ).createShader(bounds),
                                   child: const Text(
                                     'JOL',
                                     style: TextStyle(
@@ -292,7 +345,9 @@ class _SplashScreenState extends State<SplashScreen>
                               gradient: LinearGradient(
                                 colors: [
                                   const Color(0xFF2ECC71).withValues(alpha: 0),
-                                  const Color(0xFF2ECC71).withValues(alpha: 0.6 * _lineWidth.value),
+                                  const Color(
+                                    0xFF2ECC71,
+                                  ).withValues(alpha: 0.6 * _lineWidth.value),
                                   const Color(0xFF2ECC71).withValues(alpha: 0),
                                 ],
                               ),

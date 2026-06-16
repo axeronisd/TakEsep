@@ -78,7 +78,7 @@ final storeDetailProvider =
     // Get warehouse info (no company_id in warehouses table!)
     final wh = await _supabase
         .from('warehouses')
-        .select('id, name, group_id')
+        .select('id, name, group_id, latitude, longitude')
         .eq('id', storeId)
         .maybeSingle();
 
@@ -145,8 +145,8 @@ final storeDetailProvider =
       workStart: data['work_start'] as String?,
       workEnd: data['work_end'] as String?,
       is24h: data['is_24h'] == true,
-      latitude: (data['latitude'] as num?)?.toDouble(),
-      longitude: (data['longitude'] as num?)?.toDouble(),
+      latitude: (wh['latitude'] as num?)?.toDouble() ?? (data['latitude'] as num?)?.toDouble(),
+      longitude: (wh['longitude'] as num?)?.toDouble() ?? (data['longitude'] as num?)?.toDouble(),
       deliveryRadiusKm: (data['delivery_radius_km'] as num?)?.toDouble() ?? 3.0,
     );
   } catch (e) {

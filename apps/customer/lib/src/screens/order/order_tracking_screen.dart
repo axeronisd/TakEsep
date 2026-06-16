@@ -296,21 +296,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         return;
       }
 
-      // Load store coordinates from delivery_settings as fallback
-      final warehouseId = data['warehouse_id'];
-      if (warehouseId != null) {
-        try {
-          final ds = await _supabase
-              .from('delivery_settings')
-              .select('latitude, longitude')
-              .eq('warehouse_id', warehouseId)
-              .maybeSingle();
-          if (ds != null) {
-            data['_store_lat'] = ds['latitude'];
-            data['_store_lng'] = ds['longitude'];
-          }
-        } catch (_) {}
-      }
+      // Store coordinates come from warehouses table (actual store location)
+      // delivery_settings.latitude/longitude is the zone center, NOT the store location
 
       if (!mounted) return;
 
@@ -368,11 +355,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   DateTime? _lastRouteUpdate;
 
   Future<void> _loadRoutes(Map<String, dynamic> data) async {
-    final storeLat = (data['_store_lat'] as num?)?.toDouble()
-        ?? (data['warehouses']?['latitude'] as num?)?.toDouble()
+    final storeLat = (data['warehouses']?['latitude'] as num?)?.toDouble()
         ?? (data['pickup_lat'] as num?)?.toDouble();
-    final storeLng = (data['_store_lng'] as num?)?.toDouble()
-        ?? (data['warehouses']?['longitude'] as num?)?.toDouble()
+    final storeLng = (data['warehouses']?['longitude'] as num?)?.toDouble()
         ?? (data['pickup_lng'] as num?)?.toDouble();
     final custLat = (data['delivery_lat'] as num?)?.toDouble();
     final custLng = (data['delivery_lng'] as num?)?.toDouble();
@@ -680,12 +665,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
     // Gather coordinates
     final courierPos = LatLng(_courierLat!, _courierLng!);
-    // Store location: try delivery_settings → warehouses → pickup_lat
-    final pickupLat = (_order?['_store_lat'] as num?)?.toDouble()
-        ?? (_order?['warehouses']?['latitude'] as num?)?.toDouble()
+    // Store location: use warehouses table (actual store location)
+    final pickupLat = (_order?['warehouses']?['latitude'] as num?)?.toDouble()
         ?? (_order?['pickup_lat'] as num?)?.toDouble();
-    final pickupLng = (_order?['_store_lng'] as num?)?.toDouble()
-        ?? (_order?['warehouses']?['longitude'] as num?)?.toDouble()
+    final pickupLng = (_order?['warehouses']?['longitude'] as num?)?.toDouble()
         ?? (_order?['pickup_lng'] as num?)?.toDouble();
     final deliveryLat = (_order?['delivery_lat'] as num?)?.toDouble();
     final deliveryLng = (_order?['delivery_lng'] as num?)?.toDouble();
