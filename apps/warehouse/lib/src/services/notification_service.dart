@@ -68,6 +68,7 @@ class NotificationService {
       description: 'Уведомления о заказах доставки',
       importance: Importance.max,
       playSound: true,
+      sound: RawResourceAndroidNotificationSound('new_order_alert'),
       enableVibration: true,
       showBadge: true,
     ));
@@ -78,6 +79,7 @@ class NotificationService {
       description: 'Сообщения от клиентов и курьеров',
       importance: Importance.max,
       playSound: true,
+      sound: RawResourceAndroidNotificationSound('chat_message'),
       showBadge: true,
     ));
 
@@ -117,10 +119,11 @@ class NotificationService {
           : AndroidNotificationCategory.status,
     );
 
-    const iosDetails = DarwinNotificationDetails(
+    final iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
+      sound: soundName != null ? '${soundName}.wav' : 'default',
     );
 
     await _plugin.show(
@@ -138,13 +141,23 @@ class NotificationService {
 
   Future<void> playSound(String soundName) async {
     try {
+      // Try local asset first
+      final assetPath = 'sounds/$soundName.wav';
+      await _audioPlayer.setVolume(0.8);
+      await _audioPlayer.setReleaseMode(ReleaseMode.release);
+      try {
+        await _audioPlayer.play(AssetSource(assetPath));
+        debugPrint('[Notif] Playing local asset: $assetPath');
+        return;
+      } catch (_) {
+        // Asset not found — fallback to URL
+      }
+
       final url = _sounds[soundName];
       if (url == null) return;
 
-      await _audioPlayer.setVolume(0.8);
-      await _audioPlayer.setReleaseMode(ReleaseMode.release);
       await _audioPlayer.play(UrlSource(url));
-      debugPrint('[Notif] Playing: $soundName');
+      debugPrint('[Notif] Playing CDN sound: $soundName');
     } catch (e) {
       debugPrint('[Notif] Sound error: $e');
     }

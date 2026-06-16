@@ -77,6 +77,7 @@ class NotificationService {
         description: 'Уведомления о новых заказах',
         importance: Importance.max,
         playSound: true,
+        sound: RawResourceAndroidNotificationSound('new_order_alert'),
         enableVibration: true,
         showBadge: true,
       ),
@@ -90,6 +91,7 @@ class NotificationService {
         description: 'Обновления статуса заказов',
         importance: Importance.high,
         playSound: true,
+        sound: RawResourceAndroidNotificationSound('order_accepted'),
         showBadge: true,
       ),
     );
@@ -102,6 +104,7 @@ class NotificationService {
         description: 'Сообщения от клиентов',
         importance: Importance.high,
         playSound: true,
+        sound: RawResourceAndroidNotificationSound('chat_message'),
         showBadge: true,
       ),
     );
@@ -146,11 +149,11 @@ class NotificationService {
           : AndroidNotificationCategory.status,
     );
 
-    const iosDetails = DarwinNotificationDetails(
+    final iosDetails = DarwinNotificationDetails(
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
-      sound: 'default',
+      sound: soundName != null ? '${soundName}.wav' : 'default',
     );
 
     try {

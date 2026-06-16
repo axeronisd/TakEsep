@@ -28,10 +28,14 @@ class PushNotificationService {
   /// Register FCM token with Supabase
   /// Call this after FirebaseMessaging.instance.getToken()
   Future<void> registerToken(String fcmToken, {String? customUserId}) async {
-    final userId = customUserId ?? _supabase.auth.currentUser?.id;
+    var userId = customUserId ?? _supabase.auth.currentUser?.id;
     if (userId == null) {
       debugPrint('[Push] No user ID available, skipping token registration');
       return;
+    }
+
+    if (userId.startsWith('owner-')) {
+      userId = userId.substring('owner-'.length);
     }
 
     try {

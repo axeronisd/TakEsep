@@ -7,6 +7,18 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		398705DFDCE146C191CC264B /* order_pickup.wav in Resources */ = {isa = PBXBuildFile; fileRef = E8A77E49BC2B488DB2D68CF6 /* order_pickup.wav */; };
+
+		F3E611EBD53343409625EA31 /* order_delivered.wav in Resources */ = {isa = PBXBuildFile; fileRef = 4C4CA4344F144E79923AB006 /* order_delivered.wav */; };
+
+		3F12EE49578C45A5B4B95D1C /* order_cancelled.wav in Resources */ = {isa = PBXBuildFile; fileRef = 5E56F9BF4D1A4DBA835E34B2 /* order_cancelled.wav */; };
+
+		4F48E79FF49F418BB85A9DDE /* order_accepted.wav in Resources */ = {isa = PBXBuildFile; fileRef = CC20FA03DAA440D0A24D0278 /* order_accepted.wav */; };
+
+		96EED439088646F9BA5C1B1A /* new_order_alert.wav in Resources */ = {isa = PBXBuildFile; fileRef = 7AF7B443DDEF462EB2A3689C /* new_order_alert.wav */; };
+
+		E4C0EA9E2D3B44688FDD81E2 /* chat_message.wav in Resources */ = {isa = PBXBuildFile; fileRef = C1C97D8FAA5545518DF1335B /* chat_message.wav */; };
+
 		1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */ = {isa = PBXBuildFile; fileRef = 1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */; };
 		331C808B294A63AB00263BE5 /* RunnerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331C807B294A618700263BE5 /* RunnerTests.swift */; };
 		3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */ = {isa = PBXBuildFile; fileRef = 3B3967151E833CAA004F5970 /* AppFrameworkInfo.plist */; };
@@ -42,6 +54,18 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		E8A77E49BC2B488DB2D68CF6 /* order_pickup.wav */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = audio.wav; path = order_pickup.wav; sourceTree = "<group>"; };
+
+		4C4CA4344F144E79923AB006 /* order_delivered.wav */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = audio.wav; path = order_delivered.wav; sourceTree = "<group>"; };
+
+		5E56F9BF4D1A4DBA835E34B2 /* order_cancelled.wav */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = audio.wav; path = order_cancelled.wav; sourceTree = "<group>"; };
+
+		CC20FA03DAA440D0A24D0278 /* order_accepted.wav */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = audio.wav; path = order_accepted.wav; sourceTree = "<group>"; };
+
+		7AF7B443DDEF462EB2A3689C /* new_order_alert.wav */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = audio.wav; path = new_order_alert.wav; sourceTree = "<group>"; };
+
+		C1C97D8FAA5545518DF1335B /* chat_message.wav */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = audio.wav; path = chat_message.wav; sourceTree = "<group>"; };
+
 		1498D2321E8E86230040F4C2 /* GeneratedPluginRegistrant.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = GeneratedPluginRegistrant.h; sourceTree = "<group>"; };
 		1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = GeneratedPluginRegistrant.m; sourceTree = "<group>"; };
 		331C807B294A618700263BE5 /* RunnerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerTests.swift; sourceTree = "<group>"; };
@@ -113,7 +137,13 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
-				97C146FA1CF9000F007C117D /* Main.storyboard */,
+																												E8A77E49BC2B488DB2D68CF6 /* order_pickup.wav */,
+4C4CA4344F144E79923AB006 /* order_delivered.wav */,
+5E56F9BF4D1A4DBA835E34B2 /* order_cancelled.wav */,
+CC20FA03DAA440D0A24D0278 /* order_accepted.wav */,
+7AF7B443DDEF462EB2A3689C /* new_order_alert.wav */,
+C1C97D8FAA5545518DF1335B /* chat_message.wav */,
+97C146FA1CF9000F007C117D /* Main.storyboard */,
 				97C146FD1CF9000F007C117D /* Assets.xcassets */,
 				97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */,
 				97C147021CF9000F007C117D /* Info.plist */,
@@ -211,7 +241,13 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-			);
+																											398705DFDCE146C191CC264B /* order_pickup.wav in Resources */,
+F3E611EBD53343409625EA31 /* order_delivered.wav in Resources */,
+3F12EE49578C45A5B4B95D1C /* order_cancelled.wav in Resources */,
+4F48E79FF49F418BB85A9DDE /* order_accepted.wav in Resources */,
+96EED439088646F9BA5C1B1A /* new_order_alert.wav in Resources */,
+E4C0EA9E2D3B44688FDD81E2 /* chat_message.wav in Resources */,
+);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		97C146EC1CF9000F007C117D /* Resources */ = {

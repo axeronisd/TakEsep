@@ -195,8 +195,9 @@ class _EditProductSheetState extends State<_EditProductSheet> {
     final updated = widget.product.copyWith(
       name: _nameCtrl.text.trim(),
       price: double.tryParse(_sellingPriceCtrl.text) ?? widget.product.price,
-      costPrice:
-          double.tryParse(_costPriceCtrl.text) ?? widget.product.costPrice,
+      costPrice: _costPriceCtrl.text.trim().isEmpty
+          ? null
+          : double.tryParse(_costPriceCtrl.text.trim()),
       barcode: _barcodeCtrl.text.trim().isEmpty
           ? null
           : _barcodeCtrl.text.trim(),

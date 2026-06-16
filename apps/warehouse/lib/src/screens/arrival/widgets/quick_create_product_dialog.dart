@@ -295,7 +295,7 @@ class _QuickCreateProductDialogState
     }
 
     final double price = double.tryParse(priceStr) ?? 0;
-    final double cost = double.tryParse(costStr) ?? 0;
+    final double? cost = costStr.isNotEmpty ? double.tryParse(costStr) : null;
     final int minStock = int.tryParse(_minStockController.text.trim()) ?? 0;
 
     final companyId = ref.read(authProvider).currentCompany?.id;
@@ -326,7 +326,7 @@ class _QuickCreateProductDialogState
         barcode: barcode,
         categoryId: _selectedCategoryId ?? 'uncategorized',
         price: price,
-        costPrice: cost > 0 ? cost : null,
+        costPrice: cost,
         b2cPrice: _isPublic ? price : null,
         b2cDescription: _isPublic && _descriptionController.text.trim().isNotEmpty
             ? _descriptionController.text.trim()
