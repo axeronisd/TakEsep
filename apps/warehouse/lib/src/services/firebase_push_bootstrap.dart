@@ -26,9 +26,14 @@ class FirebasePushBootstrap {
   static final _pushService = PushNotificationService('warehouse');
   static final _notifService = NotificationService();
   static String? _currentToken;
+  static String? _employeeId;
 
   /// Call once in main() after Firebase.initializeApp()
-  static Future<void> initialize() async {
+  static Future<void> initialize({String? customUserId}) async {
+    if (customUserId != null) {
+      _employeeId = customUserId;
+    }
+
     if (kIsWeb) {
       debugPrint('[Push] Running on Web - skipping Firebase Messaging (only in-app notifs will work)');
       return;
@@ -62,13 +67,13 @@ class FirebasePushBootstrap {
     _currentToken = await messaging.getToken();
     debugPrint('[Push] FCM Token: ${_currentToken?.substring(0, 20)}...');
     if (_currentToken != null) {
-      await _pushService.registerToken(_currentToken!);
+      await _pushService.registerToken(_currentToken!, customUserId: _employeeId);
     }
 
     // 3. Listen for token refresh
     messaging.onTokenRefresh.listen((newToken) async {
       _currentToken = newToken;
-      await _pushService.registerToken(newToken);
+      await _pushService.registerToken(newToken, customUserId: _employeeId);
       debugPrint('[Push] Token refreshed');
     });
 
@@ -147,15 +152,18 @@ class FirebasePushBootstrap {
 
   /// Re-register token after login (call this when user signs in)
   /// Tries multiple times with delay to handle slow auth state updates
-  static Future<void> reRegisterToken() async {
+  static Future<void> reRegisterToken({String? customUserId}) async {
     if (kIsWeb) return;
+    if (customUserId != null) {
+      _employeeId = customUserId;
+    }
     for (int attempt = 0; attempt < 3; attempt++) {
       try {
         final messaging = FirebaseMessaging.instance;
         final token = await messaging.getToken();
         if (token != null) {
           _currentToken = token;
-          await _pushService.registerToken(token);
+          await _pushService.registerToken(token, customUserId: _employeeId);
           debugPrint(
             '[Push] Token re-registered after login (attempt ${attempt + 1})',
           );
@@ -182,5 +190,6 @@ class FirebasePushBootstrap {
       await _pushService.removeToken(_currentToken!);
       _currentToken = null;
     }
+    _employeeId = null;
   }
 }

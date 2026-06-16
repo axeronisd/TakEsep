@@ -52,11 +52,21 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
   // GPS tracking
   Timer? _locationTimer;
   RealtimeChannel? _assignedChannel;
+  Timer? _pollTimer;
 
   @override
   void initState() {
     super.initState();
     _initCourier();
+    _startPolling();
+  }
+
+  void _startPolling() {
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (mounted && !_loading && _isOnline) {
+        _loadOrders();
+      }
+    });
   }
 
   @override
@@ -64,6 +74,7 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
     _channel?.unsubscribe();
     _assignedChannel?.unsubscribe();
     _locationTimer?.cancel();
+    _pollTimer?.cancel();
     super.dispose();
   }
 

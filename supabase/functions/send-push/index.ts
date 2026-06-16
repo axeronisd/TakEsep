@@ -360,17 +360,14 @@ async function handleWebhook(accessToken: string, payload: any) {
 
       // → Notify COURIER if order cancelled by customer/store
       if (status.startsWith("cancelled") && status !== "cancelled_by_courier" && record.courier_id) {
-        const courierUserId = await resolveUserId(record.courier_id, "couriers")
-        if (courierUserId) {
-          const sent = await sendToUser(
-            accessToken, courierUserId, "courier",
-            "Заказ отменён",
-            `#${num} — заказ отменён`,
-            "order_status", "order_cancelled",
-            { order_id: record.id, type: "order_cancelled" }
-          )
-          results.push(`courier_cancel:${sent}`)
-        }
+        const sent = await sendToUser(
+          accessToken, record.courier_id, "courier",
+          "Заказ отменён",
+          `#${num} — заказ отменён`,
+          "order_status", "order_cancelled",
+          { order_id: record.id, type: "order_cancelled" }
+        )
+        results.push(`courier_cancel:${sent}`)
       }
 
       // → Notify WAREHOUSE if order cancelled
@@ -402,17 +399,14 @@ async function handleWebhook(accessToken: string, payload: any) {
         record.courier_id &&
         record.courier_id !== old_record?.courier_id
       ) {
-        const courierUserId = await resolveUserId(record.courier_id, "couriers")
-        if (courierUserId) {
-          const sent = await sendToUser(
-            accessToken, courierUserId, "courier",
-            "Заказ назначен вам",
-            `#${num} — проверьте детали`,
-            "new_orders", "new_order_alert",
-            { order_id: record.id, type: "order_assigned" }
-          )
-          results.push(`courier_assign:${sent}`)
-        }
+        const sent = await sendToUser(
+          accessToken, record.courier_id, "courier",
+          "Заказ назначен вам",
+          `#${num} — проверьте детали`,
+          "new_orders", "new_order_alert",
+          { order_id: record.id, type: "order_assigned" }
+        )
+        results.push(`courier_assign:${sent}`)
       }
 
       return jsonOk({ processed: true, results })
@@ -432,11 +426,10 @@ async function handleWebhook(accessToken: string, payload: any) {
       // Use sender_type to determine direction (sender_id can be customers.id, couriers.id, or auth.users.id)
       const isFromCustomer = record.sender_type === "customer"
 
-      // Resolve customer_id and courier_id to auth.users.id
-      const [customerUserId, courierUserId] = await Promise.all([
-        order.customer_id ? resolveUserId(order.customer_id, "customers") : null,
-        order.courier_id ? resolveUserId(order.courier_id, "couriers") : null,
-      ])
+      // Resolve customer_id to auth.users.id (for customer app)
+      // For courier, we use order.courier_id directly (since their token is registered with courier_id)
+      const customerUserId = order.customer_id ? await resolveUserId(order.customer_id, "customers") : null;
+      const courierUserId = order.courier_id; // Use direct courier_id
 
       const recipientUserId = isFromCustomer ? courierUserId : customerUserId
       const recipientApp = isFromCustomer ? "courier" : "customer"

@@ -61,7 +61,7 @@ class _CourierLoginScreenState extends ConsumerState<CourierLoginScreen>
           ref.read(courierProfileProvider.notifier).state = profile;
           try {
             // Запускаем без await, чтобы не блокировать вход и не ограничивать пользователя по времени на нажатие 'Разрешить'
-            FirebasePushBootstrap.initialize().catchError((e) {
+            FirebasePushBootstrap.initialize(customUserId: profile.id).catchError((e) {
               debugPrint('Push init failed: $e');
             });
           } catch (e) {
@@ -494,8 +494,8 @@ class _CourierLoginScreenState extends ConsumerState<CourierLoginScreen>
       // Store profile
       ref.read(courierProfileProvider.notifier).state = profile;
       try {
-        FirebasePushBootstrap.initialize().catchError((e) {
-          debugPrint('Push init failed: $e');
+        FirebasePushBootstrap.reRegisterToken(customUserId: profile.id).catchError((e) {
+          debugPrint('Push register failed: $e');
         });
       } catch (e) {
         debugPrint('Push init block error: $e');

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -49,12 +50,23 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
   List<Map<String, dynamic>> get _historyOrders =>
       _allOrders.where((o) => _doneStatuses.contains(o['status'])).toList();
 
+  Timer? _pollTimer;
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadOrders();
     _subscribeToOrders();
+    _startPolling();
+  }
+
+  void _startPolling() {
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (mounted && !_loading) {
+        _loadOrders();
+      }
+    });
   }
 
   @override
@@ -62,6 +74,7 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
     _tabController.dispose();
     _channel?.unsubscribe();
     _alertPlayer.dispose();
+    _pollTimer?.cancel();
     super.dispose();
   }
 

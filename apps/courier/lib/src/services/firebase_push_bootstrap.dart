@@ -29,9 +29,14 @@ class FirebasePushBootstrap {
   static final _pushService = PushNotificationService('courier');
   static final _notifService = NotificationService();
   static String? _currentToken;
+  static String? _courierId;
 
   /// Call once in main() after Firebase.initializeApp()
-  static Future<void> initialize() async {
+  static Future<void> initialize({String? customUserId}) async {
+    if (customUserId != null) {
+      _courierId = customUserId;
+    }
+
     // Register background handler
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
@@ -53,13 +58,13 @@ class FirebasePushBootstrap {
     _currentToken = await messaging.getToken();
     debugPrint('[Push] FCM Token: ${_currentToken?.substring(0, 20)}...');
     if (_currentToken != null) {
-      await _pushService.registerToken(_currentToken!);
+      await _pushService.registerToken(_currentToken!, customUserId: _courierId);
     }
 
     // 3. Listen for token refresh
     messaging.onTokenRefresh.listen((newToken) async {
       _currentToken = newToken;
-      await _pushService.registerToken(newToken);
+      await _pushService.registerToken(newToken, customUserId: _courierId);
       debugPrint('[Push] Token refreshed');
     });
 
@@ -147,11 +152,44 @@ class FirebasePushBootstrap {
     }
   }
 
+  /// Re-register token after login (call this when user signs in)
+  /// Tries multiple times with delay to handle slow auth state updates
+  static Future<void> reRegisterToken({String? customUserId}) async {
+    if (customUserId != null) {
+      _courierId = customUserId;
+    }
+    for (int attempt = 0; attempt < 3; attempt++) {
+      try {
+        final messaging = FirebaseMessaging.instance;
+        final token = await messaging.getToken();
+        if (token != null) {
+          _currentToken = token;
+          await _pushService.registerToken(token, customUserId: _courierId);
+          debugPrint(
+            '[Push] Token re-registered for courier: $_courierId (attempt ${attempt + 1})',
+          );
+          return;
+        } else {
+          debugPrint('[Push] getToken() returned null, attempt ${attempt + 1}');
+        }
+      } catch (e) {
+        debugPrint(
+          '[Push] Re-register token failed (attempt ${attempt + 1}): $e',
+        );
+      }
+      if (attempt < 2) {
+        await Future.delayed(const Duration(seconds: 2));
+      }
+    }
+    debugPrint('[Push] WARNING: Failed to register FCM token after 3 attempts');
+  }
+
   /// Call on logout to remove FCM token
   static Future<void> onLogout() async {
     if (_currentToken != null) {
       await _pushService.removeToken(_currentToken!);
       _currentToken = null;
     }
+    _courierId = null;
   }
 }

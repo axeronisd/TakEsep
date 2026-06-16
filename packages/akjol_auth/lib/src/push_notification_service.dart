@@ -27,9 +27,10 @@ class PushNotificationService {
 
   /// Register FCM token with Supabase
   /// Call this after FirebaseMessaging.instance.getToken()
-  Future<void> registerToken(String fcmToken) async {
-    if (_supabase.auth.currentUser == null) {
-      debugPrint('[Push] No user logged in, skipping token registration');
+  Future<void> registerToken(String fcmToken, {String? customUserId}) async {
+    final userId = customUserId ?? _supabase.auth.currentUser?.id;
+    if (userId == null) {
+      debugPrint('[Push] No user ID available, skipping token registration');
       return;
     }
 
@@ -38,8 +39,9 @@ class PushNotificationService {
         'p_app_type': appType,
         'p_fcm_token': fcmToken,
         'p_platform': _platform,
+        'p_user_id': userId,
       });
-      debugPrint('[Push] Token registered for $appType');
+      debugPrint('[Push] Token registered for $appType, user_id: $userId');
     } catch (e) {
       debugPrint('[Push] Error registering token: $e');
     }

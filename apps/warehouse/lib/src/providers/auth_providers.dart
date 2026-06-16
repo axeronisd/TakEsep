@@ -199,6 +199,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         availableWarehouses: warehouses,
         selectedWarehouseId: warehouseId,
       );
+      FirebasePushBootstrap.reRegisterToken(customUserId: employee.id);
       return true;
     } catch (e) {
       print('Failed to restore cached session: $e');
@@ -247,6 +248,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         );
         _saveSession();
         _saveBiometricCredentials('owner', licenseKey: licenseKey);
+        FirebasePushBootstrap.reRegisterToken(customUserId: ownerEmployee.id);
         // Seed local database from Supabase for offline use
         InventoryRepository().seedLocalDbFromSupabase(company.id);
         return true;
@@ -311,6 +313,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
       );
       _saveSession();
+      FirebasePushBootstrap.reRegisterToken(customUserId: employee.id);
       return true;
     } catch (e) {
       state = state.copyWith(
@@ -432,6 +435,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       );
       _saveSession();
       _saveBiometricCredentials('employee', login: name, pin: password);
+      FirebasePushBootstrap.reRegisterToken(customUserId: employee.id);
       InventoryRepository().seedLocalDbFromSupabase(company.id);
       return true;
     } catch (e) {

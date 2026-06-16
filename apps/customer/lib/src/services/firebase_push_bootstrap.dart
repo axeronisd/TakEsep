@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:akjol_auth/akjol_auth.dart';
 import 'notification_service.dart';
 
@@ -91,6 +92,13 @@ class FirebasePushBootstrap {
       debugPrint('[Push] Opened from terminated: ${initialMessage.data}');
       _handleNavigation(initialMessage.data);
     }
+
+    // Automatically re-register token on authentication status changes (e.g. session restored)
+    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
+      if (data.session != null && _currentToken != null) {
+        _pushService.registerToken(_currentToken!);
+      }
+    });
 
     debugPrint('[Push] Customer Firebase Push initialized ✅');
   }

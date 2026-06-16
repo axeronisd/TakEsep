@@ -123,6 +123,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             try {
               if (!mounted) return;
               final newData = Map<String, dynamic>.from(payload.newRecord);
+              final oldStatus = _order?['status'] as String?;
+              final newStatus = newData['status'] as String?;
+
               // Remove join keys that Realtime doesn't include — 
               // prevents overwriting full join objects with null
               newData.remove('couriers');
@@ -133,8 +136,12 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               setState(() {
                 _order = {...?_order, ...newData};
               });
-              // Start/stop location tracking based on status
-              _handleStatusChange(newData['status'] as String?);
+              
+              if (newStatus != oldStatus) {
+                _loadOrder();
+              } else {
+                _handleStatusChange(newStatus);
+              }
             } catch (e) {
               debugPrint('[OrderTracking] Realtime order callback error: $e');
             }
@@ -438,7 +445,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         title: Text('Заказ ${order['order_number'] ?? ''}'),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 180), // Increased from 100 to 180 for Cancel button
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 276), // Increased to 276 to prevent overlap by bottom navigation bar
         children: [
           // ── Status card with ETA ──
           _buildStatusCard(status),
@@ -1800,96 +1807,97 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) => SingleChildScrollView(
-          padding: EdgeInsets.fromLTRB(
-              24, 24, 24, MediaQuery.of(ctx).viewInsets.bottom + MediaQuery.of(ctx).viewPadding.bottom + 100),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Handle
-              Container(
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(2),
+        builder: (ctx, setSheetState) => Padding(
+          padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Handle
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: Colors.grey[300],
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              const Text('Заказ доставлен',
-                  style: TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 20),
+                const Text('Заказ доставлен',
+                    style: TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 20),
 
-              // Courier rating
-              const Text('Оцените курьера',
-                  style: TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w500)),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (i) {
-                  return IconButton(
-                    icon: Icon(
-                      i < courierRating
-                          ? Icons.star
-                          : Icons.star_border,
-                      color: i < courierRating
-                          ? Colors.amber
-                          : Colors.grey[300],
-                      size: 36,
-                    ),
-                    onPressed: () {
-                      setSheetState(() => courierRating = i + 1);
-                    },
-                  );
-                }),
-              ),
-              const SizedBox(height: 12),
-
-              // Store rating
-              const Text('Оцените магазин',
-                  style: TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.w500)),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(5, (i) {
-                  return IconButton(
-                    icon: Icon(
-                      i < storeRating
-                          ? Icons.star
-                          : Icons.star_border,
-                      color: i < storeRating
-                          ? Colors.amber
-                          : Colors.grey[300],
-                      size: 36,
-                    ),
-                    onPressed: () {
-                      setSheetState(() => storeRating = i + 1);
-                    },
-                  );
-                }),
-              ),
-              const SizedBox(height: 12),
-
-              // Comment
-              TextField(
-                controller: commentCtrl,
-                decoration: const InputDecoration(
-                  hintText: 'Комментарий (необязательно)',
-                  prefixIcon: Icon(Icons.comment_outlined),
+                // Courier rating
+                const Text('Оцените курьера',
+                    style: TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w500)),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(5, (i) {
+                    return IconButton(
+                      icon: Icon(
+                        i < courierRating
+                            ? Icons.star
+                            : Icons.star_border,
+                        color: i < courierRating
+                            ? Colors.amber
+                            : Colors.grey[300],
+                        size: 36,
+                      ),
+                      onPressed: () {
+                        setSheetState(() => courierRating = i + 1);
+                      },
+                    );
+                  }),
                 ),
-                maxLines: 2,
-              ),
-              const SizedBox(height: 20),
+                const SizedBox(height: 12),
 
-              // Submit
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: courierRating == 0
+                // Store rating
+                const Text('Оцените магазин',
+                    style: TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w500)),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(5, (i) {
+                    return IconButton(
+                      icon: Icon(
+                        i < storeRating
+                            ? Icons.star
+                            : Icons.star_border,
+                        color: i < storeRating
+                            ? Colors.amber
+                            : Colors.grey[300],
+                        size: 36,
+                      ),
+                      onPressed: () {
+                        setSheetState(() => storeRating = i + 1);
+                      },
+                    );
+                  }),
+                ),
+                const SizedBox(height: 12),
+
+                // Comment
+                TextField(
+                  controller: commentCtrl,
+                  decoration: const InputDecoration(
+                    hintText: 'Комментарий (необязательно)',
+                    prefixIcon: Icon(Icons.comment_outlined),
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 20),
+
+                // Submit
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    onPressed: courierRating == 0
                       ? null
                       : () async {
                           Navigator.pop(ctx);
@@ -1901,21 +1909,22 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                                 : null,
                           );
                         },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AkJolTheme.primary,
-                    padding:
-                        const EdgeInsets.symmetric(vertical: 14),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AkJolTheme.primary,
+                      padding:
+                          const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: const Text('Отправить оценку',
+                        style: TextStyle(fontSize: 16)),
                   ),
-                  child: const Text('Отправить оценку',
-                      style: TextStyle(fontSize: 16)),
                 ),
-              ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () => Navigator.pop(ctx),
-                child: const Text('Позже'),
-              ),
-            ],
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Позже'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
