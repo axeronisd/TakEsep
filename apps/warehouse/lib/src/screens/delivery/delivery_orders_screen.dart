@@ -314,7 +314,7 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
     return RefreshIndicator(
       onRefresh: _loadOrders,
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
         itemCount: _assemblyOrders.length,
         itemBuilder: (_, i) {
           final order = _assemblyOrders[i];
@@ -463,7 +463,7 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
     return RefreshIndicator(
       onRefresh: _loadOrders,
       child: ListView.builder(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
         itemCount: _historyOrders.length,
         itemBuilder: (_, i) {
           final order = _historyOrders[i];

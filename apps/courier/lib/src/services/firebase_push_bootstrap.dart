@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:go_router/go_router.dart';
 import 'package:akjol_auth/akjol_auth.dart';
+import '../screens/orders/available_orders_screen.dart';
 import 'notification_service.dart';
 
 // ═══════════════════════════════════════════════════════════════
@@ -70,6 +71,12 @@ class FirebasePushBootstrap {
       final data = message.data;
 
       if (notification != null) {
+        final orderId = data['order_id'];
+        if (orderId != null && recentlyAcceptedOrders.contains(orderId)) {
+          debugPrint('[Push] Ignored FCM for self-accepted order: $orderId');
+          return;
+        }
+
         final type = data['type'] ?? '';
         final channelId = _inferChannel(type);
         final soundName = _inferSound(type, data['status']);
