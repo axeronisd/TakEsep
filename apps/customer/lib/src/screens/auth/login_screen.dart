@@ -930,9 +930,11 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       await _auth.signIn(login: login, password: password);
       try {
-        await FirebasePushBootstrap.reRegisterToken().timeout(const Duration(seconds: 3));
+        FirebasePushBootstrap.reRegisterToken().catchError((e) {
+          debugPrint('Push reRegister failed: $e');
+        });
       } catch (e) {
-        debugPrint('Push init failed or timed out: $e');
+        debugPrint('Push block error: $e');
       }
       if (mounted) context.go('/');
     } on AkJolAuthException catch (e) {
@@ -1071,9 +1073,11 @@ class _LoginScreenState extends State<LoginScreen> {
         name: name,
       );
       try {
-        await FirebasePushBootstrap.reRegisterToken().timeout(const Duration(seconds: 3));
+        FirebasePushBootstrap.reRegisterToken().catchError((e) {
+          debugPrint('Push reRegister failed: $e');
+        });
       } catch (e) {
-        debugPrint('Push init failed or timed out: $e');
+        debugPrint('Push block error: $e');
       }
       if (mounted) context.go('/');
     } on AkJolAuthException catch (e) {
