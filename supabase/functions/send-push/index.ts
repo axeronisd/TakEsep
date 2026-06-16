@@ -316,17 +316,6 @@ async function handleWebhook(accessToken: string, payload: any) {
       )
       results.push(`courier:${courierSent}`)
 
-      if (record.warehouse_id) {
-        const whSent = await sendToAllOfType(
-          accessToken, "warehouse",
-          "Новый заказ",
-          `#${num} — поступил новый заказ`,
-          "delivery_orders", "new_order_alert",
-          { order_id: record.id, type: "new_order" }
-        )
-        results.push(`warehouse:${whSent}`)
-      }
-
       return jsonOk({ processed: true, results })
     }
 
@@ -394,6 +383,18 @@ async function handleWebhook(accessToken: string, payload: any) {
           { order_id: record.id, type: "order_cancelled" }
         )
         results.push(`warehouse_cancel:${sent}`)
+      }
+
+      // → Notify WAREHOUSE if payment verified (start assembly)
+      if (status === "payment_verified" && record.warehouse_id) {
+        const sent = await sendToAllOfType(
+          accessToken, "warehouse",
+          "Новый заказ (Оплачен)",
+          `#${num} — заказ оплачен, начните сборку`,
+          "delivery_orders", "new_order_alert",
+          { order_id: record.id, type: "new_order" }
+        )
+        results.push(`warehouse_paid:${sent}`)
       }
 
       // → Notify COURIER if assigned directly
