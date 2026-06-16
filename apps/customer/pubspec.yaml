@@ -1,7 +1,7 @@
 name: customer
 description: "AkJol Customer — заказ и доставка"
 publish_to: 'none'
-version: 3.0.14+108
+version: 3.0.14+109
 
 environment:
   sdk: ^3.11.1
