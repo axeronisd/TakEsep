@@ -330,8 +330,8 @@ async function handleWebhook(accessToken: string, payload: any) {
       return jsonOk({ processed: true, results })
     }
 
-    // UPDATE: status changed
-    if (type === "UPDATE" && record.status !== old_record?.status) {
+    // UPDATE: status or courier changed
+    if (type === "UPDATE" && (record.status !== old_record?.status || record.courier_id !== old_record?.courier_id)) {
       const num = orderNum(record.id)
       const status = record.status
       const results: string[] = []
