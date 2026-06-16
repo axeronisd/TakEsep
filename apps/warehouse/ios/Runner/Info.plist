@@ -78,5 +78,10 @@
 	<string>Для подключения и настройки термопринтеров для печати чеков</string>
 	<key>NSBluetoothAlwaysUsageDescription</key>
 	<string>Приложению требуется доступ к Bluetooth для поиска и печати на термопринтерах</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>fetch</string>
+		<string>remote-notification</string>
+	</array>
 </dict>
 </plist>
