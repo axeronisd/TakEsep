@@ -17,10 +17,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -45,7 +42,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyBNl63a9xCTPa9RTcnZr7XuhxxaWHf-rgk',
-    appId: '1:427394139285:android:965f83e9aec3c0dbec079c',
+    appId: '1:427394139285:android:1b347e71b76e376bec079c',
     messagingSenderId: '427394139285',
     projectId: 'akjol-f479a',
     storageBucket: 'akjol-f479a.firebasestorage.app',
@@ -53,12 +50,12 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions windows = FirebaseOptions(
     apiKey: 'AIzaSyBsFIrA-0J6BuY7iVoFRYCDJQr4xUJpoYA',
-    appId: '1:427394139285:web:9867b07f94e2984aec079c',
+    appId: '1:427394139285:web:e3f9fe4eb57b9feeec079c',
     messagingSenderId: '427394139285',
     projectId: 'akjol-f479a',
     authDomain: 'akjol-f479a.firebaseapp.com',
     storageBucket: 'akjol-f479a.firebasestorage.app',
-    measurementId: 'G-CEFBF81WNR',
+    measurementId: 'G-19EMY36R5Y',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -72,10 +69,21 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyA8VRtlitN06WcDlGzFg_RvqtickZiPkIE',
-    appId: '1:427394139285:ios:3ef852d58c04d2caec079c',
+    appId: '1:427394139285:ios:521977082ad85ad7ec079c',
     messagingSenderId: '427394139285',
     projectId: 'akjol-f479a',
     storageBucket: 'akjol-f479a.firebasestorage.app',
     iosBundleId: 'com.akjolui.courier',
   );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyBsFIrA-0J6BuY7iVoFRYCDJQr4xUJpoYA',
+    appId: '1:427394139285:web:999072ac9fc6d506ec079c',
+    messagingSenderId: '427394139285',
+    projectId: 'akjol-f479a',
+    authDomain: 'akjol-f479a.firebaseapp.com',
+    storageBucket: 'akjol-f479a.firebasestorage.app',
+    measurementId: 'G-PRL6MN3PN6',
+  );
+
 }

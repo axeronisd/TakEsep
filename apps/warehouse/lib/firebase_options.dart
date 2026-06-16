@@ -8,10 +8,7 @@ import 'package:flutter/foundation.dart'
 class DefaultFirebaseOptions {
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      throw UnsupportedError(
-        'DefaultFirebaseOptions have not been configured for web - '
-        'you can reconfigure this by running the FlutterFire CLI again.',
-      );
+      return web;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
@@ -36,7 +33,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyBNl63a9xCTPa9RTcnZr7XuhxxaWHf-rgk',
-    appId: '1:427394139285:android:965f83e9aec3c0dbec079c',
+    appId: '1:427394139285:android:3a2945b037afac8bec079c',
     messagingSenderId: '427394139285',
     projectId: 'akjol-f479a',
     storageBucket: 'akjol-f479a.firebasestorage.app',
@@ -44,17 +41,17 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions windows = FirebaseOptions(
     apiKey: 'AIzaSyBsFIrA-0J6BuY7iVoFRYCDJQr4xUJpoYA',
-    appId: '1:427394139285:web:9867b07f94e2984aec079c',
+    appId: '1:427394139285:web:e11983e7379a6becec079c',
     messagingSenderId: '427394139285',
     projectId: 'akjol-f479a',
     authDomain: 'akjol-f479a.firebaseapp.com',
     storageBucket: 'akjol-f479a.firebasestorage.app',
-    measurementId: 'G-CEFBF81WNR',
+    measurementId: 'G-J9EMNDGWJK',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyA8VRtlitN06WcDlGzFg_RvqtickZiPkIE',
-    appId: '1:427394139285:ios:18abb686d6c39a42ec079c',
+    appId: '1:427394139285:ios:f5019054c28f4032ec079c',
     messagingSenderId: '427394139285',
     projectId: 'akjol-f479a',
     storageBucket: 'akjol-f479a.firebasestorage.app',
@@ -63,10 +60,21 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyA8VRtlitN06WcDlGzFg_RvqtickZiPkIE',
-    appId: '1:427394139285:ios:18abb686d6c39a42ec079c',
+    appId: '1:427394139285:ios:f5019054c28f4032ec079c',
     messagingSenderId: '427394139285',
     projectId: 'akjol-f479a',
     storageBucket: 'akjol-f479a.firebasestorage.app',
     iosBundleId: 'com.takesep.app',
   );
+
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyBsFIrA-0J6BuY7iVoFRYCDJQr4xUJpoYA',
+    appId: '1:427394139285:web:999072ac9fc6d506ec079c',
+    messagingSenderId: '427394139285',
+    projectId: 'akjol-f479a',
+    authDomain: 'akjol-f479a.firebaseapp.com',
+    storageBucket: 'akjol-f479a.firebasestorage.app',
+    measurementId: 'G-PRL6MN3PN6',
+  );
+
 }
