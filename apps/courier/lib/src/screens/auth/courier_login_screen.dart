@@ -60,9 +60,10 @@ class _CourierLoginScreenState extends ConsumerState<CourierLoginScreen>
         if (profile != null && mounted) {
           ref.read(courierProfileProvider.notifier).state = profile;
           try {
-            await FirebasePushBootstrap.initialize(); // Register token now that we have a user
+            await FirebasePushBootstrap.initialize()
+                .timeout(const Duration(seconds: 3));
           } catch (e) {
-            debugPrint('Push init failed (ignored on Desktop): $e');
+            debugPrint('Push init failed or timed out: $e');
           }
           context.go('/');
           return;
@@ -491,9 +492,10 @@ class _CourierLoginScreenState extends ConsumerState<CourierLoginScreen>
       // Store profile
       ref.read(courierProfileProvider.notifier).state = profile;
       try {
-        await FirebasePushBootstrap.initialize(); // Register token now that we have a user
+        await FirebasePushBootstrap.initialize()
+            .timeout(const Duration(seconds: 3));
       } catch (e) {
-        debugPrint('Push init failed (ignored on Desktop): $e');
+        debugPrint('Push init failed or timed out: $e');
       }
 
       if (mounted) context.go('/');
