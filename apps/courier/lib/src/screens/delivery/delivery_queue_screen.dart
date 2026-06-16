@@ -34,6 +34,7 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
   bool _loading = true;
   bool _updating = false;
   RealtimeChannel? _channel;
+  Timer? _pollTimer;
   final Set<String> _readyOrdersTracked = {};
 
   double _sheetPosition = 0.45;
@@ -74,11 +75,21 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
     super.initState();
     _loadData();
     _subscribeToOrders();
+    _startPolling();
+  }
+
+  void _startPolling() {
+    _pollTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      if (mounted && !_loading && !_updating) {
+        _loadData();
+      }
+    });
   }
 
   @override
   void dispose() {
     _channel?.unsubscribe();
+    _pollTimer?.cancel();
     _alertPlayer.dispose();
     super.dispose();
   }

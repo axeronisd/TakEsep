@@ -171,8 +171,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   }
   void _handleStatusChange(String? status, {bool fromLoadOrder = false}) {
     if (!mounted) return;
-    if (status == 'courier_assigned' || status == 'picked_up' || status == 'arrived') {
-      // Only reload if called from Realtime, not from _loadOrder (avoids infinite loop)
+    if (status != 'delivered' && status != 'pending' && status != 'searching_courier') {
+      // Reload for any non-terminal active status to ensure we have courier details
       if (!fromLoadOrder && _lastHandledStatus != status) {
         _lastHandledStatus = status;
         _loadOrder();
@@ -438,7 +438,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         title: Text('Заказ ${order['order_number'] ?? ''}'),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 180), // Increased from 100 to 180 for Cancel button
         children: [
           // ── Status card with ETA ──
           _buildStatusCard(status),
