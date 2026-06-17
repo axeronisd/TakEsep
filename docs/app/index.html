@@ -91,6 +91,15 @@
       var boot = document.getElementById('boot');
       if (boot) boot.classList.add('hidden');
     });
+
+    // Fallback: hide loading screen if it remains visible for more than 6 seconds
+    setTimeout(function () {
+      var boot = document.getElementById('boot');
+      if (boot && !boot.classList.contains('hidden')) {
+        console.warn('Flutter loading timed out. Hiding splash screen.');
+        boot.classList.add('hidden');
+      }
+    }, 6000);
   </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
