@@ -69,6 +69,15 @@
     @keyframes spin { to { transform: rotate(360deg); } }
   </style>
   <script>
+    // Stub PasskeyAuthenticator to prevent crash in newer Supabase/GoTrue Web SDKs
+    window.PasskeyAuthenticator = {
+      init: function() {
+        console.log("PasskeyAuthenticator.init stub called");
+      },
+      register: function() {},
+      authenticate: function() {}
+    };
+
     (function () {
       var isLocal = location.hostname === 'localhost' || location.hostname === '127.0.0.1';
       if (!isLocal && sessionStorage.getItem('takesep_admin_auth') !== 'true') {
