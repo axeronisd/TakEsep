@@ -29,14 +29,19 @@ class FirebasePushBootstrap {
   static String? _currentToken;
   static String? _employeeId;
 
+  static bool get _useFirebase =>
+      !kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.android ||
+          defaultTargetPlatform == TargetPlatform.iOS);
+
   /// Call once in main() after Firebase.initializeApp()
   static Future<void> initialize({String? customUserId}) async {
     if (customUserId != null) {
       _employeeId = customUserId;
     }
 
-    if (kIsWeb) {
-      debugPrint('[Push] Running on Web - skipping Firebase Messaging (only in-app notifs will work)');
+    if (!_useFirebase) {
+      debugPrint('[Push] Skipping Firebase Messaging on unsupported platform (only in-app notifs will work)');
       return;
     }
 
@@ -166,7 +171,7 @@ class FirebasePushBootstrap {
 
   /// Enable/disable notifications dynamically (e.g. from Settings toggle)
   static Future<void> updateNotificationPreferences(bool enabled) async {
-    if (kIsWeb) return;
+    if (!_useFirebase) return;
     try {
       final messaging = FirebaseMessaging.instance;
       if (enabled) {
@@ -198,7 +203,7 @@ class FirebasePushBootstrap {
   /// Re-register token after login (call this when user signs in)
   /// Tries multiple times with delay to handle slow auth state updates
   static Future<void> reRegisterToken({String? customUserId}) async {
-    if (kIsWeb) return;
+    if (!_useFirebase) return;
     final prefs = await SharedPreferences.getInstance();
     final enabled = prefs.getBool('takesep_show_notifications') ?? true;
     if (!enabled) {
@@ -236,7 +241,7 @@ class FirebasePushBootstrap {
 
   /// Call on logout
   static Future<void> onLogout() async {
-    if (kIsWeb) return;
+    if (!_useFirebase) return;
     if (_currentToken != null) {
       await _pushService.removeToken(_currentToken!);
       _currentToken = null;

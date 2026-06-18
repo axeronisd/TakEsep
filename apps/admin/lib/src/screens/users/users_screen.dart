@@ -1560,31 +1560,15 @@ class _UsersScreenState extends State<UsersScreen>
   }
 
   void _showCourierDetail(Map<String, dynamic> c) {
-    final name = c['name'] ?? '—';
-    final phone = c['phone'] ?? '—';
-    final key = c['access_key'] ?? '—';
-    final rate = '${(_globalCourierEarningRate * 100).toStringAsFixed(0)}%';
-    final transports =
-        (c['transport_types'] as List?)?.join(', ') ?? 'Велосипед';
     final email = _getEmailForUserId(c['user_id']);
-
-    _showDetailDialog(
-      title: 'Профиль курьера AkJol Pro',
-      details: {
-        'ID курьера': c['id'] ?? '—',
-        'ID пользователя (Auth)': c['user_id'] ?? '—',
-        'Имя курьера': name,
-        'Номер телефона': phone,
-        'Электронная почта': email.isEmpty ? '—' : email,
-        'Код доступа (ключ)': key,
-        'Процент заработка (ставка)': rate,
-        'Типы транспорта': transports,
-        'Статус активности': c['is_active'] == true ? 'Активен' : 'Отключен',
-        'В сети (Online)': c['is_online'] == true ? 'Да' : 'Нет',
-        'Баланс банка': '${c['bank_balance'] ?? 0} с',
-        'Зарегистрирован': _formatDate(c['created_at']),
-      },
-    );
+    showDialog(
+      context: context,
+      builder: (ctx) => _CourierShiftsDialog(
+        courier: c,
+        globalRate: _globalCourierEarningRate,
+        email: email,
+      ),
+    ).then((_) => _loadData());
   }
 
   void _showEmployeeDetail(Map<String, dynamic> e) {
@@ -3460,5 +3444,549 @@ class _UsersScreenState extends State<UsersScreen>
         .toList();
 
     return names.isEmpty ? '—' : names.join(', ');
+  }
+}
+
+class _CourierShiftsDialog extends StatefulWidget {
+  final Map<String, dynamic> courier;
+  final double globalRate;
+  final String email;
+
+  const _CourierShiftsDialog({
+    required this.courier,
+    required this.globalRate,
+    required this.email,
+  });
+
+  @override
+  State<_CourierShiftsDialog> createState() => _CourierShiftsDialogState();
+}
+
+class _CourierShiftsDialogState extends State<_CourierShiftsDialog> {
+  final _supabase = Supabase.instance.client;
+  bool _loadingShifts = true;
+  bool _hasIsSettled = true;
+  List<Map<String, dynamic>> _shifts = [];
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadShifts();
+  }
+
+  Future<void> _loadShifts() async {
+    if (!mounted) return;
+    setState(() {
+      _loadingShifts = true;
+      _error = null;
+    });
+    try {
+      final res = await _supabase
+          .from('courier_shifts')
+          .select()
+          .eq('courier_id', widget.courier['id'])
+          .order('started_at', ascending: false);
+      
+      bool hasCol = false;
+      if (res.isNotEmpty) {
+        hasCol = res.first.containsKey('is_settled');
+      }
+
+      if (mounted) {
+        setState(() {
+          _shifts = List<Map<String, dynamic>>.from(res);
+          _hasIsSettled = hasCol;
+          _loadingShifts = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _loadingShifts = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _settleShift(String shiftId, double amount) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.darkSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: AppColors.darkBorder),
+        ),
+        title: const Text('Подтверждение оплаты', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        content: Text(
+          'Вы уверены, что хотите отметить долг по этой смене (${amount.toStringAsFixed(0)} сом) как закрытый/оплаченный?',
+          style: const TextStyle(color: AppColors.darkTextSecondary),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Отмена', style: TextStyle(color: AppColors.darkTextTertiary)),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.success),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('Да, долг закрыт'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      try {
+        await _supabase.rpc('rpc_settle_courier_shift', params: {
+          'p_shift_id': shiftId,
+        });
+      } catch (_) {
+        // Fallback: direct update
+        await _supabase
+            .from('courier_shifts')
+            .update({
+              'is_settled': true,
+              'settled_at': DateTime.now().toUtc().toIso8601String(),
+            })
+            .eq('id', shiftId);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Смена успешно рассчитана и закрыта!'),
+            backgroundColor: AppColors.success,
+          ),
+        );
+      }
+      _loadShifts();
+    } catch (e) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (ctx) => AlertDialog(
+            backgroundColor: AppColors.darkSurface,
+            title: const Text('Ошибка', style: TextStyle(color: Colors.white)),
+            content: Text('Не удалось закрыть смену: $e', style: const TextStyle(color: Colors.red)),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('ОК'),
+              ),
+            ],
+          ),
+        );
+      }
+    }
+  }
+
+  String _formatDate(String? isoString) {
+    if (isoString == null) return '—';
+    try {
+      final dt = DateTime.parse(isoString).toLocal();
+      return DateFormat('dd.MM.yyyy HH:mm').format(dt);
+    } catch (_) {
+      return isoString;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog(
+      backgroundColor: AppColors.darkSurface,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20),
+        side: const BorderSide(color: AppColors.darkBorder),
+      ),
+      child: Container(
+        width: 700,
+        height: 600,
+        padding: const EdgeInsets.all(24),
+        child: DefaultTabController(
+          length: 2,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.courier['name'] ?? 'Курьер',
+                          style: const TextStyle(
+                            color: AppColors.darkTextPrimary,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          widget.courier['phone'] ?? '',
+                          style: const TextStyle(
+                            color: AppColors.darkTextTertiary,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, color: AppColors.darkTextTertiary),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const TabBar(
+                labelColor: AppColors.primaryLight,
+                unselectedLabelColor: AppColors.darkTextSecondary,
+                indicatorColor: AppColors.primary,
+                tabs: [
+                  Tab(text: 'Профиль'),
+                  Tab(text: 'Смены и долги'),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: TabBarView(
+                  children: [
+                    _buildProfileTab(),
+                    _buildShiftsTab(),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildProfileTab() {
+    final courierRate = widget.courier['earning_rate'] as num?;
+    final rateStr = courierRate != null
+        ? '${(courierRate * 100).toStringAsFixed(0)}%'
+        : '${(widget.globalRate * 100).toStringAsFixed(0)}% (сист.)';
+    final transports =
+        (widget.courier['transport_types'] as List?)?.join(', ') ?? 'Велосипед';
+
+    final details = {
+      'ID курьера': widget.courier['id'] ?? '—',
+      'ID пользователя (Auth)': widget.courier['user_id'] ?? '—',
+      'Электронная почта': widget.email.isEmpty ? '—' : widget.email,
+      'Код доступа (ключ)': widget.courier['access_key'] ?? '—',
+      'Процент заработка (ставка)': rateStr,
+      'Типы транспорта': transports,
+      'Статус активности': widget.courier['is_active'] == true ? 'Активен' : 'Отключен',
+      'В сети (Online)': widget.courier['is_online'] == true ? 'Да' : 'Нет',
+      'Баланс банка': '${widget.courier['bank_balance'] ?? 0} с',
+      'Зарегистрирован': _formatDate(widget.courier['created_at']),
+    };
+
+    return Scrollbar(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.only(right: 8),
+        child: Column(
+          children: details.entries.map((entry) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(
+                    width: 220,
+                    child: Text(
+                      entry.key,
+                      style: const TextStyle(
+                        color: AppColors.darkTextTertiary,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    child: SelectableText(
+                      entry.value,
+                      style: const TextStyle(
+                        color: AppColors.darkTextPrimary,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildShiftsTab() {
+    if (_loadingShifts) {
+      return const Center(child: CircularProgressIndicator(color: AppColors.primary));
+    }
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 36),
+            const SizedBox(height: 12),
+            Text('Ошибка загрузки смен: $_error', style: const TextStyle(color: AppColors.errorLight)),
+            const SizedBox(height: 12),
+            TextButton.icon(
+              onPressed: _loadShifts,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Повторить'),
+            )
+          ],
+        ),
+      );
+    }
+
+    final endedShifts = _shifts.where((s) => s['ended_at'] != null).toList();
+    final unsettledShifts = endedShifts.where((s) => s['is_settled'] != true).toList();
+    
+    double totalOwed = 0.0;
+    if (_hasIsSettled) {
+      totalOwed = unsettledShifts.fold<double>(
+        0.0,
+        (sum, s) => sum + ((s['amount_to_return'] as num?)?.toDouble() ?? 0.0),
+      );
+    } else {
+      totalOwed = endedShifts.fold<double>(
+        0.0,
+        (sum, s) => sum + ((s['amount_to_return'] as num?)?.toDouble() ?? 0.0),
+      );
+    }
+
+    return Column(
+      children: [
+        // Total Debt Card
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: totalOwed > 0 
+                ? AppColors.error.withValues(alpha: 0.1)
+                : AppColors.success.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: totalOwed > 0 
+                  ? AppColors.error.withValues(alpha: 0.2)
+                  : AppColors.success.withValues(alpha: 0.2),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                totalOwed > 0 ? Icons.warning_amber_rounded : Icons.check_circle_outline_rounded,
+                color: totalOwed > 0 ? AppColors.error : AppColors.success,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Несданный долг курьера (наличные)',
+                      style: TextStyle(
+                        color: AppColors.darkTextSecondary,
+                        fontSize: 11,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${totalOwed.toStringAsFixed(0)} сом',
+                      style: TextStyle(
+                        color: totalOwed > 0 ? AppColors.errorLight : AppColors.successLight,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        if (!_hasIsSettled)
+          const Padding(
+            padding: EdgeInsets.only(top: 6, bottom: 4),
+            child: Text(
+              'Уведомление: База данных требует обновления (миграция 037) для проведения оплат.',
+              style: TextStyle(color: AppColors.warningLight, fontSize: 10, fontStyle: FontStyle.italic),
+            ),
+          ),
+        const SizedBox(height: 12),
+
+        // Shifts List
+        Expanded(
+          child: _shifts.isEmpty
+              ? const Center(
+                  child: Text(
+                    'История смен пуста',
+                    style: TextStyle(color: AppColors.darkTextTertiary),
+                  ),
+                )
+              : ListView.builder(
+                  itemCount: _shifts.length,
+                  itemBuilder: (context, idx) {
+                    final shift = _shifts[idx];
+                    final shiftId = shift['id'] as String;
+                    final isEnded = shift['ended_at'] != null;
+                    final start = _formatDate(shift['started_at']);
+                    final end = isEnded ? _formatDate(shift['ended_at']) : 'Активна';
+                    final ordersCount = shift['total_orders'] ?? 0;
+                    final collected = (shift['total_collected'] as num?)?.toDouble() ?? 0.0;
+                    final earned = (shift['courier_earning'] as num?)?.toDouble() ?? 0.0;
+                    final amountToReturn = (shift['amount_to_return'] as num?)?.toDouble() ?? 0.0;
+                    final isSettled = _hasIsSettled && shift['is_settled'] == true;
+
+                    Color statusColor;
+                    String statusLabel;
+                    if (!isEnded) {
+                      statusColor = AppColors.info;
+                      statusLabel = 'В работе';
+                    } else if (isSettled) {
+                      statusColor = AppColors.success;
+                      statusLabel = 'Оплачен';
+                    } else {
+                      statusColor = AppColors.error;
+                      statusLabel = 'Долг';
+                    }
+
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 10),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: AppColors.darkSurfaceVariant,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.darkBorder),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(Icons.date_range_rounded, size: 14, color: AppColors.darkTextSecondary),
+                              const SizedBox(width: 6),
+                              Expanded(
+                                child: Text(
+                                  '$start — $end',
+                                  style: const TextStyle(
+                                    color: AppColors.darkTextPrimary,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: statusColor.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  statusLabel,
+                                  style: TextStyle(
+                                    color: statusColor,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const Divider(color: AppColors.darkBorder, height: 16),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _ShiftMetric('Заказов', '$ordersCount'),
+                              _ShiftMetric('Собрано наличных', '${collected.toStringAsFixed(0)} с'),
+                              _ShiftMetric('Заработано', '${earned.toStringAsFixed(0)} с'),
+                              _ShiftMetric(
+                                'Долг к сдаче',
+                                '${amountToReturn.toStringAsFixed(0)} с',
+                                valueColor: amountToReturn > 0 && !isSettled 
+                                    ? AppColors.errorLight 
+                                    : AppColors.darkTextPrimary,
+                                bold: true,
+                              ),
+                            ],
+                          ),
+                          if (isEnded && !isSettled && amountToReturn > 0) ...[
+                            const SizedBox(height: 12),
+                            Align(
+                              alignment: Alignment.centerRight,
+                              child: ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.success,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  minimumSize: Size.zero,
+                                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                ),
+                                onPressed: () => _settleShift(shiftId, amountToReturn),
+                                icon: const Icon(Icons.check_circle_outline_rounded, size: 14),
+                                label: const Text('Принять долг', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    );
+                  },
+                ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ShiftMetric extends StatelessWidget {
+  final String label;
+  final String value;
+  final Color valueColor;
+  final bool bold;
+
+  const _ShiftMetric(
+    this.label,
+    this.value, {
+    this.valueColor = AppColors.darkTextPrimary,
+    this.bold = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(color: AppColors.darkTextTertiary, fontSize: 10),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          value,
+          style: TextStyle(
+            color: valueColor,
+            fontSize: 12,
+            fontWeight: bold ? FontWeight.bold : FontWeight.w500,
+          ),
+        ),
+      ],
+    );
   }
 }

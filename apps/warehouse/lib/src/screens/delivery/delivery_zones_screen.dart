@@ -495,7 +495,7 @@ class _PolygonZoneDialogState extends State<_PolygonZoneDialog> {
         final polyPoints = ecoZone['polygon_points'] as List<dynamic>?;
         if (polyPoints != null && polyPoints.length >= 3) {
           final ecoPoly = polyPoints.map((pt) {
-            final list = pt as List<dynamic>;
+            final list = pt as List;
             return LatLng((list[0] as num).toDouble(), (list[1] as num).toDouble());
           }).toList();
           if (_isPointInPolygon(point, ecoPoly)) {
@@ -503,7 +503,7 @@ class _PolygonZoneDialogState extends State<_PolygonZoneDialog> {
             break;
           }
         } else {
-          final ecoCenter = LatLng(ecoZone['center_lat'] as double, ecoZone['center_lng'] as double);
+          final ecoCenter = LatLng((ecoZone['center_lat'] as num).toDouble(), (ecoZone['center_lng'] as num).toDouble());
           final ecoRadius = (ecoZone['radius_km'] as num?)?.toDouble() ?? 0;
           final d = distanceCalc.as(LengthUnit.Kilometer, point, ecoCenter);
           if (d <= ecoRadius) {
@@ -557,7 +557,7 @@ class _PolygonZoneDialogState extends State<_PolygonZoneDialog> {
                             ..._ecosystemZones.where((z) => z['polygon_points'] != null).map((z) {
                               final rawPoints = z['polygon_points'] as List<dynamic>;
                               final points = rawPoints.map((pt) {
-                                final list = pt as List<dynamic>;
+                                final list = pt as List;
                                 return LatLng((list[0] as num).toDouble(), (list[1] as num).toDouble());
                               }).toList();
                               return Polygon(
@@ -585,7 +585,7 @@ class _PolygonZoneDialogState extends State<_PolygonZoneDialog> {
                           circles: [
                             // Ecosystem Legacy Circle Zones
                             ..._ecosystemZones.where((z) => z['polygon_points'] == null && z['radius_km'] != null).map((z) => CircleMarker(
-                                  point: LatLng(z['center_lat'] as double, z['center_lng'] as double),
+                                  point: LatLng((z['center_lat'] as num).toDouble(), (z['center_lng'] as num).toDouble()),
                                   color: Colors.red.withValues(alpha: 0.05),
                                   borderColor: Colors.red.withValues(alpha: 0.3),
                                   borderStrokeWidth: 2,

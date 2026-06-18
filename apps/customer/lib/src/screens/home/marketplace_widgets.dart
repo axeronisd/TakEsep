@@ -382,14 +382,6 @@ class MarketplaceStoreCard extends StatelessWidget {
             textColor: AkJolTheme.primary,
             iconColor: AkJolTheme.primary,
           ),
-        // Delivery rates
-        _InfoChip(
-          icon: Icons.local_shipping_rounded,
-          label: store.deliveryFeeDisplay,
-          bg: const Color(0xFF3498DB).withValues(alpha: 0.08),
-          textColor: const Color(0xFF3498DB),
-          iconColor: const Color(0xFF3498DB),
-        ),
         // Free delivery from
         if (store.freeDeliveryFrom > 0)
           _InfoChip(

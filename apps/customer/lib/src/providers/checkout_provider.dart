@@ -108,7 +108,7 @@ class CheckoutState {
     return calculated < 50.0 ? 50.0 : calculated.roundToDouble();
   }
 
-  bool get isReady => !loading && deliveryAddress.isNotEmpty;
+  bool get isReady => !loading && deliveryAddress.isNotEmpty && error == null;
 
   // Night time is removed from tariffs calculation
 
@@ -116,6 +116,7 @@ class CheckoutState {
     bool? loading,
     bool? submitting,
     String? error,
+    bool clearError = false,
     double? deliveryFee,
     double? freeDeliveryFrom,
     int? estimatedMinutes,
@@ -131,7 +132,7 @@ class CheckoutState {
   }) => CheckoutState(
     loading: loading ?? this.loading,
     submitting: submitting ?? this.submitting,
-    error: error,
+    error: clearError ? null : (error ?? this.error),
     deliveryFee: deliveryFee ?? this.deliveryFee,
     freeDeliveryFrom: freeDeliveryFrom ?? this.freeDeliveryFrom,
     estimatedMinutes: estimatedMinutes ?? this.estimatedMinutes,
@@ -273,11 +274,13 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
               (bestZone['estimated_minutes'] as num?)?.toInt() ?? 60,
           minOrderAmount:
               (bestZone['min_order_amount'] as num?)?.toDouble() ?? 0,
+          clearError: true,
         );
       } else {
         state = state.copyWith(
           distanceKm: distanceKm,
           deliveryFee: fee,
+          error: 'Адрес находится вне зоны доставки магазина',
         );
       }
     } catch (e) {
@@ -320,7 +323,7 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
     final cart = ref.read(cartProvider);
     if (cart.isEmpty || cart.warehouseId == null) return null;
 
-    state = state.copyWith(submitting: true, error: null);
+    state = state.copyWith(submitting: true, clearError: true);
 
     try {
       // ── Check working hours ──

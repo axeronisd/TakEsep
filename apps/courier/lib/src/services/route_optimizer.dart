@@ -82,18 +82,20 @@ class RouteOptimizer {
         ));
       }
 
-      // Задачу Dropoff добавляем всегда, но она будет доступна только после Pickup
-      final cust = order['customers'];
-      allTasks.add(RouteTask(
-        type: RouteTaskType.dropoff,
-        orderId: order['id'],
-        order: order,
-        lat: (cust?['latitude'] as num?)?.toDouble() ?? (order['delivery_lat'] as num?)?.toDouble() ?? 0,
-        lng: (cust?['longitude'] as num?)?.toDouble() ?? (order['delivery_lng'] as num?)?.toDouble() ?? 0,
-        title: 'Доставить клиенту: ${cust?['name'] ?? 'Клиент'}',
-        subtitle: 'Сумма: ${order['total']} сом',
-        address: order['delivery_address'] ?? '',
-      ));
+      // Задачу Dropoff добавляем только если заказ уже забрали (isPickedUp == true)
+      if (isPickedUp) {
+        final cust = order['customers'];
+        allTasks.add(RouteTask(
+          type: RouteTaskType.dropoff,
+          orderId: order['id'],
+          order: order,
+          lat: (cust?['latitude'] as num?)?.toDouble() ?? (order['delivery_lat'] as num?)?.toDouble() ?? 0,
+          lng: (cust?['longitude'] as num?)?.toDouble() ?? (order['delivery_lng'] as num?)?.toDouble() ?? 0,
+          title: 'Доставить клиенту: ${cust?['name'] ?? 'Клиент'}',
+          subtitle: 'Сумма: ${order['total']} сом',
+          address: order['delivery_address'] ?? '',
+        ));
+      }
     }
 
     final List<RouteTask> route = [];

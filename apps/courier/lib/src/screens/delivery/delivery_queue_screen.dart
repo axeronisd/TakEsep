@@ -317,6 +317,16 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
 
   Future<void> _updateOrderStatus(String orderId, String newStatus) async {
     try {
+      if (newStatus == 'delivered') {
+        final currentOrder = _activeOrders.where((o) => o['id'] == orderId).firstOrNull;
+        if (currentOrder != null) {
+          final curStatus = currentOrder['status'];
+          if (curStatus != 'arrived' && curStatus != 'picked_up') {
+            throw 'Нельзя завершить заказ, который еще не забрали или не приехали к клиенту';
+          }
+        }
+      }
+
       setState(() => _updating = true);
       await Supabase.instance.client
           .from('delivery_orders')

@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3B67CBE98AF34A4B8F3EB27E /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = FF53678784934923A2916A83 /* GoogleService-Info.plist */; };
+
+		BE3122CF557E4AF8ACDDD396 /* warehouse_order.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 1BE201B9247D42BBA8C57296 /* warehouse_order.mp3 */; };
+
 		615151A968D94D8F96A3F6C3 /* order_pickup.wav in Resources */ = {isa = PBXBuildFile; fileRef = 616702246A2F4A5E9D5106EF /* order_pickup.wav */; };
 
 		F6777C9C71BD45B0AB6B343D /* order_delivered.wav in Resources */ = {isa = PBXBuildFile; fileRef = 77CB9E13DF2B4BF49ABA256D /* order_delivered.wav */; };
@@ -53,6 +57,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		FF53678784934923A2916A83 /* GoogleService-Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+
+		1BE201B9247D42BBA8C57296 /* warehouse_order.mp3 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = audio.mp3; path = warehouse_order.mp3; sourceTree = "<group>"; };
+
 		616702246A2F4A5E9D5106EF /* order_pickup.wav */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = audio.wav; path = order_pickup.wav; sourceTree = "<group>"; };
 
 		77CB9E13DF2B4BF49ABA256D /* order_delivered.wav */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = audio.wav; path = order_delivered.wav; sourceTree = "<group>"; };
@@ -136,7 +144,9 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
-																												616702246A2F4A5E9D5106EF /* order_pickup.wav */,
+																																				FF53678784934923A2916A83 /* GoogleService-Info.plist */,
+1BE201B9247D42BBA8C57296 /* warehouse_order.mp3 */,
+616702246A2F4A5E9D5106EF /* order_pickup.wav */,
 77CB9E13DF2B4BF49ABA256D /* order_delivered.wav */,
 0D25B69949414C5BB9E14EA4 /* order_cancelled.wav */,
 292394C2F222441894FE7FDB /* order_accepted.wav */,
@@ -240,7 +250,9 @@ BEE766F257A84DCD8E21494E /* new_order_alert.wav */,
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-																											615151A968D94D8F96A3F6C3 /* order_pickup.wav in Resources */,
+																																			3B67CBE98AF34A4B8F3EB27E /* GoogleService-Info.plist in Resources */,
+BE3122CF557E4AF8ACDDD396 /* warehouse_order.mp3 in Resources */,
+615151A968D94D8F96A3F6C3 /* order_pickup.wav in Resources */,
 F6777C9C71BD45B0AB6B343D /* order_delivered.wav in Resources */,
 F8A045A2029743BC87149E09 /* order_cancelled.wav in Resources */,
 7B31BA473DCA42279624506D /* order_accepted.wav in Resources */,

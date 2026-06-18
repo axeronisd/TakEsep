@@ -274,7 +274,9 @@ class OrderService {
     double platformEarning = 0;
 
     for (final order in orders) {
-      totalCollected += (order['total'] as num?)?.toDouble() ?? 0;
+      if (order['payment_method'] == 'cash') {
+        totalCollected += (order['total'] as num?)?.toDouble() ?? 0;
+      }
       courierEarning += (order['courier_earning'] as num?)?.toDouble() ?? 0;
       platformEarning += (order['platform_earning'] as num?)?.toDouble() ?? 0;
     }

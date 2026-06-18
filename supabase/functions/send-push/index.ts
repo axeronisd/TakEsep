@@ -121,6 +121,24 @@ async function sendToToken(
   const projectId = Deno.env.get("FIREBASE_PROJECT_ID") ?? "akjol-f479a"
   const url = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`
 
+  let androidSound = soundName
+  let iosSound = soundName === 'default' ? 'default' : `${soundName}.wav`
+  let resolvedChannelId = channelId
+
+  if (appType === "warehouse") {
+    resolvedChannelId = "delivery_orders"
+    androidSound = "warehouse_order"
+    iosSound = "warehouse_order.mp3"
+  } else if (appType === "courier") {
+    if (channelId === "new_orders") {
+      androidSound = "akjol_courier"
+      iosSound = "akjol_courier.mp3"
+    } else if (channelId === "chat_messages") {
+      androidSound = "chat_message"
+      iosSound = "chat_message.wav"
+    }
+  }
+
   const resp = await fetch(url, {
     method: "POST",
     headers: {
@@ -134,8 +152,8 @@ async function sendToToken(
         android: {
           priority: "high",
           notification: {
-            channel_id: channelId,
-            sound: soundName,
+            channel_id: resolvedChannelId,
+            sound: androidSound,
             default_vibrate_timings: true,
             notification_priority: "PRIORITY_HIGH",
           },
@@ -143,7 +161,7 @@ async function sendToToken(
         apns: {
           payload: {
             aps: {
-              sound: soundName === 'default' ? 'default' : `${soundName}.wav`,
+              sound: iosSound,
               badge: 1,
               "mutable-content": 1,
             },

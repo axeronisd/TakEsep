@@ -135,7 +135,7 @@ class NearbyStore {
   }
 
   String get deliveryFeeDisplay {
-    return '🚲 ${bicycleDeliveryFee.toStringAsFixed(0)} сом • 🛺 ${scooterDeliveryFee.toStringAsFixed(0)} сом';
+    return 'от ${bicycleDeliveryFee.toStringAsFixed(0)} сом';
   }
 
   String get deliveryTypeLabel {
@@ -172,6 +172,7 @@ final nearbyStoresProvider =
     }
 
     List<Map<String, dynamic>> zones = [];
+    bool rpcSuccess = false;
     
     try {
       // 1. Быстро ищем зоны (если настроено)
@@ -184,11 +185,12 @@ final nearbyStoresProvider =
               ?.map((e) => e as Map<String, dynamic>)
               .toList() ??
           [];
+      rpcSuccess = true;
     } catch (e) {
       debugPrint('ℹ️ RPC find_businesses_near not ready, using fallback');
     }
 
-    if (zones.isEmpty) {
+    if (!rpcSuccess) {
       // ФОЛЛБЕК: Загрузить все активные магазины и фильтровать по зонам
       final settingsData = await _supabase
           .from('delivery_settings')

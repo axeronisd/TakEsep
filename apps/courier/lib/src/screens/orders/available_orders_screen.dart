@@ -847,10 +847,7 @@ class _OrderCard extends StatelessWidget {
     final status = order['status'] ?? 'pending';
     final transport =
         order['approved_transport'] ?? order['requested_transport'] ?? '';
-
     final courierEarning = deliveryFee * earningRate;
-    final hour = DateTime.now().hour;
-    final isNight = hour >= 22 || hour < 6;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -928,17 +925,6 @@ class _OrderCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (isNight)
-                      Padding(
-                        padding: const EdgeInsets.only(top: 4),
-                        child: Text(
-                          'Ночной тариф',
-                          style: TextStyle(
-                            fontSize: 10,
-                            color: Colors.amber.withValues(alpha: 0.7),
-                          ),
-                        ),
-                      ),
                   ],
                 ),
               ],

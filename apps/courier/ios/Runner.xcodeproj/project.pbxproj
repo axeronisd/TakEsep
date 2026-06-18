@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		E1084BE2ED1A4D5F92A1F1ED /* akjol_courier.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 55010A48FCC543ADA949ED2E /* akjol_courier.mp3 */; };
+
 		398705DFDCE146C191CC264B /* order_pickup.wav in Resources */ = {isa = PBXBuildFile; fileRef = E8A77E49BC2B488DB2D68CF6 /* order_pickup.wav */; };
 
 		F3E611EBD53343409625EA31 /* order_delivered.wav in Resources */ = {isa = PBXBuildFile; fileRef = 4C4CA4344F144E79923AB006 /* order_delivered.wav */; };
@@ -54,6 +56,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		55010A48FCC543ADA949ED2E /* akjol_courier.mp3 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = audio.mp3; path = akjol_courier.mp3; sourceTree = "<group>"; };
+
 		E8A77E49BC2B488DB2D68CF6 /* order_pickup.wav */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = audio.wav; path = order_pickup.wav; sourceTree = "<group>"; };
 
 		4C4CA4344F144E79923AB006 /* order_delivered.wav */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = audio.wav; path = order_delivered.wav; sourceTree = "<group>"; };
@@ -137,7 +141,8 @@
 		97C146F01CF9000F007C117D /* Runner */ = {
 			isa = PBXGroup;
 			children = (
-																												E8A77E49BC2B488DB2D68CF6 /* order_pickup.wav */,
+																																55010A48FCC543ADA949ED2E /* akjol_courier.mp3 */,
+E8A77E49BC2B488DB2D68CF6 /* order_pickup.wav */,
 4C4CA4344F144E79923AB006 /* order_delivered.wav */,
 5E56F9BF4D1A4DBA835E34B2 /* order_cancelled.wav */,
 CC20FA03DAA440D0A24D0278 /* order_accepted.wav */,
@@ -241,7 +246,8 @@ C1C97D8FAA5545518DF1335B /* chat_message.wav */,
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-																											398705DFDCE146C191CC264B /* order_pickup.wav in Resources */,
+																															E1084BE2ED1A4D5F92A1F1ED /* akjol_courier.mp3 in Resources */,
+398705DFDCE146C191CC264B /* order_pickup.wav in Resources */,
 F3E611EBD53343409625EA31 /* order_delivered.wav in Resources */,
 3F12EE49578C45A5B4B95D1C /* order_cancelled.wav in Resources */,
 4F48E79FF49F418BB85A9DDE /* order_accepted.wav in Resources */,

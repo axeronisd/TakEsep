@@ -94,7 +94,7 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
       final polyPoints = ecoZone['polygon_points'] as List<dynamic>?;
       if (polyPoints != null && polyPoints.length >= 3) {
         final ecoPoly = polyPoints.map((pt) {
-          final list = pt as List<dynamic>;
+          final list = pt as List;
           return LatLng((list[0] as num).toDouble(), (list[1] as num).toDouble());
         }).toList();
         // Since delivery zone is a circle, we check if its center is inside the polygon
@@ -104,7 +104,7 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
       } else {
         final ecoRadiusVal = ecoZone['radius_km'];
         if (ecoRadiusVal != null) {
-          final ecoCenter = LatLng(ecoZone['center_lat'] as double, ecoZone['center_lng'] as double);
+          final ecoCenter = LatLng((ecoZone['center_lat'] as num).toDouble(), (ecoZone['center_lng'] as num).toDouble());
           final ecoRadius = (ecoRadiusVal as num).toDouble();
           
           final d = distanceCalc.as(LengthUnit.Kilometer, _deliveryCenter, ecoCenter);
@@ -359,7 +359,7 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
                     ..._ecosystemZones.where((z) => z['polygon_points'] != null).map((z) {
                       final rawPoints = z['polygon_points'] as List<dynamic>;
                       final points = rawPoints.map((pt) {
-                        final list = pt as List<dynamic>;
+                        final list = pt as List;
                         return LatLng((list[0] as num).toDouble(), (list[1] as num).toDouble());
                       }).toList();
                       return Polygon(
@@ -373,7 +373,7 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
                   ]),
                   CircleLayer(circles: [
                     ..._ecosystemZones.where((z) => z['radius_km'] != null && z['polygon_points'] == null).map((z) => CircleMarker(
-                          point: LatLng(z['center_lat'] as double, z['center_lng'] as double),
+                          point: LatLng((z['center_lat'] as num).toDouble(), (z['center_lng'] as num).toDouble()),
                           color: Colors.red.withValues(alpha: 0.1),
                           borderColor: Colors.red.withValues(alpha: 0.5),
                           borderStrokeWidth: 2,

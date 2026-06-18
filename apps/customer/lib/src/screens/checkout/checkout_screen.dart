@@ -307,14 +307,6 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         style: TextStyle(fontSize: 11, color: muted)),
                   ],
                 )),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text('${(co.transportRates[t.id] ?? 50.0).toStringAsFixed(0)} с/км',
-                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800,
-                            color: sel ? AkJolTheme.primary : text)),
-                  ],
-                ),
                 const SizedBox(width: 8),
                 _RadioDot(selected: sel),
               ]),

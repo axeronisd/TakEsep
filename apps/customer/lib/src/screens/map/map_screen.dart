@@ -617,16 +617,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   ),
                 ],
 
-                // Info chips — транспорт
-                const SizedBox(height: 12),
-                Wrap(
-                  spacing: 8, runSpacing: 6,
-                  children: [
-                    _infoChip('Электровелосипед • 100 сом', Colors.green),
-                    _infoChip('Муравей • 150 сом', Colors.orange),
-                  ],
-                ),
-
                 const SizedBox(height: 16),
 
                 // Open store button

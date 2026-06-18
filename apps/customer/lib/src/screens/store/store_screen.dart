@@ -1009,26 +1009,6 @@ class _StoreHeader extends ConsumerWidget {
                             ],
                           ),
                         ],
-                        // Delivery fees info
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.local_shipping_rounded,
-                              size: 13,
-                              color: Colors.white70,
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '🚲 ${bicycleFee.toStringAsFixed(0)} сом · 🛺 ${scooterFee.toStringAsFixed(0)} сом',
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white.withValues(alpha: 0.8),
-                              ),
-                            ),
-                          ],
-                        ),
                       ],
                     ),
                   ),

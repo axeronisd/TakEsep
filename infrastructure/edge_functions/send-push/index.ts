@@ -159,6 +159,7 @@ serve(async (req: Request) => {
               android: androidSound ? {
                 notification: {
                   sound: androidSound,
+                  channel_id: t.app_type === "warehouse" ? "delivery_orders" : (event === "courier_needed" ? "new_orders" : "order_status"),
                 }
               } : undefined,
               apns: apnsSound ? {
