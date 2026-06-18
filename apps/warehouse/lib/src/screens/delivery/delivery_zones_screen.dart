@@ -504,7 +504,7 @@ class _PolygonZoneDialogState extends State<_PolygonZoneDialog> {
           }
         } else {
           final ecoCenter = LatLng(ecoZone['center_lat'] as double, ecoZone['center_lng'] as double);
-          final ecoRadius = (ecoZone['radius_km'] as num).toDouble();
+          final ecoRadius = (ecoZone['radius_km'] as num?)?.toDouble() ?? 0;
           final d = distanceCalc.as(LengthUnit.Kilometer, point, ecoCenter);
           if (d <= ecoRadius) {
             pointValid = true;
@@ -584,7 +584,7 @@ class _PolygonZoneDialogState extends State<_PolygonZoneDialog> {
                         CircleLayer(
                           circles: [
                             // Ecosystem Legacy Circle Zones
-                            ..._ecosystemZones.where((z) => z['polygon_points'] == null).map((z) => CircleMarker(
+                            ..._ecosystemZones.where((z) => z['polygon_points'] == null && z['radius_km'] != null).map((z) => CircleMarker(
                                   point: LatLng(z['center_lat'] as double, z['center_lng'] as double),
                                   color: Colors.red.withValues(alpha: 0.05),
                                   borderColor: Colors.red.withValues(alpha: 0.3),

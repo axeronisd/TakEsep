@@ -72,22 +72,51 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
     }
   }
 
+  bool _isPointInPolygon(LatLng point, List<LatLng> polygon) {
+    int intersectCount = 0;
+    for (int j = 0; j < polygon.length; j++) {
+      LatLng vertex1 = polygon[j];
+      LatLng vertex2 = polygon[(j + 1) % polygon.length];
+      if ((vertex1.longitude > point.longitude) != (vertex2.longitude > point.longitude) &&
+          (point.latitude < (vertex2.latitude - vertex1.latitude) * (point.longitude - vertex1.longitude) / (vertex2.longitude - vertex1.longitude) + vertex1.latitude)) {
+        intersectCount++;
+      }
+    }
+    return intersectCount % 2 == 1;
+  }
+
   bool _isWithinEcosystem() {
     if (_errorLoadingEco != null) return false;
     if (_ecosystemZones.isEmpty) return true; // No restrictions if no zones defined
     final distanceCalc = const Distance();
     
     for (final ecoZone in _ecosystemZones) {
-      final ecoCenter = LatLng(ecoZone['center_lat'] as double, ecoZone['center_lng'] as double);
-      final ecoRadius = (ecoZone['radius_km'] as num).toDouble();
-      
-      final d = distanceCalc.as(LengthUnit.Kilometer, _deliveryCenter, ecoCenter);
-      if (d + _radiusKm <= ecoRadius) {
-        return true;
+      final polyPoints = ecoZone['polygon_points'] as List<dynamic>?;
+      if (polyPoints != null && polyPoints.length >= 3) {
+        final ecoPoly = polyPoints.map((pt) {
+          final list = pt as List<dynamic>;
+          return LatLng((list[0] as num).toDouble(), (list[1] as num).toDouble());
+        }).toList();
+        // Since delivery zone is a circle, we check if its center is inside the polygon
+        if (_isPointInPolygon(_deliveryCenter, ecoPoly)) {
+          return true;
+        }
+      } else {
+        final ecoRadiusVal = ecoZone['radius_km'];
+        if (ecoRadiusVal != null) {
+          final ecoCenter = LatLng(ecoZone['center_lat'] as double, ecoZone['center_lng'] as double);
+          final ecoRadius = (ecoRadiusVal as num).toDouble();
+          
+          final d = distanceCalc.as(LengthUnit.Kilometer, _deliveryCenter, ecoCenter);
+          if (d + _radiusKm <= ecoRadius) {
+            return true;
+          }
+        }
       }
     }
     return false;
   }
+
 
   bool _isStoreInsideZone() {
     final distanceCalc = const Distance();
@@ -326,8 +355,24 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
                     urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     userAgentPackageName: 'com.takesep.app',
                   ),
+                  PolygonLayer(polygons: [
+                    ..._ecosystemZones.where((z) => z['polygon_points'] != null).map((z) {
+                      final rawPoints = z['polygon_points'] as List<dynamic>;
+                      final points = rawPoints.map((pt) {
+                        final list = pt as List<dynamic>;
+                        return LatLng((list[0] as num).toDouble(), (list[1] as num).toDouble());
+                      }).toList();
+                      return Polygon(
+                        points: points,
+                        color: Colors.red.withValues(alpha: 0.05),
+                        borderColor: Colors.red.withValues(alpha: 0.3),
+                        borderStrokeWidth: 2,
+                        isFilled: true,
+                      );
+                    }),
+                  ]),
                   CircleLayer(circles: [
-                    ..._ecosystemZones.map((z) => CircleMarker(
+                    ..._ecosystemZones.where((z) => z['radius_km'] != null && z['polygon_points'] == null).map((z) => CircleMarker(
                           point: LatLng(z['center_lat'] as double, z['center_lng'] as double),
                           color: Colors.red.withValues(alpha: 0.1),
                           borderColor: Colors.red.withValues(alpha: 0.5),
