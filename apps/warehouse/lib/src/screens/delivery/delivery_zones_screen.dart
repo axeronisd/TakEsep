@@ -794,6 +794,7 @@ class _PolygonZoneDialogState extends State<_PolygonZoneDialog> {
       ),
     );
   }
+}
 
 /// Диалог добавления зоны по городу
 class _CityZoneDialog extends StatefulWidget {
