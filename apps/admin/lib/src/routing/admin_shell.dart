@@ -247,7 +247,7 @@ class _Sidebar extends StatelessWidget {
                 ),
                 const SizedBox(height: 8),
                 const Text(
-                  'v2.0.0 · build 72',
+                  'v3.0.19 · build 115',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: AppColors.darkTextTertiary,
