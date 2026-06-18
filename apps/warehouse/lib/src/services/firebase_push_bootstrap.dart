@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:go_router/go_router.dart';
 import 'package:akjol_auth/akjol_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'notification_service.dart';
 
 // ═══════════════════════════════════════════════════════════════
@@ -41,6 +42,9 @@ class FirebasePushBootstrap {
 
     FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundHandler);
 
+    final prefs = await SharedPreferences.getInstance();
+    final enabled = prefs.getBool('takesep_show_notifications') ?? false;
+
     // 1. Request permission
     final messaging = FirebaseMessaging.instance;
     final settings = await messaging.requestPermission(
@@ -67,13 +71,22 @@ class FirebasePushBootstrap {
     _currentToken = await messaging.getToken();
     debugPrint('[Push] FCM Token: ${_currentToken?.substring(0, 20)}...');
     if (_currentToken != null) {
-      await _pushService.registerToken(_currentToken!, customUserId: _employeeId);
+      if (enabled) {
+        await _pushService.registerToken(_currentToken!, customUserId: _employeeId);
+      } else {
+        await _pushService.removeToken(_currentToken!);
+      }
     }
 
     // 3. Listen for token refresh
     messaging.onTokenRefresh.listen((newToken) async {
       _currentToken = newToken;
-      await _pushService.registerToken(newToken, customUserId: _employeeId);
+      final currentEnabled = prefs.getBool('takesep_show_notifications') ?? false;
+      if (currentEnabled) {
+        await _pushService.registerToken(newToken, customUserId: _employeeId);
+      } else {
+        await _pushService.removeToken(newToken);
+      }
       debugPrint('[Push] Token refreshed');
     });
 
@@ -85,11 +98,12 @@ class FirebasePushBootstrap {
       final data = message.data;
 
       if (notification != null) {
+        final type = data['type'] ?? data['event'] ?? '';
         _notifService.show(
           title: notification.title ?? 'TakEsep Склад',
           body: notification.body ?? '',
-          channelId: data['channel_id'] ?? _inferChannel(data['type']),
-          soundName: data['sound'] ?? _inferSound(data['type']),
+          channelId: data['channel_id'] ?? _inferChannel(type),
+          soundName: data['sound'] ?? _inferSound(type),
           payload: data['order_id'],
         );
       }
@@ -115,7 +129,7 @@ class FirebasePushBootstrap {
     final context = warehouseNavigatorKey.currentContext;
     if (context == null) return;
 
-    final type = data['type'] ?? '';
+    final type = data['type'] ?? data['event'] ?? '';
     final orderId = data['order_id'];
 
     if (type == 'new_order' ||
@@ -143,17 +157,54 @@ class FirebasePushBootstrap {
   /// Infer sound name from event type
   static String _inferSound(String? type) {
     if (type == 'new_order' || type == 'order_assigned') {
-      return 'new_order_alert';
+      return 'warehouse_order';
     }
     if (type == 'chat_message') return 'chat_message';
     if (type == 'order_cancelled') return 'system_alert';
     return 'order_accepted';
   }
 
+  /// Enable/disable notifications dynamically (e.g. from Settings toggle)
+  static Future<void> updateNotificationPreferences(bool enabled) async {
+    if (kIsWeb) return;
+    try {
+      final messaging = FirebaseMessaging.instance;
+      if (enabled) {
+        final settings = await messaging.requestPermission(
+          alert: true,
+          badge: true,
+          sound: true,
+        );
+        if (settings.authorizationStatus != AuthorizationStatus.denied) {
+          final token = await messaging.getToken();
+          if (token != null) {
+            _currentToken = token;
+            await _pushService.registerToken(token, customUserId: _employeeId);
+            debugPrint('[Push] Registered FCM token because notifications enabled');
+          }
+        }
+      } else {
+        final token = await messaging.getToken();
+        if (token != null) {
+          await _pushService.removeToken(token);
+          debugPrint('[Push] Unregistered FCM token because notifications disabled');
+        }
+      }
+    } catch (e) {
+      debugPrint('[Push] Error updating notification preferences: $e');
+    }
+  }
+
   /// Re-register token after login (call this when user signs in)
   /// Tries multiple times with delay to handle slow auth state updates
   static Future<void> reRegisterToken({String? customUserId}) async {
     if (kIsWeb) return;
+    final prefs = await SharedPreferences.getInstance();
+    final enabled = prefs.getBool('takesep_show_notifications') ?? false;
+    if (!enabled) {
+      debugPrint('[Push] Skipping re-register token because notifications are disabled');
+      return;
+    }
     if (customUserId != null) {
       _employeeId = customUserId;
     }

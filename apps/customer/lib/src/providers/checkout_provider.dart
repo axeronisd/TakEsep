@@ -1,6 +1,9 @@
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/route_service.dart';
 import 'cart_provider.dart';
 import 'location_provider.dart';
 
@@ -15,23 +18,13 @@ class TransportOption {
   final String name;
   final String emoji;
   final double maxWeightKg;
-  final double dayPrice;
-  final double nightPrice;
 
   const TransportOption({
     required this.id,
     required this.name,
     required this.emoji,
     this.maxWeightKg = 10,
-    required this.dayPrice,
-    required this.nightPrice,
   });
-
-  double get currentPrice {
-    final hour = DateTime.now().hour;
-    final isNight = hour >= 22 || hour < 6;
-    return isNight ? nightPrice : dayPrice;
-  }
 }
 
 const kTransports = [
@@ -40,16 +33,12 @@ const kTransports = [
     name: 'Электровелосипед',
     emoji: '',
     maxWeightKg: 5,
-    dayPrice: 100,
-    nightPrice: 150,
   ),
   TransportOption(
     id: 'scooter',
     name: 'Муравей (трицикл)',
     emoji: '',
     maxWeightKg: 20,
-    dayPrice: 150,
-    nightPrice: 200,
   ),
 ];
 
@@ -80,11 +69,15 @@ class CheckoutState {
   // Note
   final String? customerNote;
 
+  // Distance & dynamic pricing
+  final double distanceKm;
+  final Map<String, double> transportRates;
+
   const CheckoutState({
     this.loading = true,
     this.submitting = false,
     this.error,
-    this.deliveryFee = 100,
+    this.deliveryFee = 50,
     this.freeDeliveryFrom = 0,
     this.estimatedMinutes = 60,
     this.minOrderAmount = 0,
@@ -94,6 +87,13 @@ class CheckoutState {
     this.deliveryLng = 0,
     this.selectedTransport = 'bicycle',
     this.customerNote,
+    this.distanceKm = 0.0,
+    this.transportRates = const {
+      'bicycle': 50.0,
+      'scooter': 75.0,
+      'motorcycle': 50.0,
+      'truck': 100.0
+    },
   });
 
   TransportOption get currentTransport => kTransports.firstWhere(
@@ -103,15 +103,14 @@ class CheckoutState {
 
   double effectiveDeliveryFee(double itemsTotal) {
     if (freeDeliveryFrom > 0 && itemsTotal >= freeDeliveryFrom) return 0;
-    return currentTransport.currentPrice;
+    final rate = transportRates[selectedTransport] ?? 50.0;
+    final calculated = distanceKm * rate;
+    return calculated < 50.0 ? 50.0 : calculated.roundToDouble();
   }
 
   bool get isReady => !loading && deliveryAddress.isNotEmpty;
 
-  bool get isNightTime {
-    final hour = DateTime.now().hour;
-    return hour >= 22 || hour < 6;
-  }
+  // Night time is removed from tariffs calculation
 
   CheckoutState copyWith({
     bool? loading,
@@ -127,6 +126,8 @@ class CheckoutState {
     double? deliveryLng,
     String? selectedTransport,
     String? customerNote,
+    double? distanceKm,
+    Map<String, double>? transportRates,
   }) => CheckoutState(
     loading: loading ?? this.loading,
     submitting: submitting ?? this.submitting,
@@ -141,6 +142,8 @@ class CheckoutState {
     deliveryLng: deliveryLng ?? this.deliveryLng,
     selectedTransport: selectedTransport ?? this.selectedTransport,
     customerNote: customerNote ?? this.customerNote,
+    distanceKm: distanceKm ?? this.distanceKm,
+    transportRates: transportRates ?? this.transportRates,
   );
 }
 
@@ -168,8 +171,21 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
       deliveryAddress: location.displayName,
       deliveryLat: location.lat ?? 0,
       deliveryLng: location.lng ?? 0,
-      deliveryFee: kTransports.first.currentPrice,
     );
+
+    try {
+      // Fetch dynamic transport rates from DB
+      final transportsData = await _supabase
+          .from('transport_types')
+          .select('id, price_per_km');
+      final rates = {
+        for (var t in transportsData)
+          (t['id'] as String): (t['price_per_km'] as num).toDouble()
+      };
+      state = state.copyWith(transportRates: rates);
+    } catch (e) {
+      debugPrint('⚠️ Fetch transport rates error: $e');
+    }
 
     try {
       await _loadDeliveryInfo(cart.warehouseId!, location.lat!, location.lng!);
@@ -180,12 +196,53 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
     }
   }
 
+  double _haversineDistance(double lat1, double lon1, double lat2, double lon2) {
+    const r = 6371.0; // Earth radius in km
+    final dLat = (lat2 - lat1) * math.pi / 180;
+    final dLon = (lon2 - lon1) * math.pi / 180;
+    final a = math.sin(dLat / 2) * math.sin(dLat / 2) +
+        math.cos(lat1 * math.pi / 180) *
+            math.cos(lat2 * math.pi / 180) *
+            math.sin(dLon / 2) *
+            math.sin(dLon / 2);
+    final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
+    return r * c;
+  }
+
   Future<void> _loadDeliveryInfo(
     String warehouseId,
     double lat,
     double lng,
   ) async {
     try {
+      // 1. Fetch warehouse coordinates
+      final warehouseData = await _supabase
+          .from('warehouses')
+          .select('latitude, longitude')
+          .eq('id', warehouseId)
+          .maybeSingle();
+
+      double distanceKm = 0.0;
+      if (warehouseData != null && warehouseData['latitude'] != null && warehouseData['longitude'] != null) {
+        final wLat = (warehouseData['latitude'] as num).toDouble();
+        final wLng = (warehouseData['longitude'] as num).toDouble();
+        
+        try {
+          final routeInfo = await RouteService.getRouteWithInfo(
+            LatLng(wLat, wLng),
+            LatLng(lat, lng),
+          );
+          distanceKm = routeInfo.distanceKm;
+        } catch (e) {
+          debugPrint('⚠️ OSRM routing failed: $e');
+        }
+
+        if (distanceKm == 0.0) {
+          distanceKm = _haversineDistance(wLat, wLng, lat, lng);
+        }
+      }
+
+      // 2. Load zone settings for free delivery limits, estimated time, etc.
       final rpcResult = await _supabase.rpc(
         'find_businesses_near',
         params: {'p_lat': lat, 'p_lng': lng},
@@ -201,15 +258,26 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
           .where((z) => z['warehouse_id'] == warehouseId)
           .toList();
 
+      final rate = state.transportRates[state.selectedTransport] ?? 50.0;
+      final calculated = distanceKm * rate;
+      final fee = calculated < 50.0 ? 50.0 : calculated.roundToDouble();
+
       if (zone.isNotEmpty) {
         final bestZone = zone.first;
         state = state.copyWith(
+          distanceKm: distanceKm,
+          deliveryFee: fee,
           freeDeliveryFrom:
               (bestZone['free_delivery_from'] as num?)?.toDouble() ?? 0,
           estimatedMinutes:
               (bestZone['estimated_minutes'] as num?)?.toInt() ?? 60,
           minOrderAmount:
               (bestZone['min_order_amount'] as num?)?.toDouble() ?? 0,
+        );
+      } else {
+        state = state.copyWith(
+          distanceKm: distanceKm,
+          deliveryFee: fee,
         );
       }
     } catch (e) {
@@ -223,6 +291,10 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
       deliveryLat: lat,
       deliveryLng: lng,
     );
+    final cart = ref.read(cartProvider);
+    if (cart.warehouseId != null) {
+      _loadDeliveryInfo(cart.warehouseId!, lat, lng);
+    }
   }
 
   void setAddressDetails(String details) {
@@ -230,13 +302,12 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
   }
 
   void setTransport(String transport) {
-    final t = kTransports.firstWhere(
-      (x) => x.id == transport,
-      orElse: () => kTransports.first,
-    );
+    final rate = state.transportRates[transport] ?? 50.0;
+    final calculated = state.distanceKm * rate;
+    final fee = calculated < 50.0 ? 50.0 : calculated.roundToDouble();
     state = state.copyWith(
       selectedTransport: transport,
-      deliveryFee: t.currentPrice,
+      deliveryFee: fee,
     );
   }
 
@@ -329,6 +400,7 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
           'p_payment_method': 'prepaid',
           'p_customer_note': state.customerNote ?? '',
           'p_items': items,
+          'p_distance_km': state.distanceKm,
         },
       );
 

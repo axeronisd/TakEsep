@@ -3,29 +3,41 @@
 //
 // Receives delivery_orders webhook events and dispatches
 // Firebase Cloud Messaging notifications to relevant users.
+// Supports both FCM HTTP v1 API and Legacy API fallback.
 //
 // DEPLOY:
 //   supabase functions deploy send-push --project-ref YOUR_REF
 //
-// WEBHOOK SETUP (Supabase Dashboard → Database → Webhooks):
-//   Table: delivery_orders
-//   Events: INSERT, UPDATE
-//   Type: Supabase Edge Function
-//   Function: send-push
-//
 // ENV VARS (set in Supabase Dashboard → Edge Functions → send-push):
-//   FIREBASE_SERVICE_ACCOUNT_KEY: {...} (JSON string)
-//   SUPABASE_SERVICE_ROLE_KEY: auto-injected
+//   FIREBASE_SERVICE_ACCOUNT_KEY: {...} (JSON string from firebase credentials)
+//   FIREBASE_PROJECT_ID: your-firebase-project-id (if not using service account default)
+//   FCM_SERVER_KEY: Legacy FCM key (only if Legacy API is enabled)
 // ═══════════════════════════════════════════════════════════════
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { JWT } from "npm:google-auth-library";
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+let FIREBASE_PROJECT_ID = Deno.env.get("FIREBASE_PROJECT_ID") ?? "akjol-delivery";
 
-// Google OAuth2 for FCM HTTP v1 API
-const FIREBASE_PROJECT_ID = Deno.env.get("FIREBASE_PROJECT_ID") ?? "akjol-delivery";
+async function getAccessToken(serviceAccountKeyJson: string): Promise<string> {
+  const credentials = JSON.parse(serviceAccountKeyJson);
+  if (credentials.project_id) {
+    FIREBASE_PROJECT_ID = credentials.project_id;
+  }
+  const client = new JWT({
+    email: credentials.client_email,
+    key: credentials.private_key,
+    scopes: ["https://www.googleapis.com/auth/firebase.messaging"],
+  });
+  const token = await client.getAccessToken();
+  if (!token.token) {
+    throw new Error("Failed to get Google OAuth2 token");
+  }
+  return token.token;
+}
 
 serve(async (req: Request) => {
   try {
@@ -87,15 +99,27 @@ serve(async (req: Request) => {
       return new Response(JSON.stringify({ sent: 0, event }), { status: 200 });
     }
 
-    // Send FCM notifications
-    // NOTE: For production, use Google OAuth2 service account token
-    // For now, use legacy FCM key (simpler setup)
+    // Check credentials
+    const serviceAccountKey = Deno.env.get("FIREBASE_SERVICE_ACCOUNT_KEY");
     const fcmServerKey = Deno.env.get("FCM_SERVER_KEY");
 
-    if (!fcmServerKey) {
-      console.warn("FCM_SERVER_KEY not set, logging notifications:");
+    let accessToken: string | null = null;
+    let useHttpV1 = false;
+
+    if (serviceAccountKey) {
+      try {
+        accessToken = await getAccessToken(serviceAccountKey);
+        useHttpV1 = true;
+        console.log("Using FCM HTTP v1 API with Service Account Token");
+      } catch (err) {
+        console.error("Failed to generate Google OAuth2 token, falling back to legacy:", err);
+      }
+    }
+
+    if (!useHttpV1 && !fcmServerKey) {
+      console.warn("Neither FIREBASE_SERVICE_ACCOUNT_KEY nor FCM_SERVER_KEY is set. Logging notification data:");
       for (const t of tokens) {
-        console.log(`  → [${event}] ${t.title}: ${t.body}`);
+        console.log(`  → [${event}] ${t.title}: ${t.body} (App: ${t.app_type}, Platform: ${t.device_platform})`);
       }
       return new Response(
         JSON.stringify({ event, would_send: tokens.length }),
@@ -106,36 +130,94 @@ serve(async (req: Request) => {
     let sent = 0;
     for (const t of tokens) {
       try {
-        const res = await fetch("https://fcm.googleapis.com/fcm/send", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `key=${fcmServerKey}`,
-          },
-          body: JSON.stringify({
-            to: t.token,
-            notification: {
-              title: t.title,
-              body: t.body,
-              sound: "default",
-            },
-            data: {
-              order_id: orderId,
-              event: event,
-              click_action: "FLUTTER_NOTIFICATION_CLICK",
-            },
-          }),
-        });
+        let res: Response;
+        if (useHttpV1) {
+          // Format custom sound name per application/platform for background alerts
+          let androidSound: string | undefined = undefined;
+          let apnsSound: string | undefined = undefined;
 
-        if (res.ok) sent++;
-        else console.error(`FCM error for token ${t.token}:`, await res.text());
+          if (t.app_type === "warehouse") {
+            androidSound = "warehouse_order";
+            apnsSound = "warehouse_order.mp3";
+          } else if (t.app_type === "courier") {
+            androidSound = "akjol_courier";
+            apnsSound = "akjol_courier.mp3";
+          }
+
+          const messageBody = {
+            message: {
+              token: t.token,
+              notification: {
+                title: t.title,
+                body: t.body,
+              },
+              data: {
+                order_id: orderId,
+                event: event,
+                click_action: "FLUTTER_NOTIFICATION_CLICK",
+              },
+              android: androidSound ? {
+                notification: {
+                  sound: androidSound,
+                }
+              } : undefined,
+              apns: apnsSound ? {
+                payload: {
+                  aps: {
+                    sound: apnsSound,
+                  }
+                }
+              } : undefined,
+            }
+          };
+
+          res = await fetch(
+            `https://fcm.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/messages:send`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accessToken}`,
+              },
+              body: JSON.stringify(messageBody),
+            }
+          );
+        } else {
+          // Legacy API fallback
+          res = await fetch("https://fcm.googleapis.com/fcm/send", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `key=${fcmServerKey}`,
+            },
+            body: JSON.stringify({
+              to: t.token,
+              notification: {
+                title: t.title,
+                body: t.body,
+                sound: "default",
+              },
+              data: {
+                order_id: orderId,
+                event: event,
+                click_action: "FLUTTER_NOTIFICATION_CLICK",
+              },
+            }),
+          });
+        }
+
+        if (res.ok) {
+          sent++;
+        } else {
+          console.error(`FCM error for token ${t.token}:`, await res.text());
+        }
       } catch (e) {
         console.error(`Failed to send to ${t.token}:`, e);
       }
     }
 
     return new Response(
-      JSON.stringify({ event, sent, total: tokens.length }),
+      JSON.stringify({ event, sent, total: tokens.length, api: useHttpV1 ? "v1" : "legacy" }),
       { status: 200 }
     );
   } catch (err) {

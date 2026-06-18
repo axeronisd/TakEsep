@@ -82,7 +82,7 @@ class FirebasePushBootstrap {
           return;
         }
 
-        final type = data['type'] ?? '';
+        final type = data['type'] ?? data['event'] ?? '';
         final channelId = _inferChannel(type);
         final soundName = _inferSound(type, data['status']);
 
@@ -123,7 +123,7 @@ class FirebasePushBootstrap {
   /// Infer sound name from type
   static String _inferSound(String type, String? status) {
     if (type == 'new_order' || type == 'order_assigned')
-      return 'new_order_alert';
+      return 'akjol_courier';
     if (type == 'chat_message') return 'chat_message';
     if (type == 'order_cancelled') return 'order_cancelled';
     return 'order_accepted';

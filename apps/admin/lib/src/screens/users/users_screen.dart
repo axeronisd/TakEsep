@@ -27,6 +27,7 @@ class _UsersScreenState extends State<UsersScreen>
   List<Map<String, dynamic>> _authUsers = [];
   List<Map<String, dynamic>> _warehouses = [];
   List<Map<String, dynamic>> _roles = [];
+  double _globalCourierEarningRate = 0.90;
   String? _authError;
 
   final Set<String> _selectedAuthIds = {};
@@ -107,6 +108,18 @@ class _UsersScreenState extends State<UsersScreen>
           .select('id, name, company_id')
           .order('name');
 
+      double globalRate = 0.90;
+      try {
+        final settingsData = await _supabase
+            .from('system_settings')
+            .select('courier_earning_rate')
+            .eq('id', 'default')
+            .maybeSingle();
+        if (settingsData != null) {
+          globalRate = (settingsData['courier_earning_rate'] as num?)?.toDouble() ?? 0.90;
+        }
+      } catch (_) {}
+
       setState(() {
         _customers = List<Map<String, dynamic>>.from(customersData);
         _couriers = List<Map<String, dynamic>>.from(couriersData);
@@ -114,6 +127,7 @@ class _UsersScreenState extends State<UsersScreen>
         _warehouses = List<Map<String, dynamic>>.from(warehousesData);
         _roles = List<Map<String, dynamic>>.from(rolesData);
         _authUsers = authList;
+        _globalCourierEarningRate = globalRate;
         _loading = false;
       });
     } catch (e) {
@@ -659,8 +673,10 @@ class _UsersScreenState extends State<UsersScreen>
         final name = c['name'] ?? '—';
         final phone = c['phone'] ?? '—';
         final key = c['access_key'] ?? '—';
-        final rate =
-            '${((c['earning_rate'] as num?)?.toDouble() ?? 0.90) * 100 ~/ 1}%';
+        final courierRate = c['earning_rate'] as num?;
+        final rate = courierRate != null
+            ? '${(courierRate * 100).toStringAsFixed(0)}%'
+            : '${(_globalCourierEarningRate * 100).toStringAsFixed(0)}% (сист.)';
         final isActive = c['is_active'] == true;
         final isSelected = _selectedCourierIds.contains(id);
 
@@ -1170,8 +1186,10 @@ class _UsersScreenState extends State<UsersScreen>
     final name = c['name'] ?? '—';
     final phone = c['phone'] ?? '—';
     final key = c['access_key'] ?? '—';
-    final rate =
-        '${((c['earning_rate'] as num?)?.toDouble() ?? 0.90) * 100 ~/ 1}%';
+    final courierRate = c['earning_rate'] as num?;
+    final rate = courierRate != null
+        ? '${(courierRate * 100).toStringAsFixed(0)}%'
+        : '${(_globalCourierEarningRate * 100).toStringAsFixed(0)}% (сист.)';
     final isActive = c['is_active'] == true;
     final isSelected = _selectedCourierIds.contains(id);
 
@@ -1545,7 +1563,7 @@ class _UsersScreenState extends State<UsersScreen>
     final name = c['name'] ?? '—';
     final phone = c['phone'] ?? '—';
     final key = c['access_key'] ?? '—';
-    final rate = '${((c['earning_rate'] as num?)?.toDouble() ?? 0.90) * 100}%';
+    final rate = '${(_globalCourierEarningRate * 100).toStringAsFixed(0)}%';
     final transports =
         (c['transport_types'] as List?)?.join(', ') ?? 'Велосипед';
     final email = _getEmailForUserId(c['user_id']);
@@ -2441,8 +2459,10 @@ class _UsersScreenState extends State<UsersScreen>
   }
 
   void _showEditRateDialog(Map<String, dynamic> courier) {
-    double rate = ((courier['earning_rate'] as num?)?.toDouble() ?? 0.90);
     final name = courier['name'] ?? 'Курьер';
+    final initialRate = (courier['earning_rate'] as num?)?.toDouble();
+    double rate = initialRate ?? _globalCourierEarningRate;
+    bool useSystemDefault = initialRate == null;
 
     showDialog(
       context: context,
@@ -2452,7 +2472,7 @@ class _UsersScreenState extends State<UsersScreen>
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
               side: const BorderSide(color: AppColors.darkBorder)),
-          title: Text('Ставка: $name',
+          title: Text('Ставка курьера: $name',
               style: const TextStyle(
                   color: Colors.white, fontWeight: FontWeight.bold)),
           content: ConstrainedBox(
@@ -2460,59 +2480,83 @@ class _UsersScreenState extends State<UsersScreen>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                    'Процент от стоимости доставки, который получает курьер',
-                    style: TextStyle(
-                        fontSize: 13, color: AppColors.darkTextSecondary)),
-                const SizedBox(height: 24),
-                Text(
-                  '${(rate * 100).toStringAsFixed(0)}%',
-                  style: const TextStyle(
-                    fontSize: 48,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.success,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Slider(
-                  value: rate,
-                  min: 0.0,
-                  max: 1.0,
-                  divisions: 20,
+                CheckboxListTile(
+                  title: const Text('Системная ставка',
+                      style: TextStyle(color: Colors.white, fontSize: 14)),
+                  subtitle: Text(
+                      'Использовать общую ставку ${(_globalCourierEarningRate * 100).toStringAsFixed(0)}%',
+                      style: const TextStyle(color: AppColors.darkTextSecondary, fontSize: 12)),
+                  value: useSystemDefault,
                   activeColor: AppColors.success,
-                  label: '${(rate * 100).toStringAsFixed(0)}%',
-                  onChanged: (v) => setDialogState(() => rate = v),
+                  contentPadding: EdgeInsets.zero,
+                  onChanged: (v) {
+                    setDialogState(() {
+                      useSystemDefault = v ?? false;
+                      if (useSystemDefault) {
+                        rate = _globalCourierEarningRate;
+                      }
+                    });
+                  },
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [50, 70, 80, 90, 100].map((p) {
-                    final isSelected = (rate * 100).round() == p;
-                    return GestureDetector(
-                      onTap: () => setDialogState(() => rate = p / 100),
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 14, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppColors.success.withValues(alpha: 0.2)
-                              : Colors.white.withValues(alpha: 0.05),
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppColors.success
-                                : Colors.grey.withValues(alpha: 0.3),
+                const SizedBox(height: 12),
+                Opacity(
+                  opacity: useSystemDefault ? 0.4 : 1.0,
+                  child: AbsorbPointer(
+                    absorbing: useSystemDefault,
+                    child: Column(
+                      children: [
+                        Text(
+                          '${(rate * 100).toStringAsFixed(0)}%',
+                          style: const TextStyle(
+                            fontSize: 48,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.success,
                           ),
                         ),
-                        child: Text('$p%',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color:
-                                  isSelected ? AppColors.success : Colors.grey,
-                            )),
-                      ),
-                    );
-                  }).toList(),
+                        const SizedBox(height: 8),
+                        Slider(
+                          value: rate,
+                          min: 0.0,
+                          max: 1.0,
+                          divisions: 20,
+                          activeColor: AppColors.success,
+                          label: '${(rate * 100).toStringAsFixed(0)}%',
+                          onChanged: (v) => setDialogState(() => rate = v),
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [50, 70, 80, 90, 100].map((p) {
+                            final isSelected = (rate * 100).round() == p;
+                            return GestureDetector(
+                              onTap: () => setDialogState(() => rate = p / 100),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 14, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: isSelected
+                                      ? AppColors.success.withValues(alpha: 0.2)
+                                      : Colors.white.withValues(alpha: 0.05),
+                                  borderRadius: BorderRadius.circular(8),
+                                  border: Border.all(
+                                    color: isSelected
+                                        ? AppColors.success
+                                        : Colors.grey.withValues(alpha: 0.3),
+                                  ),
+                                ),
+                                child: Text('$p%',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color:
+                                          isSelected ? AppColors.success : Colors.grey,
+                                    )),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 Container(
@@ -2550,14 +2594,14 @@ class _UsersScreenState extends State<UsersScreen>
                 Navigator.pop(ctx);
                 try {
                   await _supabase.from('couriers').update({
-                    'earning_rate': rate,
+                    'earning_rate': useSystemDefault ? null : rate,
                   }).eq('id', courier['id']);
                   _loadData();
                   if (mounted) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
-                            'Ставка $name обновлена: ${(rate * 100).toStringAsFixed(0)}%'),
+                            'Ставка курьера $name обновлена: ${useSystemDefault ? "системная по умолчанию" : "${(rate * 100).toStringAsFixed(0)}%"}'),
                         backgroundColor: AppColors.success,
                       ),
                     );

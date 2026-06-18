@@ -310,12 +310,9 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text('${t.currentPrice.toStringAsFixed(0)} сом',
+                    Text('${(co.transportRates[t.id] ?? 50.0).toStringAsFixed(0)} с/км',
                         style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800,
                             color: sel ? AkJolTheme.primary : text)),
-                    if (co.isNightTime)
-                      Text('ночной',
-                          style: TextStyle(fontSize: 9, color: AkJolTheme.accent)),
                   ],
                 ),
                 const SizedBox(width: 8),
@@ -324,20 +321,6 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             ),
           );
         }),
-        if (co.isNightTime)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: AkJolTheme.accent.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Row(children: [
-              const Icon(Icons.nightlight_round, size: 12, color: AkJolTheme.accentDark),
-              const SizedBox(width: 5),
-              Text('Ночной тариф +50 сом (22:00–06:00)',
-                  style: TextStyle(fontSize: 11, color: AkJolTheme.accentDark)),
-            ]),
-          ),
       ],
     ));
   }

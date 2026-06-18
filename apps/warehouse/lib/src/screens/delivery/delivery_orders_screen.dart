@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:takesep_design_system/takesep_design_system.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../../providers/auth_providers.dart';
+import '../../services/notification_service.dart';
 
 // ═══════════════════════════════════════════════════════════════
 // Delivery Orders Screen — 3-Tab Workflow
@@ -55,6 +56,7 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
   @override
   void initState() {
     super.initState();
+    NotificationService().stopOrderLoop(); // Stop looping alarm on page entry
     _tabController = TabController(length: 2, vsync: this);
     _loadOrders();
     _subscribeToOrders();

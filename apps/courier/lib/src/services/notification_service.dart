@@ -24,6 +24,8 @@ class NotificationService {
 
   // Sound URLs for in-app foreground playback
   static const _sounds = <String, String>{
+    'akjol_courier':
+        'https://cdn.pixabay.com/audio/2024/02/19/audio_e06e29e1e4.mp3',
     'new_order_alert':
         'https://cdn.pixabay.com/audio/2024/02/19/audio_e06e29e1e4.mp3',
     'order_accepted':
@@ -77,7 +79,7 @@ class NotificationService {
         description: 'Уведомления о новых заказах',
         importance: Importance.max,
         playSound: true,
-        sound: RawResourceAndroidNotificationSound('new_order_alert'),
+        sound: RawResourceAndroidNotificationSound('akjol_courier'),
         enableVibration: true,
         showBadge: true,
       ),
@@ -153,7 +155,7 @@ class NotificationService {
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
-      sound: soundName != null ? '${soundName}.wav' : 'default',
+      sound: soundName != null ? '${soundName}.mp3' : 'default',
     );
 
     try {
@@ -182,15 +184,22 @@ class NotificationService {
   Future<void> playSound(String soundName) async {
     try {
       // Try local asset first
-      final assetPath = 'sounds/$soundName.wav';
+      final assetPathMp3 = 'sounds/$soundName.mp3';
+      final assetPathWav = 'sounds/$soundName.wav';
       await _audioPlayer.setVolume(0.8);
       await _audioPlayer.setReleaseMode(ReleaseMode.release);
       try {
-        await _audioPlayer.play(AssetSource(assetPath));
-        debugPrint('[Notif] Playing local asset: $assetPath');
+        await _audioPlayer.play(AssetSource(assetPathMp3));
+        debugPrint('[Notif] Playing local asset (mp3): $assetPathMp3');
         return;
       } catch (_) {
-        // Asset not found — fallback to URL
+        try {
+          await _audioPlayer.play(AssetSource(assetPathWav));
+          debugPrint('[Notif] Playing local asset (wav): $assetPathWav');
+          return;
+        } catch (_) {
+          // Asset not found — fallback to URL
+        }
       }
 
       final url = _sounds[soundName];

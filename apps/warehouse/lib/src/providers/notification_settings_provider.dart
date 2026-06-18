@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/firebase_push_bootstrap.dart';
 import 'auth_providers.dart';
 
 const _kShowNotificationsPref = 'takesep_show_notifications';
@@ -14,11 +15,13 @@ class NotificationSettingsNotifier extends StateNotifier<bool> {
   void toggle() {
     state = !state;
     _prefs.setBool(_kShowNotificationsPref, state);
+    FirebasePushBootstrap.updateNotificationPreferences(state);
   }
 
   void set(bool value) {
     state = value;
     _prefs.setBool(_kShowNotificationsPref, value);
+    FirebasePushBootstrap.updateNotificationPreferences(value);
   }
 }
 

@@ -31,6 +31,8 @@ class AdminShell extends StatelessWidget {
           AppColors.error),
       _NavDef(Icons.radar_rounded, 'Зоны экосистемы', '/zones', ['/zones'], 
           AppColors.warning),
+      _NavDef(Icons.local_shipping_rounded, 'Тарифы транспорта', '/tariffs', ['/tariffs'], 
+          AppColors.primary),
     ]),
   ];
 
@@ -47,6 +49,7 @@ class AdminShell extends StatelessWidget {
     if (location.startsWith('/moderation')) return 'Модерация адресов';
     if (location.startsWith('/database')) return 'База данных';
     if (location.startsWith('/zones')) return 'Зоны экосистемы';
+    if (location.startsWith('/tariffs')) return 'Тарифы транспорта';
     return 'TakEsep Admin';
   }
 
@@ -72,6 +75,9 @@ class AdminShell extends StatelessWidget {
     }
     if (location.startsWith('/zones')) {
       return 'Глобальные зоны ограничения доставки';
+    }
+    if (location.startsWith('/tariffs')) {
+      return 'Стоимость доставки курьеров за километр';
     }
     return 'Панель управления экосистемой';
   }
@@ -328,6 +334,7 @@ class _MobileShell extends StatelessWidget {
     if (location.startsWith('/moderation')) return 4;
     if (location.startsWith('/database') ||
         location.startsWith('/zones') ||
+        location.startsWith('/tariffs') ||
         location.startsWith('/orders')) {
       return 5;
     }
@@ -394,6 +401,12 @@ class _MobileShell extends StatelessWidget {
                 icon: Icons.radar_rounded,
                 label: 'Зоны экосистемы',
                 onTap: () => context.go('/zones'),
+              ),
+              _buildDrawerItem(
+                context,
+                icon: Icons.local_shipping_rounded,
+                label: 'Тарифы транспорта',
+                onTap: () => context.go('/tariffs'),
               ),
               _buildDrawerItem(
                 context,

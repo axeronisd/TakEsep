@@ -50,43 +50,12 @@ class OrderService {
   /// arrived → delivered
   /// Calculates courier_earning from delivery_fee
   Future<void> delivered(String orderId) async {
-    // Load order to get delivery_fee and courier's earning_rate
-    double courierEarning = 0;
-    try {
-      final order = await _supabase
-          .from('delivery_orders')
-          .select('delivery_fee, items_total, courier_id')
-          .eq('id', orderId)
-          .single();
-
-      final deliveryFee = (order['delivery_fee'] as num?)?.toDouble() ?? 0;
-      final courierId = order['courier_id'] as String?;
-
-      // Get courier's earning_rate
-      double earningRate = 0.90; // default 90%
-      if (courierId != null) {
-        try {
-          final courier = await _supabase
-              .from('couriers')
-              .select('earning_rate')
-              .eq('id', courierId)
-              .maybeSingle();
-          if (courier != null) {
-            earningRate = (courier['earning_rate'] as num?)?.toDouble() ?? 0.90;
-          }
-        } catch (_) {}
-      }
-
-      courierEarning = deliveryFee * earningRate;
-    } catch (_) {}
-
     await _supabase
         .from('delivery_orders')
         .update({
           'status': 'delivered',
           'is_paid': true,
           'delivered_at': DateTime.now().toIso8601String(),
-          'courier_earning': courierEarning,
         })
         .eq('id', orderId);
   }

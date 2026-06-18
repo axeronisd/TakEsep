@@ -8,6 +8,7 @@ import '../screens/addresses/addresses_screen.dart';
 import '../screens/addresses/address_moderation_screen.dart';
 import '../screens/database/database_manager_screen.dart';
 import '../screens/zones/ecosystem_zones_screen.dart';
+import '../screens/tariffs/transport_tariffs_screen.dart';
 import '../screens/users/users_screen.dart';
 import '../screens/orders/orders_screen.dart';
 import 'admin_shell.dart';
@@ -57,6 +58,10 @@ final adminRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/zones',
             builder: (context, state) => const EcosystemZonesScreen(),
+          ),
+          GoRoute(
+            path: '/tariffs',
+            builder: (context, state) => const TransportTariffsScreen(),
           ),
         ],
       ),

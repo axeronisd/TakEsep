@@ -24,6 +24,8 @@ class NotificationService {
 
   // Sound URLs for in-app foreground playback
   static const _sounds = <String, String>{
+    'warehouse_order':
+        'https://cdn.pixabay.com/audio/2024/02/19/audio_e06e29e1e4.mp3',
     'new_order_alert':
         'https://cdn.pixabay.com/audio/2024/02/19/audio_e06e29e1e4.mp3',
     'order_accepted':
@@ -33,6 +35,8 @@ class NotificationService {
     'system_alert':
         'https://cdn.pixabay.com/audio/2022/03/15/audio_942e0c3b46.mp3',
   };
+
+  bool _isLooping = false;
 
   Future<void> initialize() async {
     const androidSettings =
@@ -68,7 +72,7 @@ class NotificationService {
       description: 'Уведомления о заказах доставки',
       importance: Importance.max,
       playSound: true,
-      sound: RawResourceAndroidNotificationSound('new_order_alert'),
+      sound: RawResourceAndroidNotificationSound('warehouse_order'),
       enableVibration: true,
       showBadge: true,
     ));
@@ -89,6 +93,30 @@ class NotificationService {
       description: 'Системные уведомления',
       importance: Importance.defaultImportance,
     ));
+  }
+
+  Future<void> startOrderLoop() async {
+    if (_isLooping) return;
+    _isLooping = true;
+    try {
+      await _audioPlayer.setVolume(1.0);
+      await _audioPlayer.setReleaseMode(ReleaseMode.loop);
+      await _audioPlayer.play(AssetSource('sounds/warehouse_order.mp3'));
+      debugPrint('[Notif] Started looping sound: warehouse_order');
+    } catch (e) {
+      debugPrint('[Notif] Loop error: $e');
+    }
+  }
+
+  Future<void> stopOrderLoop() async {
+    if (!_isLooping) return;
+    _isLooping = false;
+    try {
+      await _audioPlayer.stop();
+      debugPrint('[Notif] Stopped looping sound');
+    } catch (e) {
+      debugPrint('[Notif] Error stopping sound: $e');
+    }
   }
 
   Future<void> show({
@@ -123,7 +151,7 @@ class NotificationService {
       presentAlert: true,
       presentBadge: true,
       presentSound: true,
-      sound: soundName != null ? '${soundName}.wav' : 'default',
+      sound: soundName != null ? '${soundName}.mp3' : 'default',
     );
 
     await _plugin.show(
@@ -135,22 +163,33 @@ class NotificationService {
     );
 
     if (playInAppSound && soundName != null) {
-      await playSound(soundName);
+      if (soundName == 'warehouse_order') {
+        await startOrderLoop();
+      } else {
+        await playSound(soundName);
+      }
     }
   }
 
   Future<void> playSound(String soundName) async {
     try {
       // Try local asset first
-      final assetPath = 'sounds/$soundName.wav';
+      final assetPathMp3 = 'sounds/$soundName.mp3';
+      final assetPathWav = 'sounds/$soundName.wav';
       await _audioPlayer.setVolume(0.8);
       await _audioPlayer.setReleaseMode(ReleaseMode.release);
       try {
-        await _audioPlayer.play(AssetSource(assetPath));
-        debugPrint('[Notif] Playing local asset: $assetPath');
+        await _audioPlayer.play(AssetSource(assetPathMp3));
+        debugPrint('[Notif] Playing local asset (mp3): $assetPathMp3');
         return;
       } catch (_) {
-        // Asset not found — fallback to URL
+        try {
+          await _audioPlayer.play(AssetSource(assetPathWav));
+          debugPrint('[Notif] Playing local asset (wav): $assetPathWav');
+          return;
+        } catch (_) {
+          // Asset not found — fallback to URL
+        }
       }
 
       final url = _sounds[soundName];
