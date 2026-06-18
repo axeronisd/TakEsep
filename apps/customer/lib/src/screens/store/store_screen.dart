@@ -6,6 +6,7 @@ import '../../providers/cart_provider.dart';
 import '../../providers/store_provider.dart';
 import '../../providers/favorites_provider.dart';
 import '../../providers/location_provider.dart';
+import '../../providers/marketplace_provider.dart';
 import 'package:latlong2/latlong.dart';
 import 'modifier_sheet.dart';
 
@@ -830,16 +831,40 @@ class _EmptyState extends StatelessWidget {
 //  STORE HEADER — SliverAppBar with banner + logo
 // ═══════════════════════════════════════════════════════════════
 
-class _StoreHeader extends StatelessWidget {
+class _StoreHeader extends ConsumerWidget {
   final StoreDetail store;
   final bool isDark;
 
   const _StoreHeader({required this.store, required this.isDark});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final hasBanner = store.bannerUrl != null && store.bannerUrl!.isNotEmpty;
     final hasLogo = store.logoUrl != null && store.logoUrl!.isNotEmpty;
+
+    // Get location and nearby stores to calculate delivery fee
+    final location = ref.watch(locationProvider);
+    final nearbyStores = ref.watch(nearbyStoresProvider).value ?? [];
+    final matchingStore = nearbyStores.where((s) => s.warehouseId == store.warehouseId).firstOrNull;
+
+    double? distanceKm;
+    if (store.latitude != null && store.longitude != null && location.lat != null && location.lng != null) {
+      distanceKm = const Distance().as(
+        LengthUnit.Meter,
+        LatLng(location.lat!, location.lng!),
+        LatLng(store.latitude!, store.longitude!),
+      ) / 1000.0;
+    }
+
+    double bicycleFee = 50.0;
+    double scooterFee = 50.0;
+    if (matchingStore != null) {
+      bicycleFee = matchingStore.bicycleDeliveryFee;
+      scooterFee = matchingStore.scooterDeliveryFee;
+    } else if (distanceKm != null) {
+      bicycleFee = (distanceKm * 50.0).clamp(50.0, double.infinity);
+      scooterFee = (distanceKm * 75.0).clamp(50.0, double.infinity);
+    }
 
     return SliverAppBar(
       expandedHeight: 170,
@@ -984,6 +1009,26 @@ class _StoreHeader extends StatelessWidget {
                             ],
                           ),
                         ],
+                        // Delivery fees info
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.local_shipping_rounded,
+                              size: 13,
+                              color: Colors.white70,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '🚲 ${bicycleFee.toStringAsFixed(0)} сом · 🛺 ${scooterFee.toStringAsFixed(0)} сом',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.white.withValues(alpha: 0.8),
+                              ),
+                            ),
+                          ],
+                        ),
                       ],
                     ),
                   ),

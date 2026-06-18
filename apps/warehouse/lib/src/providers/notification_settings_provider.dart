@@ -8,8 +8,8 @@ const _kShowNotificationsPref = 'takesep_show_notifications';
 class NotificationSettingsNotifier extends StateNotifier<bool> {
   final SharedPreferences _prefs;
 
-  NotificationSettingsNotifier(this._prefs) : super(false) {
-    state = _prefs.getBool(_kShowNotificationsPref) ?? false;
+  NotificationSettingsNotifier(this._prefs) : super(true) {
+    state = _prefs.getBool(_kShowNotificationsPref) ?? true;
   }
 
   void toggle() {

@@ -94,6 +94,8 @@ class NearbyStore {
   final String zoneName;
   final String zoneType;
   final List<String> categoryIds;
+  final double bicycleRate;
+  final double scooterRate;
 
   const NearbyStore({
     required this.warehouseId,
@@ -113,29 +115,31 @@ class NearbyStore {
     this.zoneName = '',
     this.zoneType = 'radius',
     this.categoryIds = const [],
+    this.bicycleRate = 50.0,
+    this.scooterRate = 75.0,
   });
 
   bool get hasFreeDelivery =>
       freeDeliveryFrom > 0; // means free delivery available from some amount
 
-  String get deliveryFeeDisplay {
-    final fee = calculatedDeliveryFee;
-    return '${fee.toStringAsFixed(0)} сом';
+  double get bicycleDeliveryFee {
+    if (distanceKm == null) return 50.0;
+    final calculated = distanceKm! * bicycleRate;
+    return calculated < 50.0 ? 50.0 : calculated.roundToDouble();
   }
 
-  /// Calculate delivery fee based on distance + time of day
-  double get calculatedDeliveryFee {
-    final hour = DateTime.now().hour;
-    final isNight = hour >= 22 || hour < 6;
-    // Bicycle for <3km, scooter for >3km
-    double base = (distanceKm != null && distanceKm! > 3) ? 150 : 100;
-    if (isNight) base += 50;
-    return base;
+  double get scooterDeliveryFee {
+    if (distanceKm == null) return 50.0;
+    final calculated = distanceKm! * scooterRate;
+    return calculated < 50.0 ? 50.0 : calculated.roundToDouble();
+  }
+
+  String get deliveryFeeDisplay {
+    return '🚲 ${bicycleDeliveryFee.toStringAsFixed(0)} сом • 🛺 ${scooterDeliveryFee.toStringAsFixed(0)} сом';
   }
 
   String get deliveryTypeLabel {
-    if (distanceKm != null && distanceKm! > 3) return 'Муравей';
-    return 'Электровелосипед';
+    return 'Электровелосипед / Муравей';
   }
 
   String get ratingDisplay =>
@@ -151,6 +155,22 @@ final nearbyStoresProvider =
   if (!location.hasLocation) return [];
 
   try {
+    double bicycleRate = 50.0;
+    double scooterRate = 75.0;
+    try {
+      final transportsData = await _supabase
+          .from('transport_types')
+          .select('id, price_per_km');
+      for (final t in transportsData) {
+        final id = t['id'] as String;
+        final rate = (t['price_per_km'] as num).toDouble();
+        if (id == 'bicycle') bicycleRate = rate;
+        if (id == 'scooter') scooterRate = rate;
+      }
+    } catch (e) {
+      debugPrint('⚠️ Fetch transport rates error in nearbyStoresProvider: $e');
+    }
+
     List<Map<String, dynamic>> zones = [];
     
     try {
@@ -347,6 +367,8 @@ final nearbyStoresProvider =
         zoneName: zone['zone_name'] as String? ?? '',
         zoneType: zone['zone_type'] as String? ?? 'radius',
         categoryIds: catMap[wId] ?? [],
+        bicycleRate: bicycleRate,
+        scooterRate: scooterRate,
       );
     }
 

@@ -43,7 +43,7 @@ class FirebasePushBootstrap {
     FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundHandler);
 
     final prefs = await SharedPreferences.getInstance();
-    final enabled = prefs.getBool('takesep_show_notifications') ?? false;
+    final enabled = prefs.getBool('takesep_show_notifications') ?? true;
 
     // 1. Request permission
     final messaging = FirebaseMessaging.instance;
@@ -81,7 +81,7 @@ class FirebasePushBootstrap {
     // 3. Listen for token refresh
     messaging.onTokenRefresh.listen((newToken) async {
       _currentToken = newToken;
-      final currentEnabled = prefs.getBool('takesep_show_notifications') ?? false;
+      final currentEnabled = prefs.getBool('takesep_show_notifications') ?? true;
       if (currentEnabled) {
         await _pushService.registerToken(newToken, customUserId: _employeeId);
       } else {
@@ -200,7 +200,7 @@ class FirebasePushBootstrap {
   static Future<void> reRegisterToken({String? customUserId}) async {
     if (kIsWeb) return;
     final prefs = await SharedPreferences.getInstance();
-    final enabled = prefs.getBool('takesep_show_notifications') ?? false;
+    final enabled = prefs.getBool('takesep_show_notifications') ?? true;
     if (!enabled) {
       debugPrint('[Push] Skipping re-register token because notifications are disabled');
       return;

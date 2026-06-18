@@ -23,8 +23,7 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
   double _zoom = 12.0;
 
   bool _isAdding = false;
-  LatLng? _newZoneCenter;
-  double _newZoneRadiusKm = 10.0;
+  final List<LatLng> _newPolygonPoints = [];
   final _nameCtrl = TextEditingController(text: 'Новая зона');
   bool _showMapOnMobile = true;
 
@@ -64,19 +63,25 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
   }
 
   Future<void> _saveNewZone() async {
-    if (_newZoneCenter == null) return;
+    if (_newPolygonPoints.length < 3) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Для создания полигона необходимо как минимум 3 точки')),
+      );
+      return;
+    }
     setState(() => _loading = true);
     try {
+      final firstPoint = _newPolygonPoints.first;
       await _supabase.from('ecosystem_zones').insert({
         'name': _nameCtrl.text,
-        'center_lat': _newZoneCenter!.latitude,
-        'center_lng': _newZoneCenter!.longitude,
-        'radius_km': _newZoneRadiusKm,
+        'center_lat': firstPoint.latitude,
+        'center_lng': firstPoint.longitude,
+        'polygon_points': _newPolygonPoints.map((p) => [p.latitude, p.longitude]).toList(),
         'is_active': true,
       });
       setState(() {
         _isAdding = false;
-        _newZoneCenter = null;
+        _newPolygonPoints.clear();
       });
       _loadZones();
     } catch (e) {
@@ -110,15 +115,10 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
   }
 
   void _startAddingMode() {
-    LatLng? cameraCenter;
-    try {
-      cameraCenter = _mapCtrl.camera.center;
-    } catch (_) {}
     setState(() {
       _isAdding = true;
-      _newZoneCenter = cameraCenter ?? _center;
+      _newPolygonPoints.clear();
       _nameCtrl.text = 'Новая зона';
-      _newZoneRadiusKm = 10.0;
     });
   }
 
@@ -188,7 +188,8 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
                       final zone = _zones[index];
                       final id = zone['id'] as String;
                       final name = zone['name'] as String;
-                      final radius = zone['radius_km'] as num;
+                      final radius = zone['radius_km'] as num?;
+                      final polygonPoints = zone['polygon_points'] as List<dynamic>?;
                       final isActive = zone['is_active'] as bool? ?? true;
 
                       return ListTile(
@@ -196,7 +197,10 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
                             style: const TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.w600)),
-                        subtitle: Text('Радиус: ${radius} км',
+                        subtitle: Text(
+                            polygonPoints != null
+                                ? 'Полигон: ${polygonPoints.length} точек'
+                                : 'Радиус: ${radius ?? 0} км',
                             style: TextStyle(
                                 color: Colors.white.withValues(alpha: 0.5))),
                         trailing: Row(
@@ -243,17 +247,10 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
           options: MapOptions(
             initialCenter: _center,
             initialZoom: _zoom,
-            onPositionChanged: (pos, hasGesture) {
-              if (_isAdding && hasGesture) {
-                setState(() {
-                  _newZoneCenter = pos.center;
-                });
-              }
-            },
             onTap: (tapPos, p) {
               if (_isAdding) {
                 setState(() {
-                  _newZoneCenter = p;
+                  _newPolygonPoints.add(p);
                 });
               }
             },
@@ -264,11 +261,43 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
                   'https://{s}.basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png',
               subdomains: const ['a', 'b', 'c', 'd'],
             ),
+            PolygonLayer(
+              polygons: [
+                // Render existing polygon zones
+                ..._zones.where((z) => z['polygon_points'] != null).map((z) {
+                  final isActive = z['is_active'] as bool? ?? true;
+                  final rawPoints = z['polygon_points'] as List<dynamic>;
+                  final points = rawPoints.map((pt) {
+                    final list = pt as List<dynamic>;
+                    return LatLng((list[0] as num).toDouble(), (list[1] as num).toDouble());
+                  }).toList();
+                  return Polygon(
+                    points: points,
+                    color: isActive
+                        ? AppColors.info.withValues(alpha: 0.2)
+                        : Colors.grey.withValues(alpha: 0.2),
+                    borderColor: isActive ? AppColors.info : Colors.grey,
+                    borderStrokeWidth: 2,
+                    isFilled: true,
+                  );
+                }),
+                // Render new polygon zone being added
+                if (_isAdding && _newPolygonPoints.length >= 2)
+                  Polygon(
+                    points: _newPolygonPoints,
+                    color: AppColors.success.withValues(alpha: 0.3),
+                    borderColor: AppColors.success,
+                    borderStrokeWidth: 2,
+                    isFilled: true,
+                  ),
+              ],
+            ),
             CircleLayer(
               circles: [
-                // Existing zones
-                ..._zones.map((z) {
+                // Render legacy radius zones
+                ..._zones.where((z) => z['polygon_points'] == null).map((z) {
                   final isActive = z['is_active'] as bool? ?? true;
+                  final radius = z['radius_km'] as num?;
                   return CircleMarker(
                     point: LatLng(
                         z['center_lat'] as double, z['center_lng'] as double),
@@ -278,19 +307,45 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
                     borderColor: isActive ? AppColors.info : Colors.grey,
                     borderStrokeWidth: 2,
                     useRadiusInMeter: true,
-                    radius: (z['radius_km'] as num).toDouble() * 1000,
+                    radius: (radius?.toDouble() ?? 0) * 1000,
                   );
                 }),
-                // New zone being added
-                if (_isAdding && _newZoneCenter != null)
-                  CircleMarker(
-                    point: _newZoneCenter!,
-                    color: AppColors.success.withValues(alpha: 0.3),
-                    borderColor: AppColors.success,
-                    borderStrokeWidth: 2,
-                    useRadiusInMeter: true,
-                    radius: _newZoneRadiusKm * 1000,
-                  ),
+              ],
+            ),
+            MarkerLayer(
+              markers: [
+                if (_isAdding)
+                  ..._newPolygonPoints.asMap().entries.map((entry) {
+                    final idx = entry.key;
+                    final pt = entry.value;
+                    return Marker(
+                      point: pt,
+                      width: 28,
+                      height: 28,
+                      child: GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            _newPolygonPoints.removeAt(idx);
+                          });
+                        },
+                        child: Container(
+                          decoration: const BoxDecoration(
+                            color: AppColors.success,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Center(
+                            child: Text(
+                              '${idx + 1}',
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
               ],
             ),
           ],
@@ -320,9 +375,15 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('Режим добавления зоны',
+                  const Text('Режим добавления зоны (Полигон)',
                       style: TextStyle(
                           color: Colors.white, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Нажимайте на карту, чтобы поставить вершины полигона.\nНажмите на вершину с номером, чтобы удалить её.',
+                    style: TextStyle(color: Colors.white70, fontSize: 11),
+                    textAlign: TextAlign.center,
+                  ),
                   const SizedBox(height: 12),
                   TextField(
                     controller: _nameCtrl,
@@ -334,25 +395,36 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
                   ),
                   const SizedBox(height: 12),
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Радиус (км): ',
-                          style: TextStyle(color: Colors.white54)),
-                      Expanded(
-                        child: Slider(
-                          value: _newZoneRadiusKm,
-                          min: 1.0,
-                          max: 50.0,
-                          activeColor: AppColors.success,
-                          inactiveColor: AppColors.darkBorder,
-                          onChanged: (v) {
-                            setState(() {
-                              _newZoneRadiusKm = v;
-                            });
-                          },
-                        ),
+                      Text(
+                        'Вершин: ${_newPolygonPoints.length}',
+                        style: const TextStyle(color: Colors.white, fontSize: 13),
                       ),
-                      Text('${_newZoneRadiusKm.toStringAsFixed(1)}',
-                          style: const TextStyle(color: Colors.white)),
+                      Row(
+                        children: [
+                          if (_newPolygonPoints.isNotEmpty)
+                            IconButton(
+                              icon: const Icon(Icons.undo_rounded, color: Colors.white70, size: 20),
+                              tooltip: 'Отменить точку',
+                              onPressed: () {
+                                setState(() {
+                                  _newPolygonPoints.removeLast();
+                                });
+                              },
+                            ),
+                          if (_newPolygonPoints.isNotEmpty)
+                            IconButton(
+                              icon: const Icon(Icons.delete_sweep_rounded, color: AppColors.errorLight, size: 20),
+                              tooltip: 'Сбросить все',
+                              onPressed: () {
+                                setState(() {
+                                  _newPolygonPoints.clear();
+                                });
+                              },
+                            ),
+                        ],
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -363,7 +435,7 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
                         onPressed: () {
                           setState(() {
                             _isAdding = false;
-                            _newZoneCenter = null;
+                            _newPolygonPoints.clear();
                           });
                         },
                         child: const Text('Отмена',
@@ -382,13 +454,6 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
                 ],
               ),
             ),
-          ),
-
-        // Center marker
-        if (_isAdding)
-          const Center(
-            child: Icon(Icons.location_on_rounded,
-                color: AppColors.success, size: 40),
           ),
       ],
     );

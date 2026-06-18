@@ -66,24 +66,23 @@ class _DeliveryZonesScreenState extends ConsumerState<DeliveryZonesScreen> {
     }
   }
 
-  Future<void> _addRadiusZone() async {
+  Future<void> _addPolygonZone() async {
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
-      builder: (ctx) => _RadiusZoneDialog(),
+      builder: (ctx) => _PolygonZoneDialog(),
     );
     if (result == null) return;
 
     await _supabase.from('delivery_zones').insert({
       'warehouse_id': _warehouseId,
       'company_id': _companyId,
-      'zone_type': 'radius',
+      'zone_type': 'polygon',
       'name': result['name'],
       'center_lat': result['lat'],
       'center_lng': result['lng'],
-      'radius_km': result['radius'],
+      'polygon_points': result['polygon_points'],
       'delivery_fee': result['fee'] ?? 0,
       'free_delivery_from': result['free_from'] ?? 0,
-      'fee_per_km': result['per_km'] ?? 0,
       'min_order_amount': result['min_order'] ?? 0,
       'estimated_minutes': result['minutes'] ?? 60,
     });
@@ -244,10 +243,10 @@ class _DeliveryZonesScreenState extends ConsumerState<DeliveryZonesScreen> {
                   runSpacing: 8,
                   children: [
                     _addButton(
-                      icon: Icons.radar_rounded,
-                      label: 'По радиусу',
-                      color: Colors.blue,
-                      onTap: _addRadiusZone,
+                      icon: Icons.polyline_rounded,
+                      label: 'По границам (полигон)',
+                      color: Colors.purple,
+                      onTap: _addPolygonZone,
                     ),
                     _addButton(
                       icon: Icons.location_city_rounded,
@@ -329,6 +328,7 @@ class _DeliveryZonesScreenState extends ConsumerState<DeliveryZonesScreen> {
 
     final (IconData icon, Color color) = switch (type) {
       'radius'  => (Icons.radar_rounded, Colors.blue),
+      'polygon' => (Icons.polyline_rounded, Colors.purple),
       'city'    => (Icons.location_city_rounded, Colors.green),
       'region'  => (Icons.terrain_rounded, Colors.teal),
       'country' => (Icons.public_rounded, Colors.orange),
@@ -387,6 +387,10 @@ class _DeliveryZonesScreenState extends ConsumerState<DeliveryZonesScreen> {
       final radius = (zone['radius_km'] as num?)?.toDouble() ?? 0;
       items.add('📏 ${radius.toStringAsFixed(0)} км');
     }
+    if (type == 'polygon') {
+      final polyPoints = zone['polygon_points'] as List<dynamic>?;
+      items.add('📏 Полигон (${polyPoints?.length ?? 0} точек)');
+    }
     if (fee > 0) items.add('💰 ${fee.toStringAsFixed(0)} сом');
     if (freeFrom > 0) items.add('🆓 от ${freeFrom.toStringAsFixed(0)}');
     if (minOrder > 0) items.add('📦 мин. ${minOrder.toStringAsFixed(0)}');
@@ -406,15 +410,14 @@ class _DeliveryZonesScreenState extends ConsumerState<DeliveryZonesScreen> {
   }
 }
 
-/// Диалог добавления зоны по радиусу
-class _RadiusZoneDialog extends StatefulWidget {
+/// Диалог добавления зоны по границам (полигон)
+class _PolygonZoneDialog extends StatefulWidget {
   @override
-  State<_RadiusZoneDialog> createState() => _RadiusZoneDialogState();
+  State<_PolygonZoneDialog> createState() => _PolygonZoneDialogState();
 }
 
-class _RadiusZoneDialogState extends State<_RadiusZoneDialog> {
+class _PolygonZoneDialogState extends State<_PolygonZoneDialog> {
   final _nameCtrl = TextEditingController(text: 'Новая зона');
-  final _radiusCtrl = TextEditingController(text: '5');
   final _feeCtrl = TextEditingController(text: '100');
   final _freeFromCtrl = TextEditingController(text: '500');
   final _minOrderCtrl = TextEditingController(text: '0');
@@ -422,7 +425,7 @@ class _RadiusZoneDialogState extends State<_RadiusZoneDialog> {
 
   final MapController _mapCtrl = MapController();
   LatLng _center = const LatLng(42.8746, 74.5698);
-  double _radiusKm = 5.0;
+  final List<LatLng> _polygonPoints = [];
 
   List<Map<String, dynamic>> _ecosystemZones = [];
   bool _loadingZones = true;
@@ -432,11 +435,6 @@ class _RadiusZoneDialogState extends State<_RadiusZoneDialog> {
   void initState() {
     super.initState();
     _loadEcosystemZones();
-    _radiusCtrl.addListener(() {
-      setState(() {
-        _radiusKm = double.tryParse(_radiusCtrl.text) ?? 5.0;
-      });
-    });
   }
 
   Future<void> _loadEcosystemZones() async {
@@ -472,22 +470,51 @@ class _RadiusZoneDialogState extends State<_RadiusZoneDialog> {
     }
   }
 
-  bool _isWithinEcosystem() {
-    if (_errorLoadingEco != null) return false;
-    if (_ecosystemZones.isEmpty) return true; // No restrictions if no zones defined
-    final distanceCalc = const Distance();
-    
-    for (final ecoZone in _ecosystemZones) {
-      final ecoCenter = LatLng(ecoZone['center_lat'] as double, ecoZone['center_lng'] as double);
-      final ecoRadius = (ecoZone['radius_km'] as num).toDouble();
-      
-      final d = distanceCalc.as(LengthUnit.Kilometer, _center, ecoCenter);
-      // Our radius must fit entirely inside the ecosystem radius
-      if (d + _radiusKm <= ecoRadius) {
-        return true;
+  bool _isPointInPolygon(LatLng point, List<LatLng> polygon) {
+    int intersectCount = 0;
+    for (int j = 0; j < polygon.length; j++) {
+      LatLng vertex1 = polygon[j];
+      LatLng vertex2 = polygon[(j + 1) % polygon.length];
+      if ((vertex1.longitude > point.longitude) != (vertex2.longitude > point.longitude) &&
+          (point.latitude < (vertex2.latitude - vertex1.latitude) * (point.longitude - vertex1.longitude) / (vertex2.longitude - vertex1.longitude) + vertex1.latitude)) {
+        intersectCount++;
       }
     }
-    return false;
+    return intersectCount % 2 == 1;
+  }
+
+  bool _isWithinEcosystem() {
+    if (_errorLoadingEco != null) return false;
+    if (_ecosystemZones.isEmpty) return true;
+    if (_polygonPoints.isEmpty) return true;
+
+    final distanceCalc = const Distance();
+    for (final point in _polygonPoints) {
+      bool pointValid = false;
+      for (final ecoZone in _ecosystemZones) {
+        final polyPoints = ecoZone['polygon_points'] as List<dynamic>?;
+        if (polyPoints != null && polyPoints.length >= 3) {
+          final ecoPoly = polyPoints.map((pt) {
+            final list = pt as List<dynamic>;
+            return LatLng((list[0] as num).toDouble(), (list[1] as num).toDouble());
+          }).toList();
+          if (_isPointInPolygon(point, ecoPoly)) {
+            pointValid = true;
+            break;
+          }
+        } else {
+          final ecoCenter = LatLng(ecoZone['center_lat'] as double, ecoZone['center_lng'] as double);
+          final ecoRadius = (ecoZone['radius_km'] as num).toDouble();
+          final d = distanceCalc.as(LengthUnit.Kilometer, point, ecoCenter);
+          if (d <= ecoRadius) {
+            pointValid = true;
+            break;
+          }
+        }
+      }
+      if (!pointValid) return false;
+    }
+    return true;
   }
 
   @override
@@ -497,8 +524,8 @@ class _RadiusZoneDialogState extends State<_RadiusZoneDialog> {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: SizedBox(
-        width: 800,
-        height: 600,
+        width: 850,
+        height: 650,
         child: Row(
           children: [
             // Map side
@@ -515,7 +542,7 @@ class _RadiusZoneDialogState extends State<_RadiusZoneDialog> {
                         initialZoom: 12.0,
                         onTap: (_, point) {
                           setState(() {
-                            _center = point;
+                            _polygonPoints.add(point);
                           });
                         },
                       ),
@@ -524,37 +551,98 @@ class _RadiusZoneDialogState extends State<_RadiusZoneDialog> {
                           urlTemplate: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
                           subdomains: const ['a', 'b', 'c', 'd'],
                         ),
+                        PolygonLayer(
+                          polygons: [
+                            // Ecosystem Polygon Zones
+                            ..._ecosystemZones.where((z) => z['polygon_points'] != null).map((z) {
+                              final rawPoints = z['polygon_points'] as List<dynamic>;
+                              final points = rawPoints.map((pt) {
+                                final list = pt as List<dynamic>;
+                                return LatLng((list[0] as num).toDouble(), (list[1] as num).toDouble());
+                              }).toList();
+                              return Polygon(
+                                points: points,
+                                color: Colors.red.withValues(alpha: 0.05),
+                                borderColor: Colors.red.withValues(alpha: 0.3),
+                                borderStrokeWidth: 2,
+                                isFilled: true,
+                              );
+                            }),
+                            // Business Polygon Zone being added
+                            if (_polygonPoints.length >= 2)
+                              Polygon(
+                                points: _polygonPoints,
+                                color: isValid
+                                    ? Colors.blue.withValues(alpha: 0.2)
+                                    : Colors.orange.withValues(alpha: 0.4),
+                                borderColor: isValid ? Colors.blue : Colors.orange,
+                                borderStrokeWidth: 2,
+                                isFilled: true,
+                              ),
+                          ],
+                        ),
                         CircleLayer(
                           circles: [
-                            // Ecosystem Zones
-                            ..._ecosystemZones.map((z) => CircleMarker(
+                            // Ecosystem Legacy Circle Zones
+                            ..._ecosystemZones.where((z) => z['polygon_points'] == null).map((z) => CircleMarker(
                                   point: LatLng(z['center_lat'] as double, z['center_lng'] as double),
-                                  color: Colors.red.withValues(alpha: 0.1),
-                                  borderColor: Colors.red.withValues(alpha: 0.5),
+                                  color: Colors.red.withValues(alpha: 0.05),
+                                  borderColor: Colors.red.withValues(alpha: 0.3),
                                   borderStrokeWidth: 2,
                                   useRadiusInMeter: true,
                                   radius: (z['radius_km'] as num).toDouble() * 1000,
                                 )),
-                            // Business Zone
-                            CircleMarker(
-                              point: _center,
-                              color: isValid
-                                  ? Colors.blue.withValues(alpha: 0.2)
-                                  : Colors.orange.withValues(alpha: 0.4),
-                              borderColor: isValid ? Colors.blue : Colors.orange,
-                              borderStrokeWidth: 2,
-                              useRadiusInMeter: true,
-                              radius: _radiusKm * 1000,
-                            ),
                           ],
+                        ),
+                        MarkerLayer(
+                          markers: _polygonPoints.asMap().entries.map((entry) {
+                            final idx = entry.key;
+                            final pt = entry.value;
+                            return Marker(
+                              point: pt,
+                              width: 28,
+                              height: 28,
+                              child: GestureDetector(
+                                onTap: () {
+                                  setState(() {
+                                    _polygonPoints.removeAt(idx);
+                                  });
+                                },
+                                child: Container(
+                                  decoration: const BoxDecoration(
+                                    color: Colors.blue,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      '${idx + 1}',
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
                         ),
                       ],
                     ),
-                    // Center marker icon
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.only(bottom: 24),
-                        child: Icon(Icons.location_on, color: Colors.blue, size: 36),
+                    // Instructions Overlay
+                    Positioned(
+                      top: 16, left: 16,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 4)],
+                        ),
+                        child: const Text(
+                          'Нажимайте на карту для добавления точек границы.\nНажмите на маркер точки для её удаления.',
+                          style: TextStyle(color: Colors.black87, fontSize: 11, fontWeight: FontWeight.w500),
+                        ),
                       ),
                     ),
                     // Error message overlay
@@ -580,8 +668,8 @@ class _RadiusZoneDialogState extends State<_RadiusZoneDialog> {
                                 child: Text(
                                   _errorLoadingEco != null
                                       ? 'Ошибка загрузки ограничений экосистемы: $_errorLoadingEco'
-                                      : 'Ваша зона выходит за разрешенные пределы экосистемы. '
-                                          'Пожалуйста, уменьшите радиус или переместите центр.',
+                                      : 'Часть границы вашей зоны выходит за разрешенные пределы экосистемы (красный контур). '
+                                          'Пожалуйста, скорректируйте точки.',
                                   style: TextStyle(
                                     color: _errorLoadingEco != null ? Colors.red : Colors.orange,
                                     fontWeight: FontWeight.bold,
@@ -608,9 +696,9 @@ class _RadiusZoneDialogState extends State<_RadiusZoneDialog> {
                   children: [
                     const Row(
                       children: [
-                        Icon(Icons.radar_rounded, color: Colors.blue, size: 24),
+                        Icon(Icons.polyline_rounded, color: Colors.blue, size: 24),
                         SizedBox(width: 8),
-                        Text('Настройка зоны', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        Text('Границы доставки', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     const SizedBox(height: 24),
@@ -620,13 +708,37 @@ class _RadiusZoneDialogState extends State<_RadiusZoneDialog> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('Нажмите на карту чтобы выбрать центр.', style: TextStyle(fontSize: 12, color: Colors.grey)),
-                            const SizedBox(height: 16),
                             TextField(controller: _nameCtrl, decoration: const InputDecoration(labelText: 'Название зоны')),
                             const SizedBox(height: 16),
-                            TextField(controller: _radiusCtrl, keyboardType: TextInputType.number,
-                                decoration: const InputDecoration(labelText: 'Радиус (км)', suffixText: 'км')),
-                            const SizedBox(height: 16),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text('Точек границы: ${_polygonPoints.length}', style: const TextStyle(fontWeight: FontWeight.w500)),
+                                Row(
+                                  children: [
+                                    if (_polygonPoints.isNotEmpty)
+                                      IconButton(
+                                        icon: const Icon(Icons.undo_rounded),
+                                        onPressed: () {
+                                          setState(() {
+                                            _polygonPoints.removeLast();
+                                          });
+                                        },
+                                      ),
+                                    if (_polygonPoints.isNotEmpty)
+                                      IconButton(
+                                        icon: const Icon(Icons.delete_sweep_rounded, color: Colors.red),
+                                        onPressed: () {
+                                          setState(() {
+                                            _polygonPoints.clear();
+                                          });
+                                        },
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            const Divider(height: 24),
                             Row(
                               children: [
                                 Expanded(child: TextField(controller: _feeCtrl, keyboardType: TextInputType.number,
@@ -657,12 +769,12 @@ class _RadiusZoneDialogState extends State<_RadiusZoneDialog> {
                         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Отмена')),
                         const SizedBox(width: 12),
                         FilledButton(
-                          onPressed: isValid && !_loadingZones ? () {
+                          onPressed: isValid && !_loadingZones && _polygonPoints.length >= 3 ? () {
                             Navigator.pop(context, {
                               'name': _nameCtrl.text,
-                              'lat': _center.latitude,
-                              'lng': _center.longitude,
-                              'radius': _radiusKm,
+                              'lat': _polygonPoints.first.latitude,
+                              'lng': _polygonPoints.first.longitude,
+                              'polygon_points': _polygonPoints.map((p) => [p.latitude, p.longitude]).toList(),
                               'fee': double.tryParse(_feeCtrl.text) ?? 0,
                               'free_from': double.tryParse(_freeFromCtrl.text) ?? 0,
                               'min_order': double.tryParse(_minOrderCtrl.text) ?? 0,
@@ -682,7 +794,6 @@ class _RadiusZoneDialogState extends State<_RadiusZoneDialog> {
       ),
     );
   }
-}
 
 /// Диалог добавления зоны по городу
 class _CityZoneDialog extends StatefulWidget {

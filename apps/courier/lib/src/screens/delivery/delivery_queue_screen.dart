@@ -640,7 +640,7 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
                   ],
                 ),
               ),
-              if (isCurrent) Builder(builder: (ctx) {
+              Builder(builder: (ctx) {
                 final customer = order['customers'] as Map<String, dynamic>? ?? {};
                 final customerName = customer['name'] ?? 'Клиент';
                 final customerPhone = customer['phone'] ?? '';
@@ -677,25 +677,8 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
           if (isPickup) _buildPickupDetails(order, isCurrent)
           else _buildDropoffDetails(order, isCurrent),
           
-          if (isCurrent) ...[
-            const SizedBox(height: 16),
-            _buildActionButtons(task, status),
-          ] else ...[
-            const SizedBox(height: 16),
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              alignment: Alignment.center,
-              child: Text(
-                'В очереди...',
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontWeight: FontWeight.bold),
-              ),
-            )
-          ]
+          const SizedBox(height: 16),
+          _buildActionButtons(task, status, isCurrent),
         ],
       ),
     );
@@ -813,7 +796,7 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
     );
   }
 
-  Widget _buildActionButtons(RouteTask task, String status) {
+  Widget _buildActionButtons(RouteTask task, String status, bool isCurrent) {
     if (_updating) {
       return const Center(child: CircularProgressIndicator(color: AkJolTheme.primary));
     }
@@ -846,26 +829,32 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
 
     return Column(
       children: [
-        Row(
-          children: [
-            Expanded(
-              flex: 1,
-              child: ElevatedButton.icon(
-                onPressed: _toggleSheet,
-                icon: Icon(_sheetPosition > 0.3 ? Icons.keyboard_arrow_down_rounded : Icons.keyboard_arrow_up_rounded, size: 24),
-                label: Text(_sheetPosition > 0.3 ? 'На карту' : 'Заказы'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white12,
-                  foregroundColor: Colors.white,
-                  minimumSize: const Size(0, 52),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        if (isCurrent)
+          Row(
+            children: [
+              Expanded(
+                flex: 1,
+                child: ElevatedButton.icon(
+                  onPressed: _toggleSheet,
+                  icon: Icon(_sheetPosition > 0.3 ? Icons.keyboard_arrow_down_rounded : Icons.keyboard_arrow_up_rounded, size: 24),
+                  label: Text(_sheetPosition > 0.3 ? 'На карту' : 'Заказы'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white12,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size(0, 52),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(flex: 2, child: actionBtn),
-          ],
-        ),
+              const SizedBox(width: 12),
+              Expanded(flex: 2, child: actionBtn),
+            ],
+          )
+        else
+          SizedBox(
+            width: double.infinity,
+            child: actionBtn,
+          ),
         if (canCancel) ...[
           const SizedBox(height: 12),
           TextButton.icon(
