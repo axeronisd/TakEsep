@@ -377,13 +377,53 @@ class _TabletLayout extends StatelessWidget {
               child: ListView(children: [
                 for (final section in sections)
                   for (final item in section.items)
-                    _SidebarNavItem(
-                      icon: item.icon,
-                      assetIcon: item.assetIcon,
-                      label: item.label,
-                      isSelected: currentPath.startsWith(item.path),
-                      collapsed: true,
-                      onTap: () => context.go(item.path),
+                    Builder(
+                      builder: (ctx) {
+                        Widget navItem = _SidebarNavItem(
+                          icon: item.icon,
+                          assetIcon: item.assetIcon,
+                          label: item.label,
+                          isSelected: currentPath.startsWith(item.path),
+                          collapsed: true,
+                          onTap: () => context.go(item.path),
+                        );
+                        if (item.hasBadge) {
+                          return Consumer(
+                            builder: (_, ref, child) {
+                              final count = ref.watch(pendingDeliveryCountProvider);
+                              if (count > 0) {
+                                return Stack(
+                                  clipBehavior: Clip.none,
+                                  children: [
+                                    navItem,
+                                    Positioned(
+                                      top: 6,
+                                      right: 10,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.error,
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Text(
+                                          '$count',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w700,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
+                              return navItem;
+                            },
+                          );
+                        }
+                        return navItem;
+                      },
                     ),
               ]),
             ),
@@ -694,14 +734,54 @@ class _MobileDrawer extends StatelessWidget {
                     ),
                   ),
                   for (final item in section.items)
-                    _DrawerItem(
-                      icon: item.icon,
-                      assetIcon: item.assetIcon,
-                      label: item.label,
-                      isSelected: currentPath.startsWith(item.path),
-                      onTap: () {
-                        Navigator.pop(context);
-                        context.go(item.path);
+                    Builder(
+                      builder: (ctx) {
+                        Widget drawerItem = _DrawerItem(
+                          icon: item.icon,
+                          assetIcon: item.assetIcon,
+                          label: item.label,
+                          isSelected: currentPath.startsWith(item.path),
+                          onTap: () {
+                            Navigator.pop(context);
+                            context.go(item.path);
+                          },
+                        );
+
+                        if (item.hasBadge) {
+                          return Consumer(
+                            builder: (_, ref, child) {
+                              final count = ref.watch(pendingDeliveryCountProvider);
+                              if (count > 0) {
+                                return Stack(
+                                  children: [
+                                    drawerItem,
+                                    Positioned(
+                                      top: 12,
+                                      right: 16,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.error,
+                                          borderRadius: BorderRadius.circular(10),
+                                        ),
+                                        child: Text(
+                                          '$count',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 9,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }
+                              return drawerItem;
+                            },
+                          );
+                        }
+                        return drawerItem;
                       },
                     ),
                 ],

@@ -12,6 +12,7 @@ import 'package:audioplayers/audioplayers.dart';
 @pragma('vm:entry-point')
 void onDidReceiveNotificationResponse(NotificationResponse response) {
   debugPrint('[Notif] Tapped: ${response.payload}');
+  NotificationService().stopOrderLoop();
 }
 
 class NotificationService {
@@ -126,6 +127,7 @@ class NotificationService {
     String? soundName,
     String? payload,
     bool playInAppSound = true,
+    bool loopSound = true,
   }) async {
     final id = DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
@@ -163,7 +165,7 @@ class NotificationService {
     );
 
     if (playInAppSound && soundName != null) {
-      if (soundName == 'warehouse_order') {
+      if (soundName == 'warehouse_order' && loopSound) {
         await startOrderLoop();
       } else {
         await playSound(soundName);

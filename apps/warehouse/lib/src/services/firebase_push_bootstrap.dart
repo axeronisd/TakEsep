@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:akjol_auth/akjol_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'notification_service.dart';
+import '../screens/delivery/delivery_orders_screen.dart';
 
 // ═══════════════════════════════════════════════════════════════
 // Firebase Push Bootstrap — Warehouse App
@@ -21,6 +22,11 @@ final GlobalKey<NavigatorState> warehouseNavigatorKey =
 @pragma('vm:entry-point')
 Future<void> _firebaseBackgroundHandler(RemoteMessage message) async {
   debugPrint('[Push] Background: ${message.notification?.title}');
+  final data = message.data;
+  final type = data['type'] ?? data['event'] ?? '';
+  if (type == 'new_order' || type == 'order_assigned') {
+    await NotificationService().startOrderLoop();
+  }
 }
 
 class FirebasePushBootstrap {
@@ -104,12 +110,14 @@ class FirebasePushBootstrap {
 
       if (notification != null) {
         final type = data['type'] ?? data['event'] ?? '';
+        final isOrdersActive = DeliveryOrdersScreen.isActive;
         _notifService.show(
           title: notification.title ?? 'TakEsep Склад',
           body: notification.body ?? '',
           channelId: data['channel_id'] ?? _inferChannel(type),
           soundName: data['sound'] ?? _inferSound(type),
           payload: data['order_id'],
+          loopSound: !isOrdersActive,
         );
       }
     });
@@ -117,6 +125,7 @@ class FirebasePushBootstrap {
     // 5. Handle background/terminated notification tap
     FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
       debugPrint('[Push] Tapped from background: ${message.data}');
+      _notifService.stopOrderLoop();
       _handleNavigation(message.data);
     });
 
@@ -124,6 +133,7 @@ class FirebasePushBootstrap {
     final initialMessage = await messaging.getInitialMessage();
     if (initialMessage != null) {
       debugPrint('[Push] Opened from terminated: ${initialMessage.data}');
+      _notifService.stopOrderLoop();
       _handleNavigation(initialMessage.data);
     }
 

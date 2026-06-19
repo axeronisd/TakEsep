@@ -583,10 +583,72 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
       );
   }
 
+  Widget _buildStatusBadge(String status) {
+    String label = '';
+    Color color = Colors.grey;
+
+    switch (status) {
+      case 'courier_assigned':
+        label = 'Ожидает оплаты';
+        color = Colors.grey;
+        break;
+      case 'payment_sent':
+        label = 'Проверка оплаты';
+        color = Colors.blue;
+        break;
+      case 'payment_verified':
+        label = 'Оплачен / Сборка';
+        color = Colors.orange;
+        break;
+      case 'assembling':
+        label = 'Собирается';
+        color = Colors.amber;
+        break;
+      case 'ready':
+        label = 'ГОТОВ';
+        color = AkJolTheme.success;
+        break;
+      case 'picked_up':
+        label = 'В пути';
+        color = AkJolTheme.primary;
+        break;
+      case 'arrived':
+        label = 'На месте';
+        color = Colors.purple;
+        break;
+      case 'delivered':
+        label = 'Доставлен';
+        color = AkJolTheme.success;
+        break;
+      default:
+        label = status;
+        color = Colors.grey;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withValues(alpha: 0.4), width: 1),
+      ),
+      child: Text(
+        label.toUpperCase(),
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.bold,
+          fontSize: 9,
+          letterSpacing: 0.3,
+        ),
+      ),
+    );
+  }
+
   Widget _buildTaskCard(RouteTask task, bool isCurrent, int orderInQueue) {
     final order = task.order;
     final status = order['status'] ?? 'pending';
     final isPickup = task.type == RouteTaskType.pickup;
+    final orderNum = order['order_number']?.toString() ?? task.orderId.substring(0, 8).toUpperCase();
     
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
@@ -634,6 +696,21 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Row(
+                      children: [
+                        Text(
+                          'Заказ #$orderNum',
+                          style: const TextStyle(
+                            color: AkJolTheme.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        _buildStatusBadge(status),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
                     Text(
                       task.title,
                       style: TextStyle(

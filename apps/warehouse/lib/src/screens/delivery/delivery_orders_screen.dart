@@ -17,6 +17,8 @@ import '../../services/notification_service.dart';
 class DeliveryOrdersScreen extends ConsumerStatefulWidget {
   const DeliveryOrdersScreen({super.key});
 
+  static bool isActive = false;
+
   @override
   ConsumerState<DeliveryOrdersScreen> createState() =>
       _DeliveryOrdersScreenState();
@@ -56,6 +58,7 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
   @override
   void initState() {
     super.initState();
+    DeliveryOrdersScreen.isActive = true;
     NotificationService().stopOrderLoop(); // Stop looping alarm on page entry
     _tabController = TabController(length: 2, vsync: this);
     _loadOrders();
@@ -73,6 +76,7 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
 
   @override
   void dispose() {
+    DeliveryOrdersScreen.isActive = false;
     _tabController.dispose();
     _channel?.unsubscribe();
     _alertPlayer.dispose();
