@@ -1,7 +1,7 @@
 name: courier
 description: "AkJol Courier — доставка заказов"
 publish_to: 'none'
-version: 3.0.29+124
+version: 3.0.30+125
 
 environment:
   sdk: ^3.11.1

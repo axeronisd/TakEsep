@@ -130,8 +130,13 @@ async function sendToToken(
 
   if (appType === "warehouse") {
     resolvedChannelId = "delivery_orders_v2"
-    androidSound = "warehouse_order"
-    iosSound = "warehouse_order.mp3"
+    if (soundName === "order_cancelled" || soundName === "system_alert") {
+      androidSound = "order_cancelled"
+      iosSound = "order_cancelled.wav"
+    } else {
+      androidSound = "warehouse_order"
+      iosSound = "warehouse_order.mp3"
+    }
   } else if (appType === "courier") {
     if (channelId === "new_orders" || channelId === "new_orders_v2") {
       androidSound = "akjol_courier"
@@ -311,7 +316,7 @@ async function handleWebhook(accessToken: string, payload: any) {
   const { type, table, record, old_record } = payload
   console.log(`[webhook] ${type} on ${table}`)
 
-  const orderNum = (id: string) => (id || "").substring(0, 8).toUpperCase()
+  const orderNum = (rec: any) => rec?.order_number || (rec?.id || "").substring(0, 8).toUpperCase()
 
   // ═══ delivery_orders ═══
   if (table === "delivery_orders") {
@@ -325,7 +330,7 @@ async function handleWebhook(accessToken: string, payload: any) {
         return jsonOk({ processed: true, reason: "already_accepted" })
       }
 
-      const num = orderNum(record.id)
+      const num = orderNum(record)
       const results: string[] = []
 
       const courierSent = await sendToAllOfType(
@@ -342,7 +347,7 @@ async function handleWebhook(accessToken: string, payload: any) {
 
     // UPDATE: status or courier changed
     if (type === "UPDATE" && (record.status !== old_record?.status || record.courier_id !== old_record?.courier_id)) {
-      const num = orderNum(record.id)
+      const num = orderNum(record)
       const status = record.status
       const results: string[] = []
 
