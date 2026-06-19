@@ -31,7 +31,6 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
 
   final MapController _zoneMapController = MapController();
   LatLng _warehouseLocation = const LatLng(42.8746, 74.5698);
-  LatLng _deliveryCenter = const LatLng(42.8746, 74.5698);
   double _radiusKm = 3.0;
 
   List<Map<String, dynamic>> _ecosystemZones = [];
@@ -72,57 +71,7 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
     }
   }
 
-  bool _isPointInPolygon(LatLng point, List<LatLng> polygon) {
-    int intersectCount = 0;
-    for (int j = 0; j < polygon.length; j++) {
-      LatLng vertex1 = polygon[j];
-      LatLng vertex2 = polygon[(j + 1) % polygon.length];
-      if ((vertex1.longitude > point.longitude) != (vertex2.longitude > point.longitude) &&
-          (point.latitude < (vertex2.latitude - vertex1.latitude) * (point.longitude - vertex1.longitude) / (vertex2.longitude - vertex1.longitude) + vertex1.latitude)) {
-        intersectCount++;
-      }
-    }
-    return intersectCount % 2 == 1;
-  }
-
-  bool _isWithinEcosystem() {
-    if (_errorLoadingEco != null) return false;
-    if (_ecosystemZones.isEmpty) return true; // No restrictions if no zones defined
-    final distanceCalc = const Distance();
-    
-    for (final ecoZone in _ecosystemZones) {
-      final polyPoints = ecoZone['polygon_points'] as List<dynamic>?;
-      if (polyPoints != null && polyPoints.length >= 3) {
-        final ecoPoly = polyPoints.map((pt) {
-          final list = pt as List;
-          return LatLng((list[0] as num).toDouble(), (list[1] as num).toDouble());
-        }).toList();
-        // Since delivery zone is a circle, we check if its center is inside the polygon
-        if (_isPointInPolygon(_deliveryCenter, ecoPoly)) {
-          return true;
-        }
-      } else {
-        final ecoRadiusVal = ecoZone['radius_km'];
-        if (ecoRadiusVal != null) {
-          final ecoCenter = LatLng((ecoZone['center_lat'] as num).toDouble(), (ecoZone['center_lng'] as num).toDouble());
-          final ecoRadius = (ecoRadiusVal as num).toDouble();
-          
-          final d = distanceCalc.as(LengthUnit.Kilometer, _deliveryCenter, ecoCenter);
-          if (d + _radiusKm <= ecoRadius) {
-            return true;
-          }
-        }
-      }
-    }
-    return false;
-  }
-
-
-  bool _isStoreInsideZone() {
-    final distanceCalc = const Distance();
-    final d = distanceCalc.as(LengthUnit.Kilometer, _deliveryCenter, _warehouseLocation);
-    return d <= _radiusKm;
-  }
+  // Ecosystem validation checks removed as stores can place their coordinate anywhere.
 
   String get _warehouseId => widget.warehouseId;
 
@@ -143,7 +92,7 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
           final lat = data['latitude'];
           final lng = data['longitude'];
           if (lat != null && lng != null) {
-            _deliveryCenter = LatLng((lat as num).toDouble(), (lng as num).toDouble());
+            _warehouseLocation = LatLng((lat as num).toDouble(), (lng as num).toDouble());
           }
         });
       }
@@ -158,17 +107,13 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
           if (wLat != null && wLng != null) {
             _warehouseLocation = LatLng((wLat as num).toDouble(), (wLng as num).toDouble());
           }
-          
-          if (data == null || data['latitude'] == null) {
-            _deliveryCenter = _warehouseLocation;
-          }
         });
       }
     } catch (_) {}
     setState(() => _loading = false);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       try { 
-        _zoneMapController.move(_deliveryCenter, 13);
+        _zoneMapController.move(_warehouseLocation, 13);
       } catch (_) {}
     });
   }
@@ -207,8 +152,8 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
       'warehouse_id': _warehouseId,
       'is_active': _isActive,
       'delivery_radius_km': _radiusKm,
-      'latitude': _deliveryCenter.latitude,
-      'longitude': _deliveryCenter.longitude,
+      'latitude': _warehouseLocation.latitude,
+      'longitude': _warehouseLocation.longitude,
       'description': _descController.text,
       'use_akjol_couriers': true,
     };
@@ -260,16 +205,12 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
       );
     }
 
-    final isEcoValid = _isWithinEcosystem();
-    final isStoreValid = _isStoreInsideZone();
-    final isValid = isEcoValid && isStoreValid;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Настройки доставки'),
         actions: [
           TextButton.icon(
-            onPressed: (_saving || !isValid || _loadingEco) ? null : _save,
+            onPressed: (_saving || _loadingEco) ? null : _save,
             icon: _saving
                 ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                 : const Icon(Icons.save),
@@ -292,35 +233,14 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
           ),
           const SizedBox(height: 16),
 
-          if (!isStoreValid)
-            Container(
-              padding: const EdgeInsets.all(12),
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.1),
-                border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.warning_amber_rounded, color: Colors.red),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Маркер магазина находится за пределами зоны доставки!',
-                      style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold, fontSize: 13),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          // Warning banners removed since stores can place location point anywhere
 
           // Map Section
           const Text('Настройка на карте', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
 
           Text(
-            'Перетаскивайте карту, чтобы переместить зону доставки.\nНажмите на карту, чтобы поставить маркер магазина.',
+            'Нажмите на карту, чтобы установить маркер склада/магазина.',
             style: TextStyle(fontSize: 12, color: Colors.grey[600]),
           ),
           const SizedBox(height: 12),
@@ -336,12 +256,7 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
               FlutterMap(
                 mapController: _zoneMapController,
                 options: MapOptions(
-                  initialCenter: _deliveryCenter, initialZoom: 13,
-                  onPositionChanged: (pos, hasGesture) {
-                    if (hasGesture && pos.center != null) {
-                      setState(() => _deliveryCenter = pos.center!);
-                    }
-                  },
+                  initialCenter: _warehouseLocation, initialZoom: 13,
                   onTap: (_, point) {
                     setState(() {
                       _warehouseLocation = point;
@@ -380,16 +295,6 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
                           useRadiusInMeter: true,
                           radius: (z['radius_km'] as num).toDouble() * 1000,
                         )),
-                    CircleMarker(
-                      point: _deliveryCenter,
-                      color: isValid
-                          ? Colors.green.withValues(alpha: 0.15)
-                          : Colors.orange.withValues(alpha: 0.35),
-                      borderColor: isValid ? Colors.green : Colors.orange,
-                      borderStrokeWidth: 2,
-                      useRadiusInMeter: true,
-                      radius: _radiusKm * 1000,
-                    ),
                   ]),
                   MarkerLayer(markers: [
                     Marker(point: _warehouseLocation, width: 44, height: 44,
@@ -403,8 +308,7 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(6)),
                   child: Text(
-                    'Зона: ${_deliveryCenter.latitude.toStringAsFixed(4)}, ${_deliveryCenter.longitude.toStringAsFixed(4)}\n'
-                    'Магазин: ${_warehouseLocation.latitude.toStringAsFixed(4)}, ${_warehouseLocation.longitude.toStringAsFixed(4)}',
+                    'Склад: ${_warehouseLocation.latitude.toStringAsFixed(4)}, ${_warehouseLocation.longitude.toStringAsFixed(4)}',
                     style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w500)),
                 ),
               ),
@@ -420,55 +324,7 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
             ]),
           ),
           
-          if (!isValid) ...[
-            const SizedBox(height: 8),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: _errorLoadingEco != null ? Colors.red : Colors.orange),
-                boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 6)],
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    _errorLoadingEco != null ? Icons.error_outline : Icons.warning_amber_rounded,
-                    color: _errorLoadingEco != null ? Colors.red : Colors.orange,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      _errorLoadingEco != null
-                          ? 'Ошибка загрузки ограничений экосистемы: $_errorLoadingEco'
-                          : 'Радиус доставки вашего магазина выходит за разрешенные пределы экосистемы. '
-                              'Пожалуйста, уменьшите радиус или скорректируйте положение магазина.',
-                      style: TextStyle(
-                        color: _errorLoadingEco != null ? Colors.red : Colors.orange,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-          
-          const SizedBox(height: 12),
-          // Radius Slider
-          Row(children: [
-            const Text('Радиус: ', style: TextStyle(fontWeight: FontWeight.w600)),
-            Text('${_radiusKm.toStringAsFixed(1)} км',
-                style: const TextStyle(color: Colors.green, fontWeight: FontWeight.w700, fontSize: 16)),
-            Expanded(
-              child: Slider(
-                value: _radiusKm, min: 0.5, max: 15.0, divisions: 29,
-                activeColor: Colors.green,
-                onChanged: (v) => setState(() => _radiusKm = v),
-              ),
-            ),
-          ]),
+          // Radius settings and sliders are removed
           
           const Divider(height: 48),
 
