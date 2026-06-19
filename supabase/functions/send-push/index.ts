@@ -334,6 +334,15 @@ async function handleWebhook(accessToken: string, payload: any) {
       )
       results.push(`courier:${courierSent}`)
 
+      const warehouseSent = await sendToAllOfType(
+        accessToken, "warehouse",
+        "🛒 Новый заказ!",
+        `Заказ #${num} ожидает подтверждения`,
+        "delivery_orders", "new_order_alert",
+        { order_id: record.id, type: "new_order" }
+      )
+      results.push(`warehouse:${warehouseSent}`)
+
       return jsonOk({ processed: true, results })
     }
 
@@ -522,7 +531,9 @@ async function handleDirectCall(accessToken: string, payload: any) {
     title || "AkJol", body || "",
     data?.channel_id || "general",
     data?.sound || "default",
-    data || {}
+    data || {},
+    user_id,
+    app_type
   )
 
   return new Response(
