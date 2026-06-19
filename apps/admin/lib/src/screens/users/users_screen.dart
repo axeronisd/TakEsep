@@ -1909,7 +1909,7 @@ class _UsersScreenState extends State<UsersScreen>
               ),
             ),
           ),
-        ),
+        );
       },
     );
 
@@ -2061,7 +2061,7 @@ class _UsersScreenState extends State<UsersScreen>
               ),
             ),
           ),
-        ),
+        );
       },
     );
 
@@ -3196,7 +3196,7 @@ class _UsersScreenState extends State<UsersScreen>
               ),
             ),
           ),
-        ),
+        );
       },
     );
 
@@ -3347,7 +3347,7 @@ class _UsersScreenState extends State<UsersScreen>
               ),
             ),
           ),
-        ),
+        );
       },
     );
 

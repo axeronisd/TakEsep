@@ -460,7 +460,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
               ),
             ),
           ),
-        ),
+        );
       },
     );
 
