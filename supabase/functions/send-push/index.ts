@@ -409,7 +409,12 @@ async function handleWebhook(accessToken: string, payload: any) {
       }
 
       // → Notify WAREHOUSE if order cancelled (only if the warehouse was already notified/knew about the order)
-      if (status.startsWith("cancelled") && record.warehouse_id && old_record?.status !== "pending") {
+      if (
+        status.startsWith("cancelled") &&
+        record.warehouse_id &&
+        old_record?.status !== "pending" &&
+        old_record?.status !== "courier_assigned"
+      ) {
         const sent = await sendToAllOfType(
           accessToken, "warehouse",
           "Заказ отменён",
