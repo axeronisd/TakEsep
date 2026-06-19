@@ -228,6 +228,7 @@ class _UsersScreenState extends State<UsersScreen>
     final isMobile = width < 760;
 
     return AdminPageBody(
+      scrollable: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -420,23 +421,31 @@ class _UsersScreenState extends State<UsersScreen>
           const SizedBox(height: 20),
 
           // Tab views
-          Expanded(
-            child: _loading
-                ? const Center(
-                    child: CircularProgressIndicator(color: AppColors.primary))
-                : TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildAuthUsersTab(isMobile),
-                      _buildCustomersTab(isMobile),
-                      _buildCouriersTab(isMobile),
-                      _buildEmployeesTab(isMobile),
-                    ],
-                  ),
-          ),
+          _loading
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 60),
+                  child: Center(
+                      child: CircularProgressIndicator(color: AppColors.primary)),
+                )
+              : _buildTabContent(isMobile),
         ],
       ),
     );
+  }
+
+  Widget _buildTabContent(bool isMobile) {
+    switch (_tabController.index) {
+      case 0:
+        return _buildAuthUsersTab(isMobile);
+      case 1:
+        return _buildCustomersTab(isMobile);
+      case 2:
+        return _buildCouriersTab(isMobile);
+      case 3:
+        return _buildEmployeesTab(isMobile);
+      default:
+        return const SizedBox.shrink();
+    }
   }
 
   String _getSearchHint() {
@@ -475,6 +484,8 @@ class _UsersScreenState extends State<UsersScreen>
 
     if (isMobile) {
       return ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
         itemCount: _filteredAuthUsers.length,
         separatorBuilder: (_, __) => const SizedBox(height: 10),
         itemBuilder: (context, idx) =>
@@ -567,7 +578,9 @@ class _UsersScreenState extends State<UsersScreen>
     }
 
     if (isMobile) {
-      return ListView.separated(
+       return ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
         itemCount: _filteredCustomers.length,
         separatorBuilder: (_, __) => const SizedBox(height: 10),
         itemBuilder: (context, idx) =>
@@ -651,6 +664,8 @@ class _UsersScreenState extends State<UsersScreen>
 
     if (isMobile) {
       return ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
         itemCount: _filteredCouriers.length,
         separatorBuilder: (_, __) => const SizedBox(height: 10),
         itemBuilder: (context, idx) =>
@@ -849,6 +864,8 @@ class _UsersScreenState extends State<UsersScreen>
 
     if (isMobile) {
       return ListView.separated(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
         itemCount: _filteredEmployees.length,
         separatorBuilder: (_, __) => const SizedBox(height: 10),
         itemBuilder: (context, idx) =>

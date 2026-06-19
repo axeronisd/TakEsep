@@ -204,37 +204,39 @@ class _TransportTariffsScreenState extends State<TransportTariffsScreen> {
               ? _buildErrorView()
               : _transports.isEmpty
                   ? const Center(child: Text('Нет тарифов в базе', style: TextStyle(color: AppColors.darkTextSecondary)))
-                  : Padding(
-                      padding: const EdgeInsets.all(24.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (!isMobile) ...[
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('Тарифы транспорта',
-                                        style: TextStyle(
-                                            fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.darkTextPrimary)),
-                                    SizedBox(height: 4),
-                                    Text('Настройка стоимости доставки за один километр',
-                                        style: TextStyle(fontSize: 13, color: AppColors.darkTextTertiary)),
-                                  ],
-                                ),
-                                IconButton(
-                                  onPressed: _loadTariffs,
-                                  icon: const Icon(Icons.refresh_rounded, color: AppColors.darkTextSecondary),
-                                  tooltip: 'Обновить',
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 24),
-                          ],
-                          Expanded(
-                            child: GridView.builder(
+                  : SingleChildScrollView(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (!isMobile) ...[
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text('Тарифы транспорта',
+                                          style: TextStyle(
+                                              fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.darkTextPrimary)),
+                                      SizedBox(height: 4),
+                                      Text('Настройка стоимости доставки за один километр',
+                                          style: TextStyle(fontSize: 13, color: AppColors.darkTextTertiary)),
+                                    ],
+                                  ),
+                                  IconButton(
+                                    onPressed: _loadTariffs,
+                                    icon: const Icon(Icons.refresh_rounded, color: AppColors.darkTextSecondary),
+                                    tooltip: 'Обновить',
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 24),
+                            ],
+                            GridView.builder(
+                              shrinkWrap: true,
+                              physics: const NeverScrollableScrollPhysics(),
                               itemCount: _transports.length,
                               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                                 crossAxisCount: isMobile ? 1 : 3,
@@ -323,7 +325,7 @@ class _TransportTariffsScreenState extends State<TransportTariffsScreen> {
                                               style: IconButton.styleFrom(
                                                 backgroundColor: AppColors.primary.withValues(alpha: 0.15),
                                                 foregroundColor: AppColors.primaryLight,
-                                              ),
+                                                ),
                                               icon: const Icon(Icons.edit_rounded, size: 18),
                                             ),
                                           ],
@@ -334,10 +336,10 @@ class _TransportTariffsScreenState extends State<TransportTariffsScreen> {
                                 );
                               },
                             ),
-                          ),
-                          const SizedBox(height: 24),
-                          _buildCourierRateSettingsCard(),
-                        ],
+                            const SizedBox(height: 24),
+                            _buildCourierRateSettingsCard(),
+                          ],
+                        ),
                       ),
                     ),
     );

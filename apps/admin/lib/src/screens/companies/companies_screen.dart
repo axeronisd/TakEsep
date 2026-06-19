@@ -23,6 +23,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
     final isMobile = MediaQuery.of(context).size.width < 760;
 
     return AdminPageBody(
+      scrollable: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -88,37 +89,38 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
             ),
           ],
           const SizedBox(height: 20),
-          Expanded(
-            child: companiesAsync.when(
-              loading: () => const Center(
+          companiesAsync.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 60),
+              child: Center(
                 child: CircularProgressIndicator(color: AppColors.primary),
               ),
-              error: (e, _) => AdminEmptyState(
-                icon: Icons.error_outline_rounded,
-                title: 'Не удалось загрузить компании',
-                subtitle: e.toString(),
-              ),
-              data: (companies) {
-                final filtered = companies.where((c) {
-                  if (_searchQuery.isEmpty) return true;
-                  final title = (c['title'] as String? ?? '').toLowerCase();
-                  return title.contains(_searchQuery);
-                }).toList();
-
-                if (filtered.isEmpty) {
-                  return const AdminEmptyState(
-                    icon: Icons.business_outlined,
-                    title: 'Нет компаний',
-                    subtitle: 'Создайте первую компанию для выдачи лицензии',
-                  );
-                }
-
-                if (isMobile) {
-                  return _buildMobileList(filtered);
-                }
-                return _buildTable(filtered);
-              },
             ),
+            error: (e, _) => AdminEmptyState(
+              icon: Icons.error_outline_rounded,
+              title: 'Не удалось загрузить компании',
+              subtitle: e.toString(),
+            ),
+            data: (companies) {
+              final filtered = companies.where((c) {
+                if (_searchQuery.isEmpty) return true;
+                final title = (c['title'] as String? ?? '').toLowerCase();
+                return title.contains(_searchQuery);
+              }).toList();
+
+              if (filtered.isEmpty) {
+                return const AdminEmptyState(
+                  icon: Icons.business_outlined,
+                  title: 'Нет компаний',
+                  subtitle: 'Создайте первую компанию для выдачи лицензии',
+                );
+              }
+
+              if (isMobile) {
+                return _buildMobileList(filtered);
+              }
+              return _buildTable(filtered);
+            },
           ),
         ],
       ),
@@ -127,6 +129,8 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
 
   Widget _buildMobileList(List<Map<String, dynamic>> companies) {
     return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       itemCount: companies.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
@@ -283,20 +287,18 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
         borderRadius: BorderRadius.circular(16),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          child: SingleChildScrollView(
-            child: DataTable(
-              headingRowColor:
-                  WidgetStateProperty.all(AppColors.darkSurfaceVariant),
-              dataRowColor: WidgetStateProperty.all(Colors.transparent),
-              showCheckboxColumn: true,
-              columns: const [
-                DataColumn(label: Text('Компания', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600))),
-                DataColumn(label: Text('Ключ', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600))),
-                DataColumn(label: Text('Статус', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600))),
-                DataColumn(label: Text('Действия', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600))),
-              ],
-              rows: companies.map((c) => _buildRow(c)).toList(),
-            ),
+          child: DataTable(
+            headingRowColor:
+                WidgetStateProperty.all(AppColors.darkSurfaceVariant),
+            dataRowColor: WidgetStateProperty.all(Colors.transparent),
+            showCheckboxColumn: true,
+            columns: const [
+              DataColumn(label: Text('Компания', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600))),
+              DataColumn(label: Text('Ключ', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600))),
+              DataColumn(label: Text('Статус', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600))),
+              DataColumn(label: Text('Действия', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600))),
+            ],
+            rows: companies.map((c) => _buildRow(c)).toList(),
           ),
         ),
       ),

@@ -93,6 +93,7 @@ class _AddressModerationScreenState extends ConsumerState<AddressModerationScree
   @override
   Widget build(BuildContext context) {
     return AdminPageBody(
+      scrollable: true,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -119,24 +120,27 @@ class _AddressModerationScreenState extends ConsumerState<AddressModerationScree
             ],
           ),
           const SizedBox(height: 20),
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                : _pendingWarehouses.isEmpty
-                    ? const AdminEmptyState(
-                        icon: Icons.check_circle_outline_rounded,
-                        title: 'Нет заявок',
-                        subtitle: 'Все изменения адресов проверены',
-                      )
-                    : ListView.separated(
-                        itemCount: _pendingWarehouses.length,
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          final wh = _pendingWarehouses[index];
-                          return _buildModerationCard(wh);
-                        },
-                      ),
-          ),
+          _loading
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 60),
+                  child: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+                )
+              : _pendingWarehouses.isEmpty
+                  ? const AdminEmptyState(
+                      icon: Icons.check_circle_outline_rounded,
+                      title: 'Нет заявок',
+                      subtitle: 'Все изменения адресов проверены',
+                    )
+                  : ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _pendingWarehouses.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final wh = _pendingWarehouses[index];
+                        return _buildModerationCard(wh);
+                      },
+                    ),
         ],
       ),
     );
