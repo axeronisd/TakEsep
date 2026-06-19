@@ -9,6 +9,7 @@ import '../../../data/powersync_db.dart';
 import '../../../data/supabase_sync.dart';
 import '../../../data/supabase_storage_helper.dart';
 import '../../../utils/snackbar_helper.dart';
+import '../../../widgets/cached_image_widget.dart';
 
 /// Полноэкранный редактор товара для каталога AkJol
 class AkjolProductEditorDialog extends ConsumerStatefulWidget {
@@ -327,8 +328,11 @@ class _AkjolProductEditorDialogState extends ConsumerState<AkjolProductEditorDia
                       Text('Добавить', style: TextStyle(fontSize: 9, color: cs.onSurface.withValues(alpha: 0.5))),
                     ])
                   : hasImg
-                      ? Image.network(imageUrl, fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _empty(cs))
+                      ? CachedImageWidget(
+                          imageUrl: imageUrl,
+                          fit: BoxFit.cover,
+                          errorWidget: _empty(cs),
+                        )
                       : _empty(cs),
             ),
             if (label != null)
@@ -386,7 +390,11 @@ class _AkjolProductEditorDialogState extends ConsumerState<AkjolProductEditorDia
           SizedBox(
             height: 110, width: 180,
             child: photos.isNotEmpty
-                ? Image.network(photos.first, fit: BoxFit.cover, errorBuilder: (_, __, ___) => _empty(cs))
+                ? CachedImageWidget(
+                    imageUrl: photos.first,
+                    fit: BoxFit.cover,
+                    errorWidget: _empty(cs),
+                  )
                 : Container(
                     color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
                     child: Center(child: Icon(Icons.image_outlined, size: 32, color: cs.onSurface.withValues(alpha: 0.2))),

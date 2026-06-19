@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../theme/akjol_theme.dart';
 import '../../providers/cart_provider.dart';
+import '../../widgets/cached_image_widget.dart';
 
 /// Shows the cart as a draggable bottom sheet that can be swiped down to dismiss.
 void showCartSheet(BuildContext context) {
@@ -366,13 +367,11 @@ class _SheetStoreHeader extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: url != null && url.isNotEmpty
-                    ? Image.network(
-                        url,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) => _fallback(),
-                      )
-                    : _fallback(),
+                child: CachedImageWidget(
+                  imageUrl: url,
+                  fit: BoxFit.cover,
+                  errorWidget: _fallback(),
+                ),
               );
             },
           ),
@@ -513,13 +512,11 @@ class _SheetCartItem extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(10),
               ),
               clipBehavior: Clip.antiAlias,
-              child: item.imageUrl != null
-                  ? Image.network(
-                      item.imageUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => _ph(),
-                    )
-                  : _ph(),
+              child: CachedImageWidget(
+                imageUrl: item.imageUrl,
+                fit: BoxFit.cover,
+                errorWidget: _ph(),
+              ),
             ),
             const SizedBox(width: 8),
             // Info

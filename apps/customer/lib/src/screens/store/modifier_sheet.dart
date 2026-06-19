@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../theme/akjol_theme.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/store_provider.dart';
+import '../../widgets/cached_image_widget.dart';
 
 /// Opens a modal bottom sheet for selecting product modifiers.
 /// Returns null if cancelled, or a list of selected CartModifiers.
@@ -149,16 +150,11 @@ class _ModifierSheetState extends State<_ModifierSheet> {
                         : const Color(0xFFF3F4F6),
                   ),
                   clipBehavior: Clip.antiAlias,
-                  child: widget.product.imageUrl != null
-                      ? Image.network(
-                          widget.product.imageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, _, _) => Icon(
-                            Icons.image_outlined,
-                            color: muted,
-                          ),
-                        )
-                      : Icon(Icons.image_outlined, color: muted),
+                  child: CachedImageWidget(
+                    imageUrl: widget.product.imageUrl,
+                    fit: BoxFit.cover,
+                    errorWidget: Icon(Icons.image_outlined, color: muted),
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(

@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../theme/akjol_theme.dart';
 import '../../utils/phone_formatter.dart';
+import '../../widgets/cached_image_widget.dart';
 
 class OrderChatScreen extends StatefulWidget {
   final String orderId;
@@ -672,43 +673,27 @@ class _MessageBubble extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 if (_isImageUrl(text))
-                  ClipRRect(
+                  CachedImageWidget(
+                    imageUrl: text,
+                    width: 220,
                     borderRadius: BorderRadius.circular(12),
-                    child: Image.network(
-                      text,
-                      width: 220,
-                      fit: BoxFit.cover,
-                      loadingBuilder: (_, child, progress) {
-                        if (progress == null) return child;
-                        return const SizedBox(
-                          width: 220,
-                          height: 150,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              color: AkJolTheme.primary,
-                              strokeWidth: 2,
-                            ),
-                          ),
-                        );
-                      },
-                      errorBuilder: (_, __, ___) => Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.broken_image_rounded,
-                            size: 16,
+                    errorWidget: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.broken_image_rounded,
+                          size: 16,
+                          color: isMe ? Colors.white70 : Colors.grey,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Изображение',
+                          style: TextStyle(
                             color: isMe ? Colors.white70 : Colors.grey,
+                            fontSize: 13,
                           ),
-                          const SizedBox(width: 4),
-                          Text(
-                            'Изображение',
-                            style: TextStyle(
-                              color: isMe ? Colors.white70 : Colors.grey,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   )
                 else

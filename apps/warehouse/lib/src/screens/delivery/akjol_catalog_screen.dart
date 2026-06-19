@@ -7,6 +7,7 @@ import '../../data/powersync_db.dart';
 import '../../data/supabase_sync.dart';
 import '../../providers/auth_providers.dart';
 import '../../utils/snackbar_helper.dart';
+import '../../widgets/cached_image_widget.dart';
 import 'widgets/akjol_product_editor.dart';
 
 /// Экран управления каталогом AkJol
@@ -388,11 +389,10 @@ class _AkjolCatalogScreenState extends ConsumerState<AkjolCatalogScreen> {
             borderRadius: BorderRadius.circular(10),
           ),
           child: product.imageUrl != null && product.imageUrl!.isNotEmpty
-              ? ClipRRect(
+              ? CachedImageWidget(
+                  imageUrl: product.imageUrl,
                   borderRadius: BorderRadius.circular(10),
-                  child: Image.network(product.imageUrl!, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
-                          Icon(Icons.inventory_2, size: 22, color: cs.onSurface.withValues(alpha: 0.3))),
+                  errorWidget: Icon(Icons.inventory_2, size: 22, color: cs.onSurface.withValues(alpha: 0.3)),
                 )
               : Icon(Icons.inventory_2, size: 22,
                   color: isActive

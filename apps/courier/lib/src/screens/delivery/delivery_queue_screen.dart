@@ -13,6 +13,7 @@ import '../../services/route_service.dart';
 import '../../providers/courier_providers.dart';
 import '../../theme/akjol_theme.dart';
 import '../chat/order_chat_screen.dart';
+import '../../widgets/cached_image_widget.dart';
 
 import 'package:audioplayers/audioplayers.dart';
 
@@ -810,9 +811,12 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
                     color: Colors.white.withValues(alpha: 0.05),
                   ),
                   clipBehavior: Clip.antiAlias,
-                  child: imageUrl != null && imageUrl.isNotEmpty
-                      ? Image.network(imageUrl, fit: BoxFit.cover, errorBuilder: (_, __, ___) => const Icon(Icons.fastfood, color: Colors.grey, size: 20))
-                      : const Icon(Icons.fastfood, color: Colors.grey, size: 20),
+                  child: CachedImageWidget(
+                    imageUrl: imageUrl,
+                    fit: BoxFit.cover,
+                    borderRadius: BorderRadius.circular(8),
+                    errorWidget: const Icon(Icons.fastfood, color: Colors.grey, size: 20),
+                  ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(

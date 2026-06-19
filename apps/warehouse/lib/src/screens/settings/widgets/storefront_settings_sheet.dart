@@ -9,6 +9,7 @@ import '../../../data/powersync_db.dart';
 import '../../../data/supabase_sync.dart';
 import '../../../data/supabase_storage_helper.dart';
 import '../../../utils/snackbar_helper.dart';
+import '../../../widgets/cached_image_widget.dart';
 
 /// Bottom sheet allowing warehouse owner to set store logo + banner
 /// for the customer-facing storefront.
@@ -407,11 +408,12 @@ class _StorefrontSettingsSheetState
                           : _currentBannerUrl != null &&
                                   _currentBannerUrl!.isNotEmpty
                               ? Stack(fit: StackFit.expand, children: [
-                                  Image.network(_currentBannerUrl!,
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (c, e, s) =>
-                                          _emptyImagePlaceholder(
-                                              cs, false)),
+                                  CachedImageWidget(
+                                    imageUrl: _currentBannerUrl!,
+                                    fit: BoxFit.cover,
+                                    errorWidget: _emptyImagePlaceholder(
+                                        cs, false),
+                                  ),
                                   _imageOverlay(
                                       'Нажмите чтобы заменить'),
                                 ])
@@ -448,11 +450,12 @@ class _StorefrontSettingsSheetState
                                 fit: BoxFit.cover)
                             : _currentLogoUrl != null &&
                                     _currentLogoUrl!.isNotEmpty
-                                ? Image.network(_currentLogoUrl!,
+                                ? CachedImageWidget(
+                                    imageUrl: _currentLogoUrl!,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (c, e, s) =>
-                                        _emptyImagePlaceholder(
-                                            cs, true))
+                                    errorWidget: _emptyImagePlaceholder(
+                                        cs, true),
+                                  )
                                 : _emptyImagePlaceholder(cs, true),
                       ),
                     ),
@@ -772,10 +775,10 @@ class _StorefrontSettingsSheetState
                               children: [
                                 // Image
                                 if (imageUrl != null && imageUrl.isNotEmpty)
-                                  Image.network(
-                                    imageUrl,
+                                  CachedImageWidget(
+                                    imageUrl: imageUrl,
                                     fit: BoxFit.cover,
-                                    errorBuilder: (_, __, ___) => Center(
+                                    errorWidget: Center(
                                       child: Icon(Icons.broken_image_rounded,
                                           size: 32, color: cs.onSurface.withValues(alpha: 0.2)),
                                     ),

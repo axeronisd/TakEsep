@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takesep_core/takesep_core.dart';
+import '../../widgets/cached_image_widget.dart';
 import '../../providers/realtime_products_providers.dart';
 import '../../providers/optimistic_update_providers.dart';
 
@@ -142,17 +143,12 @@ class RealtimeProductTile extends ConsumerWidget {
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: ListTile(
         leading: displayProduct.imageUrl != null
-            ? ClipRRect(
+            ? CachedImageWidget(
+                imageUrl: displayProduct.imageUrl,
+                width: 48,
+                height: 48,
                 borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  displayProduct.imageUrl!,
-                  width: 48,
-                  height: 48,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(Icons.inventory_2);
-                  },
-                ),
+                errorWidget: const Icon(Icons.inventory_2),
               )
             : const Icon(Icons.inventory_2),
         title: Text(
@@ -283,16 +279,11 @@ class ProductDetailScreen extends ConsumerWidget {
                 // Product image
                 if (displayProduct.imageUrl != null)
                   Center(
-                    child: ClipRRect(
+                    child: CachedImageWidget(
+                      imageUrl: displayProduct.imageUrl,
+                      height: 200,
                       borderRadius: BorderRadius.circular(12),
-                      child: Image.network(
-                        displayProduct.imageUrl!,
-                        height: 200,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return const Icon(Icons.inventory_2, size: 100);
-                        },
-                      ),
+                      errorWidget: const Icon(Icons.inventory_2, size: 100),
                     ),
                   ),
                 const SizedBox(height: 24),

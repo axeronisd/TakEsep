@@ -8,6 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../providers/courier_providers.dart';
 import '../../theme/akjol_theme.dart';
 import '../../services/firebase_push_bootstrap.dart';
+import '../../widgets/cached_image_widget.dart';
 
 class CourierProfileScreen extends ConsumerStatefulWidget {
   const CourierProfileScreen({super.key});
@@ -529,17 +530,15 @@ class _CourierProfileScreenState extends ConsumerState<CourierProfileScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   padding: const EdgeInsets.all(8),
-                  child: ClipRRect(
+                  child: CachedImageWidget(
+                    imageUrl: _courier!['qr_url'] as String,
+                    height: 200,
+                    fit: BoxFit.contain,
                     borderRadius: BorderRadius.circular(8),
-                    child: Image.network(
-                      _courier!['qr_url'] as String,
-                      height: 200,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) => Container(
-                        height: 80,
-                        color: Colors.grey.withValues(alpha: 0.1),
-                        child: const Center(child: Text('Ошибка загрузки QR')),
-                      ),
+                    errorWidget: Container(
+                      height: 80,
+                      color: Colors.grey.withValues(alpha: 0.1),
+                      child: const Center(child: Text('Ошибка загрузки QR')),
                     ),
                   ),
                 ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../theme/akjol_theme.dart';
+import '../../widgets/cached_image_widget.dart';
 
 /// Каталог — все магазины TakEsep, категории и товары
 class CatalogScreen extends ConsumerStatefulWidget {
@@ -334,15 +335,12 @@ class _CategoryChip extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (imageUrl != null && imageUrl!.isNotEmpty) ...[
-              ClipRRect(
+              CachedImageWidget(
+                imageUrl: imageUrl!,
+                width: 26,
+                height: 26,
+                fit: BoxFit.cover,
                 borderRadius: BorderRadius.circular(14),
-                child: Image.network(
-                  imageUrl!,
-                  width: 26,
-                  height: 26,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => const SizedBox(width: 26, height: 26),
-                ),
               ),
               const SizedBox(width: 6),
             ],
@@ -415,13 +413,11 @@ class _ProductCard extends StatelessWidget {
             SizedBox(
               height: 120,
               width: double.infinity,
-              child: hasPhoto
-                  ? Image.network(
-                      photos.first,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _placeholder(muted),
-                    )
-                  : _placeholder(muted),
+              child: CachedImageWidget(
+                imageUrl: hasPhoto ? photos.first : null,
+                fit: BoxFit.cover,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              ),
             ),
 
             // ── Info ──

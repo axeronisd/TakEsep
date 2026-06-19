@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../theme/akjol_theme.dart';
 import '../../providers/cart_provider.dart';
+import '../../widgets/cached_image_widget.dart';
 import '../cart/cart_bottom_sheet.dart';
 import '../../providers/checkout_provider.dart';
 
@@ -188,10 +189,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
               borderRadius: BorderRadius.circular(12),
             ),
             clipBehavior: Clip.antiAlias,
-            child: url != null && url.isNotEmpty
-                ? Image.network(url, fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => _storeIcon())
-                : _storeIcon(),
+            child: CachedImageWidget(
+              imageUrl: url,
+              fit: BoxFit.cover,
+              errorWidget: _storeIcon(),
+            ),
           );
         },
       ),

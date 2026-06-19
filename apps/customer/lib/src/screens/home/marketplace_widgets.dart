@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../theme/akjol_theme.dart';
 import '../../providers/marketplace_provider.dart';
+import '../../widgets/cached_image_widget.dart';
 
 // ═══════════════════════════════════════════════════════════════
 //  STORE CATEGORIES ROW — Горизонтальный скролл категорий
@@ -253,13 +254,11 @@ class MarketplaceStoreCard extends StatelessWidget {
         children: [
           // Background image
           Positioned.fill(
-            child: hasBanner
-                ? Image.network(
-                    store.bannerUrl!,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, _, _) => _gradientFallback(isDark),
-                  )
-                : _gradientFallback(isDark),
+            child: CachedImageWidget(
+              imageUrl: hasBanner ? store.bannerUrl : null,
+              fit: BoxFit.cover,
+              errorWidget: _gradientFallback(isDark),
+            ),
           ),
           // Gradient overlay
           Positioned.fill(
@@ -298,14 +297,11 @@ class MarketplaceStoreCard extends StatelessWidget {
                 ],
               ),
               clipBehavior: Clip.antiAlias,
-              child: hasLogo
-                  ? Image.network(
-                      store.logoUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) =>
-                          _logoFallback(store.name),
-                    )
-                  : _logoFallback(store.name),
+              child: CachedImageWidget(
+                imageUrl: hasLogo ? store.logoUrl : null,
+                fit: BoxFit.cover,
+                errorWidget: _logoFallback(store.name),
+              ),
             ),
           ),
 

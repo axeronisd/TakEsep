@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../theme/akjol_theme.dart';
+import '../../widgets/cached_image_widget.dart';
 import '../../providers/cart_provider.dart';
 import '../../providers/store_provider.dart';
 import '../../providers/favorites_provider.dart';
@@ -584,10 +585,10 @@ class _CategoryCard extends StatelessWidget {
           children: [
             // Background: image or gradient
             if (hasImage)
-              Image.network(
-                category.imageUrl!,
+              CachedImageWidget(
+                imageUrl: category.imageUrl!,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _gradientFallback(),
+                errorWidget: _gradientFallback(),
               )
             else
               _gradientFallback(),
@@ -894,10 +895,10 @@ class _StoreHeader extends ConsumerWidget {
           fit: StackFit.expand,
           children: [
             if (hasBanner)
-              Image.network(
-                store.bannerUrl!,
+              CachedImageWidget(
+                imageUrl: store.bannerUrl!,
                 fit: BoxFit.cover,
-                errorBuilder: (c, e, s) => _bannerFallback(isDark),
+                errorWidget: _bannerFallback(isDark),
               )
             else
               _bannerFallback(isDark),
@@ -937,14 +938,11 @@ class _StoreHeader extends ConsumerWidget {
                       ],
                     ),
                     clipBehavior: Clip.antiAlias,
-                    child: hasLogo
-                        ? Image.network(
-                            store.logoUrl!,
-                            fit: BoxFit.cover,
-                            errorBuilder: (c, e, s) =>
-                                _logoFallback(store.name),
-                          )
-                        : _logoFallback(store.name),
+                    child: CachedImageWidget(
+                      imageUrl: hasLogo ? store.logoUrl : null,
+                      fit: BoxFit.cover,
+                      errorWidget: _logoFallback(store.name),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -1153,13 +1151,11 @@ class _ProductCard extends ConsumerWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  product.imageUrl != null && product.imageUrl!.isNotEmpty
-                      ? Image.network(
-                          product.imageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (c, e, s) => _imageFallback(isDark),
-                        )
-                      : _imageFallback(isDark),
+                  CachedImageWidget(
+                    imageUrl: product.imageUrl,
+                    fit: BoxFit.cover,
+                    errorWidget: _imageFallback(isDark),
+                  ),
                   if (!product.isInStock)
                     Container(
                       color: Colors.black.withValues(alpha: 0.55),
@@ -1664,12 +1660,10 @@ class _ProductDetailSheet extends ConsumerWidget {
                         color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(20),
                       ),
-                      child: ClipRRect(
+                      child: CachedImageWidget(
+                        imageUrl: product.imageUrl!,
+                        fit: BoxFit.contain,
                         borderRadius: BorderRadius.circular(20),
-                        child: Image.network(
-                          product.imageUrl!,
-                          fit: BoxFit.contain,
-                        ),
                       ),
                     ),
                   Text(

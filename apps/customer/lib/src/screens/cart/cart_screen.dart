@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../theme/akjol_theme.dart';
 import '../../providers/cart_provider.dart';
+import '../../widgets/cached_image_widget.dart';
 
 // ═══════════════════════════════════════════════════════════════
 //  CART SCREEN — Premium slide-up design
@@ -321,14 +322,11 @@ class _StoreHeader extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: logoUrl != null && logoUrl.isNotEmpty
-                    ? Image.network(
-                        logoUrl,
-                        fit: BoxFit.cover,
-                        errorBuilder: (_, _, _) =>
-                            _logoFallback(cart.warehouseName),
-                      )
-                    : _logoFallback(cart.warehouseName),
+                child: CachedImageWidget(
+                  imageUrl: logoUrl,
+                  fit: BoxFit.cover,
+                  errorWidget: _logoFallback(cart.warehouseName),
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -473,13 +471,11 @@ class _CartItemCard extends ConsumerWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               clipBehavior: Clip.antiAlias,
-              child: item.imageUrl != null
-                  ? Image.network(
-                      item.imageUrl!,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) => _placeholder(),
-                    )
-                  : _placeholder(),
+              child: CachedImageWidget(
+                imageUrl: item.imageUrl,
+                fit: BoxFit.cover,
+                errorWidget: _placeholder(),
+              ),
             ),
             const SizedBox(width: 10),
 
