@@ -246,14 +246,7 @@ C1C97D8FAA5545518DF1335B /* chat_message.wav */,
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-																															E1084BE2ED1A4D5F92A1F1ED /* akjol_courier.mp3 in Resources */,
-398705DFDCE146C191CC264B /* order_pickup.wav in Resources */,
-F3E611EBD53343409625EA31 /* order_delivered.wav in Resources */,
-3F12EE49578C45A5B4B95D1C /* order_cancelled.wav in Resources */,
-4F48E79FF49F418BB85A9DDE /* order_accepted.wav in Resources */,
-96EED439088646F9BA5C1B1A /* new_order_alert.wav in Resources */,
-E4C0EA9E2D3B44688FDD81E2 /* chat_message.wav in Resources */,
-);
+			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		97C146EC1CF9000F007C117D /* Resources */ = {
@@ -265,6 +258,13 @@ E4C0EA9E2D3B44688FDD81E2 /* chat_message.wav in Resources */,
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
 				D2B27C8E1E8E8922004F5970 /* GoogleService-Info.plist in Resources */,
+				E1084BE2ED1A4D5F92A1F1ED /* akjol_courier.mp3 in Resources */,
+				398705DFDCE146C191CC264B /* order_pickup.wav in Resources */,
+				F3E611EBD53343409625EA31 /* order_delivered.wav in Resources */,
+				3F12EE49578C45A5B4B95D1C /* order_cancelled.wav in Resources */,
+				4F48E79FF49F418BB85A9DDE /* order_accepted.wav in Resources */,
+				96EED439088646F9BA5C1B1A /* new_order_alert.wav in Resources */,
+				E4C0EA9E2D3B44688FDD81E2 /* chat_message.wav in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
