@@ -175,7 +175,6 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
     final categoriesAsync = ref.watch(storeProductCategoriesProvider(storeId));
     final productsAsync = ref.watch(storeProductsProvider(storeId));
     final selectedCat = ref.watch(selectedProductCategoryProvider(storeId));
-    final location = ref.watch(locationProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -214,15 +213,13 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
             );
           }
 
-          // Calculate if out of delivery zone
+          // Calculate if out of delivery zone using nearbyStoresProvider
+          final nearbyStoresAsync = ref.watch(nearbyStoresProvider);
           bool isOutOfZone = false;
-          if (store.latitude != null && store.longitude != null && location.lat != null && location.lng != null) {
-            final distanceMeters = const Distance().as(
-              LengthUnit.Meter,
-              LatLng(location.lat!, location.lng!),
-              LatLng(store.latitude!, store.longitude!),
-            );
-            if (distanceMeters > store.deliveryRadiusKm * 1000) {
+          if (nearbyStoresAsync.hasValue) {
+            final nearbyStores = nearbyStoresAsync.value ?? [];
+            final hasStore = nearbyStores.any((s) => s.warehouseId == store.warehouseId);
+            if (!hasStore) {
               isOutOfZone = true;
             }
           }
