@@ -1182,7 +1182,12 @@ class _ReceiptAndPrinterSettingsSheetState
       maxChildSize: 0.95,
       builder: (_, sc) => SingleChildScrollView(
         controller: sc,
-        padding: const EdgeInsets.all(AppSpacing.xl),
+        padding: EdgeInsets.only(
+          left: AppSpacing.xl,
+          right: AppSpacing.xl,
+          top: AppSpacing.xl,
+          bottom: AppSpacing.xl + MediaQuery.of(context).padding.bottom + 50,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -1512,7 +1517,7 @@ class _ReceiptAndPrinterSettingsSheetState
                   fontWeight: FontWeight.bold, fontSize: 14),
               textAlign: TextAlign.center),
         if (_config.showAddress)
-          Text('г. Бишкек, ул. Примерная 1',
+          Text(auth.selectedWarehouse?.address ?? 'г. Бишкек',
               style: receiptTextStyle.copyWith(fontSize: 10),
               textAlign: TextAlign.center),
         divider,
@@ -1568,6 +1573,29 @@ class _ReceiptAndPrinterSettingsSheetState
                 : _footerController.text,
             style: receiptTextStyle.copyWith(fontSize: 10),
             textAlign: TextAlign.center),
+        divider,
+        const SizedBox(height: 8),
+        Image.asset(
+          'assets/images/logo_square.png',
+          width: 60,
+          height: 60,
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) => const Icon(
+            Icons.receipt_long_rounded,
+            size: 40,
+            color: Colors.black54,
+          ),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'TakEsep',
+          style: TextStyle(
+            fontFamily: 'monospace',
+            fontWeight: FontWeight.bold,
+            fontSize: 14,
+            color: Colors.black87,
+          ),
+        ),
       ],
     );
   }

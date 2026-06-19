@@ -25,9 +25,9 @@ class NotificationService {
   // Sound URLs for in-app foreground playback
   static const _sounds = <String, String>{
     'akjol_courier':
-        'https://cdn.pixabay.com/audio/2024/02/19/audio_e06e29e1e4.mp3',
+        'https://smvegrscjnoelfsipwqq.supabase.co/storage/v1/object/public/sounds/akjol_courier.mp3',
     'new_order_alert':
-        'https://cdn.pixabay.com/audio/2024/02/19/audio_e06e29e1e4.mp3',
+        'https://smvegrscjnoelfsipwqq.supabase.co/storage/v1/object/public/sounds/akjol_courier.mp3',
     'order_accepted':
         'https://cdn.pixabay.com/audio/2024/11/07/audio_77e36f21ee.mp3',
     'order_pickup':

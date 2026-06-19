@@ -91,14 +91,17 @@ async function logNotification(
 ) {
   try {
     const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
+    const logData = { ...data }
+    if (error) {
+      logData.error = error
+    }
     await sb.from("push_notification_log").insert({
       user_id: userId,
       app_type: appType,
       title,
       body,
-      data,
-      status,
-      error: error || null,
+      data: logData,
+      status: error ? "failed" : status,
     })
   } catch (e) {
     console.error("[log] Failed to log notification:", e)
@@ -333,15 +336,6 @@ async function handleWebhook(accessToken: string, payload: any) {
         { order_id: record.id, type: "new_order" }
       )
       results.push(`courier:${courierSent}`)
-
-      const warehouseSent = await sendToAllOfType(
-        accessToken, "warehouse",
-        "🛒 Новый заказ!",
-        `Заказ #${num} ожидает подтверждения`,
-        "delivery_orders", "new_order_alert",
-        { order_id: record.id, type: "new_order" }
-      )
-      results.push(`warehouse:${warehouseSent}`)
 
       return jsonOk({ processed: true, results })
     }

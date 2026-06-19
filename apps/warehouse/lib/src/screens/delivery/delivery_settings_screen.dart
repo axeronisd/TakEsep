@@ -6,6 +6,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../../utils/snackbar_helper.dart';
+import '../../providers/auth_providers.dart';
 
 class DeliverySettingsScreen extends ConsumerStatefulWidget {
   final String warehouseId;
@@ -171,11 +172,20 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
 
       // 2. Save address to warehouses if editing
       if (_isEditingAddress) {
+        final newAddress = _addressController.text;
+        final newLat = _pendingLocation?.latitude ?? _warehouseLocation.latitude;
+        final newLng = _pendingLocation?.longitude ?? _warehouseLocation.longitude;
         await _supabase.from('warehouses').update({
-          'address': _addressController.text,
-          'latitude': _pendingLocation?.latitude ?? _warehouseLocation.latitude,
-          'longitude': _pendingLocation?.longitude ?? _warehouseLocation.longitude,
+          'address': newAddress,
+          'latitude': newLat,
+          'longitude': newLng,
         }).eq('id', _warehouseId);
+        ref.read(authProvider.notifier).updateWarehouseAddress(
+          _warehouseId,
+          newAddress,
+          newLat,
+          newLng,
+        );
         setState(() {
           _isEditingAddress = false;
         });

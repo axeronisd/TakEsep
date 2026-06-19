@@ -374,6 +374,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
         isLoading: false,
       );
       _saveSession();
+      FirebasePushBootstrap.reRegisterToken(customUserId: employee.id);
       InventoryRepository().seedLocalDbFromSupabase(company.id);
       return true;
     } catch (e) {
@@ -451,6 +452,18 @@ class AuthNotifier extends StateNotifier<AuthState> {
   void selectWarehouse(String warehouseId) {
     _prefs.setString(_kWarehouseIdPref, warehouseId);
     state = state.copyWith(selectedWarehouseId: warehouseId);
+    _saveSession();
+  }
+
+  /// Update a warehouse's address and coordinates in memory and session cache.
+  void updateWarehouseAddress(String id, String address, double lat, double lng) {
+    final list = state.availableWarehouses.map((w) {
+      if (w.id == id) {
+        return w.copyWith(address: address, latitude: lat, longitude: lng);
+      }
+      return w;
+    }).toList();
+    state = state.copyWith(availableWarehouses: list);
     _saveSession();
   }
 
