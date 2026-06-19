@@ -23,6 +23,7 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
   double _zoom = 12.0;
 
   bool _isAdding = false;
+  String? _editingZoneId;
   final List<LatLng> _newPolygonPoints = [];
   final _nameCtrl = TextEditingController(text: 'Новая зона');
   bool _showMapOnMobile = true;
@@ -62,25 +63,33 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
     }
   }
 
-  Future<void> _saveNewZone() async {
+  Future<void> _saveZone() async {
     if (_newPolygonPoints.length < 3) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Для создания полигона необходимо как минимум 3 точки')),
+        const SnackBar(content: Text('Для сохранения полигона необходимо как минимум 3 точки')),
       );
       return;
     }
     setState(() => _loading = true);
     try {
       final firstPoint = _newPolygonPoints.first;
-      await _supabase.from('ecosystem_zones').insert({
+      final payload = {
         'name': _nameCtrl.text,
         'center_lat': firstPoint.latitude,
         'center_lng': firstPoint.longitude,
         'polygon_points': _newPolygonPoints.map((p) => [p.latitude, p.longitude]).toList(),
         'is_active': true,
-      });
+      };
+
+      if (_editingZoneId != null) {
+        await _supabase.from('ecosystem_zones').update(payload).eq('id', _editingZoneId!);
+      } else {
+        await _supabase.from('ecosystem_zones').insert(payload);
+      }
+
       setState(() {
         _isAdding = false;
+        _editingZoneId = null;
         _newPolygonPoints.clear();
       });
       _loadZones();
@@ -117,8 +126,36 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
   void _startAddingMode() {
     setState(() {
       _isAdding = true;
+      _editingZoneId = null;
       _newPolygonPoints.clear();
       _nameCtrl.text = 'Новая зона';
+    });
+  }
+
+  void _startEditingMode(Map<String, dynamic> zone) {
+    setState(() {
+      _editingZoneId = zone['id'] as String;
+      _isAdding = false;
+      _newPolygonPoints.clear();
+      _nameCtrl.text = zone['name'] as String;
+
+      final polygonPoints = zone['polygon_points'] as List<dynamic>?;
+      if (polygonPoints != null) {
+        for (final pt in polygonPoints) {
+          final list = pt as List<dynamic>;
+          _newPolygonPoints.add(LatLng((list[0] as num).toDouble(), (list[1] as num).toDouble()));
+        }
+      }
+
+      _center = LatLng(zone['center_lat'] as double, zone['center_lng'] as double);
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try {
+        _mapCtrl.move(_center, _zoom);
+      } catch (e) {
+        debugPrint('Move map error: $e');
+      }
     });
   }
 
@@ -156,7 +193,7 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
                 ),
                 const SizedBox(height: 16),
                 FilledButton.icon(
-                  onPressed: _isAdding
+                  onPressed: _isAdding || _editingZoneId != null
                       ? null
                       : () {
                           if (isMobile) {
@@ -206,6 +243,18 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            IconButton(
+                              icon: const Icon(Icons.edit_rounded,
+                                  color: AppColors.info),
+                              onPressed: () {
+                                if (isMobile) {
+                                  setState(() {
+                                    _showMapOnMobile = true;
+                                  });
+                                }
+                                _startEditingMode(zone);
+                              },
+                            ),
                             Switch(
                               value: isActive,
                               onChanged: (v) => _toggleZone(id, v),
@@ -248,7 +297,7 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
             initialCenter: _center,
             initialZoom: _zoom,
             onTap: (tapPos, p) {
-              if (_isAdding) {
+              if (_isAdding || _editingZoneId != null) {
                 setState(() {
                   _newPolygonPoints.add(p);
                 });
@@ -263,8 +312,8 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
             ),
             PolygonLayer(
               polygons: [
-                // Render existing polygon zones
-                ..._zones.where((z) => z['polygon_points'] != null).map((z) {
+                // Render existing polygon zones (excluding the one being edited)
+                ..._zones.where((z) => z['polygon_points'] != null && z['id'] != _editingZoneId).map((z) {
                   final isActive = z['is_active'] as bool? ?? true;
                   final rawPoints = z['polygon_points'] as List<dynamic>;
                   final points = rawPoints.map((pt) {
@@ -281,12 +330,12 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
                     isFilled: true,
                   );
                 }),
-                // Render new polygon zone being added
-                if (_isAdding && _newPolygonPoints.length >= 2)
+                // Render new polygon zone being added or edited
+                if ((_isAdding || _editingZoneId != null) && _newPolygonPoints.length >= 2)
                   Polygon(
                     points: _newPolygonPoints,
-                    color: AppColors.success.withValues(alpha: 0.3),
-                    borderColor: AppColors.success,
+                    color: (_editingZoneId != null ? AppColors.info : AppColors.success).withValues(alpha: 0.3),
+                    borderColor: _editingZoneId != null ? AppColors.info : AppColors.success,
                     borderStrokeWidth: 2,
                     isFilled: true,
                   ),
@@ -294,8 +343,8 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
             ),
             CircleLayer(
               circles: [
-                // Render legacy radius zones
-                ..._zones.where((z) => z['polygon_points'] == null).map((z) {
+                // Render legacy radius zones (excluding the one being edited)
+                ..._zones.where((z) => z['polygon_points'] == null && z['id'] != _editingZoneId).map((z) {
                   final isActive = z['is_active'] as bool? ?? true;
                   final radius = z['radius_km'] as num?;
                   return CircleMarker(
@@ -314,7 +363,7 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
             ),
             MarkerLayer(
               markers: [
-                if (_isAdding)
+                if (_isAdding || _editingZoneId != null)
                   ..._newPolygonPoints.asMap().entries.map((entry) {
                     final idx = entry.key;
                     final pt = entry.value;
@@ -329,8 +378,8 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
                           });
                         },
                         child: Container(
-                          decoration: const BoxDecoration(
-                            color: AppColors.success,
+                          decoration: BoxDecoration(
+                            color: _editingZoneId != null ? AppColors.info : AppColors.success,
                             shape: BoxShape.circle,
                           ),
                           child: Center(
@@ -351,8 +400,8 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
           ],
         ),
 
-        // Overlay for adding mode
-        if (_isAdding)
+        // Overlay for adding/editing mode
+        if (_isAdding || _editingZoneId != null)
           Positioned(
             top: 20,
             right: 20,
@@ -364,7 +413,7 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
                 color: AppColors.darkSurface,
                 borderRadius: BorderRadius.circular(16),
                 border:
-                    Border.all(color: AppColors.success.withValues(alpha: 0.5)),
+                    Border.all(color: (_editingZoneId != null ? AppColors.info : AppColors.success).withValues(alpha: 0.5)),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.3),
@@ -375,8 +424,8 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Text('Режим добавления зоны (Полигон)',
-                      style: TextStyle(
+                  Text(_editingZoneId != null ? 'Режим редактирования зоны' : 'Режим добавления зоны (Полигон)',
+                      style: const TextStyle(
                           color: Colors.white, fontWeight: FontWeight.bold)),
                   const SizedBox(height: 8),
                   const Text(
@@ -435,6 +484,7 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
                         onPressed: () {
                           setState(() {
                             _isAdding = false;
+                            _editingZoneId = null;
                             _newPolygonPoints.clear();
                           });
                         },
@@ -444,8 +494,8 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
                       const SizedBox(width: 8),
                       FilledButton(
                         style: FilledButton.styleFrom(
-                            backgroundColor: AppColors.success),
-                        onPressed: _loading ? null : _saveNewZone,
+                            backgroundColor: _editingZoneId != null ? AppColors.info : AppColors.success),
+                        onPressed: _loading ? null : _saveZone,
                         child: const Text('Сохранить',
                             style: TextStyle(color: Colors.white)),
                       ),
