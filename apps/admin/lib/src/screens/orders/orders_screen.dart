@@ -14,6 +14,7 @@ class OrdersScreen extends StatefulWidget {
 class _OrdersScreenState extends State<OrdersScreen> {
   final _supabase = Supabase.instance.client;
   bool _loading = true;
+  bool _deleting = false;
   String _searchQuery = '';
   String _statusFilter = 'all'; // all, pending, courier_assigned, picked_up, delivered, cancelled
   final Set<String> _selectedOrderIds = {};
@@ -104,102 +105,115 @@ class _OrdersScreenState extends State<OrdersScreen> {
     final isMobile = width < 760;
 
     return AdminPageBody(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          // Upper Search Bar
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: AdminSearchField(
-                  hint: 'Поиск по номеру заказа, имени клиента/курьера...',
-                  onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
-                ),
+              // Upper Search Bar
+              Row(
+                children: [
+                  Expanded(
+                    child: AdminSearchField(
+                      hint: 'Поиск по номеру заказа, имени клиента/курьера...',
+                      onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+                    ),
+                  ),
+                  if (!isMobile) ...[
+                    if (_selectedOrderIds.isNotEmpty) ...[
+                      const SizedBox(width: 16),
+                      ElevatedButton.icon(
+                        onPressed: () => _confirmDeleteOrders(_selectedOrderIds.toList()),
+                        icon: const Icon(Icons.delete_sweep_rounded, size: 18),
+                        label: Text('Удалить (${_selectedOrderIds.length})'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.error,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(width: 16),
+                    IconButton(
+                      tooltip: 'Обновить заказы',
+                      onPressed: _loadOrders,
+                      icon: const Icon(Icons.refresh_rounded, color: AppColors.darkTextSecondary),
+                      style: IconButton.styleFrom(
+                        backgroundColor: AppColors.darkSurface,
+                        padding: const EdgeInsets.all(14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          side: const BorderSide(color: AppColors.darkBorder),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              if (!isMobile) ...[
-                if (_selectedOrderIds.isNotEmpty) ...[
-                  const SizedBox(width: 16),
-                  ElevatedButton.icon(
+              if (isMobile && _selectedOrderIds.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
                     onPressed: () => _confirmDeleteOrders(_selectedOrderIds.toList()),
                     icon: const Icon(Icons.delete_sweep_rounded, size: 18),
-                    label: Text('Удалить (${_selectedOrderIds.length})'),
+                    label: Text('Удалить выбранные (${_selectedOrderIds.length})'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.error,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                  ),
-                ],
-                const SizedBox(width: 16),
-                IconButton(
-                  tooltip: 'Обновить заказы',
-                  onPressed: _loadOrders,
-                  icon: const Icon(Icons.refresh_rounded, color: AppColors.darkTextSecondary),
-                  style: IconButton.styleFrom(
-                    backgroundColor: AppColors.darkSurface,
-                    padding: const EdgeInsets.all(14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14),
-                      side: const BorderSide(color: AppColors.darkBorder),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
                   ),
                 ),
               ],
+              const SizedBox(height: 16),
+
+              // Horizontal scrolling Status chips
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildStatusChip('Все заказы', 'all'),
+                    _buildStatusChip('В обработке (Pending)', 'pending'),
+                    _buildStatusChip('Курьер в пути (Assigned)', 'courier_assigned'),
+                    _buildStatusChip('Забран курьером (Picked Up)', 'picked_up'),
+                    _buildStatusChip('Доставлено (Delivered)', 'delivered'),
+                    _buildStatusChip('Отменено (Cancelled)', 'cancelled'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Orders List
+              Expanded(
+                child: _loading
+                    ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
+                    : _filteredOrders.isEmpty
+                        ? const AdminEmptyState(
+                            icon: Icons.receipt_long_rounded,
+                            title: 'Заказы не найдены',
+                            subtitle: 'Нет заказов в этой категории или по вашему запросу',
+                          )
+                        : isMobile
+                            ? ListView.separated(
+                                itemCount: _filteredOrders.length,
+                                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                                itemBuilder: (context, idx) => _buildMobileCard(_filteredOrders[idx]),
+                              )
+                            : _buildDesktopTable(),
+              ),
             ],
           ),
-          if (isMobile && _selectedOrderIds.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () => _confirmDeleteOrders(_selectedOrderIds.toList()),
-                icon: const Icon(Icons.delete_sweep_rounded, size: 18),
-                label: Text('Удалить выбранные (${_selectedOrderIds.length})'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.error,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
+          if (_deleting)
+            Positioned.fill(
+              child: Container(
+                color: Colors.black38,
+                child: const Center(
+                  child: CircularProgressIndicator(color: AppColors.error),
                 ),
               ),
             ),
-          ],
-          const SizedBox(height: 16),
-
-          // Horizontal scrolling Status chips
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                _buildStatusChip('Все заказы', 'all'),
-                _buildStatusChip('В обработке (Pending)', 'pending'),
-                _buildStatusChip('Курьер в пути (Assigned)', 'courier_assigned'),
-                _buildStatusChip('Забран курьером (Picked Up)', 'picked_up'),
-                _buildStatusChip('Доставлено (Delivered)', 'delivered'),
-                _buildStatusChip('Отменено (Cancelled)', 'cancelled'),
-              ],
-            ),
-          ),
-          const SizedBox(height: 20),
-
-          // Orders List
-          Expanded(
-            child: _loading
-                ? const Center(child: CircularProgressIndicator(color: AppColors.primary))
-                : _filteredOrders.isEmpty
-                    ? const AdminEmptyState(
-                        icon: Icons.receipt_long_rounded,
-                        title: 'Заказы не найдены',
-                        subtitle: 'Нет заказов в этой категории или по вашему запросу',
-                      )
-                    : isMobile
-                        ? ListView.separated(
-                            itemCount: _filteredOrders.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 10),
-                            itemBuilder: (context, idx) => _buildMobileCard(_filteredOrders[idx]),
-                          )
-                        : _buildDesktopTable(),
-          ),
         ],
       ),
     );
@@ -741,26 +755,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
     if (confirmed != true) return;
 
     if (!mounted) return;
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => const Center(
-        child: Card(
-          color: AppColors.darkSurface,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(color: AppColors.error),
-                SizedBox(width: 20),
-                Text('Удаление заказов...', style: TextStyle(color: Colors.white)),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+    setState(() => _deleting = true);
 
     try {
       int successCount = 0;
@@ -778,11 +773,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
         successCount++;
       }
 
-      if (mounted) {
-        Navigator.of(context).pop(); // Dismiss loading overlay safely
-      }
-
       setState(() {
+        _deleting = false;
         _selectedOrderIds.removeAll(ids);
       });
 
@@ -797,8 +789,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
       _loadOrders();
     } catch (e) {
+      setState(() => _deleting = false);
       if (mounted) {
-        Navigator.of(context).pop(); // Dismiss loading overlay safely
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Ошибка удаления заказов: $e'),
