@@ -384,6 +384,18 @@ async function handleWebhook(accessToken: string, payload: any) {
         }
       }
 
+      // → Notify COURIER if order becomes ready and courier is assigned
+      if (status === "ready" && record.courier_id) {
+        const sent = await sendToUser(
+          accessToken, record.courier_id, "courier",
+          "Заказ готов",
+          `#${num} — заказ готов к выдаче`,
+          "order_status", "order_accepted",
+          { order_id: record.id, type: "order_status", status }
+        )
+        results.push(`courier_ready:${sent}`)
+      }
+
       // → Notify COURIER if order cancelled by customer/store
       if (status.startsWith("cancelled") && status !== "cancelled_by_courier" && record.courier_id) {
         const sent = await sendToUser(
