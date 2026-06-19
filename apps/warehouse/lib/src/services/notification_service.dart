@@ -67,7 +67,7 @@ class NotificationService {
     if (android == null) return;
 
     await android.createNotificationChannel(const AndroidNotificationChannel(
-      'delivery_orders',
+      'delivery_orders_v2',
       'Доставка',
       description: 'Уведомления о заказах доставки',
       importance: Importance.max,
@@ -133,7 +133,7 @@ class NotificationService {
       channelId,
       _channelName(channelId),
       channelDescription: _channelDesc(channelId),
-      importance: channelId == 'delivery_orders' || channelId == 'chat_messages'
+      importance: channelId == 'delivery_orders_v2' || channelId == 'chat_messages'
           ? Importance.max
           : Importance.defaultImportance,
       priority: Priority.high,
@@ -203,14 +203,14 @@ class NotificationService {
   }
 
   String _channelName(String id) => switch (id) {
-        'delivery_orders' => 'Доставка',
+        'delivery_orders_v2' => 'Доставка',
         'chat_messages' => 'Сообщения',
         'system_info' => 'Системные',
         _ => 'Общие',
       };
 
   String _channelDesc(String id) => switch (id) {
-        'delivery_orders' => 'Уведомления о заказах доставки',
+        'delivery_orders_v2' => 'Уведомления о заказах доставки',
         'chat_messages' => 'Сообщения от клиентов и курьеров',
         'system_info' => 'Системные уведомления',
         _ => 'Общие уведомления',

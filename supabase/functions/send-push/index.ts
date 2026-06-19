@@ -129,11 +129,11 @@ async function sendToToken(
   let resolvedChannelId = channelId
 
   if (appType === "warehouse") {
-    resolvedChannelId = "delivery_orders"
+    resolvedChannelId = "delivery_orders_v2"
     androidSound = "warehouse_order"
     iosSound = "warehouse_order.mp3"
   } else if (appType === "courier") {
-    if (channelId === "new_orders") {
+    if (channelId === "new_orders" || channelId === "new_orders_v2") {
       androidSound = "akjol_courier"
       iosSound = "akjol_courier.mp3"
     } else if (channelId === "chat_messages") {
@@ -332,7 +332,7 @@ async function handleWebhook(accessToken: string, payload: any) {
         accessToken, "courier",
         "Новый заказ",
         `#${num} — ${record.delivery_address || "ожидает курьера"}`,
-        "new_orders", "new_order_alert",
+        "new_orders_v2", "new_order_alert",
         { order_id: record.id, type: "new_order" }
       )
       results.push(`courier:${courierSent}`)
@@ -397,7 +397,7 @@ async function handleWebhook(accessToken: string, payload: any) {
           accessToken, "warehouse",
           "Заказ отменён",
           `#${num} — заказ отменён`,
-          "delivery_orders", "order_cancelled",
+          "delivery_orders_v2", "order_cancelled",
           { order_id: record.id, type: "order_cancelled" }
         )
         results.push(`warehouse_cancel:${sent}`)
@@ -409,7 +409,7 @@ async function handleWebhook(accessToken: string, payload: any) {
           accessToken, "warehouse",
           "Новый заказ (Оплачен)",
           `#${num} — заказ оплачен, начните сборку`,
-          "delivery_orders", "new_order_alert",
+          "delivery_orders_v2", "new_order_alert",
           { order_id: record.id, type: "new_order" }
         )
         results.push(`warehouse_paid:${sent}`)
@@ -424,7 +424,7 @@ async function handleWebhook(accessToken: string, payload: any) {
           accessToken, record.courier_id, "courier",
           "Заказ назначен вам",
           `#${num} — проверьте детали`,
-          "new_orders", "new_order_alert",
+          "new_orders_v2", "new_order_alert",
           { order_id: record.id, type: "order_assigned" }
         )
         results.push(`courier_assign:${sent}`)

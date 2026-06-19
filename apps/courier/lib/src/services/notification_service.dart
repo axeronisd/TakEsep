@@ -74,7 +74,7 @@ class NotificationService {
     // New orders — MAXIMUM priority 🚨
     await android.createNotificationChannel(
       const AndroidNotificationChannel(
-        'new_orders',
+        'new_orders_v2',
         'Новые заказы',
         description: 'Уведомления о новых заказах',
         importance: Importance.max,
@@ -126,14 +126,14 @@ class NotificationService {
   Future<void> show({
     required String title,
     required String body,
-    String channelId = 'new_orders',
+    String channelId = 'new_orders_v2',
     String? soundName,
     String? payload,
     bool playInAppSound = true,
   }) async {
     final id = DateTime.now().millisecondsSinceEpoch ~/ 1000;
 
-    final isUrgent = channelId == 'new_orders';
+    final isUrgent = channelId == 'new_orders_v2';
 
     final androidDetails = AndroidNotificationDetails(
       channelId,
@@ -216,7 +216,7 @@ class NotificationService {
   }
 
   String _channelName(String id) => switch (id) {
-    'new_orders' => 'Новые заказы',
+    'new_orders_v2' => 'Новые заказы',
     'order_status' => 'Статус заказа',
     'chat_messages' => 'Сообщения',
     'system_info' => 'Системные',
@@ -224,7 +224,7 @@ class NotificationService {
   };
 
   String _channelDesc(String id) => switch (id) {
-    'new_orders' => 'Уведомления о новых доступных заказах',
+    'new_orders_v2' => 'Уведомления о новых доступных заказах',
     'order_status' => 'Обновления статуса ваших заказов',
     'chat_messages' => 'Сообщения от клиентов',
     'system_info' => 'Системная информация',

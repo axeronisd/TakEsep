@@ -114,7 +114,7 @@ class FirebasePushBootstrap {
 
   /// Infer notification channel from event type
   static String _inferChannel(String type) {
-    if (type == 'new_order' || type == 'order_assigned') return 'new_orders';
+    if (type == 'new_order' || type == 'order_assigned') return 'new_orders_v2';
     if (type == 'chat_message') return 'chat_messages';
     if (type == 'order_cancelled') return 'order_status';
     return 'system_info';
