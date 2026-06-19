@@ -259,83 +259,85 @@ class _OrdersScreenState extends State<OrdersScreen> {
         borderRadius: BorderRadius.circular(16),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          child: DataTable(
-            headingRowColor: WidgetStateProperty.all(AppColors.darkSurfaceVariant),
-            dataRowColor: WidgetStateProperty.all(Colors.transparent),
-            horizontalMargin: 20,
-            columnSpacing: 28,
-            showCheckboxColumn: true,
-            columns: const [
-              DataColumn(label: Text('Номер / ID', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
-              DataColumn(label: Text('Клиент', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
-              DataColumn(label: Text('Курьер', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
-              DataColumn(label: Text('Склад', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
-              DataColumn(label: Text('Сумма', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
-              DataColumn(label: Text('Статус', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
-              DataColumn(label: Text('Создан', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
-              DataColumn(label: Text('Действия', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
-            ],
-            rows: _filteredOrders.map((o) {
-              final id = o['id'] as String;
-              final number = o['order_number'] ?? '—';
-              final customer = o['customers']?['name'] ?? 'Без имени';
-              final courier = o['couriers']?['name'] ?? 'Не назначен';
-              final warehouse = o['warehouses']?['name'] ?? '—';
-              final total = '${o['total'] ?? 0} с';
-              final status = o['status'] ?? '—';
-              final isSelected = _selectedOrderIds.contains(id);
+          child: SingleChildScrollView(
+            child: DataTable(
+              headingRowColor: WidgetStateProperty.all(AppColors.darkSurfaceVariant),
+              dataRowColor: WidgetStateProperty.all(Colors.transparent),
+              horizontalMargin: 20,
+              columnSpacing: 28,
+              showCheckboxColumn: true,
+              columns: const [
+                DataColumn(label: Text('Номер / ID', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
+                DataColumn(label: Text('Клиент', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
+                DataColumn(label: Text('Курьер', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
+                DataColumn(label: Text('Склад', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
+                DataColumn(label: Text('Сумма', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
+                DataColumn(label: Text('Статус', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
+                DataColumn(label: Text('Создан', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
+                DataColumn(label: Text('Действия', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
+              ],
+              rows: _filteredOrders.map((o) {
+                final id = o['id'] as String;
+                final number = o['order_number'] ?? '—';
+                final customer = o['customers']?['name'] ?? 'Без имени';
+                final courier = o['couriers']?['name'] ?? 'Не назначен';
+                final warehouse = o['warehouses']?['name'] ?? '—';
+                final total = '${o['total'] ?? 0} с';
+                final status = o['status'] ?? '—';
+                final isSelected = _selectedOrderIds.contains(id);
 
-              return DataRow(
-                selected: isSelected,
-                onSelectChanged: (selected) {
-                  setState(() {
-                    if (selected == true) {
-                      _selectedOrderIds.add(id);
-                    } else {
-                      _selectedOrderIds.remove(id);
-                    }
-                  });
-                },
-                cells: [
-                  DataCell(
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(number, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                        Text(
-                          id.substring(0, 8),
-                          style: const TextStyle(fontFamily: 'monospace', color: AppColors.darkTextTertiary, fontSize: 11),
-                        ),
-                      ],
+                return DataRow(
+                  selected: isSelected,
+                  onSelectChanged: (selected) {
+                    setState(() {
+                      if (selected == true) {
+                        _selectedOrderIds.add(id);
+                      } else {
+                        _selectedOrderIds.remove(id);
+                      }
+                    });
+                  },
+                  cells: [
+                    DataCell(
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(number, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                          Text(
+                            id.substring(0, 8),
+                            style: const TextStyle(fontFamily: 'monospace', color: AppColors.darkTextTertiary, fontSize: 11),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  DataCell(Text(customer, style: const TextStyle(color: Colors.white))),
-                  DataCell(Text(courier, style: TextStyle(color: courier == 'Не назначен' ? AppColors.darkTextTertiary : Colors.white))),
-                  DataCell(Text(warehouse, style: const TextStyle(color: Colors.white))),
-                  DataCell(Text(total, style: const TextStyle(color: AppColors.successLight, fontWeight: FontWeight.bold))),
-                  DataCell(_buildStatusBadge(status)),
-                  DataCell(Text(_formatDate(o['created_at']), style: const TextStyle(color: AppColors.darkTextSecondary))),
-                  DataCell(
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.info_outline_rounded, color: AppColors.primaryLight, size: 20),
-                          onPressed: () => _showOrderDetail(o),
-                          tooltip: 'Подробнее',
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete_forever_rounded, color: AppColors.errorLight, size: 20),
-                          onPressed: () => _confirmDeleteOrders([id]),
-                          tooltip: 'Удалить заказ',
-                        ),
-                      ],
+                    DataCell(Text(customer, style: const TextStyle(color: Colors.white))),
+                    DataCell(Text(courier, style: TextStyle(color: courier == 'Не назначен' ? AppColors.darkTextTertiary : Colors.white))),
+                    DataCell(Text(warehouse, style: const TextStyle(color: Colors.white))),
+                    DataCell(Text(total, style: const TextStyle(color: AppColors.successLight, fontWeight: FontWeight.bold))),
+                    DataCell(_buildStatusBadge(status)),
+                    DataCell(Text(_formatDate(o['created_at']), style: const TextStyle(color: AppColors.darkTextSecondary))),
+                    DataCell(
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.info_outline_rounded, color: AppColors.primaryLight, size: 20),
+                            onPressed: () => _showOrderDetail(o),
+                            tooltip: 'Подробнее',
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete_forever_rounded, color: AppColors.errorLight, size: 20),
+                            onPressed: () => _confirmDeleteOrders([id]),
+                            tooltip: 'Удалить заказ',
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              );
-            }).toList(),
+                  ],
+                );
+              }).toList(),
+            ),
           ),
         ),
       ),

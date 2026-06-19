@@ -1887,33 +1887,40 @@ class _UsersScreenState extends State<UsersScreen>
     if (confirmed != true) return;
 
     if (!mounted) return;
+    bool dialogOpened = false;
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => const Center(
-        child: Card(
-          color: AppColors.darkSurface,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(color: AppColors.error),
-                SizedBox(width: 20),
-                Text('Выполняется каскадное удаление...',
-                    style: TextStyle(color: Colors.white)),
-              ],
+      builder: (ctx) {
+        dialogOpened = true;
+        return const Center(
+          child: Card(
+            color: AppColors.darkSurface,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: AppColors.error),
+                  SizedBox(width: 20),
+                  Text('Выполняется каскадное удаление...',
+                      style: TextStyle(color: Colors.white)),
+                ],
+              ),
             ),
           ),
         ),
-      ),
+      },
     );
 
     try {
       await _deleteSingleUserCascade(userId, userType);
 
       // Dismiss loading overlay safely
-      if (mounted) Navigator.of(context).pop();
+      if (mounted) {
+        if (!dialogOpened) await Future.delayed(const Duration(milliseconds: 100));
+        Navigator.of(context).pop();
+      }
 
       // Success notification
       if (mounted) {
@@ -1929,7 +1936,10 @@ class _UsersScreenState extends State<UsersScreen>
       _loadData();
     } catch (e) {
       // Dismiss loading overlay safely
-      if (mounted) Navigator.of(context).pop();
+      if (mounted) {
+        if (!dialogOpened) await Future.delayed(const Duration(milliseconds: 100));
+        Navigator.of(context).pop();
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2029,26 +2039,30 @@ class _UsersScreenState extends State<UsersScreen>
     if (confirmed != true) return;
 
     if (!mounted) return;
+    bool dialogOpened = false;
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => const Center(
-        child: Card(
-          color: AppColors.darkSurface,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(color: AppColors.error),
-                SizedBox(width: 20),
-                Text('Выполняется групповое удаление...',
-                    style: TextStyle(color: Colors.white)),
-              ],
+      builder: (ctx) {
+        dialogOpened = true;
+        return const Center(
+          child: Card(
+            color: AppColors.darkSurface,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: AppColors.error),
+                  SizedBox(width: 20),
+                  Text('Выполняется групповое удаление...',
+                      style: TextStyle(color: Colors.white)),
+                ],
+              ),
             ),
           ),
         ),
-      ),
+      },
     );
 
     try {
@@ -2132,8 +2146,10 @@ class _UsersScreenState extends State<UsersScreen>
         if (index == 3) _selectedEmployeeIds.clear();
       });
 
-      if (mounted)
+      if (mounted) {
+        if (!dialogOpened) await Future.delayed(const Duration(milliseconds: 100));
         Navigator.of(context).pop(); // Dismiss loading overlay safely
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -2145,8 +2161,10 @@ class _UsersScreenState extends State<UsersScreen>
       }
       _loadData();
     } catch (e) {
-      if (mounted)
+      if (mounted) {
+        if (!dialogOpened) await Future.delayed(const Duration(milliseconds: 100));
         Navigator.of(context).pop(); // Dismiss loading overlay safely
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -3156,26 +3174,30 @@ class _UsersScreenState extends State<UsersScreen>
     required String salaryType,
     required double salaryAmount,
   }) async {
+    bool dialogOpened = false;
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => const Center(
-        child: Card(
-          color: AppColors.darkSurface,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(color: AppColors.success),
-                SizedBox(width: 20),
-                Text('Создание сотрудника...',
-                    style: TextStyle(color: Colors.white)),
-              ],
+      builder: (ctx) {
+        dialogOpened = true;
+        return const Center(
+          child: Card(
+            color: AppColors.darkSurface,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: AppColors.success),
+                  SizedBox(width: 20),
+                  Text('Создание сотрудника...',
+                      style: TextStyle(color: Colors.white)),
+                ],
+              ),
             ),
           ),
         ),
-      ),
+      },
     );
 
     try {
@@ -3199,8 +3221,10 @@ class _UsersScreenState extends State<UsersScreen>
         'updated_at': now,
       });
 
-      if (mounted)
+      if (mounted) {
+        if (!dialogOpened) await Future.delayed(const Duration(milliseconds: 100));
         Navigator.of(context).pop(); // Dismiss loading overlay safely
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -3212,8 +3236,10 @@ class _UsersScreenState extends State<UsersScreen>
       }
       _loadData();
     } catch (e) {
-      if (mounted)
+      if (mounted) {
+        if (!dialogOpened) await Future.delayed(const Duration(milliseconds: 100));
         Navigator.of(context).pop(); // Dismiss loading overlay safely
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -3299,26 +3325,30 @@ class _UsersScreenState extends State<UsersScreen>
 
   Future<void> _changeUserPassword(
       String userId, String newPassword, String userIdentifier) async {
+    bool dialogOpened = false;
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => const Center(
-        child: Card(
-          color: AppColors.darkSurface,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(color: AppColors.primary),
-                SizedBox(width: 20),
-                Text('Обновление пароля...',
-                    style: TextStyle(color: Colors.white)),
-              ],
+      builder: (ctx) {
+        dialogOpened = true;
+        return const Center(
+          child: Card(
+            color: AppColors.darkSurface,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: AppColors.primary),
+                  SizedBox(width: 20),
+                  Text('Обновление пароля...',
+                      style: TextStyle(color: Colors.white)),
+                ],
+              ),
             ),
           ),
         ),
-      ),
+      },
     );
 
     try {
@@ -3329,8 +3359,10 @@ class _UsersScreenState extends State<UsersScreen>
         ),
       );
 
-      if (mounted)
+      if (mounted) {
+        if (!dialogOpened) await Future.delayed(const Duration(milliseconds: 100));
         Navigator.of(context).pop(); // Dismiss loading overlay safely
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -3342,8 +3374,10 @@ class _UsersScreenState extends State<UsersScreen>
         );
       }
     } catch (e) {
-      if (mounted)
+      if (mounted) {
+        if (!dialogOpened) await Future.delayed(const Duration(milliseconds: 100));
         Navigator.of(context).pop(); // Dismiss loading overlay safely
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

@@ -439,25 +439,29 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
 
     if (!mounted) return;
     
+    bool dialogOpened = false;
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => const Center(
-        child: Card(
-          color: AppColors.darkSurface,
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(color: AppColors.error),
-                SizedBox(width: 20),
-                Text('Каскадное удаление...', style: TextStyle(color: Colors.white)),
-              ],
+      builder: (ctx) {
+        dialogOpened = true;
+        return const Center(
+          child: Card(
+            color: AppColors.darkSurface,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(color: AppColors.error),
+                  SizedBox(width: 20),
+                  Text('Каскадное удаление...', style: TextStyle(color: Colors.white)),
+                ],
+              ),
             ),
           ),
         ),
-      ),
+      },
     );
 
     try {
@@ -469,6 +473,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
       }
 
       if (mounted) {
+        if (!dialogOpened) await Future.delayed(const Duration(milliseconds: 100));
         Navigator.of(context).pop(); // Закрываем лоадер безопасно
       }
 
@@ -489,6 +494,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
       }
     } catch (e) {
       if (mounted) {
+        if (!dialogOpened) await Future.delayed(const Duration(milliseconds: 100));
         Navigator.of(context).pop(); // Закрываем лоадер
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
