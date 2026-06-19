@@ -120,7 +120,7 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
       await _alertPlayer.setVolume(1.0);
       await _alertPlayer.setReleaseMode(ReleaseMode.release);
       await _alertPlayer.play(
-        UrlSource('https://smvegrscjnoelfsipwqq.supabase.co/storage/v1/object/public/sounds/akjol_courier.mp3'),
+        AssetSource('sounds/order_accepted.wav'),
       );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
