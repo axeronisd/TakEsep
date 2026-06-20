@@ -62,4 +62,5 @@ jobs:
           fi
           TIMESTAMP=$(date -u +"%Y-%m-%d %H:%M UTC")
           git commit -m "🚀 Deploy Admin Web — ${TIMESTAMP}"
+          git pull --rebase origin main
           git push
