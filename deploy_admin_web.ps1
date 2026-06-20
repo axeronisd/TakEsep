@@ -20,7 +20,7 @@ Write-Host "✅ Dependencies resolved`n" -ForegroundColor Green
 
 # ── Step 2: Build Flutter Web ──
 Write-Host "🔨 [2/5] Building Flutter Web (release)..." -ForegroundColor Yellow
-flutter build web --release --base-href "/TakEsep/app/"
+flutter build web --release --base-href "/app/"
 if ($LASTEXITCODE -ne 0) { Write-Host "❌ Flutter web build failed!" -ForegroundColor Red; exit 1 }
 Write-Host "✅ Web build complete`n" -ForegroundColor Green
 

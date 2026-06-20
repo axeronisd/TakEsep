@@ -41,7 +41,7 @@ jobs:
       - name: Build Flutter Web (release)
         working-directory: apps/admin
         run: |
-          flutter build web --release --base-href "/TakEsep/app/"
+          flutter build web --release --base-href "/app/"
 
       - name: Deploy to docs/app
         run: |

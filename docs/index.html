@@ -1856,8 +1856,6 @@
         downloads: [
           { id: 'warehouse-windows', platform: 'windows', file: 'TakEsep_Setup.exe', title: 'Windows', sub: 'Установщик .exe · 64-bit', subKg: 'Орнотуучу .exe · 64-bit' },
           { id: 'warehouse-playstore-beta', platform: 'android', beta: true, groupUrl: 'https://groups.google.com/g/takesep-testers', optInUrl: 'https://play.google.com/apps/testing/com.takesep.app', title: 'Google Play (Тест)', sub: 'Установка через Google Play (2 шага)', subKg: 'Google Play аркылуу орнотуу (2 кадам)' },
-          { id: 'warehouse-android', platform: 'android', file: 'TakEsep.apk', title: 'Android APK', sub: 'APK · прямая установка', subKg: 'APK · түздөн-түз орнотуу' },
-          { id: 'warehouse-ios-ipa', platform: 'ios', file: 'TakEsep.ipa', title: 'iOS (IPA)', sub: 'Сборка из GitHub Releases', subKg: 'GitHub Releases жыйнагы' },
           { id: 'warehouse-appstore', platform: 'ios', external: 'https://apps.apple.com/kg/app/takesep/id6764801885', title: 'App Store', sub: 'Официальная установка для iPhone', subKg: 'Официалдуу орнотуу iPhone үчүн' },
         ]
       },
@@ -1865,8 +1863,6 @@
         label: 'AkJol',
         downloads: [
           { id: 'customer-playstore', platform: 'android', external: 'https://play.google.com/store/apps/details?id=com.akjolui.customer', title: 'Google Play', sub: 'Официальная установка для Android', subKg: 'Официалдуу орнотуу Android үчүн' },
-          { id: 'customer-android', platform: 'android', file: 'AkJol.apk', title: 'Android APK', sub: 'APK · прямая установка', subKg: 'APK · түздөн-түз орнотуу' },
-          { id: 'customer-ios-ipa', platform: 'ios', file: 'AkJol.ipa', title: 'iOS (IPA)', sub: 'Сборка из GitHub Releases', subKg: 'GitHub Releases жыйнагы' },
           { id: 'customer-appstore', platform: 'ios', external: 'https://apps.apple.com/kg/app/akjol-go/id6764801381', title: 'App Store', sub: 'Официальная установка для iPhone', subKg: 'Официалдуу орнотуу iPhone үчүн' },
         ]
       },
@@ -1874,8 +1870,6 @@
         label: 'AkJol Pro',
         downloads: [
           { id: 'courier-playstore-beta', platform: 'android', beta: true, groupUrl: 'https://groups.google.com/g/akjol-pro-testers', optInUrl: 'https://play.google.com/apps/testing/com.akjolui.courier', title: 'Google Play (Тест)', sub: 'Установка через Google Play (2 шага)', subKg: 'Google Play аркылуу орнотуу (2 кадам)' },
-          { id: 'courier-android', platform: 'android', file: 'AkJol_Pro.apk', title: 'Android APK', sub: 'APK · прямая установка', subKg: 'APK · түздөн-түз орнотуу' },
-          { id: 'courier-ios-ipa', platform: 'ios', file: 'AkJol_Pro.ipa', title: 'iOS (IPA)', sub: 'Сборка из GitHub Releases', subKg: 'GitHub Releases жыйнагы' },
           { id: 'courier-appstore', platform: 'ios', external: 'https://apps.apple.com/kg/app/akjol-pro/id6764801761', title: 'App Store', sub: 'Официальная установка для iPhone', subKg: 'Официалдуу орнотуу iPhone үчүн' },
         ]
       }
@@ -1896,41 +1890,12 @@
       return { type: 'desktop', label: 'Desktop', app: 'warehouse' };
     }
 
-    function formatBytes(bytes) {
-      if (!bytes) return '';
-      const units = ['B', 'KB', 'MB', 'GB'];
-      let value = bytes;
-      let i = 0;
-      while (value >= 1024 && i < units.length - 1) {
-        value /= 1024;
-        i++;
-      }
-      return `${value.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
-    }
-
-    function parseReleaseTag(tag) {
-      const match = String(tag || '').match(/v?([\d.]+)(?:-b(\d+))?/i);
-      return {
-        version: match?.[1] || tag || 'latest',
-        build: match?.[2] || null,
-      };
-    }
-
-    function buildAssetMap(assets) {
-      const map = {};
-      (assets || []).forEach((asset) => {
-        map[asset.name] = asset;
-      });
-      return map;
-    }
-
-    function renderDownloadButton(item, asset, highlight) {
-      const size = asset ? formatBytes(asset.size) : '';
+    function renderDownloadButton(item, highlight) {
       const icon = item.external ? ICONS.store : ICONS[item.platform] || ICONS.download;
       const subLabel = currentLang === 'kg' ? (item.subKg || item.sub) : item.sub;
 
       if (item.beta) {
-        const apkUrl = asset?.browser_download_url || `https://github.com/${GITHUB_REPO}/releases/latest/download/${item.id.includes('courier') ? 'AkJol_Pro.apk' : 'TakEsep.apk'}`;
+        const apkUrl = `https://smvegrscjnoelfsipwqq.supabase.co/storage/v1/object/public/app-releases/${item.id.includes('courier') ? 'AkJol_Pro.apk' : 'TakEsep.apk'}`;
         return `
           <button onclick="openBetaModal('${item.id}', '${apkUrl}', '${item.groupUrl}', '${item.optInUrl}')"
              class="dl-btn ${highlight ? 'highlight' : ''}"
@@ -1949,12 +1914,11 @@
         `;
       }
 
-      const href = item.external || asset?.browser_download_url || `${RELEASES_PAGE}/latest`;
-      const disabled = !item.external && !asset;
+      const href = item.external || `https://smvegrscjnoelfsipwqq.supabase.co/storage/v1/object/public/app-releases/${item.file}`;
 
       return `
         <a href="${href}"
-           class="dl-btn ${highlight ? 'highlight' : ''} ${disabled ? 'disabled' : ''}"
+           class="dl-btn ${highlight ? 'highlight' : ''}"
            id="${item.id}"
            ${item.external ? 'target="_blank" rel="noopener"' : 'download'}
            data-platform="${item.platform}">
@@ -1962,7 +1926,7 @@
             <span class="dl-icon">${icon}</span>
             <span class="dl-text">
               <div class="dl-title">${item.title}</div>
-              <div class="dl-sub">${subLabel}${size ? ` · ${size}` : ''}</div>
+              <div class="dl-sub">${subLabel}</div>
             </span>
           </span>
           ${item.external ? ICONS.store : ICONS.download}
@@ -1975,31 +1939,23 @@
         const container = document.querySelector(`[data-downloads="${appKey}"]`);
         if (!container) return;
 
-        const assetMap = buildAssetMap(releaseData?.assets || []);
         container.innerHTML = config.downloads.map((item) => {
-          const asset = item.file ? assetMap[item.file] : null;
-          
-          const isAndroidPlayStore = item.id.includes('playstore') || item.id.includes('beta');
-          const isAndroidApk = item.platform === 'android' && !isAndroidPlayStore;
-          
-          let highlight =
+          const highlight =
             (DEVICE.type === item.platform || (DEVICE.type === 'desktop' && item.platform === 'windows')) &&
             appKey === DEVICE.app;
-            
-          if (DEVICE.type === 'android' && isAndroidApk && config.downloads.some(d => d.id.includes('playstore') || d.id.includes('beta'))) {
-            highlight = false;
-          }
 
-          if (highlight && !item.external && !item.beta && asset) {
-            primaryDownload = { href: asset.browser_download_url, app: appKey, title: `${config.label} · ${item.title}` };
+          const href = item.external || `https://smvegrscjnoelfsipwqq.supabase.co/storage/v1/object/public/app-releases/${item.file}`;
+
+          if (highlight && !item.external && !item.beta) {
+            primaryDownload = { href: href, app: appKey, title: `${config.label} · ${item.title}` };
           }
           if (highlight && item.external) {
             primaryDownload = { href: item.external, app: appKey, title: `${config.label} · ${item.title}` };
           }
           if (highlight && item.beta) {
-            primaryDownload = { href: '#', app: appKey, isBeta: true, item: item, asset: asset, title: `${config.label} · ${item.title}` };
+            primaryDownload = { href: '#', app: appKey, isBeta: true, item: item, asset: null, title: `${config.label} · ${item.title}` };
           }
-          return renderDownloadButton(item, asset, highlight);
+          return renderDownloadButton(item, highlight);
         }).join('');
       });
 
@@ -2009,9 +1965,7 @@
     }
 
     function updateVersionUI(release) {
-      const parsed = parseReleaseTag(release.tag_name);
-      const buildLabel = parsed.build ? ` · build ${parsed.build}` : '';
-      const versionText = `v${parsed.version}${buildLabel}`;
+      const versionText = release.tag_name;
       
       const locale = currentLang === 'kg' ? 'ky-KG' : 'ru-RU';
       const dateLabel = release.published_at
@@ -2023,7 +1977,7 @@
         navVersionEl.textContent = versionText;
       }
       
-      document.getElementById('metric-build').textContent = parsed.build || parsed.version;
+      document.getElementById('metric-build').textContent = release.build_number || release.tag_name;
 
       const note = document.getElementById('release-note');
       note.classList.remove('loading');
@@ -2091,8 +2045,7 @@
         const mobileBtn = document.getElementById('mobile-cta-btn');
         
         if (primaryDownload.isBeta) {
-          const apkAsset = primaryDownload.asset;
-          const apkUrl = apkAsset ? apkAsset.browser_download_url : `https://github.com/${GITHUB_REPO}/releases/latest/download/${primaryDownload.item.id.includes('courier') ? 'AkJol_Pro.apk' : 'TakEsep.apk'}`;
+          const apkUrl = `https://smvegrscjnoelfsipwqq.supabase.co/storage/v1/object/public/app-releases/${primaryDownload.item.id.includes('courier') ? 'AkJol_Pro.apk' : 'TakEsep.apk'}`;
           const onclickHandler = `openBetaModal('${primaryDownload.item.id}', '${apkUrl}', '${primaryDownload.item.groupUrl}', '${primaryDownload.item.optInUrl}'); return false;`;
           
           heroBtn.setAttribute('onclick', onclickHandler);
@@ -2130,23 +2083,41 @@
       }
     }
 
+    const SUPABASE_URL = 'https://smvegrscjnoelfsipwqq.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNtdmVncnNjam5vZWxmc2lwd3FxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxNTU5MjcsImV4cCI6MjA4ODczMTkyN30.z6h0ubNjAC0QfdGgg3FhAfSCy9RVVCupOuQUKuD98ig';
+
     async function loadRelease() {
       try {
-        const response = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
-          headers: { Accept: 'application/vnd.github+json' }
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/app_versions?select=*&order=build_number.desc&limit=1`, {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          }
         });
-        if (!response.ok) throw new Error(`GitHub API ${response.status}`);
-        releaseData = await response.json();
-        renderDownloads();
-        updateVersionUI(releaseData);
-        updateDeviceBanner();
+        if (!response.ok) throw new Error(`Supabase API ${response.status}`);
+        const data = await response.json();
+        if (data && data.length > 0) {
+          const latest = data[0];
+          releaseData = {
+            tag_name: `v${latest.version}`,
+            build_number: latest.build_number,
+            published_at: latest.created_at,
+            name: `TakEsep v${latest.version}`,
+            body: latest.release_notes || ''
+          };
+          renderDownloads();
+          updateVersionUI(releaseData);
+          updateDeviceBanner();
+        } else {
+          throw new Error('No release records found in Supabase');
+        }
       } catch (error) {
         console.warn('[TakEsep landing] Release fetch failed:', error);
-        document.getElementById('nav-version').textContent = 'GitHub Releases';
+        document.getElementById('nav-version').textContent = 'TakEsep Web';
         
         const errorText = currentLang === 'kg'
-          ? 'Жыйноо маалыматын жүктөө мүмкүн болгон жок. Шилтемелер түз баракчага багытталат.'
-          : 'Не удалось загрузить метаданные релиза. Ссылки ведут на /releases/latest.';
+          ? 'Жыйноо маалыматын жүктөө мүмкүн болгон жок.'
+          : 'Не удалось загрузить метаданные релиза.';
         document.getElementById('release-note').textContent = errorText;
         
         renderFallbackDownloads();
@@ -2155,36 +2126,7 @@
     }
 
     function renderFallbackDownloads() {
-      Object.entries(APP_CONFIG).forEach(([appKey, config]) => {
-        const container = document.querySelector(`[data-downloads="${appKey}"]`);
-        if (!container) return;
-        container.innerHTML = config.downloads.map((item) => {
-          const href = item.external || `https://github.com/${GITHUB_REPO}/releases/latest/download/${item.file}`;
-          
-          const isAndroidPlayStore = item.id.includes('playstore') || item.id.includes('beta');
-          const isAndroidApk = item.platform === 'android' && !isAndroidPlayStore;
-          
-          let highlight = appKey === DEVICE.app && (DEVICE.type === item.platform || (DEVICE.type === 'desktop' && item.platform === 'windows'));
-          
-          if (DEVICE.type === 'android' && isAndroidApk && config.downloads.some(d => d.id.includes('playstore') || d.id.includes('beta'))) {
-            highlight = false;
-          }
-
-          if (highlight && !item.external && !item.beta) {
-            primaryDownload = { href, app: appKey, title: `${config.label} · ${item.title}` };
-          }
-          if (highlight && item.external) {
-            primaryDownload = { href: item.external, app: appKey, title: `${config.label} · ${item.title}` };
-          }
-          if (highlight && item.beta) {
-            primaryDownload = { href: '#', app: appKey, isBeta: true, item: item, asset: null, title: `${config.label} · ${item.title}` };
-          }
-          return renderDownloadButton(item, null, highlight);
-        }).join('');
-      });
-      document.querySelectorAll('.app-card').forEach((card) => {
-        card.classList.toggle('recommended', card.dataset.app === DEVICE.app);
-      });
+      renderDownloads();
     }
 
     // ── Beta Testing Modal Functions ──

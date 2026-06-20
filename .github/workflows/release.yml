@@ -500,24 +500,41 @@ jobs:
             ./artifacts/ios/AkJol.ipa
             ./artifacts/ios/AkJol_Pro.ipa
 
-      - name: Update Supabase app_versions
+      - name: Upload Binaries to Supabase Storage & Update app_versions
         continue-on-error: true
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: |
           if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_SERVICE_KEY" ]; then
-            echo "⚠️ Supabase secrets not configured — skipping app_versions update"
+            echo "⚠️ Supabase secrets not configured — skipping upload and update"
             exit 0
           fi
 
           VERSION="${{ steps.version.outputs.version }}"
           BUILD="${{ steps.version.outputs.build_number }}"
-          TAG="${{ github.ref_name }}"
-          REPO="${{ github.repository }}"
 
-          WIN_URL="https://github.com/${REPO}/releases/download/${TAG}/TakEsep_Setup.exe"
-          APK_URL="https://github.com/${REPO}/releases/download/${TAG}/TakEsep.apk"
+          # Upload Windows Installer to Supabase Storage
+          echo "Uploading TakEsep_Setup.exe to Supabase Storage..."
+          curl -s -X POST "${SUPABASE_URL}/storage/v1/object/app-releases/TakEsep_Setup.exe" \
+            -H "apikey: ${SUPABASE_SERVICE_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_KEY}" \
+            -H "x-upsert: true" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary "@./artifacts/windows/TakEsep_Setup.exe"
+
+          # Upload Android APK to Supabase Storage
+          echo "Uploading TakEsep.apk to Supabase Storage..."
+          curl -s -X POST "${SUPABASE_URL}/storage/v1/object/app-releases/TakEsep.apk" \
+            -H "apikey: ${SUPABASE_SERVICE_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_SERVICE_KEY}" \
+            -H "x-upsert: true" \
+            -H "Content-Type: application/vnd.android.package-archive" \
+            --data-binary "@./artifacts/android-apks/TakEsep.apk"
+
+          # Use public Supabase Storage paths for download URLs
+          WIN_URL="${SUPABASE_URL}/storage/v1/object/public/app-releases/TakEsep_Setup.exe"
+          APK_URL="${SUPABASE_URL}/storage/v1/object/public/app-releases/TakEsep.apk"
 
           # Insert Windows version
           curl -s -X POST "${SUPABASE_URL}/rest/v1/app_versions" \
@@ -535,7 +552,7 @@ jobs:
             -H "Prefer: return=minimal" \
             -d "{\"platform\":\"android\",\"version\":\"${VERSION}\",\"build_number\":${BUILD},\"download_url\":\"${APK_URL}\",\"release_notes\":\"Обновление v${VERSION}\"}" || true
 
-          echo "✅ Supabase updated with v${VERSION} (build ${BUILD})"
+          echo "✅ Supabase Storage and app_versions updated for v${VERSION} (build ${BUILD})"
 
   # ═══════════════════════════════════════════════
   # Upload to Google Play (Internal Testing)
