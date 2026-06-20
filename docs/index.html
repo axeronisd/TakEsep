@@ -279,178 +279,54 @@
       z-index: 10;
     }
 
-    /* ── CSS/SVG Cosmic Planet ── */
-    .planet-viewport {
+    /* ── Hero Graphics Mockup ── */
+    .mockup-container {
       position: relative;
-      width: 460px;
-      height: 460px;
+      width: 100%;
+      max-width: 520px;
+      margin: 0 auto;
+      border-radius: var(--radius-lg);
+      background: rgba(12, 10, 30, 0.4);
+      backdrop-filter: var(--glass);
+      -webkit-backdrop-filter: var(--glass);
+      border: 1px solid rgba(139, 92, 246, 0.15);
+      padding: 10px;
+      box-shadow: 
+        0 30px 80px rgba(0, 0, 0, 0.6),
+        0 0 50px rgba(139, 92, 246, 0.15),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
       display: flex;
       align-items: center;
       justify-content: center;
+      animation: float 6s ease-in-out infinite;
+      transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.4s;
     }
 
-    .planet-glow-background {
-      position: absolute;
-      width: 380px;
-      height: 380px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(139, 92, 246, 0.2) 0%, rgba(167, 139, 250, 0.08) 50%, transparent 70%);
-      filter: blur(40px);
-      z-index: 1;
+    .mockup-container:hover {
+      transform: translateY(-4px) scale(1.02);
+      border-color: rgba(139, 92, 246, 0.35);
+      box-shadow: 
+        0 40px 90px rgba(0, 0, 0, 0.8),
+        0 0 70px rgba(139, 92, 246, 0.25),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
     }
 
-    .planet-core {
-      position: relative;
-      width: 280px;
-      height: 280px;
-      border-radius: 50%;
-      background:
-        radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.15) 0%, transparent 50%),
-        radial-gradient(circle at 25% 25%, #180d3d 0%, #0c0618 45%, #030206 90%);
-      box-shadow:
-        inset -20px -20px 50px rgba(0, 0, 0, 0.95),
-        inset 15px 15px 40px rgba(139, 92, 246, 0.25),
-        inset 5px 5px 15px rgba(167, 139, 250, 0.2),
-        0 0 60px rgba(139, 92, 246, 0.15);
-      overflow: hidden;
-      z-index: 3;
-    }
-
-    .planet-core::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      background-image:
-        linear-gradient(rgba(139, 92, 246, 0.08) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(139, 92, 246, 0.08) 1px, transparent 1px);
-      background-size: 24px 24px;
-      background-position: center;
-      mask-image: radial-gradient(circle at 35% 35%, black 20%, rgba(0, 0, 0, 0.3) 60%, transparent 90%);
-      -webkit-mask-image: radial-gradient(circle at 35% 35%, black 20%, rgba(0, 0, 0, 0.3) 60%, transparent 90%);
-      opacity: 0.85;
-      pointer-events: none;
-      mix-blend-mode: screen;
-    }
-
-    .planet-crescent {
-      position: absolute;
-      inset: -2px;
-      border-radius: 50%;
-      box-shadow:
-        inset 18px 18px 30px rgba(139, 92, 246, 0.85),
-        inset 30px 30px 65px rgba(167, 139, 250, 0.65);
-      filter: drop-shadow(0 0 35px rgba(139, 92, 246, 0.45));
-      pointer-events: none;
-      mix-blend-mode: screen;
-    }
-
-    .planet-orbits {
-      position: absolute;
+    .mockup-image {
       width: 100%;
-      height: 100%;
-      z-index: 2;
-      pointer-events: none;
+      height: auto;
+      border-radius: calc(var(--radius-lg) - 8px);
+      display: block;
+      object-fit: cover;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
     }
 
-    .orbit-path {
-      opacity: 0.4;
-      transition: opacity 0.3s;
-    }
-
-    .orbit-node {
-      filter: drop-shadow(0 0 8px currentColor);
-    }
-
-    .orbit-wrapper {
-      position: absolute;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      pointer-events: none;
-      z-index: 4;
-      transform-origin: center;
-      will-change: transform, left, top, opacity, z-index;
-      transition: opacity 0.4s ease, filter 0.4s ease;
-    }
-
-    #orbit-node-takesep {
-      flex-direction: row-reverse;
-    }
-
-    .orbit-node-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-      flex-shrink: 0;
-      border: 1.5px solid #ffffff;
-    }
-
-    .orbit-wrapper .planet-label-tag {
-      position: static;
-      white-space: nowrap;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
-    }
-
-    .planet-label-tag {
-      position: absolute;
-      font-family: 'Outfit', sans-serif;
-      font-size: 0.68rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      background: rgba(10, 15, 30, 0.65);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      padding: 6px 12px;
-      border-radius: 8px;
-      pointer-events: none;
-      z-index: 4;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-      transition: all 0.3s ease;
-    }
-
-    .tag-dot {
-      display: inline-block;
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      box-shadow: 0 0 8px currentColor;
-    }
-
-    .tag-takesep {
-      border-color: rgba(59, 130, 246, 0.25);
-      color: #93c5fd;
-    }
-
-    .tag-akjol {
-      border-color: rgba(16, 185, 129, 0.25);
-      color: #a7f3d0;
-    }
-
-    .tag-akjolpro {
-      border-color: rgba(245, 158, 11, 0.25);
-      color: #fde68a;
-    }
-
-    .planet-horizon {
-      position: absolute;
-      left: -10%;
-      right: -10%;
-      bottom: 20px;
-      height: 120px;
-      z-index: 5;
-      background: linear-gradient(180deg, rgba(139, 92, 246, 0.15) 0%, rgba(5, 5, 16, 0.95) 80%);
-      border-top: 1px solid rgba(139, 92, 246, 0.3);
-      box-shadow: 0 -20px 40px rgba(139, 92, 246, 0.15);
-      transform: perspective(300px) rotateX(70deg);
-      transform-origin: bottom center;
-      mask-image: linear-gradient(to bottom, black 20%, transparent 95%);
-      -webkit-mask-image: linear-gradient(to bottom, black 20%, transparent 95%);
-      pointer-events: none;
+    @keyframes float {
+      0%, 100% {
+        transform: translateY(0);
+      }
+      50% {
+        transform: translateY(-10px);
+      }
     }
 
     /* ── Hero Text ── */
@@ -1715,6 +1591,29 @@
         grid-template-columns: 1fr;
         padding-top: 44px;
         gap: 36px;
+        text-align: center;
+      }
+
+      .hero-copy {
+        order: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .hero-graphics {
+        order: 2;
+        width: 100%;
+      }
+
+      .hero-lead {
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .hero-actions {
+        justify-content: center;
+        width: 100%;
       }
 
       .apps-grid,
@@ -1741,16 +1640,23 @@
         display: inline-flex;
       }
 
-      .hero-metrics {
+      .stats-row {
         grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+        margin-top: 24px;
       }
 
-      .metric {
-        padding: 14px;
+      .stat-card {
+        padding: 12px 8px;
+        text-align: center;
       }
 
-      .metric-value {
-        font-size: 1.25rem;
+      .stat-num {
+        font-size: 1.75rem;
+      }
+
+      .stat-text {
+        font-size: 0.72rem;
       }
 
       .hero-actions .btn {
@@ -1813,17 +1719,54 @@
       }
     }
 
+    @media (max-width: 540px) {
+      .stats-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+
+      .stat-card {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 16px 24px;
+        text-align: left;
+      }
+
+      .stat-num {
+        font-size: 2rem;
+        margin-bottom: 0;
+      }
+
+      .stat-text {
+        font-size: 0.8rem;
+        text-align: right;
+        max-width: 60%;
+      }
+
+      .device-banner {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+    }
+
     @media (max-width: 420px) {
       .container {
-        padding: 0 20px;
+        padding: 0 16px;
       }
 
       .brand-tagline {
         display: none;
       }
 
-      .hero-metrics {
-        grid-template-columns: 1fr;
+      .hero h1 {
+        font-size: 3.2rem;
+      }
+
+      .hero-subtitle {
+        font-size: 0.95rem;
       }
     }
 
@@ -2045,42 +1988,8 @@
   <div class="container">
     <section class="hero">
       <div class="hero-graphics scroll-reveal reveal-delay-2">
-        <div class="planet-viewport">
-          <div class="planet-glow-background"></div>
-
-          <!-- Back Orbits (Behind Planet Core) -->
-          <svg class="planet-orbits back-orbits" viewBox="0 0 500 500" style="z-index: 2;">
-            <ellipse class="orbit-path" cx="250" cy="250" rx="200" ry="80" transform="rotate(15, 250, 250)" fill="none"
-              stroke="rgba(139, 92, 246, 0.2)" stroke-width="1.2" stroke-dasharray="4 4" />
-            <ellipse class="orbit-path" cx="250" cy="250" rx="170" ry="68" transform="rotate(-10, 250, 250)" fill="none"
-              stroke="rgba(167, 139, 250, 0.2)" stroke-width="1.2" />
-            <ellipse class="orbit-path" cx="250" cy="250" rx="140" ry="56" transform="rotate(5, 250, 250)" fill="none"
-              stroke="rgba(192, 132, 252, 0.2)" stroke-width="1.2" stroke-dasharray="8 4" />
-          </svg>
-
-          <div class="planet-core">
-            <div class="planet-crescent"></div>
-          </div>
-
-          <!-- Dynamic HTML Orbiting Nodes with Badges -->
-          <div class="orbit-wrapper" id="orbit-node-takesep">
-            <div class="orbit-node-dot" style="background: #8B5CF6; box-shadow: 0 0 15px #8B5CF6;"></div>
-            <div class="planet-label-tag tag-takesep"><span class="tag-dot" style="background:#8B5CF6;"></span>TakEsep
-            </div>
-          </div>
-
-          <div class="orbit-wrapper" id="orbit-node-akjol">
-            <div class="orbit-node-dot" style="background: #a78bfa; box-shadow: 0 0 15px #a78bfa;"></div>
-            <div class="planet-label-tag tag-akjol"><span class="tag-dot" style="background:#a78bfa;"></span>AkJol</div>
-          </div>
-
-          <div class="orbit-wrapper" id="orbit-node-akjolpro">
-            <div class="orbit-node-dot" style="background: #c084fc; box-shadow: 0 0 15px #c084fc;"></div>
-            <div class="planet-label-tag tag-akjolpro"><span class="tag-dot" style="background:#c084fc;"></span>AkJol
-              Pro</div>
-          </div>
-
-          <div class="planet-horizon"></div>
+        <div class="mockup-container">
+          <img src="ui_hero_mockup.png" alt="AkJol Workspace Mockup" class="mockup-image" width="500" height="350">
         </div>
       </div>
 
@@ -3169,88 +3078,7 @@
       rootMargin: '0px 0px -50px 0px'
     });
 
-    function initOrbitAnimation() {
-      const nodes = [
-        {
-          id: 'orbit-node-takesep',
-          a: 184, // 200 * 0.92
-          b: 73.6, // 80 * 0.92
-          phi: 15 * Math.PI / 180,
-          speed: 0.00039, // Radians per millisecond (~16s)
-          direction: 1,
-          offset: 0
-        },
-        {
-          id: 'orbit-node-akjol',
-          a: 156.4, // 170 * 0.92
-          b: 62.56, // 68 * 0.92
-          phi: -10 * Math.PI / 180,
-          speed: 0.00031, // (~20s)
-          direction: -1,
-          offset: Math.PI
-        },
-        {
-          id: 'orbit-node-akjolpro',
-          a: 128.8, // 140 * 0.92
-          b: 51.52, // 56 * 0.92
-          phi: 5 * Math.PI / 180,
-          speed: 0.00045, // (~14s)
-          direction: 1,
-          offset: Math.PI / 2
-        }
-      ];
 
-      const center = { x: 230, y: 230 }; // center of 460x460 viewport
-      const startTime = performance.now();
-
-      function update() {
-        const now = performance.now();
-        const elapsed = now - startTime;
-
-        nodes.forEach(node => {
-          const el = document.getElementById(node.id);
-          if (!el) return;
-
-          // Calculate current angle (theta)
-          const theta = node.offset + node.direction * node.speed * elapsed;
-
-          // Standard ellipse coordinates
-          const x = node.a * Math.cos(theta);
-          const y = node.b * Math.sin(theta);
-
-          // Rotate coordinates by phi (orbital inclination)
-          const rx = x * Math.cos(node.phi) - y * Math.sin(node.phi);
-          const ry = x * Math.sin(node.phi) + y * Math.cos(node.phi);
-
-          // Absolute position in viewport pixels
-          const px = center.x + rx;
-          const py = center.y + ry;
-
-          // Set element style position
-          el.style.left = `${px}px`;
-          el.style.top = `${py}px`;
-
-          // Tilted orbit depth calculation: top half (sin(theta) < 0) goes behind planet
-          const isBehind = Math.sin(theta) < 0;
-
-          if (isBehind) {
-            el.style.zIndex = '1';
-            el.style.opacity = '0.45';
-            el.style.transform = 'translate(-50%, -50%) scale(0.82)';
-            el.style.filter = 'brightness(0.65)';
-          } else {
-            el.style.zIndex = '4';
-            el.style.opacity = '1';
-            el.style.transform = 'translate(-50%, -50%) scale(1.15)';
-            el.style.filter = 'brightness(1)';
-          }
-        });
-
-        requestAnimationFrame(update);
-      }
-
-      requestAnimationFrame(update);
-    }
 
     // ── Startup ──
     window.addEventListener('DOMContentLoaded', () => {
@@ -3265,7 +3093,6 @@
       renderFallbackDownloads();
       loadRelease();
       activateStep(1);
-      initOrbitAnimation();
     });
   </script>
 </body>
