@@ -1640,11 +1640,6 @@
       </div>
       <div class="modal-footer">
         <p><span data-translate="modalFooterReady">Уже выполнили шаги?</span> <a id="modal-playstore-btn" href="#" target="_blank" rel="noopener" data-translate="modalFooterDownload">Скачать в Google Play</a></p>
-        <div class="modal-divider"></div>
-        <p class="modal-fallback-text" data-translate="modalFallbackText">Или скачайте установочный APK-файл напрямую:</p>
-        <a id="modal-apk-btn" href="#" download class="btn btn-secondary modal-fallback-btn" data-translate="modalFallbackBtn">
-          Скачать APK напрямую
-        </a>
       </div>
     </div>
   </div>
@@ -1895,9 +1890,8 @@
       const subLabel = currentLang === 'kg' ? (item.subKg || item.sub) : item.sub;
 
       if (item.beta) {
-        const apkUrl = `https://smvegrscjnoelfsipwqq.supabase.co/storage/v1/object/public/app-releases/${item.id.includes('courier') ? 'AkJol_Pro.apk' : 'TakEsep.apk'}`;
         return `
-          <button onclick="openBetaModal('${item.id}', '${apkUrl}', '${item.groupUrl}', '${item.optInUrl}')"
+          <button onclick="openBetaModal('${item.id}', '${item.groupUrl}', '${item.optInUrl}')"
              class="dl-btn ${highlight ? 'highlight' : ''}"
              id="${item.id}"
              style="background: transparent; text-align: left; width: 100%; cursor: pointer;"
@@ -2045,8 +2039,7 @@
         const mobileBtn = document.getElementById('mobile-cta-btn');
         
         if (primaryDownload.isBeta) {
-          const apkUrl = `https://smvegrscjnoelfsipwqq.supabase.co/storage/v1/object/public/app-releases/${primaryDownload.item.id.includes('courier') ? 'AkJol_Pro.apk' : 'TakEsep.apk'}`;
-          const onclickHandler = `openBetaModal('${primaryDownload.item.id}', '${apkUrl}', '${primaryDownload.item.groupUrl}', '${primaryDownload.item.optInUrl}'); return false;`;
+          const onclickHandler = `openBetaModal('${primaryDownload.item.id}', '${primaryDownload.item.groupUrl}', '${primaryDownload.item.optInUrl}'); return false;`;
           
           heroBtn.setAttribute('onclick', onclickHandler);
           heroBtn.href = '#';
@@ -2130,14 +2123,13 @@
     }
 
     // ── Beta Testing Modal Functions ──
-    function openBetaModal(appId, apkUrl, groupUrl, optInUrl) {
+    function openBetaModal(appId, groupUrl, optInUrl) {
       const modal = document.getElementById('beta-modal');
       
       // Update modal URLs
       document.getElementById('modal-group-btn').href = groupUrl;
       document.getElementById('modal-optin-btn').href = optInUrl;
       document.getElementById('modal-playstore-btn').href = optInUrl;
-      document.getElementById('modal-apk-btn').href = apkUrl;
       
       const appLabel = appId.includes('courier') ? 'AkJol Pro' : 'TakEsep';
       
