@@ -19,22 +19,22 @@
 
   <style>
     :root {
-      --bg: #050510;
-      --bg-soft: #0a0a1a;
-      --bg-card: rgba(12, 10, 30, 0.55);
-      --bg-card-solid: #0c0a1e;
+      --bg: #040508;
+      --bg-soft: #0a0c10;
+      --bg-card: rgba(13, 17, 24, 0.65);
+      --bg-card-solid: #0d1118;
       --text: #f0eef5;
       --text-secondary: #8b8aa0;
       --text-muted: #55546b;
-      --border: rgba(139, 92, 246, 0.06);
-      --border-strong: rgba(139, 92, 246, 0.12);
-      --brand: #8B5CF6;
-      --brand-2: #a78bfa;
-      --accent: #8B5CF6;
-      --green: #8B5CF6;
-      --green-2: #a78bfa;
-      --brand-glow: rgba(139, 92, 246, 0.35);
-      --brand-surface: rgba(139, 92, 246, 0.12);
+      --border: rgba(16, 185, 129, 0.06);
+      --border-strong: rgba(16, 185, 129, 0.12);
+      --brand: #10B981;
+      --brand-2: #34D399;
+      --accent: #10B981;
+      --green: #10B981;
+      --green-2: #34D399;
+      --brand-glow: rgba(16, 185, 129, 0.35);
+      --brand-surface: rgba(16, 185, 129, 0.12);
       --radius: 16px;
       --radius-lg: 24px;
       --shadow: 0 40px 100px rgba(0, 0, 0, 0.9);
@@ -64,7 +64,7 @@
     }
 
     ::selection {
-      background: rgba(139, 92, 246, 0.3);
+      background: rgba(16, 185, 129, 0.3);
       color: #fff;
     }
 
@@ -73,8 +73,8 @@
       position: fixed;
       inset: 0;
       background:
-        radial-gradient(ellipse at 20% 0%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 100%, rgba(139, 92, 246, 0.06) 0%, transparent 45%),
+        radial-gradient(ellipse at 20% 0%, rgba(16, 185, 129, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 100%, rgba(16, 185, 129, 0.06) 0%, transparent 45%),
         linear-gradient(180deg, #050510 0%, #08071a 50%, #050510 100%);
       pointer-events: none;
       z-index: 0;
@@ -84,8 +84,8 @@
       position: fixed;
       inset: 0;
       background-image:
-        linear-gradient(rgba(139, 92, 246, 0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(139, 92, 246, 0.02) 1px, transparent 1px);
+        linear-gradient(rgba(16, 185, 129, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(16, 185, 129, 0.02) 1px, transparent 1px);
       background-size: 80px 80px;
       mask-image: radial-gradient(circle at center, black 20%, transparent 75%);
       pointer-events: none;
@@ -121,7 +121,7 @@
       backdrop-filter: blur(20px);
       -webkit-backdrop-filter: blur(20px);
       background: rgba(5, 5, 16, 0.75);
-      border-bottom: 1px solid rgba(139, 92, 246, 0.08);
+      border-bottom: 1px solid rgba(16, 185, 129, 0.08);
       transition: all 0.3s;
     }
 
@@ -202,8 +202,8 @@
     /* Language Toggle Switcher */
     .lang-selector {
       display: inline-flex;
-      background: rgba(139, 92, 246, 0.04);
-      border: 1px solid rgba(139, 92, 246, 0.15);
+      background: rgba(16, 185, 129, 0.04);
+      border: 1px solid rgba(16, 185, 129, 0.15);
       border-radius: 12px;
       padding: 3px;
     }
@@ -223,7 +223,7 @@
     .lang-btn.active {
       background: var(--brand);
       color: #ffffff;
-      box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
     }
 
     .menu-btn {
@@ -289,11 +289,11 @@
       background: rgba(12, 10, 30, 0.4);
       backdrop-filter: var(--glass);
       -webkit-backdrop-filter: var(--glass);
-      border: 1px solid rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.15);
       padding: 10px;
       box-shadow: 
         0 30px 80px rgba(0, 0, 0, 0.6),
-        0 0 50px rgba(139, 92, 246, 0.15),
+        0 0 50px rgba(16, 185, 129, 0.15),
         inset 0 1px 0 rgba(255, 255, 255, 0.1);
       display: flex;
       align-items: center;
@@ -304,10 +304,10 @@
 
     .mockup-container:hover {
       transform: translateY(-4px) scale(1.02);
-      border-color: rgba(139, 92, 246, 0.35);
+      border-color: rgba(16, 185, 129, 0.35);
       box-shadow: 
         0 40px 90px rgba(0, 0, 0, 0.8),
-        0 0 70px rgba(139, 92, 246, 0.25),
+        0 0 70px rgba(16, 185, 129, 0.25),
         inset 0 1px 0 rgba(255, 255, 255, 0.2);
     }
 
@@ -369,7 +369,7 @@
       letter-spacing: 0.05em;
       margin-bottom: 24px;
       text-transform: uppercase;
-      background: linear-gradient(90deg, #a78bfa, #c084fc);
+      background: linear-gradient(90deg, #34D399, #F59E0B);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
@@ -408,27 +408,27 @@
     .btn-primary {
       background: var(--brand);
       color: #ffffff;
-      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 10px 30px rgba(139, 92, 246, 0.35);
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), 0 10px 30px rgba(16, 185, 129, 0.35);
     }
 
     .btn-primary:hover {
       transform: translateY(-2px);
-      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2), 0 15px 40px rgba(139, 92, 246, 0.55);
-      background: #9d76fd;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2), 0 15px 40px rgba(16, 185, 129, 0.55);
+      background: #059669;
     }
 
     .btn-secondary {
-      background: rgba(139, 92, 246, 0.03);
+      background: rgba(16, 185, 129, 0.03);
       color: var(--text);
-      border: 1px solid rgba(139, 92, 246, 0.2);
+      border: 1px solid rgba(16, 185, 129, 0.2);
       backdrop-filter: var(--glass);
     }
 
     .btn-secondary:hover {
-      background: rgba(139, 92, 246, 0.08);
-      border-color: rgba(139, 92, 246, 0.4);
+      background: rgba(16, 185, 129, 0.08);
+      border-color: rgba(16, 185, 129, 0.4);
       transform: translateY(-2px);
-      box-shadow: 0 10px 25px rgba(139, 92, 246, 0.15);
+      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.15);
     }
 
     .device-banner {
@@ -437,8 +437,8 @@
       gap: 14px;
       padding: 12px 18px;
       border-radius: 14px;
-      border: 1px solid rgba(139, 92, 246, 0.15);
-      background: linear-gradient(135deg, rgba(139, 92, 246, 0.08), rgba(167, 139, 250, 0.04));
+      border: 1px solid rgba(16, 185, 129, 0.15);
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(52, 211, 153, 0.04));
       margin-bottom: 28px;
       max-width: 520px;
     }
@@ -457,7 +457,7 @@
       background: rgba(255, 255, 255, 0.04);
       border: 1px solid rgba(255, 255, 255, 0.05);
       flex-shrink: 0;
-      color: #a78bfa;
+      color: #34D399;
     }
 
     .device-banner-title {
@@ -485,15 +485,15 @@
       background: rgba(12, 10, 30, 0.45);
       backdrop-filter: blur(40px) saturate(160%);
       -webkit-backdrop-filter: blur(40px) saturate(160%);
-      border: 1px solid rgba(139, 92, 246, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.08);
       transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
     }
 
     .stat-card:hover {
       transform: translateY(-4px);
-      border-color: rgba(139, 92, 246, 0.3);
-      box-shadow: 0 20px 40px rgba(139, 92, 246, 0.15);
+      border-color: rgba(16, 185, 129, 0.3);
+      box-shadow: 0 20px 40px rgba(16, 185, 129, 0.15);
     }
 
     .stat-num {
@@ -558,7 +558,7 @@
       letter-spacing: -0.02em;
       text-transform: uppercase;
       margin-bottom: 12px;
-      background: linear-gradient(135deg, #ffffff 40%, #a78bfa 100%);
+      background: linear-gradient(135deg, #ffffff 40%, #34D399 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
@@ -1241,7 +1241,7 @@
       left: 15%;
       right: 15%;
       height: 3px;
-      background: rgba(139, 92, 246, 0.08);
+      background: rgba(16, 185, 129, 0.08);
       z-index: 1;
       border-radius: 4px;
       overflow: hidden;
@@ -1318,15 +1318,15 @@
       background: var(--brand);
       border-color: var(--brand);
       color: var(--text);
-      box-shadow: 0 0 15px rgba(139, 92, 246, 0.45);
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.45);
     }
 
     .timeline-step.active .step-icon {
-      background: rgba(139, 92, 246, 0.14);
-      border-color: rgba(139, 92, 246, 0.4);
-      color: #c084fc;
+      background: rgba(16, 185, 129, 0.14);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #F59E0B;
       transform: scale(1.05);
-      box-shadow: 0 10px 25px rgba(139, 92, 246, 0.18);
+      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.18);
     }
 
     .timeline-step h3 {
@@ -1378,7 +1378,7 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: radial-gradient(circle at 50% 0%, rgba(139, 92, 246, 0.12), transparent 70%);
+      background: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.12), transparent 70%);
       opacity: 0;
       transition: opacity 0.4s;
       pointer-events: none;
@@ -1390,12 +1390,12 @@
 
     .feature-card:hover {
       transform: translateY(-5px);
-      border-color: rgba(139, 92, 246, 0.3);
+      border-color: rgba(16, 185, 129, 0.3);
       background: rgba(12, 10, 30, 0.5);
       box-shadow:
         0 20px 40px rgba(0, 0, 0, 0.35),
         inset 0 1px 0 rgba(255, 255, 255, 0.1),
-        0 0 20px rgba(139, 92, 246, 0.15);
+        0 0 20px rgba(16, 185, 129, 0.15);
     }
 
     .feature-icon {
@@ -1406,7 +1406,7 @@
       align-items: center;
       justify-content: center;
       margin-bottom: 20px;
-      background: rgba(139, 92, 246, 0.12);
+      background: rgba(16, 185, 129, 0.12);
       color: var(--brand);
     }
 
@@ -1427,7 +1427,7 @@
       position: relative;
       padding: 60px 40px;
       border-radius: var(--radius-lg);
-      border: 1px solid rgba(139, 92, 246, 0.08);
+      border: 1px solid rgba(16, 185, 129, 0.08);
       background: rgba(12, 10, 30, 0.2);
       backdrop-filter: blur(32px);
       text-align: center;
@@ -1450,7 +1450,7 @@
       font-weight: 800;
       letter-spacing: -0.02em;
       margin-bottom: 12px;
-      background: linear-gradient(135deg, #ffffff 40%, #a78bfa 100%);
+      background: linear-gradient(135deg, #ffffff 40%, #34D399 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
     }
@@ -1477,8 +1477,8 @@
       border-radius: 14px;
       text-decoration: none;
       color: var(--text);
-      border: 1px solid rgba(139, 92, 246, 0.2);
-      background: rgba(139, 92, 246, 0.03);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      background: rgba(16, 185, 129, 0.03);
       font-weight: 700;
       font-size: 0.9rem;
       transition: transform 0.25s, background 0.25s, border-color 0.25s, box-shadow 0.25s;
@@ -1486,26 +1486,26 @@
 
     .support-btn:hover {
       transform: translateY(-2px);
-      background: rgba(139, 92, 246, 0.08);
-      border-color: rgba(139, 92, 246, 0.4);
-      box-shadow: 0 10px 25px rgba(139, 92, 246, 0.15);
+      background: rgba(16, 185, 129, 0.08);
+      border-color: rgba(16, 185, 129, 0.4);
+      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.15);
     }
 
     .support-btn.whatsapp {
-      border-color: rgba(139, 92, 246, 0.2);
+      border-color: rgba(16, 185, 129, 0.2);
       color: var(--text);
-      background: rgba(139, 92, 246, 0.03);
+      background: rgba(16, 185, 129, 0.03);
     }
 
     .support-btn.whatsapp:hover {
-      border-color: rgba(139, 92, 246, 0.4);
-      background: rgba(139, 92, 246, 0.08);
+      border-color: rgba(16, 185, 129, 0.4);
+      background: rgba(16, 185, 129, 0.08);
     }
 
     /* ── Footer ── */
     footer {
       padding: 40px 0 48px;
-      border-top: 1px solid rgba(139, 92, 246, 0.12);
+      border-top: 1px solid rgba(16, 185, 129, 0.12);
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -1868,9 +1868,9 @@
       width: 28px;
       height: 28px;
       border-radius: 50%;
-      background: rgba(139, 92, 246, 0.15);
-      border: 1px solid rgba(139, 92, 246, 0.3);
-      color: #a78bfa;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: #34D399;
       font-weight: 800;
       font-size: 0.85rem;
       display: flex;
@@ -1910,7 +1910,7 @@
     }
 
     .modal-footer a {
-      color: #a78bfa;
+      color: #34D399;
       text-decoration: none;
       font-weight: 600;
     }
@@ -2114,18 +2114,18 @@
                 <svg class="mock-chart" viewBox="0 0 240 80">
                   <defs>
                     <linearGradient id="chart-grad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.4" />
-                      <stop offset="100%" stop-color="#8B5CF6" stop-opacity="0.0" />
+                      <stop offset="0%" stop-color="#10B981" stop-opacity="0.4" />
+                      <stop offset="100%" stop-color="#10B981" stop-opacity="0.0" />
                     </linearGradient>
                     <filter id="chart-glow" x="-20%" y="-20%" width="140%" height="140%">
-                      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#8B5CF6" flood-opacity="0.5" />
+                      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#10B981" flood-opacity="0.5" />
                     </filter>
                   </defs>
                   <path d="M 0,60 Q 30,50 60,35 T 120,45 T 180,15 T 240,10 L 240,80 L 0,80 Z" fill="url(#chart-grad)" />
-                  <path d="M 0,60 Q 30,50 60,35 T 120,45 T 180,15 T 240,10" fill="none" stroke="#8B5CF6"
+                  <path d="M 0,60 Q 30,50 60,35 T 120,45 T 180,15 T 240,10" fill="none" stroke="#10B981"
                     stroke-width="2.5" filter="url(#chart-glow)" />
-                  <circle cx="180" cy="15" r="4.5" fill="#8B5CF6" stroke="#ffffff" stroke-width="1.5" />
-                  <circle cx="240" cy="10" r="4.5" fill="#a78bfa" stroke="#ffffff" stroke-width="1.5" />
+                  <circle cx="180" cy="15" r="4.5" fill="#10B981" stroke="#ffffff" stroke-width="1.5" />
+                  <circle cx="240" cy="10" r="4.5" fill="#34D399" stroke="#ffffff" stroke-width="1.5" />
                 </svg>
               </div>
               <div class="mock-table">
@@ -2212,14 +2212,14 @@
           <div class="card-right">
             <div class="sync-flow-animation">
               <div class="sync-node center-node"
-                style="color: #8B5CF6; border-color: rgba(139, 92, 246, 0.4); box-shadow: 0 0 25px rgba(139, 92, 246, 0.25);">
+                style="color: #10B981; border-color: rgba(16, 185, 129, 0.4); box-shadow: 0 0 25px rgba(16, 185, 129, 0.25);">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                   stroke-linecap="round" stroke-linejoin="round">
                   <path d="M19 16.9A5 5 0 0 0 18 7h-1.26a8 8 0 1 0-11.62 8.58" />
                 </svg>
               </div>
               <div class="sync-node client-node t-node"
-                style="color: #a78bfa; border-color: rgba(167, 139, 250, 0.3); box-shadow: 0 0 15px rgba(167, 139, 250, 0.15);">
+                style="color: #34D399; border-color: rgba(52, 211, 153, 0.3); box-shadow: 0 0 15px rgba(52, 211, 153, 0.15);">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                   stroke-linecap="round" stroke-linejoin="round">
                   <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
@@ -2228,7 +2228,7 @@
                 </svg>
               </div>
               <div class="sync-node client-node c-node"
-                style="color: #c084fc; border-color: rgba(192, 132, 252, 0.3); box-shadow: 0 0 15px rgba(192, 132, 252, 0.15);">
+                style="color: #F59E0B; border-color: rgba(245, 158, 11, 0.3); box-shadow: 0 0 15px rgba(245, 158, 11, 0.15);">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                   stroke-linecap="round" stroke-linejoin="round">
                   <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
@@ -2236,7 +2236,7 @@
                 </svg>
               </div>
               <div class="sync-node client-node p-node"
-                style="color: #e879f9; border-color: rgba(232, 121, 249, 0.3); box-shadow: 0 0 15px rgba(232, 121, 249, 0.15);">
+                style="color: #10B981; border-color: rgba(16, 185, 129, 0.3); box-shadow: 0 0 15px rgba(16, 185, 129, 0.15);">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                   stroke-linecap="round" stroke-linejoin="round">
                   <line x1="16.5" y1="9.4" x2="7.5" y2="4.21"></line>
@@ -2505,7 +2505,7 @@
         statPlatforms: "Поддерживаемых платформ",
         statRealtime: "Синхронизация Realtime",
         cloudTitle: "Облако и синхронизация",
-        badgeCloud: "Безопасность",
+        badgeCloud: "100% Realtime",
         descCloud: "Мгновенный обмен заказами, остатками товаров и логами между всеми участниками сети через защищенный протокол.",
         appsEyebrow: "Загрузка",
         appsTitle: "Приложения экосистемы",
@@ -2594,7 +2594,7 @@
         statPlatforms: "Колдоого алынган платформалар",
         statRealtime: "Реалдуу убакытта синхрондоштуруу",
         cloudTitle: "Булут жана синхрондоштуруу",
-        badgeCloud: "Коопсуздук",
+        badgeCloud: "100% Realtime",
         descCloud: "Корголгон протокол аркылуу тармактын бардык катышуучуларынын ортосунда буйрутмаларды, товарлардын калдыктарын жана логдорду заматта алмашуу.",
         appsEyebrow: "Жүктөө",
         appsTitle: "Экосистема тиркемелери",
@@ -2688,11 +2688,25 @@
         }
       });
 
+      // Update downloads to apply local subtexts
+      renderDownloads();
+
       // Update dynamic banners or custom device texts if present
       if (releaseData) {
         updateVersionUI(releaseData);
-        updateDeviceBanner();
+      } else {
+        const navVersionEl = document.getElementById('nav-version');
+        if (navVersionEl) {
+          navVersionEl.textContent = 'TakEsep Web';
+        }
+        const note = document.getElementById('release-note');
+        if (note) {
+          note.textContent = currentLang === 'kg'
+            ? 'Жыйноо маалыматын жүктөө мүмкүн болгон жок.'
+            : 'Не удалось загрузить метаданные релиза.';
+        }
       }
+      updateDeviceBanner();
     }
 
     // ── Icons SVG definitions ──
