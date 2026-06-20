@@ -430,14 +430,16 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
                             reply,
                             style: const TextStyle(
                               fontSize: 13,
-                              color: Colors.white70,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFFE2E8F0),
                             ),
                           ),
-                          backgroundColor: AkJolTheme.primary.withValues(
-                            alpha: 0.15,
+                          backgroundColor: const Color(0xFF1E293B),
+                          side: const BorderSide(
+                            color: Color(0xFF334155),
                           ),
-                          side: BorderSide(
-                            color: AkJolTheme.primary.withValues(alpha: 0.3),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
                           ),
                           onPressed: () => _sendMessage(reply),
                         ),

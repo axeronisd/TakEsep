@@ -192,19 +192,30 @@ class _EditProductSheetState extends State<_EditProductSheet> {
       }
     }
 
-    final updated = widget.product.copyWith(
+    final updated = Product(
+      id: widget.product.id,
+      companyId: widget.product.companyId,
       name: _nameCtrl.text.trim(),
+      sku: widget.product.sku,
+      barcode: _barcodeCtrl.text.trim().isEmpty ? null : _barcodeCtrl.text.trim(),
+      description: _descriptionCtrl.text.trim().isEmpty ? null : _descriptionCtrl.text.trim(),
+      categoryId: widget.product.categoryId,
       price: double.tryParse(_sellingPriceCtrl.text) ?? widget.product.price,
-      costPrice: _costPriceCtrl.text.trim().isEmpty
-          ? null
-          : double.tryParse(_costPriceCtrl.text.trim()),
-      barcode: _barcodeCtrl.text.trim().isEmpty
-          ? null
-          : _barcodeCtrl.text.trim(),
-      description: _descriptionCtrl.text.trim().isEmpty
-          ? null
-          : _descriptionCtrl.text.trim(),
+      costPrice: _costPriceCtrl.text.trim().isEmpty ? null : double.tryParse(_costPriceCtrl.text.trim()),
+      b2cPrice: widget.product.b2cPrice,
+      quantity: widget.product.quantity,
+      minQuantity: widget.product.minQuantity,
+      unit: widget.product.unit,
+      warehouseId: widget.product.warehouseId,
       imageUrl: finalImageUrl,
+      isPublic: widget.product.isPublic,
+      b2cDescription: widget.product.b2cDescription,
+      createdAt: widget.product.createdAt,
+      updatedAt: DateTime.now(),
+      criticalMin: widget.product.criticalMin,
+      maxQuantity: widget.product.maxQuantity,
+      lastSoldAt: widget.product.lastSoldAt,
+      soldLast30Days: widget.product.soldLast30Days,
     );
 
     final repo = widget.ref.read(inventoryRepositoryProvider);

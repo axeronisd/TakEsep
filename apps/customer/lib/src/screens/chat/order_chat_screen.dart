@@ -330,13 +330,22 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
                         child: ActionChip(
                           label: Text(
                             reply,
-                            style: const TextStyle(fontSize: 13),
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: isDark ? const Color(0xFFE2E8F0) : AkJolTheme.primary,
+                            ),
                           ),
-                          backgroundColor: AkJolTheme.primary.withValues(
-                            alpha: 0.08,
-                          ),
+                          backgroundColor: isDark
+                              ? const Color(0xFF1E293B)
+                              : AkJolTheme.primary.withValues(alpha: 0.08),
                           side: BorderSide(
-                            color: AkJolTheme.primary.withValues(alpha: 0.2),
+                            color: isDark
+                                ? const Color(0xFF334155)
+                                : AkJolTheme.primary.withValues(alpha: 0.15),
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
                           ),
                           onPressed: () => _sendMessage(reply),
                         ),

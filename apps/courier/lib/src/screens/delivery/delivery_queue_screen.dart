@@ -401,37 +401,32 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
   void _showReceiptDialog(String imageUrl) {
     showDialog(
       context: context,
-      builder: (ctx) => Dialog(
-        backgroundColor: Colors.transparent,
-        insetPadding: const EdgeInsets.all(16),
-        child: Stack(
-          alignment: Alignment.topRight,
-          children: [
-            InteractiveViewer(
+      builder: (ctx) => Dialog.fullscreen(
+        backgroundColor: const Color(0xFF0F0F1A),
+        child: Scaffold(
+          backgroundColor: const Color(0xFF0F0F1A),
+          appBar: AppBar(
+            backgroundColor: const Color(0xFF1A1A2E),
+            title: const Text('Чек оплаты', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold)),
+            leading: IconButton(
+              icon: const Icon(Icons.close_rounded, color: Colors.white),
+              onPressed: () => Navigator.pop(ctx),
+            ),
+          ),
+          body: Center(
+            child: InteractiveViewer(
               minScale: 0.5,
               maxScale: 4.0,
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
-                child: Image.network(
-                  imageUrl,
-                  fit: BoxFit.contain,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return const Center(child: CircularProgressIndicator(color: AkJolTheme.primary));
-                  },
-                ),
+              child: Image.network(
+                imageUrl,
+                fit: BoxFit.contain,
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const Center(child: CircularProgressIndicator(color: AkJolTheme.primary));
+                },
               ),
             ),
-            Positioned(
-              top: 8,
-              right: 8,
-              child: IconButton(
-                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 24),
-                onPressed: () => Navigator.pop(ctx),
-                style: IconButton.styleFrom(backgroundColor: Colors.black54),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -491,23 +486,53 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
                   curve: Curves.easeOutCubic,
                   right: 16,
                   bottom: (MediaQuery.of(context).size.height * _sheetPosition) + 16,
-                  child: FloatingActionButton(
-                    mini: true,
-                    backgroundColor: const Color(0xFF111111),
-                    foregroundColor: _lockToCourier ? AkJolTheme.primary : Colors.white70,
-                    onPressed: () {
-                      final pos = _locationService.lastPosition;
-                      if (pos != null) {
-                        _mapController.move(LatLng(pos.latitude, pos.longitude), 16.5);
-                      }
-                      setState(() {
-                        _lockToCourier = true;
-                      });
-                    },
-                    child: Icon(
-                      _lockToCourier ? Icons.gps_fixed_rounded : Icons.gps_not_fixed_rounded,
-                      size: 20,
-                    ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      FloatingActionButton(
+                        mini: true,
+                        heroTag: 'zoom_in_btn',
+                        backgroundColor: const Color(0xFF111111),
+                        foregroundColor: Colors.white,
+                        onPressed: () {
+                          final currentZoom = _mapController.camera.zoom;
+                          _mapController.move(_mapController.camera.center, currentZoom + 1.0);
+                        },
+                        child: const Icon(Icons.add, size: 20),
+                      ),
+                      const SizedBox(height: 8),
+                      FloatingActionButton(
+                        mini: true,
+                        heroTag: 'zoom_out_btn',
+                        backgroundColor: const Color(0xFF111111),
+                        foregroundColor: Colors.white,
+                        onPressed: () {
+                          final currentZoom = _mapController.camera.zoom;
+                          _mapController.move(_mapController.camera.center, currentZoom - 1.0);
+                        },
+                        child: const Icon(Icons.remove, size: 20),
+                      ),
+                      const SizedBox(height: 8),
+                      FloatingActionButton(
+                        mini: true,
+                        heroTag: 'gps_lock_btn',
+                        backgroundColor: const Color(0xFF111111),
+                        foregroundColor: _lockToCourier ? AkJolTheme.primary : Colors.white70,
+                        onPressed: () {
+                          final pos = _locationService.lastPosition;
+                          if (pos != null) {
+                            _mapController.move(LatLng(pos.latitude, pos.longitude), 16.5);
+                          }
+                          setState(() {
+                            _lockToCourier = true;
+                          });
+                        },
+                        child: Icon(
+                          _lockToCourier ? Icons.gps_fixed_rounded : Icons.gps_not_fixed_rounded,
+                          size: 20,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 AnimatedPositioned(

@@ -1829,8 +1829,13 @@ class _UsersScreenState extends State<UsersScreen>
       }
     }
 
-    // 5. Delete user credentials from Supabase Auth
-    await _supabase.auth.admin.deleteUser(userId);
+    // 5. Delete user credentials from Supabase Auth (fallback to RPC if service_role is missing)
+    try {
+      await _supabase.auth.admin.deleteUser(userId);
+    } catch (e) {
+      debugPrint('Admin deleteUser failed: $e. Falling back to SQL RPC...');
+      await _supabase.rpc('rpc_delete_user', params: {'p_user_id': userId});
+    }
   }
 
   Future<void> _confirmDeleteUser(
@@ -1904,12 +1909,12 @@ class _UsersScreenState extends State<UsersScreen>
     if (confirmed != true) return;
 
     if (!mounted) return;
-    bool dialogOpened = false;
+    BuildContext? dialogCtx;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) {
-        dialogOpened = true;
+        dialogCtx = ctx;
         return const Center(
           child: Card(
             color: AppColors.darkSurface,
@@ -1934,9 +1939,8 @@ class _UsersScreenState extends State<UsersScreen>
       await _deleteSingleUserCascade(userId, userType);
 
       // Dismiss loading overlay safely
-      if (mounted) {
-        if (!dialogOpened) await Future.delayed(const Duration(milliseconds: 100));
-        Navigator.of(context).pop();
+      if (dialogCtx != null && dialogCtx!.mounted) {
+        Navigator.of(dialogCtx!).pop();
       }
 
       // Success notification
@@ -1953,9 +1957,8 @@ class _UsersScreenState extends State<UsersScreen>
       _loadData();
     } catch (e) {
       // Dismiss loading overlay safely
-      if (mounted) {
-        if (!dialogOpened) await Future.delayed(const Duration(milliseconds: 100));
-        Navigator.of(context).pop();
+      if (dialogCtx != null && dialogCtx!.mounted) {
+        Navigator.of(dialogCtx!).pop();
       }
 
       if (mounted) {
@@ -2056,12 +2059,12 @@ class _UsersScreenState extends State<UsersScreen>
     if (confirmed != true) return;
 
     if (!mounted) return;
-    bool dialogOpened = false;
+    BuildContext? dialogCtx;
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) {
-        dialogOpened = true;
+        dialogCtx = ctx;
         return const Center(
           child: Card(
             color: AppColors.darkSurface,
@@ -2163,9 +2166,8 @@ class _UsersScreenState extends State<UsersScreen>
         if (index == 3) _selectedEmployeeIds.clear();
       });
 
-      if (mounted) {
-        if (!dialogOpened) await Future.delayed(const Duration(milliseconds: 100));
-        Navigator.of(context).pop(); // Dismiss loading overlay safely
+      if (dialogCtx != null && dialogCtx!.mounted) {
+        Navigator.of(dialogCtx!).pop(); // Dismiss loading overlay safely
       }
 
       if (mounted) {
@@ -2178,9 +2180,8 @@ class _UsersScreenState extends State<UsersScreen>
       }
       _loadData();
     } catch (e) {
-      if (mounted) {
-        if (!dialogOpened) await Future.delayed(const Duration(milliseconds: 100));
-        Navigator.of(context).pop(); // Dismiss loading overlay safely
+      if (dialogCtx != null && dialogCtx!.mounted) {
+        Navigator.of(dialogCtx!).pop(); // Dismiss loading overlay safely
       }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
