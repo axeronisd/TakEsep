@@ -1306,7 +1306,6 @@
             <a href="#apps" class="nav-link" data-translate="navApps">Приложения</a>
             <a href="#features" class="nav-link" data-translate="navFeatures">Возможности</a>
             <a href="#support" class="nav-link" data-translate="navSupport">Поддержка</a>
-            <a href="https://github.com/axeronisd/TakEsep/releases" target="_blank" rel="noopener" class="nav-link">GitHub</a>
             <span class="nav-badge" id="nav-version" data-translate="navVersion">Загрузка версии…</span>
           </div>
           
@@ -1327,7 +1326,6 @@
         <a href="#features" data-translate="navFeatures">Возможности</a>
         <a href="#support" data-translate="navSupport">Поддержка</a>
         <a href="admin.html" data-translate="navAdmin">Веб-панель</a>
-        <a href="https://github.com/axeronisd/TakEsep/releases" target="_blank" rel="noopener">GitHub Releases</a>
       </div>
     </div>
   </header>
@@ -1598,7 +1596,6 @@
         <span>© 2026 TakEsep Ecosystem</span>
       </div>
       <div class="footer-links">
-        <a href="https://github.com/axeronisd/TakEsep/releases" target="_blank" rel="noopener" id="footer-releases" data-translate="footReleases">Все версии</a>
         <a href="admin.html" data-translate="navAdmin">Админ-панель</a>
         <a href="privacy.html" data-translate="footPrivacy">Конфиденциальность</a>
       </div>
@@ -2038,8 +2035,6 @@
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6 9 17l-5-5"/></svg>
         ${prefixText} <strong>${releaseTitle}</strong>${dateLabel ? ` · ${dateLabel}` : ''}
       `;
-
-      document.getElementById('footer-releases').href = release.html_url || RELEASES_PAGE;
 
       // Populate Changelog if body exists
       if (release.body) {
