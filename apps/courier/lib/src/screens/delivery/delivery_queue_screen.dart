@@ -38,6 +38,12 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
   Timer? _pollTimer;
   final Set<String> _readyOrdersTracked = {};
 
+  final Map<String, String> _orderReceipts = {};
+  final MapController _mapController = MapController();
+  bool _lockToCourier = true;
+  StreamSubscription? _locationSub;
+  double? _courierHeading;
+
   double _sheetPosition = 0.45;
 
   void _toggleSheet() {
@@ -77,6 +83,16 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
     _loadData();
     _subscribeToOrders();
     _startPolling();
+    
+    _locationSub = _locationService.positionStream.listen((pos) {
+      if (!mounted) return;
+      setState(() {
+        _courierHeading = pos.heading;
+      });
+      if (_lockToCourier) {
+        _mapController.move(LatLng(pos.latitude, pos.longitude), 16.5);
+      }
+    });
   }
 
   void _startPolling() {
@@ -91,6 +107,7 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
   void dispose() {
     _channel?.unsubscribe();
     _pollTimer?.cancel();
+    _locationSub?.cancel();
     _alertPlayer.dispose();
     super.dispose();
   }
@@ -218,6 +235,28 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
         }
       }
 
+      // Fetch latest receipt image from chat messages for each active order
+      final Map<String, String> receipts = {};
+      await Future.wait(orders.map((o) async {
+        final orderId = o['id'];
+        try {
+          final msgData = await Supabase.instance.client
+              .from('delivery_order_messages')
+              .select('message')
+              .eq('order_id', orderId)
+              .eq('sender_type', 'customer')
+              .like('message', '%order-receipts%')
+              .order('created_at', ascending: false)
+              .limit(1)
+              .maybeSingle();
+          if (msgData != null && msgData['message'] != null) {
+            receipts[orderId] = msgData['message'] as String;
+          }
+        } catch (e) {
+          debugPrint('Error loading receipt for order $orderId: $e');
+        }
+      }));
+
       // Route optimization
       var pos = _locationService.lastPosition;
       if (pos == null) {
@@ -232,6 +271,8 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
         setState(() {
           _activeOrders = orders;
           _routeTasks = tasks;
+          _orderReceipts.clear();
+          _orderReceipts.addAll(receipts);
           _loading = false;
         });
 
@@ -357,6 +398,45 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
     }
   }
 
+  void _showReceiptDialog(String imageUrl) {
+    showDialog(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.transparent,
+        insetPadding: const EdgeInsets.all(16),
+        child: Stack(
+          alignment: Alignment.topRight,
+          children: [
+            InteractiveViewer(
+              minScale: 0.5,
+              maxScale: 4.0,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.contain,
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return const Center(child: CircularProgressIndicator(color: AkJolTheme.primary));
+                  },
+                ),
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: IconButton(
+                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 24),
+                onPressed: () => Navigator.pop(ctx),
+                style: IconButton.styleFrom(backgroundColor: Colors.black54),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   void _openChat(String orderId, String name, String phone) {
     final courierId = ref.read(courierIdProvider);
     if (courierId == null) return;
@@ -405,6 +485,30 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
               children: [
                 Positioned.fill(
                   child: _buildGlobalMap(),
+                ),
+                AnimatedPositioned(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeOutCubic,
+                  right: 16,
+                  bottom: (MediaQuery.of(context).size.height * _sheetPosition) + 16,
+                  child: FloatingActionButton(
+                    mini: true,
+                    backgroundColor: const Color(0xFF111111),
+                    foregroundColor: _lockToCourier ? AkJolTheme.primary : Colors.white70,
+                    onPressed: () {
+                      final pos = _locationService.lastPosition;
+                      if (pos != null) {
+                        _mapController.move(LatLng(pos.latitude, pos.longitude), 16.5);
+                      }
+                      setState(() {
+                        _lockToCourier = true;
+                      });
+                    },
+                    child: Icon(
+                      _lockToCourier ? Icons.gps_fixed_rounded : Icons.gps_not_fixed_rounded,
+                      size: 20,
+                    ),
+                  ),
                 ),
                 AnimatedPositioned(
                   duration: const Duration(milliseconds: 300),
@@ -493,12 +597,20 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
     final bounds = LatLngBounds.fromPoints(mapPoints);
 
     return FlutterMap(
+      mapController: _mapController,
       options: MapOptions(
         initialCameraFit: CameraFit.bounds(
           bounds: bounds,
           padding: const EdgeInsets.only(left: 40, right: 40, top: 40, bottom: 300),
           maxZoom: 16.0,
         ),
+        onPositionChanged: (position, hasGesture) {
+          if (hasGesture) {
+            setState(() {
+              _lockToCourier = false;
+            });
+          }
+        },
       ),
         children: [
           TileLayer(
@@ -549,7 +661,18 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
                         BoxShadow(color: AkJolTheme.primary.withValues(alpha: 0.5), blurRadius: 8),
                       ]
                     ),
-                    child: const Icon(Icons.delivery_dining, color: AkJolTheme.primary, size: 24),
+                    child: Transform.rotate(
+                      angle: (_courierHeading != null && _locationService.lastPosition != null && (_locationService.lastPosition!.speed) > 0.5)
+                          ? (_courierHeading! * 3.141592653589793 / 180.0)
+                          : 0.0,
+                      child: Icon(
+                        (_courierHeading != null && _locationService.lastPosition != null && (_locationService.lastPosition!.speed) > 0.5)
+                            ? Icons.navigation_rounded
+                            : Icons.delivery_dining,
+                        color: AkJolTheme.primary,
+                        size: 24,
+                      ),
+                    ),
                   ),
                 ),
               // Task markers
@@ -764,6 +887,61 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
           
           if (isPickup) _buildPickupDetails(order, isCurrent)
           else _buildDropoffDetails(order, isCurrent),
+
+          if (_orderReceipts.containsKey(order['id'])) ...[
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Divider(color: Colors.white12, height: 1),
+            ),
+            Row(
+              children: [
+                const Icon(Icons.receipt_long_rounded, color: Colors.blue, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'Чек об оплате:',
+                  style: TextStyle(color: Colors.white.withValues(alpha: 0.9), fontWeight: FontWeight.bold, fontSize: 15),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            GestureDetector(
+              onTap: () => _showReceiptDialog(_orderReceipts[order['id']]!),
+              child: Container(
+                height: 140,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white12),
+                ),
+                clipBehavior: Clip.antiAlias,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    CachedImageWidget(
+                      imageUrl: _orderReceipts[order['id']]!,
+                      fit: BoxFit.cover,
+                      errorWidget: const Icon(Icons.image, color: Colors.grey, size: 40),
+                    ),
+                    Container(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      alignment: Alignment.center,
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.zoom_in, color: Colors.white, size: 20),
+                          SizedBox(width: 6),
+                          Text(
+                            'Посмотреть чек',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
           
           const SizedBox(height: 16),
           _buildActionButtons(task, status, isCurrent),

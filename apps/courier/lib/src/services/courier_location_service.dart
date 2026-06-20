@@ -24,6 +24,7 @@ class CourierLocationService {
   StreamSubscription<Position>? _positionStream;
   Timer? _snapshotTimer;
   RealtimeChannel? _broadcastChannel;
+  final _positionController = StreamController<Position>.broadcast();
 
   String? _courierId;
   Position? _lastPosition;
@@ -31,6 +32,7 @@ class CourierLocationService {
 
   bool get isTracking => _isTracking;
   Position? get lastPosition => _lastPosition;
+  Stream<Position> get positionStream => _positionController.stream;
 
   /// Start live tracking for a specific delivery
   Future<void> startTracking({
@@ -144,6 +146,7 @@ class CourierLocationService {
     }
 
     _lastPosition = position;
+    _positionController.add(position);
 
     // Broadcast via Realtime (ephemeral, no DB write)
     _broadcastChannel?.sendBroadcastMessage(

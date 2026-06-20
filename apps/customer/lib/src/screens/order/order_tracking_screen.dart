@@ -1809,11 +1809,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setSheetState) => Padding(
           padding: EdgeInsets.only(bottom: MediaQuery.of(ctx).viewInsets.bottom),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
+          child: SafeArea(
+            top: false,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(24, 24, 24, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
                 // Handle
                 Container(
                   width: 40,
@@ -1928,8 +1930,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Future<void> _submitRating(
       int courierRating, int? storeRating, String? comment) async {

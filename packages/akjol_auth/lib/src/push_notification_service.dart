@@ -54,11 +54,10 @@ class PushNotificationService {
   /// Remove token on logout
   Future<void> removeToken(String fcmToken) async {
     try {
-      await _supabase
-          .from('user_fcm_tokens')
-          .delete()
-          .eq('fcm_token', fcmToken);
-      debugPrint('[Push] Token removed');
+      await _supabase.rpc('rpc_delete_fcm_token', params: {
+        'p_fcm_token': fcmToken,
+      });
+      debugPrint('[Push] Token removed via RPC');
     } catch (e) {
       debugPrint('[Push] Error removing token: $e');
     }
