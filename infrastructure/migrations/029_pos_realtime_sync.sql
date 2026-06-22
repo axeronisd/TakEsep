@@ -76,6 +76,18 @@ BEGIN
   EXCEPTION WHEN duplicate_object THEN NULL;
   END;
 
+  -- Roles table
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE roles;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+
+  -- Services table
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE services;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END;
+
   -- Audits table
   BEGIN
     ALTER PUBLICATION supabase_realtime ADD TABLE audits;

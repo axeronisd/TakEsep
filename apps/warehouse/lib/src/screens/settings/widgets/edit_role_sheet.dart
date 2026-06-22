@@ -4,8 +4,6 @@ import 'package:takesep_core/takesep_core.dart';
 import 'package:takesep_design_system/takesep_design_system.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../../data/powersync_db.dart';
-import '../../../data/supabase_sync.dart';
 import '../../../providers/auth_providers.dart';
 import '../../../providers/employee_providers.dart';
 import '../../../utils/snackbar_helper.dart';
@@ -304,31 +302,20 @@ class _EditRoleSheetState extends ConsumerState<EditRoleSheet> {
     if (companyId == null) return;
 
     final pinCode = _pinController.text.trim();
-    // Save string format for PowerSync
-    final permissionsString = '{${_selectedPermissions.join(',')}}';
+
+    final newRole = Role(
+      id: _isEditing ? widget.role!.id : const Uuid().v4(),
+      companyId: companyId,
+      name: name,
+      permissions: _selectedPermissions.toList(),
+      pinCode: pinCode,
+      isSystem: _isEditing ? widget.role!.isSystem : false,
+      createdAt: _isEditing ? widget.role!.createdAt : DateTime.now(),
+    );
 
     try {
-      if (_isEditing) {
-        await powerSyncDb.execute(
-          'UPDATE roles SET name = ?, pin_code = ?, permissions = ? WHERE id = ? AND company_id = ?',
-          [name, pinCode, permissionsString, widget.role!.id, companyId],
-        );
-        await SupabaseSync.update('roles', widget.role!.id, {
-          'name': name, 'pin_code': pinCode, 'permissions': permissionsString,
-        });
-      } else {
-        final newId = const Uuid().v4();
-        final now = DateTime.now().toIso8601String();
-        await powerSyncDb.execute(
-          'INSERT INTO roles (id, company_id, name, permissions, pin_code, is_system, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
-          [newId, companyId, name, permissionsString, pinCode, 0, now],
-        );
-        await SupabaseSync.upsert('roles', {
-          'id': newId, 'company_id': companyId, 'name': name,
-          'permissions': permissionsString, 'pin_code': pinCode,
-          'is_system': false, 'created_at': now,
-        });
-      }
+      final authRepo = ref.read(authRepositoryProvider);
+      await authRepo.upsertRole(newRole);
       
       ref.invalidate(rolesListProvider);
       if (mounted) Navigator.pop(context);
@@ -346,7 +333,7 @@ class _EditRoleSheetState extends ConsumerState<EditRoleSheet> {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('Удалить роль?'),
-        content: Text('Сотрудники с этой ролью потеряют доступ. Действие нельзя отменить.'),
+        content: const Text('Сотрудники с этой ролью потеряют доступ. Действие нельзя отменить.'),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
           FilledButton(
@@ -362,8 +349,8 @@ class _EditRoleSheetState extends ConsumerState<EditRoleSheet> {
 
     setState(() => _isSaving = true);
     try {
-      await powerSyncDb.execute('DELETE FROM roles WHERE id = ?', [widget.role!.id]);
-      await SupabaseSync.delete('roles', widget.role!.id);
+      final authRepo = ref.read(authRepositoryProvider);
+      await authRepo.deleteRole(widget.role!.id);
       ref.invalidate(rolesListProvider);
       if (mounted) Navigator.pop(context);
     } catch (e) {

@@ -462,9 +462,10 @@ class _EditEmployeeSheetState extends ConsumerState<EditEmployeeSheet> {
     }
 
     final allowedWarehouses = _allWarehouses ? null : _selectedWarehouses;
+    bool success = false;
 
     if (_isEditing) {
-      await notifier.updateEmployee(
+      success = await notifier.updateEmployee(
         employeeId: widget.employee!.id,
         name: name,
         pinCode: pinCode,
@@ -489,7 +490,7 @@ class _EditEmployeeSheetState extends ConsumerState<EditEmployeeSheet> {
         salaryAutoDeduct: _salaryAutoDeduct,
       );
     } else {
-      await notifier.createEmployee(
+      final employee = await notifier.createEmployee(
         name: name,
         pinCode: pinCode,
         roleId: _selectedRoleId,
@@ -503,8 +504,16 @@ class _EditEmployeeSheetState extends ConsumerState<EditEmployeeSheet> {
         salaryAmount: double.tryParse(_salaryAmountController.text) ?? 0,
         salaryAutoDeduct: _salaryAutoDeduct,
       );
+      success = employee != null;
     }
 
-    if (mounted) Navigator.pop(context);
+    if (mounted) {
+      if (success) {
+        Navigator.pop(context);
+      } else {
+        setState(() => _isSaving = false);
+        showErrorSnackBar(context, 'Не удалось сохранить сотрудника. Попробуйте еще раз.');
+      }
+    }
   }
 }

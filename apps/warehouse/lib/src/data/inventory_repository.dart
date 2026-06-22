@@ -459,6 +459,29 @@ class InventoryRepository {
       }
       print('[seedLocalDb] payment_methods: ${methods.length}');
 
+      // ── Roles ──
+      final roles = await Supabase.instance.client
+          .from('roles')
+          .select()
+          .eq('company_id', companyId);
+      for (final r in roles) {
+        await _db.execute(
+          '''INSERT OR REPLACE INTO roles (
+            id, company_id, name, permissions, pin_code, is_system, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)''',
+          [
+            r['id'],
+            r['company_id'],
+            r['name'],
+            r['permissions'],
+            r['pin_code'],
+            r['is_system'] == true ? 1 : 0,
+            r['created_at'],
+          ],
+        );
+      }
+      print('[seedLocalDb] roles: ${roles.length}');
+
       print('[seedLocalDb] ✅ Completed');
     } catch (e, st) {
       print('[seedLocalDb] error: $e\n$st');

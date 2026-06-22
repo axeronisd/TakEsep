@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takesep_core/takesep_core.dart';
 
 import '../data/employee_repository.dart';
-import '../data/powersync_db.dart';
 import '../data/supabase_realtime_service.dart';
 import 'auth_providers.dart';
 
@@ -53,19 +52,21 @@ class EmployeeListNotifier extends StateNotifier<AsyncValue<List<Employee>>> {
 
     _subscription = stream.listen((data) {
       // When data changes, reload from repository (which fetches from Supabase)
-      load();
+      load(silent: true);
     }, onError: (e) {
       print('EmployeeListNotifier realtime error: $e');
     });
   }
 
-  Future<void> load() async {
+  Future<void> load({bool silent = false}) async {
     if (_companyId == null) {
       state = const AsyncValue.data([]);
       return;
     }
     try {
-      state = const AsyncValue.loading();
+      if (!silent && !state.hasValue) {
+        state = const AsyncValue.loading();
+      }
       final employees = await _repo.getEmployees(_companyId);
       state = AsyncValue.data(employees);
     } catch (e, st) {
@@ -104,7 +105,7 @@ class EmployeeListNotifier extends StateNotifier<AsyncValue<List<Employee>>> {
         salaryAmount: salaryAmount,
         salaryAutoDeduct: salaryAutoDeduct,
       );
-      await load(); // Refresh list
+      await load(silent: true); // Refresh list
       return employee;
     } catch (e) {
       print('createEmployee error: $e');
@@ -159,7 +160,7 @@ class EmployeeListNotifier extends StateNotifier<AsyncValue<List<Employee>>> {
         salaryAmount: salaryAmount,
         salaryAutoDeduct: salaryAutoDeduct,
       );
-      await load();
+      await load(silent: true);
       return true;
     } catch (e) {
       print('updateEmployee error: $e');
@@ -170,7 +171,7 @@ class EmployeeListNotifier extends StateNotifier<AsyncValue<List<Employee>>> {
   Future<bool> deleteEmployee(String employeeId) async {
     try {
       await _repo.deleteEmployee(employeeId);
-      await load();
+      await load(silent: true);
       return true;
     } catch (e) {
       print('deleteEmployee error: $e');
@@ -188,15 +189,20 @@ class EmployeeListNotifier extends StateNotifier<AsyncValue<List<Employee>>> {
 
 // ─── Roles list ─────────────────────────────────────────
 
-/// Provides the list of roles for the current company (from local PowerSync DB).
-final rolesListProvider = FutureProvider<List<Role>>((ref) async {
+/// Provides the list of roles for the current company (from Supabase directly) in real-time.
+final rolesListProvider = StreamProvider.autoDispose<List<Role>>((ref) {
   final companyId = ref.watch(currentCompanyProvider)?.id;
-  if (companyId == null) return [];
-  final rows = await powerSyncDb.getAll(
-    'SELECT * FROM roles WHERE company_id = ? ORDER BY name',
-    [companyId],
-  );
-  return rows.map((r) => Role.fromJson(r)).toList();
+  if (companyId == null) {
+    return Stream.value(<Role>[]);
+  }
+
+  return realtimeService
+      .subscribeToTable(table: 'roles', companyId: companyId)
+      .map((list) {
+        final roles = list.map((e) => Role.fromJson(e)).toList();
+        roles.sort((a, b) => a.name.compareTo(b.name));
+        return roles;
+      });
 });
 
 // ─── Analytics ────────────────────────────────────────

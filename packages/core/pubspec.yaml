@@ -1,7 +1,7 @@
 name: takesep_core
 description: Shared core package for TakEsep ecosystem — models, DTOs, constants, and business logic utilities.
 
-version: 0.1.0
+version: 0.1.1
 
 environment:
   sdk: ">=3.2.0 <4.0.0"

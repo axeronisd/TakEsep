@@ -34,45 +34,49 @@ class SupabaseRealtimeService {
   }) {
     final channelKey = _generateChannelKey(table, companyId, warehouseId);
 
-    // Return existing stream if already subscribed
+    // If already subscribed, return the existing stream and fetch data for the new listener
     if (_controllers.containsKey(channelKey)) {
-      return _controllers[channelKey]!
-          .stream
-          .cast<List<Map<String, dynamic>>>();
+      final controller = _controllers[channelKey]!;
+      _fetchInitialData(controller, table, companyId, warehouseId);
+      return controller.stream.cast<List<Map<String, dynamic>>>();
     }
 
-    // Create new stream controller
-    final controller = StreamController<List<Map<String, dynamic>>>.broadcast();
-    _controllers[channelKey] = controller;
+    late final StreamController<List<Map<String, dynamic>>> controller;
+    controller = StreamController<List<Map<String, dynamic>>>.broadcast(
+      onListen: () {
+        // Fetch initial data immediately on subscription
+        _fetchInitialData(controller, table, companyId, warehouseId);
 
-    // Create or get channel
-    final channel = _client.channel(channelKey);
-    _channels[channelKey] = channel;
+        final channel = _client.channel(channelKey);
+        _channels[channelKey] = channel;
 
-    // Subscribe to table changes
-    channel.onPostgresChanges(
-      event: PostgresChangeEvent.all,
-      schema: 'public',
-      table: table,
-      callback: (payload) {
-        _handleTableChange(controller, table, companyId, warehouseId);
+        channel.onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: table,
+          callback: (payload) {
+            _fetchInitialData(controller, table, companyId, warehouseId);
+          },
+        );
+
+        channel.subscribe((status, error) {
+          if (status == RealtimeSubscribeStatus.subscribed) {
+            print('✅ Realtime connected to $table');
+            _fetchInitialData(controller, table, companyId, warehouseId);
+          } else if (status == RealtimeSubscribeStatus.closed) {
+            print('⚠️ Realtime disconnected from $table');
+          } else if (error != null) {
+            print('❌ Realtime error on $table: $error');
+            _scheduleReconnect(channelKey);
+          }
+        });
+      },
+      onCancel: () {
+        _cleanupChannel(channelKey);
       },
     );
 
-    // Subscribe channel
-    channel.subscribe((status, error) {
-      if (status == RealtimeSubscribeStatus.subscribed) {
-        print('✅ Realtime connected to $table');
-        // Fetch initial data
-        _fetchInitialData(controller, table, companyId, warehouseId);
-      } else if (status == RealtimeSubscribeStatus.closed) {
-        print('⚠️ Realtime disconnected from $table');
-      } else if (error != null) {
-        print('❌ Realtime error on $table: $error');
-        _scheduleReconnect(channelKey);
-      }
-    });
-
+    _controllers[channelKey] = controller;
     return controller.stream;
   }
 
@@ -85,35 +89,45 @@ class SupabaseRealtimeService {
     final channelKey = '${table}_$rowId';
 
     if (_controllers.containsKey(channelKey)) {
-      return _controllers[channelKey]!.stream.cast<Map<String, dynamic>?>();
+      final controller = _controllers[channelKey]!;
+      _fetchRowData(controller, table, rowId);
+      return controller.stream.cast<Map<String, dynamic>?>();
     }
 
-    final controller = StreamController<Map<String, dynamic>?>.broadcast();
-    _controllers[channelKey] = controller;
-
-    final channel = _client.channel(channelKey);
-    _channels[channelKey] = channel;
-
-    channel.onPostgresChanges(
-      event: PostgresChangeEvent.all,
-      schema: 'public',
-      table: table,
-      callback: (payload) {
+    late final StreamController<Map<String, dynamic>?> controller;
+    controller = StreamController<Map<String, dynamic>?>.broadcast(
+      onListen: () {
         _fetchRowData(controller, table, rowId);
+
+        final channel = _client.channel(channelKey);
+        _channels[channelKey] = channel;
+
+        channel.onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: table,
+          callback: (payload) {
+            _fetchRowData(controller, table, rowId);
+          },
+        );
+
+        channel.subscribe((status, error) {
+          if (status == RealtimeSubscribeStatus.subscribed) {
+            _fetchRowData(controller, table, rowId);
+          } else if (status == RealtimeSubscribeStatus.closed) {
+            print('⚠️ Realtime disconnected from $table row $rowId');
+          } else if (error != null) {
+            print('❌ Realtime error on $table row $rowId: $error');
+            _scheduleReconnect(channelKey);
+          }
+        });
+      },
+      onCancel: () {
+        _cleanupChannel(channelKey);
       },
     );
 
-    channel.subscribe((status, error) {
-      if (status == RealtimeSubscribeStatus.subscribed) {
-        _fetchRowData(controller, table, rowId);
-      } else if (status == RealtimeSubscribeStatus.closed) {
-        print('⚠️ Realtime disconnected from $table row $rowId');
-      } else if (error != null) {
-        print('❌ Realtime error on $table row $rowId: $error');
-        _scheduleReconnect(channelKey);
-      }
-    });
-
+    _controllers[channelKey] = controller;
     return controller.stream;
   }
 

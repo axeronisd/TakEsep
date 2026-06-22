@@ -527,7 +527,12 @@ class SettingsScreen extends ConsumerWidget {
         maxChildSize: 0.92,
         builder: (ctx, sc) => SingleChildScrollView(
           controller: sc,
-          padding: const EdgeInsets.all(AppSpacing.xl),
+          padding: const EdgeInsets.only(
+            left: AppSpacing.xl,
+            right: AppSpacing.xl,
+            top: AppSpacing.xl,
+            bottom: AppSpacing.xl + 80,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -642,7 +647,6 @@ class SettingsScreen extends ConsumerWidget {
 
   void _showRoles(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    final rolesAsync = ref.watch(rolesListProvider);
 
     showModalBottomSheet(
       context: context,
@@ -654,71 +658,81 @@ class SettingsScreen extends ConsumerWidget {
         expand: false,
         initialChildSize: 0.7,
         maxChildSize: 0.92,
-        builder: (ctx, sc) => SingleChildScrollView(
-          controller: sc,
-          padding: const EdgeInsets.all(AppSpacing.xl),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _handleBar(cs),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        builder: (ctx, sc) => Consumer(
+          builder: (ctx, ref, _) {
+            final rolesAsync = ref.watch(rolesListProvider);
+            return SingleChildScrollView(
+              controller: sc,
+              padding: const EdgeInsets.only(
+                left: AppSpacing.xl,
+                right: AppSpacing.xl,
+                top: AppSpacing.xl,
+                bottom: AppSpacing.xl + 80,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                  _handleBar(cs),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('Роли и права',
-                          style: AppTypography.headlineMedium
-                              .copyWith(color: cs.onSurface)),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text('Доступы сотрудников к разделам приложения',
-                          style: AppTypography.bodySmall.copyWith(
-                              color: cs.onSurface.withValues(alpha: 0.5))),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Роли и права',
+                              style: AppTypography.headlineMedium
+                                  .copyWith(color: cs.onSurface)),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text('Доступы сотрудников к разделам приложения',
+                              style: AppTypography.bodySmall.copyWith(
+                                  color: cs.onSurface.withValues(alpha: 0.5))),
+                        ],
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            useRootNavigator: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (_) => const EditRoleSheet(),
+                          );
+                        },
+                        icon: const Icon(Icons.add_rounded),
+                        style: IconButton.styleFrom(
+                          backgroundColor: cs.primary,
+                          foregroundColor: cs.onPrimary,
+                        ),
+                      ),
                     ],
                   ),
-                  IconButton(
-                    onPressed: () {
-                      Navigator.pop(ctx);
-                      showModalBottomSheet(
-                        context: context,
-                        isScrollControlled: true,
-                        useRootNavigator: true,
-                        backgroundColor: Colors.transparent,
-                        builder: (_) => const EditRoleSheet(),
+                  const SizedBox(height: AppSpacing.xl),
+                  rolesAsync.when(
+                    data: (roles) {
+                      if (roles.isEmpty) {
+                        return _emptyState(cs, Icons.admin_panel_settings_rounded,
+                            'Нет ролей');
+                      }
+                      return Column(
+                        children: [
+                          for (final role in roles) ...[
+                            _buildRoleTile(context, cs, role),
+                            const SizedBox(height: AppSpacing.sm),
+                          ],
+                        ],
                       );
                     },
-                    icon: const Icon(Icons.add_rounded),
-                    style: IconButton.styleFrom(
-                      backgroundColor: cs.primary,
-                      foregroundColor: cs.onPrimary,
-                    ),
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (e, _) => Center(
+                        child: Text('Ошибка: $e',
+                            style: TextStyle(color: cs.error))),
                   ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.xl),
-              rolesAsync.when(
-                data: (roles) {
-                  if (roles.isEmpty) {
-                    return _emptyState(cs, Icons.admin_panel_settings_rounded,
-                        'Нет ролей');
-                  }
-                  return Column(
-                    children: [
-                      for (final role in roles) ...[
-                        _buildRoleTile(context, cs, role),
-                        const SizedBox(height: AppSpacing.sm),
-                      ],
-                    ],
-                  );
-                },
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(
-                    child: Text('Ошибка: $e',
-                        style: TextStyle(color: cs.error))),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
@@ -809,7 +823,6 @@ class SettingsScreen extends ConsumerWidget {
 
   void _showSecurity(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
-    final employeesAsync = ref.read(employeeListProvider);
 
     showModalBottomSheet(
       context: context,
@@ -821,44 +834,54 @@ class SettingsScreen extends ConsumerWidget {
         expand: false,
         initialChildSize: 0.7,
         maxChildSize: 0.92,
-        builder: (ctx, sc) => SingleChildScrollView(
-          controller: sc,
-          padding: const EdgeInsets.all(AppSpacing.xl),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _handleBar(cs),
-              Text('Безопасность',
-                  style: AppTypography.headlineMedium
-                      .copyWith(color: cs.onSurface)),
-              const SizedBox(height: AppSpacing.xs),
-              Text('PIN-коды и доступы сотрудников',
-                  style: AppTypography.bodySmall.copyWith(
-                      color: cs.onSurface.withValues(alpha: 0.5))),
-              const SizedBox(height: AppSpacing.xl),
-              employeesAsync.when(
-                data: (employees) {
-                  if (employees.isEmpty) {
-                    return _emptyState(cs, Icons.security_rounded,
-                        'Нет сотрудников');
-                  }
-                  return Column(
-                    children: [
-                      for (final emp in employees) ...[
-                        _buildSecurityTile(cs, emp),
-                        const SizedBox(height: AppSpacing.sm),
-                      ],
-                    ],
-                  );
-                },
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
-                error: (e, _) => Center(
-                    child: Text('Ошибка: $e',
-                        style: TextStyle(color: cs.error))),
+        builder: (ctx, sc) => Consumer(
+          builder: (ctx, ref, _) {
+            final employeesAsync = ref.watch(employeeListProvider);
+            return SingleChildScrollView(
+              controller: sc,
+              padding: const EdgeInsets.only(
+                left: AppSpacing.xl,
+                right: AppSpacing.xl,
+                top: AppSpacing.xl,
+                bottom: AppSpacing.xl + 80,
               ),
-            ],
-          ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _handleBar(cs),
+                  Text('Безопасность',
+                      style: AppTypography.headlineMedium
+                          .copyWith(color: cs.onSurface)),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text('PIN-коды и доступы сотрудников',
+                      style: AppTypography.bodySmall.copyWith(
+                          color: cs.onSurface.withValues(alpha: 0.5))),
+                  const SizedBox(height: AppSpacing.xl),
+                  employeesAsync.when(
+                    data: (employees) {
+                      if (employees.isEmpty) {
+                        return _emptyState(cs, Icons.security_rounded,
+                            'Нет сотрудников');
+                      }
+                      return Column(
+                        children: [
+                          for (final emp in employees) ...[
+                            _buildSecurityTile(cs, emp),
+                            const SizedBox(height: AppSpacing.sm),
+                          ],
+                        ],
+                      );
+                    },
+                    loading: () =>
+                        const Center(child: CircularProgressIndicator()),
+                    error: (e, _) => Center(
+                        child: Text('Ошибка: $e',
+                            style: TextStyle(color: cs.error))),
+                  ),
+                ],
+              ),
+            );
+          },
         ),
       ),
     );

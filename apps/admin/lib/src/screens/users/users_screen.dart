@@ -3219,6 +3219,25 @@ class _UsersScreenState extends State<UsersScreen>
     );
 
     try {
+      String legacyRole = 'cashier';
+      try {
+        final roleRes = await _supabase
+            .from('roles')
+            .select('name')
+            .eq('id', roleId)
+            .maybeSingle();
+        if (roleRes != null && roleRes['name'] != null) {
+          final rName = (roleRes['name'] as String).toLowerCase();
+          if (rName.contains('owner') || rName.contains('владелец') || rName.contains('хозяин')) {
+            legacyRole = 'owner';
+          } else if (rName.contains('manager') || rName.contains('менеджер') || rName.contains('управляющий')) {
+            legacyRole = 'manager';
+          }
+        }
+      } catch (e) {
+        print('Error fetching role for legacy role mapping: $e');
+      }
+
       final now = DateTime.now().toIso8601String();
       await _supabase.from('employees').insert({
         'company_id': companyId,
@@ -3227,6 +3246,7 @@ class _UsersScreenState extends State<UsersScreen>
         'phone': phone,
         'pin_code': pin,
         'role_id': roleId,
+        'role': legacyRole,
         'allowed_warehouses': [warehouseId],
         'is_active': true,
         'inn': inn,

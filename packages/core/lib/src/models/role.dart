@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:equatable/equatable.dart';
 
 /// Represents a dynamic role within a company.
@@ -86,29 +87,49 @@ class Role extends Equatable {
 
   factory Role.fromJson(Map<String, dynamic> json) {
     final rawPerms = json['permissions'];
-    List<String> perms;
+    List<String> perms = [];
     if (rawPerms is List) {
       perms = rawPerms.cast<String>();
-    } else if (rawPerms is String) {
-      // PowerSync stores arrays as comma-separated strings
-      perms = rawPerms.isEmpty
-          ? []
-          : rawPerms
-              .replaceAll('{', '')
-              .replaceAll('}', '')
-              .split(',')
-              .map((s) => s.trim())
-              .where((s) => s.isNotEmpty)
-              .toList();
-    } else {
-      perms = [];
+    } else if (rawPerms is String && rawPerms.isNotEmpty) {
+      final trimmed = rawPerms.trim();
+      if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+        try {
+          final decoded = jsonDecode(trimmed);
+          if (decoded is List) {
+            perms = decoded.map((e) => e.toString()).toList();
+          }
+        } catch (_) {
+          perms = trimmed.split(',');
+        }
+      } else if (trimmed.startsWith('{') && trimmed.endsWith('}')) {
+        perms = trimmed
+            .substring(1, trimmed.length - 1)
+            .split(',')
+            .map((s) => s.trim())
+            .toList();
+      } else {
+        perms = trimmed.split(',');
+      }
     }
+
+    // Defensive parsing: sanitize permissions by stripping brackets, braces, and quotes
+    final cleanPerms = perms
+        .map((s) => s
+            .replaceAll('[', '')
+            .replaceAll(']', '')
+            .replaceAll('{', '')
+            .replaceAll('}', '')
+            .replaceAll('"', '')
+            .replaceAll("'", '')
+            .trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
 
     return Role(
       id: json['id'] as String,
       companyId: json['company_id'] as String,
       name: json['name'] as String,
-      permissions: perms,
+      permissions: cleanPerms,
       pinCode: json['pin_code'] as String? ?? '',
       isSystem: json['is_system'] == true ||
           json['is_system'] == 1,
@@ -122,7 +143,7 @@ class Role extends Equatable {
       'id': id,
       'company_id': companyId,
       'name': name,
-      'permissions': permissions,
+      'permissions': '{${permissions.join(',')}}', // Store in PostgreSQL array format for compatibility
       'pin_code': pinCode,
       'is_system': isSystem,
       'created_at': createdAt.toIso8601String(),

@@ -10,7 +10,7 @@ final serviceRepositoryProvider =
 
 /// Services list for the current company with real-time updates.
 final serviceListProvider =
-    StateNotifierProvider<ServiceListNotifier, AsyncValue<List<Service>>>(
+    StateNotifierProvider.autoDispose<ServiceListNotifier, AsyncValue<List<Service>>>(
         (ref) {
   final repo = ref.read(serviceRepositoryProvider);
   final companyId = ref.watch(currentCompanyProvider)?.id;

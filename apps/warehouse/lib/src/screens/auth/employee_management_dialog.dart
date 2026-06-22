@@ -8,7 +8,6 @@ import 'package:takesep_design_system/takesep_design_system.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../data/powersync_db.dart';
-import '../../data/supabase_sync.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/employee_providers.dart';
 import '../../utils/export_helper.dart';
@@ -675,8 +674,9 @@ class _EmployeesTab extends ConsumerWidget {
                     return;
                   }
 
+                  bool success = false;
                   if (isNew) {
-                    await ref
+                    final emp = await ref
                         .read(employeeListProvider.notifier)
                         .createEmployee(
                           name: name,
@@ -686,8 +686,9 @@ class _EmployeesTab extends ConsumerWidget {
                               ? null
                               : selectedWarehouses,
                         );
+                    success = emp != null;
                   } else {
-                    await ref
+                    success = await ref
                         .read(employeeListProvider.notifier)
                         .updateEmployee(
                           employeeId: employee.id,
@@ -703,7 +704,13 @@ class _EmployeesTab extends ConsumerWidget {
                           isActive: isActive,
                         );
                   }
-                  if (ctx.mounted) Navigator.pop(ctx);
+                  if (ctx.mounted) {
+                    if (success) {
+                      Navigator.pop(ctx);
+                    } else {
+                      showErrorSnackBar(ctx, 'Не удалось сохранить сотрудника. Попробуйте еще раз.');
+                    }
+                  }
                 },
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.primary,
@@ -1024,12 +1031,7 @@ class _RolesTab extends ConsumerWidget {
                       ),
                     );
                     if (ok == true) {
-                      // Delete from PowerSync local DB
-                      await powerSyncDb.execute(
-                        'DELETE FROM roles WHERE id = ?',
-                        [role.id],
-                      );
-                      await SupabaseSync.delete('roles', role.id);
+                      await ref.read(authRepositoryProvider).deleteRole(role.id);
                       ref.invalidate(rolesListProvider);
                       if (ctx.mounted) Navigator.pop(ctx);
                     }
@@ -1059,33 +1061,19 @@ class _RolesTab extends ConsumerWidget {
                   if (companyId == null) return;
 
                   final id = role?.id ?? const Uuid().v4();
-                  final now = DateTime.now().toIso8601String();
-                  final permsStr = selPerms.join(',');
+                  final permsList = selPerms.toList();
 
-                  if (isNew) {
-                    // INSERT into local PowerSync DB
-                    await powerSyncDb.execute(
-                      '''INSERT INTO roles (id, company_id, name, permissions, pin_code, is_system, created_at)
-                         VALUES (?, ?, ?, ?, ?, ?, ?)''',
-                      [id, companyId, name, permsStr, pin, 0, now],
-                    );
-                    await SupabaseSync.upsert('roles', {
-                      'id': id, 'company_id': companyId, 'name': name,
-                      'permissions': permsStr, 'pin_code': pin,
-                      'is_system': false, 'created_at': now,
-                    });
-                  } else {
-                    // UPDATE
-                    await powerSyncDb.execute(
-                      '''UPDATE roles SET name = ?, permissions = ?, pin_code = ?, is_system = ?
-                         WHERE id = ?''',
-                      [name, permsStr, pin, role.isSystem ? 1 : 0, id],
-                    );
-                    await SupabaseSync.update('roles', id, {
-                      'name': name, 'permissions': permsStr,
-                      'pin_code': pin, 'is_system': role.isSystem,
-                    });
-                  }
+                  final newRole = Role(
+                    id: id,
+                    companyId: companyId,
+                    name: name,
+                    permissions: permsList,
+                    pinCode: pin,
+                    isSystem: isNew ? false : role.isSystem,
+                    createdAt: isNew ? DateTime.now() : role.createdAt,
+                  );
+
+                  await ref.read(authRepositoryProvider).upsertRole(newRole);
 
                   ref.invalidate(rolesListProvider);
                   if (ctx.mounted) Navigator.pop(ctx);

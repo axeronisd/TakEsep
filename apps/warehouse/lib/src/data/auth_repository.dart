@@ -78,26 +78,15 @@ class AuthRepository {
   /// [password] = the role's PIN code
   Future<Employee?> verifyByNameAndPassword(String name, String password) async {
     try {
-      // --- Try local PowerSync first (for instantly-created employees) ---
-      final localRows = await powerSyncDb.getAll(
-        'SELECT * FROM employees WHERE pin_code = ? AND is_active = 1 LIMIT 1',
-        [name],
-      );
-
-      Employee? employee;
-      if (localRows.isNotEmpty) {
-        employee = Employee.fromJson(localRows.first);
-      } else {
-        // --- Fallback to Supabase ---
-        final response = await _supabase
-            .from('employees')
-            .select()
-            .eq('pin_code', name)
-            .eq('is_active', true)
-            .maybeSingle();
-        if (response == null) return null;
-        employee = Employee.fromJson(response);
-      }
+      // --- Load directly from Supabase (bypassing local SQLite) ---
+      final response = await _supabase
+          .from('employees')
+          .select()
+          .eq('pin_code', name)
+          .eq('is_active', true)
+          .maybeSingle();
+      if (response == null) return null;
+      final employee = Employee.fromJson(response);
 
       // Now verify the role's PIN
       if (employee.roleId == null) {
@@ -105,17 +94,7 @@ class AuthRepository {
         return employee;
       }
 
-      // Check role's pin_code
-      final roleRows = await powerSyncDb.getAll(
-        'SELECT * FROM roles WHERE id = ? LIMIT 1',
-        [employee.roleId!],
-      );
-      if (roleRows.isNotEmpty) {
-        final rolePinCode = roleRows.first['pin_code'] as String? ?? '';
-        if (rolePinCode == password) return employee;
-      }
-
-      // Fallback: check role in Supabase
+      // Check role in Supabase directly
       final roleResponse = await _supabase
           .from('roles')
           .select()
@@ -152,19 +131,9 @@ class AuthRepository {
     }
   }
 
-  /// Fetches a Role by its ID — tries local PowerSync first, then Supabase.
+  /// Fetches a Role by its ID directly from Supabase.
   Future<Role?> getRole(String roleId) async {
     try {
-      // Try local PowerSync first (roles may be created locally)
-      final localRows = await powerSyncDb.getAll(
-        'SELECT * FROM roles WHERE id = ? LIMIT 1',
-        [roleId],
-      );
-      if (localRows.isNotEmpty) {
-        return Role.fromJson(localRows.first);
-      }
-
-      // Fallback to Supabase
       final response = await _supabase
           .from('roles')
           .select()
