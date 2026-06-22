@@ -70,15 +70,18 @@ class RouteOptimizer {
       // Если еще не забрали — добавляем задачу Pickup
       if (!isPickedUp) {
         final wh = order['warehouses'];
+        final isFreelance = order['delivery_type'] == 'freelance' && (order['items_total'] as num?)?.toDouble() == 0;
+        final pickupName = isFreelance ? 'Откуда (Клиент)' : (wh?['name'] ?? 'Магазин');
+        final pickupAddr = isFreelance ? (order['pickup_address'] ?? '') : (wh?['address'] ?? '');
         allTasks.add(RouteTask(
           type: RouteTaskType.pickup,
           orderId: order['id'],
           order: order,
-          lat: (wh?['latitude'] as num?)?.toDouble() ?? 0,
-          lng: (wh?['longitude'] as num?)?.toDouble() ?? 0,
-          title: 'Забрать заказ: ${wh?['name'] ?? 'Магазин'}',
+          lat: (order['pickup_lat'] as num?)?.toDouble() ?? (wh?['latitude'] as num?)?.toDouble() ?? 0,
+          lng: (order['pickup_lng'] as num?)?.toDouble() ?? (wh?['longitude'] as num?)?.toDouble() ?? 0,
+          title: 'Забрать заказ: $pickupName',
           subtitle: 'Заказ #${order['id'].toString().substring(0, 5)}',
-          address: wh?['address'] ?? '',
+          address: pickupAddr,
         ));
       }
 

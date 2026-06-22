@@ -88,13 +88,18 @@ Future<void> _bootstrapApp() async {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    if (!kIsWeb && defaultTargetPlatform != TargetPlatform.windows && defaultTargetPlatform != TargetPlatform.macOS && defaultTargetPlatform != TargetPlatform.linux) {
+    if (!kIsWeb &&
+        defaultTargetPlatform != TargetPlatform.windows &&
+        defaultTargetPlatform != TargetPlatform.macOS &&
+        defaultTargetPlatform != TargetPlatform.linux) {
       await FirebaseCrashlytics.instance.setCrashlyticsCollectionEnabled(true);
     }
     firebaseOk = true;
     debugPrint('[AkJol] Firebase initialized ✅');
   } catch (e, st) {
-    debugPrint('[AkJol] Firebase init FAILED (continuing without push/analytics): $e');
+    debugPrint(
+      '[AkJol] Firebase init FAILED (continuing without push/analytics): $e',
+    );
     // Don't crash — Firebase is optional for basic functionality
   }
 

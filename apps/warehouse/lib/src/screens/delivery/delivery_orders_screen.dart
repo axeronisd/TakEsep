@@ -107,6 +107,7 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
           .from('delivery_orders')
           .select('*, customers(name, phone), delivery_order_items(*, delivery_order_item_modifiers(*))')
           .eq('warehouse_id', warehouseId)
+          .or('delivery_type.neq.freelance,items_total.gt.0')
           .neq('status', 'pending')
           .neq('status', 'courier_assigned')
           .order('created_at', ascending: false)
@@ -948,7 +949,9 @@ class _OrderCard extends StatelessWidget {
   static IconData _transportIcon(String type) {
     switch (type) {
       case 'bicycle': return Icons.electric_bike_rounded;
-      case 'motorcycle': return Icons.two_wheeler_rounded;
+      case 'motorcycle':
+      case 'scooter':
+        return Icons.two_wheeler_rounded;
       case 'car': return Icons.directions_car_rounded;
       case 'truck': return Icons.local_shipping_rounded;
       default: return Icons.delivery_dining_rounded;
@@ -959,7 +962,9 @@ class _OrderCard extends StatelessWidget {
     switch (type) {
       case 'truck': return AppColors.warning;
       case 'car': return AppColors.info;
-      case 'motorcycle': return AppColors.secondary;
+      case 'motorcycle':
+      case 'scooter':
+        return AppColors.secondary;
       default: return AppColors.success;
     }
   }
@@ -967,7 +972,9 @@ class _OrderCard extends StatelessWidget {
   static String _transportLabel(String type) {
     switch (type) {
       case 'bicycle': return 'Велосипед';
-      case 'motorcycle': return 'Мото';
+      case 'motorcycle':
+      case 'scooter':
+        return 'Муравей';
       case 'car': return 'Авто';
       case 'truck': return 'Грузовой';
       default: return type;

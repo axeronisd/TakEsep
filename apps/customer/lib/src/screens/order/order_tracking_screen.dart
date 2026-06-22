@@ -69,13 +69,35 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   // Courier Multi-Order Support
   bool _courierHasOtherOrders = false;
 
+  // Active stores for freelance delivery map
+  List<Map<String, dynamic>> _stores = [];
+  bool _loadingStores = true;
+
   @override
   void initState() {
     super.initState();
     _loadOrder();
+    _loadStores();
     _subscribeToOrderUpdates();
     _subscribeToChatMessages();
     _startPolling();
+  }
+
+  Future<void> _loadStores() async {
+    try {
+      final data = await _supabase
+          .from('delivery_settings')
+          .select('*, warehouses(name, address, latitude, longitude)')
+          .eq('is_active', true);
+      if (!mounted) return;
+      setState(() {
+        _stores = List<Map<String, dynamic>>.from(data);
+        _loadingStores = false;
+      });
+    } catch (e) {
+      debugPrint('⚠️ Fetch map stores error: $e');
+      if (mounted) setState(() => _loadingStores = false);
+    }
   }
 
   @override
@@ -427,6 +449,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
     final order = _order!;
     final status = order['status'] ?? '';
+    final isFreelance = order['delivery_type'] == 'freelance';
     final storeName = order['warehouses']?['name'] ?? 'Магазин';
     final courierName = order['couriers']?['name'];
     final courierPhone = order['couriers']?['phone'];
@@ -448,7 +471,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 276), // Increased to 276 to prevent overlap by bottom navigation bar
         children: [
           // ── Status card with ETA ──
-          _buildStatusCard(status),
+          _buildStatusCard(status, isFreelance),
           const SizedBox(height: 12),
 
           // ── Transport info ──
@@ -485,9 +508,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             ),
 
           // ── QR Payment section (after courier accepts) ──
-          if (status == 'courier_assigned')
+          if (status == 'courier_assigned' && !isFreelance)
             _buildPaymentSection(),
-          if (status == 'payment_sent')
+          if (status == 'payment_sent' && !isFreelance)
             _buildPaymentSentBanner(),
 
           const SizedBox(height: 12),
@@ -543,10 +566,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           // ── Store ──
           Card(
             child: ListTile(
-              leading:
-                  const Icon(Icons.storefront, color: AkJolTheme.primary),
-              title: Text(storeName,
-                  style: const TextStyle(fontWeight: FontWeight.w600)),
+              leading: Icon(
+                isFreelance ? Icons.radio_button_checked_rounded : Icons.storefront,
+                color: isFreelance ? Colors.green : AkJolTheme.primary,
+              ),
+              title: Text(
+                isFreelance ? 'Откуда (Точка А)' : storeName,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
               subtitle: Text(order['pickup_address'] ?? ''),
             ),
           ),
@@ -560,6 +587,65 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             ),
           ),
           const SizedBox(height: 16),
+
+          // ── Comment / Loader ──
+          if (order['customer_note'] != null && (order['customer_note'] as String).trim().isNotEmpty) ...[
+            if ((order['customer_note'] as String).contains('Грузчик: Нужен'))
+              Container(
+                margin: const EdgeInsets.only(bottom: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.warning_amber_rounded, color: Colors.red, size: 24),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'ТРЕБУЕТСЯ ГРУЗЧИК (+100 сом)',
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.comment_rounded, color: AkJolTheme.primary, size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Комментарий к заказу',
+                            style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.grey),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            order['customer_note'] as String,
+                            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
 
           // ── Items ──
           const Text('Состав заказа',
@@ -672,6 +758,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
     // Gather coordinates
     final courierPos = LatLng(_courierLat!, _courierLng!);
+    final isFreelance = _order?['delivery_type'] == 'freelance';
     // Store location: use warehouses table (actual store location)
     final pickupLat = (_order?['warehouses']?['latitude'] as num?)?.toDouble()
         ?? (_order?['pickup_lat'] as num?)?.toDouble();
@@ -710,15 +797,97 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
       ),
     ];
 
-    // Store marker
+    // Active stores/warehouses for freelance orders
+    if (isFreelance && !_loadingStores) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      for (final store in _stores) {
+        final lat = (store['warehouses']?['latitude'] as num?)?.toDouble() ?? (store['latitude'] as num?)?.toDouble();
+        final lng = (store['warehouses']?['longitude'] as num?)?.toDouble() ?? (store['longitude'] as num?)?.toDouble();
+        if (lat == null || lng == null) continue;
+        
+        // Skip if this is the active pickup location (Point A) to avoid overlap
+        if (pickupLat != null && pickupLng != null) {
+          final diffLat = (lat - pickupLat).abs();
+          final diffLng = (lng - pickupLng).abs();
+          if (diffLat < 0.0001 && diffLng < 0.0001) continue;
+        }
+
+        final logoUrl = store['logo_url'] as String?;
+
+        markers.add(Marker(
+          point: LatLng(lat, lng),
+          width: 40,
+          height: 40,
+          alignment: Alignment.center,
+          child: Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF161B22) : Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: AkJolTheme.primary, width: 2.0),
+              boxShadow: [
+                BoxShadow(
+                  color: AkJolTheme.primary.withValues(alpha: 0.3),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+              image: logoUrl != null && logoUrl.isNotEmpty
+                  ? DecorationImage(
+                      image: NetworkImage(logoUrl),
+                      fit: BoxFit.cover,
+                    )
+                  : null,
+            ),
+            child: logoUrl == null || logoUrl.isEmpty
+                ? const Icon(Icons.storefront_rounded, color: AkJolTheme.primary, size: 18)
+                : null,
+          ),
+        ));
+      }
+    }
+
+    // Store/Pickup marker
     if (pickupLat != null && pickupLng != null) {
-      markers.add(Marker(
-        point: LatLng(pickupLat, pickupLng),
-        width: 40,
-        height: 40,
-        alignment: Alignment.topCenter,
-        child: const Icon(Icons.storefront, color: Colors.blue, size: 36),
-      ));
+      if (isFreelance) {
+        markers.add(Marker(
+          point: LatLng(pickupLat, pickupLng),
+          width: 32,
+          height: 32,
+          alignment: Alignment.center,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.green,
+              shape: BoxShape.circle,
+              border: Border.all(color: Colors.white, width: 2.5),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.green.withValues(alpha: 0.4),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Center(
+              child: Text(
+                'А',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ));
+      } else {
+        markers.add(Marker(
+          point: LatLng(pickupLat, pickupLng),
+          width: 40,
+          height: 40,
+          alignment: Alignment.topCenter,
+          child: const Icon(Icons.storefront, color: Colors.blue, size: 36),
+        ));
+      }
     }
 
     // Customer marker
@@ -1503,15 +1672,22 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     }
   }
 
-  Widget _buildStatusCard(String status) {
-    // 5 customer-facing steps
-    final steps = [
-      _StatusStep('Поиск', Icons.search_rounded, 'pending'),
-      _StatusStep('Оплата', Icons.payment_rounded, 'payment'),
-      _StatusStep('Едет', Icons.delivery_dining_rounded, 'en_route'),
-      _StatusStep('Забрал', Icons.inventory_2_rounded, 'picked_up'),
-      _StatusStep('Приехал', Icons.location_on_rounded, 'arrived'),
-    ];
+  Widget _buildStatusCard(String status, bool isFreelance) {
+    // 5 customer-facing steps (4 for freelance since payment is bypassed)
+    final steps = isFreelance
+        ? [
+            _StatusStep('Поиск', Icons.search_rounded, 'pending'),
+            _StatusStep('Едет', Icons.delivery_dining_rounded, 'en_route'),
+            _StatusStep('Забрал', Icons.inventory_2_rounded, 'picked_up'),
+            _StatusStep('Приехал', Icons.location_on_rounded, 'arrived'),
+          ]
+        : [
+            _StatusStep('Поиск', Icons.search_rounded, 'pending'),
+            _StatusStep('Оплата', Icons.payment_rounded, 'payment'),
+            _StatusStep('Едет', Icons.delivery_dining_rounded, 'en_route'),
+            _StatusStep('Забрал', Icons.inventory_2_rounded, 'picked_up'),
+            _StatusStep('Приехал', Icons.location_on_rounded, 'arrived'),
+          ];
 
     // Map real DB statuses to display steps
     String mappedStatus;
@@ -1521,7 +1697,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         break;
       case 'courier_assigned':
       case 'payment_sent':
-        mappedStatus = 'payment';
+        mappedStatus = isFreelance ? 'en_route' : 'payment';
         break;
       case 'payment_verified':
       case 'assembling':
@@ -1557,7 +1733,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
-                    _statusLabel(status),
+                    _statusLabel(status, isFreelance),
                     style: TextStyle(
                       fontWeight: FontWeight.w700,
                       color: _statusColor(status),
@@ -1990,18 +2166,18 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     }
   }
 
-  String _statusLabel(String status) {
+  String _statusLabel(String status, bool isFreelance) {
     switch (status) {
       case 'pending':
         return 'Поиск курьера...';
       case 'courier_assigned':
-        return 'Подтверждение оплаты';
+        return isFreelance ? 'Курьер едет к вам' : 'Подтверждение оплаты';
       case 'payment_sent':
         return 'Ожидание подтверждения';
       case 'payment_verified':
       case 'assembling':
       case 'ready':
-        return 'Курьер едет за заказом';
+        return isFreelance ? 'Курьер в пути' : 'Курьер едет за заказом';
       case 'picked_up':
         return 'Курьер забрал заказ';
       case 'arrived':

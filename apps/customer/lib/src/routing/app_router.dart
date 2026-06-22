@@ -11,6 +11,7 @@ import '../screens/store/store_screen.dart';
 import '../screens/cart/cart_screen.dart';
 import '../screens/cart/cart_bottom_sheet.dart';
 import '../screens/checkout/checkout_screen.dart';
+import '../screens/checkout/custom_delivery_screen.dart';
 import '../screens/order/order_tracking_screen.dart';
 import '../screens/orders/orders_screen.dart';
 import '../screens/support/support_screen.dart';
@@ -50,6 +51,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/splash', builder: (_, __) => const SplashScreen()),
       GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
+      GoRoute(
+        path: '/custom-delivery',
+        builder: (_, __) => const CustomDeliveryScreen(),
+      ),
       ShellRoute(
         builder: (_, state, child) => _AppShell(child: child),
         routes: [

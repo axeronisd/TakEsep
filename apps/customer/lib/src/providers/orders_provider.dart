@@ -40,6 +40,7 @@ class CustomerOrder {
   final DateTime? deliveredAt;
   final int? estimatedMinutes;
   final int itemCount;
+  final String? deliveryType;
 
   const CustomerOrder({
     required this.id,
@@ -59,6 +60,7 @@ class CustomerOrder {
     this.deliveredAt,
     this.estimatedMinutes,
     this.itemCount = 0,
+    this.deliveryType,
   });
 
   bool get isActive => _activeStatuses.contains(status);
@@ -129,6 +131,7 @@ class CustomerOrder {
           : null,
       estimatedMinutes: (j['estimated_minutes'] as num?)?.toInt(),
       itemCount: items,
+      deliveryType: j['delivery_type'] as String?,
     );
   }
 }
@@ -154,7 +157,7 @@ final customerOrdersProvider =
     final data = await _supabase
         .from('delivery_orders')
         .select(
-            'id, order_number, warehouse_id, status, requested_transport, approved_transport, delivery_address, items_total, delivery_fee, total, payment_method, customer_note, created_at, delivered_at, estimated_minutes, warehouses(name), delivery_order_items(id)')
+            'id, order_number, warehouse_id, status, requested_transport, approved_transport, delivery_address, items_total, delivery_fee, total, payment_method, customer_note, created_at, delivered_at, estimated_minutes, delivery_type, warehouses(name), delivery_order_items(id)')
         .eq('customer_id', customerId)
         .order('created_at', ascending: false)
         .limit(50);

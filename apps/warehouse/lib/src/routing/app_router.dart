@@ -72,6 +72,36 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return _firstPermittedRoute(authState);
       }
 
+      // Route-level permission guards
+      const routeToPermission = <String, String>{
+        '/dashboard': 'dashboard',
+        '/sales': 'sales',
+        '/income': 'income',
+        '/transfer': 'transfer',
+        '/audit': 'audit',
+        '/write-offs': 'write_offs',
+        '/inventory': 'inventory',
+        '/services': 'services',
+        '/clients': 'clients',
+        '/employees': 'employees',
+        '/reports': 'reports',
+        '/delivery-orders': 'delivery_orders',
+        '/delivery-settings': 'delivery_settings',
+        '/couriers': 'delivery_settings',
+        '/delivery-analytics': 'delivery_settings',
+        '/akjol-catalog': 'akjol_catalog',
+        '/delivery-zones': 'delivery_settings',
+        '/settings': 'settings',
+      };
+
+      final location = state.matchedLocation;
+      if (routeToPermission.containsKey(location)) {
+        final requiredPerm = routeToPermission[location]!;
+        if (!authState.hasPermission(requiredPerm)) {
+          return _firstPermittedRoute(authState);
+        }
+      }
+
       return null;
     },
     routes: [

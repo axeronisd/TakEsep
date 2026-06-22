@@ -350,7 +350,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   void _onCategoryTap(BuildContext context, String category) {
     switch (category) {
-      case 'delivery' || 'stores' || 'food' || 'pharmacy':
+      case 'delivery':
+        context.go('/custom-delivery');
+      case 'stores' || 'food' || 'pharmacy':
         context.go('/catalog');
       case 'services':
         context.go('/services');
@@ -619,7 +621,9 @@ class _ActiveOrderBanner extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      order.warehouseName ?? order.orderNumber,
+                      (order.deliveryType == 'freelance' && order.itemsTotal == 0)
+                          ? 'Свободная доставка'
+                          : (order.warehouseName ?? order.orderNumber),
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,

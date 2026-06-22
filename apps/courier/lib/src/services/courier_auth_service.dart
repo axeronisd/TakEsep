@@ -124,7 +124,7 @@ class CourierAuthService {
         phone: courier['phone'],
         courierType: courier['courier_type'] ?? 'freelance',
         transportType: courier['transport_type'] ?? 'bicycle',
-        transportTypes: _parseTransportTypes(courier['transport_types']),
+        transportTypes: _parseTransportTypes(courier['transport_types'], courier['transport_type']),
         isOnline: courier['is_online'] ?? false,
         bankBalance: (courier['bank_balance'] as num?)?.toDouble() ?? 0,
         earningRate: _safeDouble(courier['earning_rate'], 0.90),
@@ -193,7 +193,7 @@ class CourierAuthService {
         phone: courier['phone'],
         courierType: courier['courier_type'] ?? 'freelance',
         transportType: courier['transport_type'] ?? 'bicycle',
-        transportTypes: _parseTransportTypes(courier['transport_types']),
+        transportTypes: _parseTransportTypes(courier['transport_types'], courier['transport_type']),
         isOnline: courier['is_online'] ?? false,
         bankBalance: (courier['bank_balance'] as num?)?.toDouble() ?? 0,
         earningRate: _safeDouble(courier['earning_rate'], 0.90),
@@ -217,7 +217,7 @@ class CourierAuthService {
       phone: courier['phone'],
       courierType: courier['courier_type'] ?? 'freelance',
       transportType: courier['transport_type'] ?? 'bicycle',
-      transportTypes: _parseTransportTypes(courier['transport_types']),
+      transportTypes: _parseTransportTypes(courier['transport_types'], courier['transport_type']),
       isOnline: courier['is_online'] ?? false,
       bankBalance: (courier['bank_balance'] as num?)?.toDouble() ?? 0,
       earningRate: _safeDouble(courier['earning_rate'], 0.90),
@@ -235,13 +235,16 @@ class CourierAuthService {
     );
   }
 
-  /// Parse transport_types JSONB array from Supabase
-  List<String> _parseTransportTypes(dynamic value) {
-    if (value == null) return [];
+  /// Parse transport_types JSONB array from Supabase with fallback to primary transport type
+  List<String> _parseTransportTypes(dynamic value, String? fallback) {
+    List<String> list = [];
     if (value is List) {
-      return value.map((e) => e.toString()).toList();
+      list = value.map((e) => e.toString()).toList();
     }
-    return [];
+    if (list.isEmpty && fallback != null) {
+      return [fallback];
+    }
+    return list;
   }
 
   /// Bind Supabase auth user_id to courier record

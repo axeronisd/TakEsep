@@ -30,6 +30,7 @@ class _PendingCountNotifier extends StateNotifier<int> {
           .from('delivery_orders')
           .select('id')
           .eq('warehouse_id', warehouseId)
+          .or('delivery_type.neq.freelance,items_total.gt.0')
           .inFilter('status', ['payment_verified', 'assembling']);
 
       state = (data as List).length;

@@ -530,19 +530,21 @@ class _MobileLayoutState extends State<_MobileLayout> {
             child: Row(
               children: [
                 // Аналитика
-                _MobileNavItem(
-                  icon: Icons.analytics_rounded,
-                  label: 'Аналитика',
-                  isSelected: widget.currentPath.startsWith('/dashboard'),
-                  onTap: () => context.go('/dashboard'),
-                ),
+                if (widget.authState.hasPermission('dashboard'))
+                  _MobileNavItem(
+                    icon: Icons.analytics_rounded,
+                    label: 'Аналитика',
+                    isSelected: widget.currentPath.startsWith('/dashboard'),
+                    onTap: () => context.go('/dashboard'),
+                  ),
                 // Sales
-                _MobileNavItem(
-                  icon: Icons.point_of_sale_rounded,
-                  label: 'Продажа',
-                  isSelected: widget.currentPath.startsWith('/sales'),
-                  onTap: () => context.go('/sales'),
-                ),
+                if (widget.authState.hasPermission('sales'))
+                  _MobileNavItem(
+                    icon: Icons.point_of_sale_rounded,
+                    label: 'Продажа',
+                    isSelected: widget.currentPath.startsWith('/sales'),
+                    onTap: () => context.go('/sales'),
+                  ),
                 // Scanner (conditional)
                 if (showScanner)
                   Expanded(
@@ -574,12 +576,13 @@ class _MobileLayoutState extends State<_MobileLayout> {
                     ),
                   ),
                 // Reports
-                _MobileNavItem(
-                  icon: Icons.assessment_rounded,
-                  label: 'Отчёты',
-                  isSelected: widget.currentPath.startsWith('/reports'),
-                  onTap: () => context.go('/reports'),
-                ),
+                if (widget.authState.hasPermission('reports'))
+                  _MobileNavItem(
+                    icon: Icons.assessment_rounded,
+                    label: 'Отчёты',
+                    isSelected: widget.currentPath.startsWith('/reports'),
+                    onTap: () => context.go('/reports'),
+                  ),
                 // More
                 _MobileNavItem(
                   icon: Icons.menu_rounded,

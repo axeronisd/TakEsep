@@ -350,7 +350,7 @@ class _CourierManagementScreenState extends State<CourierManagementScreen>
                       child: Text('Электровелосипед'),
                     ),
                     DropdownMenuItem(
-                      value: 'motorcycle',
+                      value: 'scooter',
                       child: Text('Муравей'),
                     ),
                     DropdownMenuItem(

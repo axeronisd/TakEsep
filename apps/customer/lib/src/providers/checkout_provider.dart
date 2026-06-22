@@ -412,8 +412,16 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
 
       final orderId = orderData['id'] ?? orderData['order_id'];
 
-      // ── Insert order items ──
       if (orderId != null) {
+        try {
+          await _supabase
+              .from('delivery_orders')
+              .update({'delivery_type': 'store'})
+              .eq('id', orderId);
+        } catch (e) {
+          debugPrint('⚠️ Set delivery_type store error: $e');
+        }
+
         try {
           // Check if RPC already inserted items
           final existingItems = await _supabase

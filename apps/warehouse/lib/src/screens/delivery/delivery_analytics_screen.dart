@@ -57,7 +57,8 @@ class _DeliveryAnalyticsScreenState
       var query = _supabase
           .from('delivery_orders')
           .select('*, couriers(name)')
-          .gte('created_at', from.toIso8601String());
+          .gte('created_at', from.toIso8601String())
+          .or('delivery_type.neq.freelance,items_total.gt.0');
 
       if (warehouseId != null) {
         query = query.eq('warehouse_id', warehouseId);

@@ -138,10 +138,19 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
         '🔍 Loading orders for courier: ${profile.id}, transports: ${profile.transportTypes}',
       );
 
-      final orders = await _orderService.getFreelanceOrders(
-        transportTypes: profile.transportTypes,
-        courierId: profile.id,
-      );
+      final List<Map<String, dynamic>> orders;
+      if (profile.isStoreCourier) {
+        orders = await _orderService.getStoreOrders(
+          warehouseIds: profile.warehouseIds,
+          transportTypes: profile.transportTypes,
+          courierId: profile.id,
+        );
+      } else {
+        orders = await _orderService.getFreelanceOrders(
+          transportTypes: profile.transportTypes,
+          courierId: profile.id,
+        );
+      }
 
       debugPrint('📦 Found ${orders.length} orders');
       for (final o in orders) {
@@ -203,7 +212,17 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
   }
 
   void _subscribeToOrders() {
-    _channel = _orderService.subscribeToFreelanceOrders((_) => _loadOrders());
+    final profile = ref.read(courierProfileProvider);
+    if (profile == null) return;
+
+    if (profile.isStoreCourier) {
+      _channel = _orderService.subscribeToStoreOrders(
+        profile.warehouseIds,
+        (_) => _loadOrders(),
+      );
+    } else {
+      _channel = _orderService.subscribeToFreelanceOrders((_) => _loadOrders());
+    }
   }
 
   Future<void> _toggleOnline(bool value) async {
@@ -438,7 +457,7 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
                               itemCount: visible.length,
                               itemBuilder: (_, i) => _OrderCard(
                                 order: visible[i],
-                                isStoreCourier: false,
+                                isStoreCourier: profile?.isStoreCourier ?? false,
                                 earningRate: profile?.earningRate ?? 0.90,
                                 onAccept: () => _acceptOrder(visible[i]),
                               ),
@@ -838,8 +857,9 @@ class _OrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final storeName = order['warehouses']?['name'] ?? 'Магазин';
-    final storeAddr = order['warehouses']?['address'] ?? '';
+    final isFreelance = order['delivery_type'] == 'freelance';
+    final storeName = isFreelance ? 'Откуда (Клиент)' : (order['warehouses']?['name'] ?? 'Магазин');
+    final storeAddr = isFreelance ? (order['pickup_address'] ?? '') : (order['warehouses']?['address'] ?? '');
     final customerName = order['customers']?['name'] ?? '';
     final address = order['delivery_address'] ?? '';
     final deliveryFee = (order['delivery_fee'] as num?)?.toDouble() ?? 0;
@@ -940,6 +960,38 @@ class _OrderCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Loader warning
+                if (order['customer_note'] != null &&
+                    (order['customer_note'] as String).contains('Грузчик: Нужен'))
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.warning_amber_rounded, color: Colors.red, size: 20),
+                          SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'ТРЕБУЕТСЯ ГРУЗЧИК (+100 сом)',
+                              style: TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
                 // Customer
                 if (customerName.isNotEmpty)
                   Padding(
@@ -986,6 +1038,44 @@ class _OrderCard extends StatelessWidget {
                     ),
                   ],
                 ),
+
+                // Note
+                if (order['customer_note'] != null && (order['customer_note'] as String).isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFFF9800).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: const Color(0xFFFF9800).withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(
+                            Icons.sticky_note_2_rounded,
+                            size: 16,
+                            color: Color(0xFFFF9800),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              order['customer_note'] as String,
+                              style: const TextStyle(
+                                color: Color(0xFFFF9800),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
 
                 const SizedBox(height: 10),
 
@@ -1194,8 +1284,8 @@ class _OrderCard extends StatelessWidget {
   }
 
   Widget _buildMiniMap() {
-    final storeLat = (order['warehouses']?['latitude'] as num?)?.toDouble();
-    final storeLng = (order['warehouses']?['longitude'] as num?)?.toDouble();
+    final storeLat = (order['pickup_lat'] as num?)?.toDouble() ?? (order['warehouses']?['latitude'] as num?)?.toDouble();
+    final storeLng = (order['pickup_lng'] as num?)?.toDouble() ?? (order['warehouses']?['longitude'] as num?)?.toDouble();
     final custLat = (order['customers']?['latitude'] as num?)?.toDouble() ?? (order['delivery_lat'] as num?)?.toDouble();
     final custLng = (order['customers']?['longitude'] as num?)?.toDouble() ?? (order['delivery_lng'] as num?)?.toDouble();
 

@@ -32,6 +32,8 @@ class SettingsScreen extends ConsumerWidget {
     final cs = Theme.of(context).colorScheme;
     final currentCurrency = ref.watch(currencyProvider);
 
+    final hasEmployeesPerm = ref.watch(authProvider).hasPermission('employees');
+
     final sections = [
       _SettingsSection('Вид', [
         _SettingsItem('Тёмная тема', Icons.dark_mode_rounded,
@@ -52,14 +54,15 @@ class SettingsScreen extends ConsumerWidget {
             'Склады', Icons.store_rounded, 'Управление складами и магазинами',
             action: 'warehouses'),
       ]),
-      _SettingsSection('Доступ', [
-        _SettingsItem('Роли и права', Icons.admin_panel_settings_rounded,
-            'Настройка ролей',
-            action: 'roles'),
-        _SettingsItem('Безопасность', Icons.security_rounded,
-            'PIN-коды сотрудников',
-            action: 'security'),
-      ]),
+      if (hasEmployeesPerm)
+        _SettingsSection('Доступ', [
+          _SettingsItem('Роли и права', Icons.admin_panel_settings_rounded,
+              'Настройка ролей',
+              action: 'roles'),
+          _SettingsItem('Безопасность', Icons.security_rounded,
+              'PIN-коды сотрудников',
+              action: 'security'),
+        ]),
       _SettingsSection('Продажи', [
         _SettingsItem('Чековый принтер', Icons.receipt_long_rounded,
             'Выбор принтера и настройка чека',

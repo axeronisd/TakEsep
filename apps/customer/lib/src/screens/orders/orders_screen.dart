@@ -293,7 +293,9 @@ class _PremiumOrderCard extends StatelessWidget {
                           children: [
                             Expanded(
                               child: Text(
-                                order.warehouseName ?? order.orderNumber,
+                                order.deliveryType == 'freelance' && order.itemsTotal == 0
+                                    ? 'Свободная доставка'
+                                    : (order.warehouseName ?? order.orderNumber),
                                 style: TextStyle(
                                   fontSize: 15,
                                   fontWeight: FontWeight.w700,

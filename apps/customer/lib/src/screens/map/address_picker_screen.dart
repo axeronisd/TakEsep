@@ -13,7 +13,12 @@ import '../../providers/location_provider.dart';
 /// Full-screen address picker (Yandex Go style).
 /// Pin stays fixed at center, user drags map underneath.
 class AddressPickerScreen extends ConsumerStatefulWidget {
-  const AddressPickerScreen({super.key});
+  final bool saveToLocationProvider;
+
+  const AddressPickerScreen({
+    super.key,
+    this.saveToLocationProvider = true,
+  });
 
   @override
   ConsumerState<AddressPickerScreen> createState() =>
@@ -24,12 +29,17 @@ class _AddressPickerScreenState extends ConsumerState<AddressPickerScreen> {
   final _mapController = MapController();
   final _addressController = TextEditingController();
   final _houseController = TextEditingController();
+  final _entranceController = TextEditingController();
 
   String? _streetName;
   bool _isGeocoding = false;
   bool _showHint = true;
   bool _userEdited = false; // true = user typed in fields, don't overwrite
   Timer? _debounce;
+
+  double _sheetHeight = 120.0; // Collapsed height by default
+  List<Map<String, dynamic>> _searchResults = [];
+  Timer? _searchDebounce;
 
   @override
   void initState() {
@@ -76,10 +86,12 @@ class _AddressPickerScreenState extends ConsumerState<AddressPickerScreen> {
   @override
   void dispose() {
     _debounce?.cancel();
+    _searchDebounce?.cancel();
     _addressController.removeListener(_onUserEdit);
     _houseController.removeListener(_onUserEdit);
     _addressController.dispose();
     _houseController.dispose();
+    _entranceController.dispose();
     super.dispose();
   }
 
@@ -325,13 +337,91 @@ class _AddressPickerScreenState extends ConsumerState<AddressPickerScreen> {
 
     if (!mounted) return;
 
-    ref.read(locationProvider.notifier).setManualAddress(
-          address,
-          center.latitude,
-          center.longitude,
-        );
+    if (widget.saveToLocationProvider) {
+      ref.read(locationProvider.notifier).setManualAddress(
+            address,
+            center.latitude,
+            center.longitude,
+          );
+    }
 
-    Navigator.of(context).pop(address);
+    Navigator.of(context).pop({
+      'address': address,
+      'latitude': center.latitude,
+      'longitude': center.longitude,
+    });
+  }
+
+  void _onAddressSearchChanged(String val) {
+    _searchDebounce?.cancel();
+    if (val.trim().length < 2) {
+      setState(() => _searchResults = []);
+      return;
+    }
+    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
+      _executeAddressSearch(val.trim());
+    });
+  }
+
+  Future<void> _executeAddressSearch(String query) async {
+    try {
+      final url = Uri.parse(
+        'https://nominatim.openstreetmap.org/search'
+        '?format=json'
+        '&q=$query'
+        '&countrycodes=kg'
+        '&limit=5'
+        '&addressdetails=1'
+        '&accept-language=ru,ky',
+      );
+
+      final response = await http.get(url, headers: {
+        'User-Agent': 'AkJol-SuperApp/1.0',
+      });
+
+      if (!mounted) return;
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body) as List;
+        setState(() {
+          _searchResults = data.map((item) {
+            final addr = item['address'] as Map<String, dynamic>? ?? {};
+            final road = addr['road'] ?? addr['pedestrian'] ?? addr['footway']
+                ?? addr['path'] ?? addr['residential'] ?? addr['tertiary'] ?? addr['secondary'] ?? '';
+            final houseNumber = (addr['house_number'] ?? '').toString();
+            final city = addr['city'] ?? addr['town'] ?? addr['village'] ?? '';
+
+            String street = road.toString();
+            String fullLabel = street;
+            if (houseNumber.isNotEmpty) {
+              fullLabel = '$street, $houseNumber';
+            }
+            if (city.toString().isNotEmpty) {
+              fullLabel = '$fullLabel, $city';
+            } else {
+              fullLabel = '$fullLabel, ${item['display_name']}';
+            }
+
+            return {
+              'display_name': item['display_name'],
+              'street': street,
+              'house_number': houseNumber,
+              'city': city,
+              'lat': double.tryParse(item['lat']?.toString() ?? '') ?? 0.0,
+              'lng': double.tryParse(item['lon']?.toString() ?? '') ?? 0.0,
+              'full_label': fullLabel,
+            };
+          }).toList();
+        });
+      }
+    } catch (e) {
+      debugPrint('⚠️ Autocomplete Nominatim: $e');
+    }
+  }
+
+  void _onMapTap(LatLng point) {
+    _mapController.move(point, _mapController.camera.zoom);
+    _onMapMove();
   }
 
   /// Save/update address in Supabase (pending for admin review)
@@ -427,6 +517,7 @@ class _AddressPickerScreenState extends ConsumerState<AddressPickerScreen> {
               interactionOptions: const InteractionOptions(
                 flags: InteractiveFlag.all,
               ),
+              onTap: (tapPosition, point) => _onMapTap(point),
               onPositionChanged: (pos, hasGesture) {
                 if (hasGesture) _onMapMove();
               },
@@ -496,7 +587,7 @@ class _AddressPickerScreenState extends ConsumerState<AddressPickerScreen> {
           // ─── Back button ───
           Positioned(
             left: 16,
-            bottom: 260,
+            bottom: _sheetHeight + 16,
             child: _circleButton(
               icon: Icons.arrow_back_rounded,
               isDark: isDark,
@@ -507,124 +598,326 @@ class _AddressPickerScreenState extends ConsumerState<AddressPickerScreen> {
           // ─── My location button ───
           Positioned(
             right: 16,
-            bottom: 260,
+            bottom: _sheetHeight + 16,
             child: _circleButton(
               icon: Icons.near_me_rounded,
               isDark: isDark,
-              onTap: () {
-                if (location.lat != null) {
-                  _mapController.move(
-                    LatLng(location.lat!, location.lng!),
-                    17,
-                  );
+              onTap: () async {
+                final notifier = ref.read(locationProvider.notifier);
+                await notifier.determinePosition();
+                final updatedLoc = ref.read(locationProvider);
+                if (updatedLoc.lat != null && updatedLoc.lng != null) {
+                  final pt = LatLng(updatedLoc.lat!, updatedLoc.lng!);
+                  _mapController.move(pt, 18);
                   _houseController.clear();
-                  _geocodeCenter(LatLng(location.lat!, location.lng!));
+                  _geocodeCenter(pt);
                 }
               },
             ),
           ),
 
-          // ─── Bottom panel ───
+          // ─── Search Suggestions Overlay ───
+          if (_searchResults.isNotEmpty && _sheetHeight > 200)
+            Positioned(
+              left: 20,
+              right: 20,
+              bottom: _sheetHeight + 16,
+              child: Container(
+                constraints: const BoxConstraints(maxHeight: 200),
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.15),
+                      blurRadius: 12,
+                      offset: const Offset(0, -4),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    padding: EdgeInsets.zero,
+                    itemCount: _searchResults.length,
+                    separatorBuilder: (_, _) => Divider(
+                      height: 1,
+                      color: isDark ? const Color(0xFF30363D) : const Color(0xFFE5E7EB),
+                    ),
+                    itemBuilder: (context, idx) {
+                      final item = _searchResults[idx];
+                      return ListTile(
+                        dense: true,
+                        leading: const Icon(
+                          Icons.location_on_rounded,
+                          color: AkJolTheme.primary,
+                          size: 18,
+                        ),
+                        title: Text(
+                          item['full_label'],
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        onTap: () {
+                          _addressController.removeListener(_onUserEdit);
+                          _houseController.removeListener(_onUserEdit);
+
+                          setState(() {
+                            _addressController.text = item['street'];
+                            _houseController.text = item['house_number'];
+                            _streetName = item['street'];
+                            _searchResults = [];
+                            _userEdited = true;
+                          });
+
+                          _mapController.move(LatLng(item['lat'], item['lng']), 18);
+
+                          _addressController.addListener(_onUserEdit);
+                          _houseController.addListener(_onUserEdit);
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ),
+
+          // ─── Draggable Bottom panel ───
           Positioned(
             left: 0,
             right: 0,
             bottom: 0,
-            child: Container(
-              decoration: BoxDecoration(
-                color: bg,
-                borderRadius:
-                    const BorderRadius.vertical(top: Radius.circular(20)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.12),
-                    blurRadius: 20,
-                    offset: const Offset(0, -4),
-                  ),
-                ],
-              ),
-              child: SafeArea(
-                top: false,
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Center(
-                        child: Container(
-                          width: 40,
-                          height: 4,
-                          margin: const EdgeInsets.only(bottom: 12),
-                          decoration: BoxDecoration(
-                            color: textSecondary.withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(2),
-                          ),
-                        ),
-                      ),
-
-                      Text(
-                        'Точка доставки',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                          color: textPrimary,
-                        ),
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      // Street field
-                      Container(
-                        decoration: BoxDecoration(
-                          color: fieldBg,
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Row(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(left: 14),
-                              child: Icon(
-                                Icons.location_on_rounded,
-                                color: AkJolTheme.primary,
-                                size: 22,
+            child: GestureDetector(
+              onVerticalDragUpdate: (details) {
+                setState(() {
+                  _sheetHeight -= details.delta.dy;
+                  if (_sheetHeight < 120.0) _sheetHeight = 120.0;
+                  if (_sheetHeight > 340.0) _sheetHeight = 340.0;
+                });
+              },
+              onVerticalDragEnd: (details) {
+                setState(() {
+                  if (_sheetHeight < 220.0) {
+                    _sheetHeight = 120.0;
+                  } else {
+                    _sheetHeight = 320.0;
+                  }
+                });
+              },
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 100),
+                height: _sheetHeight,
+                decoration: BoxDecoration(
+                  color: bg,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.12),
+                      blurRadius: 20,
+                      offset: const Offset(0, -4),
+                    ),
+                  ],
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: SingleChildScrollView(
+                    physics: const NeverScrollableScrollPhysics(),
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Center(
+                            child: Container(
+                              width: 40,
+                              height: 4,
+                              margin: const EdgeInsets.only(bottom: 12),
+                              decoration: BoxDecoration(
+                                color: textSecondary.withValues(alpha: 0.3),
+                                borderRadius: BorderRadius.circular(2),
                               ),
                             ),
-                            Expanded(
-                              child: _isGeocoding
-                                  ? Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 14),
-                                      child: Row(
-                                        children: [
-                                          SizedBox(
-                                            width: 14,
-                                            height: 14,
-                                            child:
-                                                CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              color: AkJolTheme.primary,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 8),
-                                          Text(
-                                            'Определяем...',
-                                            style: TextStyle(
-                                              fontSize: 14,
-                                              color: textSecondary,
-                                            ),
-                                          ),
-                                        ],
+                          ),
+
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _sheetHeight = _sheetHeight < 200 ? 320.0 : 120.0;
+                              });
+                            },
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        'Точка доставки',
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          fontWeight: FontWeight.w800,
+                                          color: textPrimary,
+                                        ),
                                       ),
-                                    )
-                                  : TextField(
-                                      controller: _addressController,
+                                      if (_sheetHeight < 200) ...[
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          _fullAddress.isNotEmpty ? _fullAddress : 'Перетащите карту или введите адрес',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.w500,
+                                            color: textSecondary,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                                Icon(
+                                  _sheetHeight < 200 ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                                  color: textSecondary,
+                                  size: 24,
+                                ),
+                              ],
+                            ),
+                          ),
+
+                          if (_sheetHeight >= 200) ...[
+                            const SizedBox(height: 12),
+
+                            // Street field
+                            Container(
+                              decoration: BoxDecoration(
+                                color: fieldBg,
+                                borderRadius: BorderRadius.circular(14),
+                              ),
+                              child: Row(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.only(left: 14),
+                                    child: Icon(
+                                      Icons.location_on_rounded,
+                                      color: AkJolTheme.primary,
+                                      size: 22,
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: _isGeocoding
+                                        ? Padding(
+                                            padding: const EdgeInsets.symmetric(
+                                                horizontal: 12, vertical: 14),
+                                            child: Row(
+                                              children: [
+                                                SizedBox(
+                                                  width: 14,
+                                                  height: 14,
+                                                  child: CircularProgressIndicator(
+                                                    strokeWidth: 2,
+                                                    color: AkJolTheme.primary,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Text(
+                                                  'Определяем...',
+                                                  style: TextStyle(
+                                                    fontSize: 14,
+                                                    color: textSecondary,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          )
+                                        : TextField(
+                                            controller: _addressController,
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w600,
+                                              color: textPrimary,
+                                            ),
+                                            decoration: InputDecoration(
+                                              hintText: 'Улица',
+                                              hintStyle: TextStyle(
+                                                color: textSecondary,
+                                                fontWeight: FontWeight.w400,
+                                              ),
+                                              border: InputBorder.none,
+                                              contentPadding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 12,
+                                                      vertical: 14),
+                                            ),
+                                            onChanged: _onAddressSearchChanged,
+                                          ),
+                                  ),
+                                ],
+                              ),
+                            ),
+
+                            const SizedBox(height: 8),
+
+                            // House + entrance
+                            Row(
+                              children: [
+                                Expanded(
+                                  flex: 3,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: fieldBg,
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    child: TextField(
+                                      controller: _houseController,
                                       style: TextStyle(
                                         fontSize: 15,
                                         fontWeight: FontWeight.w600,
                                         color: textPrimary,
                                       ),
                                       decoration: InputDecoration(
-                                        hintText: 'Улица',
+                                        hintText: 'Дом №',
+                                        hintStyle: TextStyle(
+                                          color: textSecondary,
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                        prefixIcon: Icon(
+                                          Icons.home_rounded,
+                                          color: AkJolTheme.primary,
+                                          size: 20,
+                                        ),
+                                        border: InputBorder.none,
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                                horizontal: 12, vertical: 14),
+                                      ),
+                                      onChanged: (_) => setState(() {}),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  flex: 2,
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: fieldBg,
+                                      borderRadius: BorderRadius.circular(14),
+                                    ),
+                                    child: TextField(
+                                      controller: _entranceController,
+                                      style: TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w600,
+                                        color: textPrimary,
+                                      ),
+                                      decoration: InputDecoration(
+                                        hintText: 'Подъезд',
                                         hintStyle: TextStyle(
                                           color: textSecondary,
                                           fontWeight: FontWeight.w400,
@@ -632,118 +925,49 @@ class _AddressPickerScreenState extends ConsumerState<AddressPickerScreen> {
                                         border: InputBorder.none,
                                         contentPadding:
                                             const EdgeInsets.symmetric(
-                                                horizontal: 12,
-                                                vertical: 14),
+                                                horizontal: 12, vertical: 14),
                                       ),
-                                      onChanged: (_) => setState(() {}),
                                     ),
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 14),
+
+                            // Confirm
+                            SizedBox(
+                              width: double.infinity,
+                              height: 52,
+                              child: ElevatedButton(
+                                onPressed: _fullAddress.isNotEmpty && !_isGeocoding
+                                    ? _confirmAddress
+                                    : null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AkJolTheme.primary,
+                                  disabledBackgroundColor:
+                                      AkJolTheme.primary.withValues(alpha: 0.3),
+                                  foregroundColor: Colors.white,
+                                  disabledForegroundColor:
+                                      Colors.white.withValues(alpha: 0.5),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                  ),
+                                  elevation: 0,
+                                ),
+                                child: const Text(
+                                  'Готово',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ),
                             ),
                           ],
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      // House + entrance
-                      Row(
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: fieldBg,
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: TextField(
-                                controller: _houseController,
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: textPrimary,
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: 'Дом №',
-                                  hintStyle: TextStyle(
-                                    color: textSecondary,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                  prefixIcon: Icon(
-                                    Icons.home_rounded,
-                                    color: AkJolTheme.primary,
-                                    size: 20,
-                                  ),
-                                  border: InputBorder.none,
-                                  contentPadding:
-                                      const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 14),
-                                ),
-                                onChanged: (_) => setState(() {}),
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            flex: 2,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: fieldBg,
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                              child: TextField(
-                                style: TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.w600,
-                                  color: textPrimary,
-                                ),
-                                decoration: InputDecoration(
-                                  hintText: 'Подъезд',
-                                  hintStyle: TextStyle(
-                                    color: textSecondary,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                  border: InputBorder.none,
-                                  contentPadding:
-                                      const EdgeInsets.symmetric(
-                                          horizontal: 12, vertical: 14),
-                                ),
-                              ),
-                            ),
-                          ),
                         ],
                       ),
-
-                      const SizedBox(height: 14),
-
-                      // Confirm
-                      SizedBox(
-                        width: double.infinity,
-                        height: 52,
-                        child: ElevatedButton(
-                          onPressed: _fullAddress.isNotEmpty && !_isGeocoding
-                              ? _confirmAddress
-                              : null,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AkJolTheme.primary,
-                            disabledBackgroundColor:
-                                AkJolTheme.primary.withValues(alpha: 0.3),
-                            foregroundColor: Colors.white,
-                            disabledForegroundColor:
-                                Colors.white.withValues(alpha: 0.5),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: const Text(
-                            'Готово',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ),

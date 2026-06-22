@@ -13,6 +13,7 @@ class AkJolHeader extends StatelessWidget {
   final VoidCallback? onAddressTap;
   final VoidCallback? onProfileTap;
   final VoidCallback? onOrdersTap;
+  final VoidCallback? onLocateTap;
 
   const AkJolHeader({
     super.key,
@@ -22,6 +23,7 @@ class AkJolHeader extends StatelessWidget {
     this.onAddressTap,
     this.onProfileTap,
     this.onOrdersTap,
+    this.onLocateTap,
   });
 
   @override
@@ -313,10 +315,9 @@ class BentoGrid extends StatelessWidget {
                 gradient: const [Color(0xFF00B15E), Color(0xFF10B981)],
                 icon: Icons.local_shipping_rounded,
                 title: 'Доставка',
-                subtitle: 'Еда и товары\nиз магазинов',
+                subtitle: 'Любые точки\nоткуда угодно',
                 iconSize: 36,
                 isDark: isDark,
-                badge: 'СКОРО',
                 onTap: () => onCategoryTap?.call('delivery'),
               ),
             ),

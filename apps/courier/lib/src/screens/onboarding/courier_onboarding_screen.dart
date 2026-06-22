@@ -47,6 +47,7 @@ class _CourierOnboardingScreenState extends State<CourierOnboardingScreen> {
         'name': _nameCtrl.text.trim(),
         'phone': user.phone ?? '',
         'transport_type': _transport,
+        'transport_types': [_transport],
         'courier_type': 'freelance',
         'is_active': true,
         'is_online': false,
@@ -115,7 +116,7 @@ class _CourierOnboardingScreenState extends State<CourierOnboardingScreen> {
               const SizedBox(height: 24),
               const Center(
                 child: Text('Добро пожаловать в AkJol!',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
+                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
               ),
               const SizedBox(height: 8),
               Center(
@@ -160,9 +161,9 @@ class _CourierOnboardingScreenState extends State<CourierOnboardingScreen> {
                   _TransportOption(
                     icon: Icons.two_wheeler_rounded,
                     label: 'Муравей',
-                    value: 'motorcycle',
-                    selected: _transport == 'motorcycle',
-                    onTap: () => setState(() => _transport = 'motorcycle'),
+                    value: 'scooter',
+                    selected: _transport == 'scooter',
+                    onTap: () => setState(() => _transport = 'scooter'),
                   ),
                   const SizedBox(width: 12),
                   _TransportOption(

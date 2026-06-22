@@ -36,11 +36,8 @@ class Role extends Equatable {
     'reports',
     'settings',
     'delivery_orders',
-    'couriers',
     'delivery_settings',
-    'delivery_analytics',
     'akjol_catalog',
-    'delivery_zones',
   ];
 
   /// Human-readable labels for permission keys.
@@ -58,11 +55,8 @@ class Role extends Equatable {
     'reports': 'Отчёты',
     'settings': 'Настройки',
     'delivery_orders': 'Заказы доставки',
-    'couriers': 'Курьеры',
     'delivery_settings': 'Настройки доставки',
-    'delivery_analytics': 'Аналитика доставки',
     'akjol_catalog': 'Каталог AkJol',
-    'delivery_zones': 'Зоны доставки',
   };
 
   bool hasPermission(String key) => permissions.contains(key);

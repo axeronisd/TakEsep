@@ -370,15 +370,16 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
       }
 
       setState(() => _updating = true);
-      await Supabase.instance.client
-          .from('delivery_orders')
-          .update({'status': newStatus}).eq('id', orderId);
-      
-      // Execute standard triggers if they hit milestones
       if (newStatus == 'picked_up') {
         await _orderService.pickedUp(orderId);
+      } else if (newStatus == 'arrived') {
+        await _orderService.markArrived(orderId);
       } else if (newStatus == 'delivered') {
         await _orderService.delivered(orderId);
+      } else {
+        await Supabase.instance.client
+            .from('delivery_orders')
+            .update({'status': newStatus}).eq('id', orderId);
       }
       
       await _loadData();
@@ -905,13 +906,82 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
             ],
           ),
           
+          if (order['customer_note'] != null && (order['customer_note'] as String).isNotEmpty) ...[
+            if ((order['customer_note'] as String).contains('Грузчик: Нужен'))
+              Padding(
+                padding: const EdgeInsets.only(top: 8),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.red.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
+                  ),
+                  child: const Row(
+                    children: [
+                      Icon(Icons.warning_amber_rounded, color: Colors.red, size: 20),
+                      SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'ТРЕБУЕТСЯ ГРУЗЧИК (+100 сом)',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF9800).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: const Color(0xFFFF9800).withValues(alpha: 0.3),
+                  ),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(
+                      Icons.sticky_note_2_rounded,
+                      size: 16,
+                      color: Color(0xFFFF9800),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        order['customer_note'] as String,
+                        style: const TextStyle(
+                          color: Color(0xFFFF9800),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
             child: Divider(color: Colors.white12, height: 1),
           ),
           
-          if (isPickup) _buildPickupDetails(order, isCurrent)
-          else _buildDropoffDetails(order, isCurrent),
+          if (isPickup) ...[
+            if (!(order['delivery_type'] == 'freelance' && (order['items_total'] as num?)?.toDouble() == 0))
+              _buildPickupDetails(order, isCurrent),
+          ] else _buildDropoffDetails(order, isCurrent),
 
           if (_orderReceipts.containsKey(order['id'])) ...[
             const Padding(
@@ -1052,7 +1122,6 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
   Widget _buildDropoffDetails(Map<String, dynamic> order, bool isCurrent) {
     final customer = order['customers'] as Map<String, dynamic>? ?? {};
     final customerName = customer['name'] ?? 'Клиент';
-    final customerPhone = customer['phone'] ?? '';
     final toPay = (order['total'] as num?)?.toInt() ?? 0;
     
     return Column(
@@ -1097,18 +1166,31 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
 
     Widget actionBtn;
     bool canCancel = false;
+    final isCustomFreelance = task.order['delivery_type'] == 'freelance' && (task.order['items_total'] as num?)?.toDouble() == 0;
     
     if (task.type == RouteTaskType.pickup) {
       if (status == 'payment_sent') {
         actionBtn = _buildBtn('Подтвердить оплату', Colors.blue, Icons.verified_rounded, () => _updateOrderStatus(task.orderId, 'payment_verified'));
       } else if (status == 'payment_verified' || status == 'assembling' || status == 'ready') {
-        actionBtn = _buildBtn('Забрал заказ', AkJolTheme.statusAccepted, Icons.inventory_rounded, () => _updateOrderStatus(task.orderId, 'picked_up'));
+        if (isCustomFreelance) {
+          actionBtn = _buildBtn('Я на Точке А', AkJolTheme.statusAccepted, Icons.location_on_rounded, () => _updateOrderStatus(task.orderId, 'picked_up'));
+        } else {
+          actionBtn = _buildBtn('Забрал заказ', AkJolTheme.statusAccepted, Icons.inventory_rounded, () => _updateOrderStatus(task.orderId, 'picked_up'));
+        }
       } else if (status == 'courier_assigned') {
-        actionBtn = _buildBtn('Ожидание оплаты...', Colors.grey, Icons.hourglass_top_rounded, null);
-        canCancel = true; // Can cancel while waiting for payment
+        if (isCustomFreelance) {
+          actionBtn = _buildBtn('Я на Точке А', AkJolTheme.statusAccepted, Icons.location_on_rounded, () => _updateOrderStatus(task.orderId, 'picked_up'));
+        } else {
+          actionBtn = _buildBtn('Ожидание оплаты...', Colors.grey, Icons.hourglass_top_rounded, null);
+          canCancel = true; // Can cancel while waiting for payment
+        }
       } else {
         // Fallback
-        actionBtn = _buildBtn('Забрал', AkJolTheme.statusAccepted, Icons.check, () => _updateOrderStatus(task.orderId, 'picked_up'));
+        if (isCustomFreelance) {
+          actionBtn = _buildBtn('Я на Точке А', AkJolTheme.statusAccepted, Icons.location_on_rounded, () => _updateOrderStatus(task.orderId, 'picked_up'));
+        } else {
+          actionBtn = _buildBtn('Забрал', AkJolTheme.statusAccepted, Icons.check, () => _updateOrderStatus(task.orderId, 'picked_up'));
+        }
       }
     } else {
       if (status == 'picked_up') {

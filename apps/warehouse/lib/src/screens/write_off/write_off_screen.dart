@@ -67,9 +67,15 @@ class _WriteOffScreenState extends ConsumerState<WriteOffScreen> {
   int get _totalQty =>
       _items.fold(0, (sum, item) => sum + item.quantity);
 
-  /// Owner sees prices, employees do not.
-  bool get _isOwner =>
-      ref.read(authProvider).currentEmployee?.roleId == null;
+  /// Owner sees prices, employees with inventory/dashboard/reports/settings permissions do too.
+  bool get _isOwner {
+    final authState = ref.read(authProvider);
+    if (authState.currentEmployee?.roleId == null) return true;
+    return authState.hasPermission('inventory') ||
+        authState.hasPermission('dashboard') ||
+        authState.hasPermission('reports') ||
+        authState.hasPermission('settings');
+  }
 
   void _addProduct(Product product) {
     final existing = _items.where((i) => i.product.id == product.id);

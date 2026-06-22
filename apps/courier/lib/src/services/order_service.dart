@@ -73,16 +73,43 @@ class OrderService {
   // ═══════════════════════════════════════════════════════════
 
   /// Get orders for store courier's warehouse(s)
-  Future<List<Map<String, dynamic>>> getStoreOrders(
-    List<String> warehouseIds,
-  ) async {
-    final data = await _supabase
+  Future<List<Map<String, dynamic>>> getStoreOrders({
+    required List<String> warehouseIds,
+    List<String>? transportTypes,
+    String? courierId,
+  }) async {
+    // Unassigned orders for these warehouses that are ready for pickup
+    var query = _supabase
         .from('delivery_orders')
-        .select('*, customers(name, phone), warehouses(name, address)')
+        .select('*, customers(name, phone), warehouses(name, address, latitude, longitude), delivery_order_items(name, quantity, unit_price, total)')
         .inFilter('warehouse_id', warehouseIds)
-        .inFilter('status', ['ready', 'courier_assigned', 'picked_up'])
-        .order('created_at', ascending: false);
-    return List<Map<String, dynamic>>.from(data);
+        .eq('status', 'ready')
+        .isFilter('courier_id', null);
+
+    // Filter by courier's transport types — if list has entries, match any
+    if (transportTypes != null && transportTypes.isNotEmpty) {
+      query = query.inFilter('requested_transport', transportTypes);
+    }
+
+    final unassigned = await query.order('created_at', ascending: false);
+
+    // Also get orders assigned to this courier specifically
+    List<Map<String, dynamic>> assigned = [];
+    if (courierId != null) {
+      final assignedData = await _supabase
+          .from('delivery_orders')
+          .select('*, customers(name, phone), warehouses(name, address, latitude, longitude), delivery_order_items(name, quantity, unit_price, total)')
+          .inFilter('warehouse_id', warehouseIds)
+          .inFilter('status', ['ready', 'courier_assigned', 'picked_up'])
+          .eq('courier_id', courierId)
+          .order('created_at', ascending: false);
+      assigned = List<Map<String, dynamic>>.from(assignedData);
+    }
+
+    return [
+      ...assigned,
+      ...List<Map<String, dynamic>>.from(unassigned),
+    ];
   }
 
   /// Get orders for this courier:
