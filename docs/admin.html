@@ -214,15 +214,16 @@
   </div>
 
   <script>
-    const ACCESS_KEY_HASH = '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8';
+    const ENCRYPTED_TOKEN_HEX = 'd3905a929a2bf9cb9138d253c23261a1091d75fa89b7b4ba5224c005b69babcf0f8fa8d74692941b7a32d759cef56eaa888fcff6537857dd461ccc2f9d311d2fb0798cedc31efb0d61d76d851624dd4e14039838dbc56e0ba8bd297717fbaf07ee66e11bde1692e0ad2c6af9884434a7b0919c9ea5ba1a42abd7505bbb999f03c737ada9470d1b73630363eaaaf20338af12e2d210cd2df2d57ab894f9860c457a42be0f854a8aadb11bf2b577aabc17fef4fa412dde3988d4fc03b3eb22ca9273734db2b204c7a214fd79b5216b3b9d21579727a6a52410d8d071fb3b49c085caf16f95181f9700773a62c2c70c674258b5a598b8d131';
 
     const params = new URLSearchParams(location.search);
     if (params.get('logout') === '1') {
       sessionStorage.removeItem('takesep_admin_auth');
+      sessionStorage.removeItem('takesep_admin_service_role');
       history.replaceState({}, '', 'admin.html');
     }
 
-    if (sessionStorage.getItem('takesep_admin_auth') === 'true') {
+    if (sessionStorage.getItem('takesep_admin_service_role')) {
       location.replace('app/');
     }
 
@@ -235,31 +236,53 @@
     });
     btn.addEventListener('click', checkAccess);
 
-    async function sha256(message) {
-      const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(message));
-      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    function hexToBytes(hex) {
+      const bytes = new Uint8Array(hex.length / 2);
+      for (let i = 0; i < bytes.length; i++) {
+        bytes[i] = parseInt(hex.substr(i * 2, 2), 16);
+      }
+      return bytes;
     }
 
     async function checkAccess() {
-      const key = input.value.trim();
-      if (!key) return;
+      const password = input.value.trim();
+      if (!password) return;
 
       btn.disabled = true;
       btn.innerHTML = '<span class="spinner"></span>Проверка...';
       error.classList.remove('visible');
 
-      const hash = await sha256(key);
-      await new Promise(r => setTimeout(r, 400));
+      try {
+        const payloadBytes = hexToBytes(ENCRYPTED_TOKEN_HEX);
+        const iv = payloadBytes.slice(0, 12);
+        const ciphertext = payloadBytes.slice(12);
 
-      if (hash === ACCESS_KEY_HASH) {
-        sessionStorage.setItem('takesep_admin_auth', 'true');
-        btn.textContent = 'Доступ подтверждён';
-        btn.style.background = 'linear-gradient(135deg, #4ade80, #22c55e)';
-        btn.style.color = '#052e16';
-        setTimeout(() => location.replace('app/'), 350);
-        return;
+        // Derive AES key from password via SHA-256
+        const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(password));
+        const key = await crypto.subtle.importKey('raw', hash, { name: 'AES-GCM' }, false, ['decrypt']);
+
+        // Decrypt
+        const decrypted = await crypto.subtle.decrypt(
+          { name: 'AES-GCM', iv: iv },
+          key,
+          ciphertext
+        );
+        const token = new TextDecoder().decode(decrypted);
+
+        if (token && token.startsWith('eyJ')) {
+          sessionStorage.setItem('takesep_admin_auth', 'true');
+          sessionStorage.setItem('takesep_admin_service_role', token);
+          btn.textContent = 'Доступ подтверждён';
+          btn.style.background = 'linear-gradient(135deg, #4ade80, #22c55e)';
+          btn.style.color = '#052e16';
+          setTimeout(() => location.replace('app/'), 350);
+          return;
+        }
+      } catch (err) {
+        console.error('Decryption failed:', err);
       }
 
+      // If we reach here, decryption failed (incorrect password)
       btn.disabled = false;
       btn.textContent = 'Войти в панель';
       error.classList.add('visible');
