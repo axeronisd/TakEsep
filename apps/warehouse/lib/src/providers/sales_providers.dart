@@ -279,6 +279,39 @@ final cartProvider = StateNotifierProvider<CartNotifier, List<CartItem>>((ref) {
       ref.read(cashReceivedProvider.notifier).state = null;
     }
   });
+
+  // Listen to client changes — automatically apply VIP/Wholesale discounts
+  ref.listen<Client?>(selectedClientProvider, (prev, next) {
+    if (next == null) {
+      // If client is cleared, remove the automatic client discount if it matches the client type
+      final currentDiscount = ref.read(globalDiscountProvider);
+      if (currentDiscount != null &&
+          (currentDiscount.value == 10.0 || currentDiscount.value == 5.0)) {
+        ref.read(globalDiscountProvider.notifier).state = null;
+      }
+    } else {
+      // Set global discount automatically based on client type
+      if (next.type == 'wholesale') {
+        ref.read(globalDiscountProvider.notifier).state = const Discount(
+          type: DiscountType.percentage,
+          value: 10.0,
+        );
+      } else if (next.type == 'vip') {
+        ref.read(globalDiscountProvider.notifier).state = const Discount(
+          type: DiscountType.percentage,
+          value: 5.0,
+        );
+      } else {
+        // Retail client — clear the automatic client discount if one was applied
+        final currentDiscount = ref.read(globalDiscountProvider);
+        if (currentDiscount != null &&
+            (currentDiscount.value == 10.0 || currentDiscount.value == 5.0)) {
+          ref.read(globalDiscountProvider.notifier).state = null;
+        }
+      }
+    }
+  });
+
   return CartNotifier();
 });
 

@@ -42,6 +42,7 @@ class SalesCartPane extends ConsumerWidget {
     final cur = ref.watch(currencyProvider).symbol;
     final isMobile = MediaQuery.of(context).size.width < 600;
     final pad = isMobile ? AppSpacing.sm : AppSpacing.lg;
+    final client = ref.watch(selectedClientProvider);
 
     return Column(
       children: [
@@ -276,7 +277,19 @@ class SalesCartPane extends ConsumerWidget {
                                     const Icon(Icons.percent_rounded, size: 14),
                                 label: Text(
                                     summary.globalDiscount != null
-                                        ? 'Скидка применена'
+                                        ? (client != null &&
+                                                client.type == 'wholesale' &&
+                                                summary.globalDiscount?.value ==
+                                                    10.0
+                                            ? 'Скидка (Оптовая 10%)'
+                                            : (client != null &&
+                                                    client.type == 'vip' &&
+                                                    summary
+                                                            .globalDiscount
+                                                            ?.value ==
+                                                        5.0
+                                                ? 'Скидка (VIP 5%)'
+                                                : 'Скидка применена'))
                                         : 'Скидка на весь чек',
                                     style: const TextStyle(fontSize: 12)),
                                 style: TextButton.styleFrom(
