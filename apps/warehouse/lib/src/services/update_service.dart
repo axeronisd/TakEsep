@@ -6,11 +6,12 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:takesep_design_system/takesep_design_system.dart';
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 
-/// Current app version — update this when releasing a new build.
-/// Must match the version in pubspec.yaml (without the +buildNumber).
-const String kAppVersion = '1.0.1';
-const int kAppBuildNumber = 1;
+/// Current app version — fallback/default value.
+/// Update this when releasing a new build.
+const String kAppVersion = '3.0.35';
+const int kAppBuildNumber = 135;
 
 class UpdateService {
   static final _supabase = Supabase.instance.client;
@@ -37,7 +38,17 @@ class UpdateService {
       final releaseNotes = response['release_notes'] as String?;
       final forceUpdate = response['force_update'] as bool? ?? false;
 
-      if (latestBuild <= kAppBuildNumber) return;
+      // Get current build number from platform package info dynamically
+      int currentBuild = kAppBuildNumber;
+      try {
+        final packageInfo = await PackageInfo.fromPlatform();
+        currentBuild = int.tryParse(packageInfo.buildNumber) ?? kAppBuildNumber;
+        debugPrint('[UpdateService] Loaded package info: version=${packageInfo.version}, buildNumber=${packageInfo.buildNumber}');
+      } catch (e) {
+        debugPrint('[UpdateService] Error reading package info: $e');
+      }
+
+      if (latestBuild <= currentBuild) return;
 
       if (!context.mounted) return;
 
