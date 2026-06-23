@@ -3,7 +3,7 @@ description: TakEsep Admin Panel — Ecosystem management dashboard.
 
 publish_to: 'none'
 
-version: 3.0.34+133
+version: 3.0.34+134
 
 environment:
   sdk: ">=3.2.0 <4.0.0"
