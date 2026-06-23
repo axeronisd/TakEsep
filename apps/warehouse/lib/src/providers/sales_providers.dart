@@ -249,6 +249,25 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
     state = state.where((c) => c.id != itemId).toList();
   }
 
+  void updateExecutor(String itemId, String? executorId, String? executorName) {
+    final index = state.indexWhere((c) => c.id == itemId);
+    if (index >= 0) {
+      final existing = state[index];
+      state = [
+        ...state.sublist(0, index),
+        CartItem(
+          product: existing.product,
+          service: existing.service,
+          qty: existing.qty,
+          discount: existing.discount,
+          executorId: executorId,
+          executorName: executorName,
+        ),
+        ...state.sublist(index + 1),
+      ];
+    }
+  }
+
   void setItemDiscount(String itemId, Discount? discount) {
     final index = state.indexWhere((c) => c.id == itemId);
     if (index >= 0) {
@@ -278,6 +297,7 @@ final cartProvider = StateNotifierProvider<CartNotifier, List<CartItem>>((ref) {
       ref.read(orderPhotosProvider.notifier).state = [];
       ref.read(paymentMethodProvider.notifier).state = 'cash';
       ref.read(cashReceivedProvider.notifier).state = null;
+      ref.read(isDebtPaymentProvider.notifier).state = false;
     }
   });
 
@@ -285,6 +305,7 @@ final cartProvider = StateNotifierProvider<CartNotifier, List<CartItem>>((ref) {
   ref.listen<Client?>(selectedClientProvider, (prev, next) {
     final discountSettings = ref.read(clientDiscountSettingsProvider);
     if (next == null) {
+      ref.read(isDebtPaymentProvider.notifier).state = false;
       // If client is cleared, remove the automatic client discount if it matches the client type
       final currentDiscount = ref.read(globalDiscountProvider);
       if (currentDiscount != null &&
@@ -342,6 +363,7 @@ final globalDiscountProvider = StateProvider<Discount?>((ref) => null);
 final orderCommentProvider = StateProvider<String>((ref) => '');
 final orderPhotosProvider = StateProvider<List<String>>((ref) => []);
 final paymentMethodProvider = StateProvider<String>((ref) => 'cash');
+final isDebtPaymentProvider = StateProvider<bool>((ref) => false);
 
 // Cash handling
 final cashReceivedProvider = StateProvider<double?>((ref) => null);

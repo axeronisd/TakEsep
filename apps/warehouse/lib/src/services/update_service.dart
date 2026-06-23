@@ -10,8 +10,8 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 /// Current app version — fallback/default value.
 /// Update this when releasing a new build.
-const String kAppVersion = '3.0.35';
-const int kAppBuildNumber = 135;
+const String kAppVersion = '3.0.36';
+const int kAppBuildNumber = 136;
 
 class UpdateService {
   static final _supabase = Supabase.instance.client;

@@ -760,6 +760,40 @@ class DashboardRepository {
     }
   }
 
+  /// Get service details and breakdown for a specific executor
+  Future<List<Map<String, dynamic>>> getExecutorServicesBreakdown(
+      String companyId, String executorId, DateTime startDate, DateTime endDate,
+      {String? warehouseId}) async {
+    try {
+      final whFilter = warehouseId != null ? ' AND s.warehouse_id = ?' : '';
+      final whParam = warehouseId != null ? [warehouseId] : <String>[];
+
+      return await _db.getAll(
+        '''SELECT si.product_name as service_name, 
+                  SUM(si.quantity) as total_qty,
+                  SUM(si.quantity * si.selling_price) as total_revenue
+           FROM sale_items si
+           INNER JOIN sales s ON si.sale_id = s.id
+           WHERE s.company_id = ? AND s.status = 'completed'
+             AND s.created_at >= ? AND s.created_at <= ?
+             AND si.item_type = 'service'
+             AND si.executor_id = ?$whFilter
+           GROUP BY si.product_id, si.product_name
+           ORDER BY total_revenue DESC''',
+        [
+          companyId,
+          startDate.toIso8601String(),
+          endDate.toIso8601String(),
+          executorId,
+          ...whParam
+        ],
+      );
+    } catch (e) {
+      print('DashboardRepository getExecutorServicesBreakdown error: $e');
+      return [];
+    }
+  }
+
   /// Get top clients by total spent
   Future<List<TopClient>> getTopClients(
       String companyId, DateTime startDate, DateTime endDate,

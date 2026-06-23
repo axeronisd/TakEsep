@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:takesep_design_system/takesep_design_system.dart';
 import '../../../providers/sales_providers.dart';
+import '../../../providers/employee_providers.dart';
 import '../../../providers/currency_provider.dart';
 import '../../../providers/auth_providers.dart';
 import '../../../providers/dashboard_providers.dart';
@@ -41,7 +42,8 @@ class SalesCartPane extends ConsumerWidget {
                   id: 'card', companyId: '', name: 'Карта', isActive: true),
             ];
     final cur = ref.watch(currencyProvider).symbol;
-    final isMobile = MediaQuery.of(context).size.width < 600;
+    final isDebt = ref.watch(isDebtPaymentProvider);
+    final isMobile = MediaQuery.of(context).size.width < 900;
     final pad = isMobile ? AppSpacing.sm : AppSpacing.lg;
     final client = ref.watch(selectedClientProvider);
     final discountSettings = ref.watch(clientDiscountSettingsProvider);
@@ -311,170 +313,172 @@ class SalesCartPane extends ConsumerWidget {
                         ],
                       ),
                     ),
-                    const Divider(height: 1),
+                    if (!isDebt) ...[
+                      const Divider(height: 1),
 
-                    // Payment methods
-                    Padding(
-                      padding: EdgeInsets.symmetric(
-                          horizontal: pad,
-                          vertical: isMobile ? 8 : AppSpacing.lg),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SingleChildScrollView(
-                            scrollDirection: Axis.horizontal,
-                            child: Row(
-                              children: activeMethods.map((m) {
-                                final isSelected = paymentMethod == m.id ||
-                                    (paymentMethod.isEmpty && m.id == 'cash');
-                                return Padding(
-                                  padding: const EdgeInsets.only(
-                                      right: AppSpacing.sm),
-                                  child: _PayChip(
-                                    label: m.name,
-                                    icon: m.qrImageUrl != null
-                                        ? Icons.qr_code_2_rounded
-                                        : Icons.payment_rounded,
-                                    selected: isSelected,
-                                    onTap: () {
-                                      ref
-                                          .read(paymentMethodProvider.notifier)
-                                          .state = m.id;
-                                      if (m.name.toLowerCase() != 'наличные' &&
-                                          m.id != 'cash') {
+                      // Payment methods
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: pad,
+                            vertical: isMobile ? 8 : AppSpacing.lg),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                children: activeMethods.map((m) {
+                                  final isSelected = paymentMethod == m.id ||
+                                      (paymentMethod.isEmpty && m.id == 'cash');
+                                  return Padding(
+                                    padding: const EdgeInsets.only(
+                                        right: AppSpacing.sm),
+                                    child: _PayChip(
+                                      label: m.name,
+                                      icon: m.qrImageUrl != null
+                                          ? Icons.qr_code_2_rounded
+                                          : Icons.payment_rounded,
+                                      selected: isSelected,
+                                      onTap: () {
+                                        ref
+                                            .read(paymentMethodProvider.notifier)
+                                            .state = m.id;
+                                        if (m.name.toLowerCase() != 'наличные' &&
+                                            m.id != 'cash') {
+                                          ref
+                                              .read(cashReceivedProvider.notifier)
+                                              .state = null;
+                                        }
+                                        if (m.qrImageUrl != null) {
+                                          _showQrDialog(context, m);
+                                        }
+                                      },
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                            // Cash change calculator
+                            if (activeMethods.any((m) =>
+                                m.id == paymentMethod &&
+                                (m.id == 'cash' ||
+                                    m.name
+                                        .toLowerCase()
+                                        .contains('наличные')))) ...[
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: TextField(
+                                      keyboardType:
+                                          const TextInputType.numberWithOptions(
+                                              decimal: true),
+                                      onChanged: (val) {
+                                        final parsed = double.tryParse(val);
                                         ref
                                             .read(cashReceivedProvider.notifier)
-                                            .state = null;
-                                      }
-                                      if (m.qrImageUrl != null) {
-                                        _showQrDialog(context, m);
-                                      }
-                                    },
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                          // Cash change calculator
-                          if (activeMethods.any((m) =>
-                              m.id == paymentMethod &&
-                              (m.id == 'cash' ||
-                                  m.name
-                                      .toLowerCase()
-                                      .contains('наличные')))) ...[
-                            const SizedBox(height: 8),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    keyboardType:
-                                        const TextInputType.numberWithOptions(
-                                            decimal: true),
-                                    onChanged: (val) {
-                                      final parsed = double.tryParse(val);
-                                      ref
-                                          .read(cashReceivedProvider.notifier)
-                                          .state = parsed;
-                                    },
-                                    decoration: InputDecoration(
-                                      labelText: 'Получено ($cur)',
-                                      isDense: true,
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                              horizontal: 10, vertical: 10),
-                                      border: OutlineInputBorder(
-                                        borderRadius: BorderRadius.circular(
-                                            AppSpacing.radiusMd),
-                                        borderSide: BorderSide(
-                                            color: Theme.of(context)
-                                                .colorScheme
-                                                .outline),
+                                            .state = parsed;
+                                      },
+                                      decoration: InputDecoration(
+                                        labelText: 'Получено ($cur)',
+                                        isDense: true,
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                                horizontal: 10, vertical: 10),
+                                        border: OutlineInputBorder(
+                                          borderRadius: BorderRadius.circular(
+                                              AppSpacing.radiusMd),
+                                          borderSide: BorderSide(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .outline),
+                                        ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                const SizedBox(width: AppSpacing.sm),
-                                Expanded(
-                                  child: Consumer(
-                                    builder: (context, ref, _) {
-                                      final received =
-                                          ref.watch(cashReceivedProvider) ??
-                                              0.0;
-                                      final total = summary.finalTotal;
-                                      final change = received > total
-                                          ? received - total
-                                          : 0.0;
+                                  const SizedBox(width: AppSpacing.sm),
+                                  Expanded(
+                                    child: Consumer(
+                                      builder: (context, ref, _) {
+                                        final received =
+                                            ref.watch(cashReceivedProvider) ??
+                                                0.0;
+                                        final total = summary.finalTotal;
+                                        final change = received > total
+                                            ? received - total
+                                            : 0.0;
 
-                                      return Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            vertical: 8, horizontal: 10),
-                                        decoration: BoxDecoration(
-                                          color: change > 0
-                                              ? AppColors.primary
-                                                  .withValues(alpha: 0.1)
-                                              : Theme.of(context)
-                                                  .colorScheme
-                                                  .surfaceContainerHighest
-                                                  .withValues(alpha: 0.3),
-                                          borderRadius: BorderRadius.circular(
-                                              AppSpacing.radiusMd),
-                                          border: Border.all(
-                                              color: change > 0
-                                                  ? AppColors.primary
-                                                  : Theme.of(context)
-                                                      .colorScheme
-                                                      .outline
-                                                      .withValues(alpha: 0.5)),
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Text(
-                                                change > 0
-                                                    ? 'Сдача'
-                                                    : (received < total &&
-                                                            received > 0
-                                                        ? 'В долг'
-                                                        : 'Сдача'),
-                                                style: AppTypography.labelSmall
-                                                    .copyWith(
-                                                  color: received < total &&
-                                                          received > 0
-                                                      ? AppColors.error
-                                                      : Theme.of(context)
-                                                          .colorScheme
-                                                          .onSurface
-                                                          .withValues(
-                                                              alpha: 0.7),
-                                                )),
-                                            Text(
-                                              '$cur ${_fmtNum(change > 0 ? change.toInt() : (received < total && received > 0 ? (total - received).toInt() : 0))}',
-                                              style: AppTypography.labelLarge
-                                                  .copyWith(
+                                        return Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              vertical: 8, horizontal: 10),
+                                          decoration: BoxDecoration(
+                                            color: change > 0
+                                                ? AppColors.primary
+                                                    .withValues(alpha: 0.1)
+                                                : Theme.of(context)
+                                                    .colorScheme
+                                                    .surfaceContainerHighest
+                                                    .withValues(alpha: 0.3),
+                                            borderRadius: BorderRadius.circular(
+                                                AppSpacing.radiusMd),
+                                            border: Border.all(
                                                 color: change > 0
                                                     ? AppColors.primary
-                                                    : (received < total &&
+                                                    : Theme.of(context)
+                                                        .colorScheme
+                                                        .outline
+                                                        .withValues(alpha: 0.5)),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              Text(
+                                                  change > 0
+                                                      ? 'Сдача'
+                                                      : (received < total &&
+                                                              received > 0
+                                                          ? 'В долг'
+                                                          : 'Сдача'),
+                                                  style: AppTypography.labelSmall
+                                                      .copyWith(
+                                                    color: received < total &&
                                                             received > 0
                                                         ? AppColors.error
                                                         : Theme.of(context)
                                                             .colorScheme
-                                                            .onSurface),
-                                                fontWeight: FontWeight.w700,
+                                                            .onSurface
+                                                            .withValues(
+                                                                alpha: 0.7),
+                                                  )),
+                                              Text(
+                                                '$cur ${_fmtNum(change > 0 ? change.toInt() : (received < total && received > 0 ? (total - received).toInt() : 0))}',
+                                                style: AppTypography.labelLarge
+                                                    .copyWith(
+                                                  color: change > 0
+                                                      ? AppColors.primary
+                                                      : (received < total &&
+                                                              received > 0
+                                                          ? AppColors.error
+                                                          : Theme.of(context)
+                                                              .colorScheme
+                                                              .onSurface),
+                                                  fontWeight: FontWeight.w700,
+                                                ),
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
+                                            ],
+                                          ),
+                                        );
+                                      },
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
+                                ],
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
         ),
@@ -606,7 +610,6 @@ class SalesCartPane extends ConsumerWidget {
     final employeeId = ref.read(authProvider).currentEmployee?.id;
     final comment = ref.read(orderCommentProvider);
     final paymentMethod = ref.read(paymentMethodProvider);
-    final isDesktop = MediaQuery.of(context).size.width >= 900;
     final methodsAsync = ref.read(paymentMethodsProvider);
     final activeMethods =
         methodsAsync.valueOrNull?.where((m) => m.isActive).toList() ??
@@ -635,7 +638,9 @@ class SalesCartPane extends ConsumerWidget {
           .toList();
 
       final client = ref.read(selectedClientProvider);
-      final receivedAmount = ref.read(cashReceivedProvider);
+      final isDebt = ref.read(isDebtPaymentProvider);
+      final actualPaymentMethod = isDebt ? 'debt' : paymentMethod;
+      final actualReceivedAmount = isDebt ? 0.0 : ref.read(cashReceivedProvider);
 
       final newSaleId = await ref.read(salesRepositoryProvider).createSale(
             companyId: companyId,
@@ -644,12 +649,12 @@ class SalesCartPane extends ConsumerWidget {
             totalAmount: summary.finalTotal,
             discountAmount:
                 summary.itemsDiscountTotal + summary.globalDiscountAmount,
-            paymentMethod: paymentMethod,
+            paymentMethod: actualPaymentMethod,
             notes: comment.isNotEmpty ? comment : null,
             items: saleItems,
             clientId: client?.id,
             clientName: client?.name,
-            receivedAmount: receivedAmount,
+            receivedAmount: actualReceivedAmount,
           );
 
       // Clear all state
@@ -660,6 +665,7 @@ class SalesCartPane extends ConsumerWidget {
       ref.read(cashReceivedProvider.notifier).state = null;
       ref.read(selectedClientProvider.notifier).state = null;
       ref.read(paymentMethodProvider.notifier).state = 'cash';
+      ref.read(isDebtPaymentProvider.notifier).state = false;
 
       // Refresh data everywhere
       ref.invalidate(clientListProvider);
@@ -683,14 +689,16 @@ class SalesCartPane extends ConsumerWidget {
         showInfoSnackBar(context, ref, 'Покупка успешно завершена!');
 
         // Show receipt print dialog
-        final pmName = activeMethods
-            .firstWhere((m) => m.id == paymentMethod,
-                orElse: () => PaymentMethod(
-                    id: 'cash',
-                    companyId: '',
-                    name: 'Наличные',
-                    isActive: true))
-            .name;
+        final pmName = isDebt
+            ? 'В долг'
+            : activeMethods
+                .firstWhere((m) => m.id == actualPaymentMethod,
+                    orElse: () => PaymentMethod(
+                        id: 'cash',
+                        companyId: '',
+                        name: 'Наличные',
+                        isActive: true))
+                .name;
         final receiptNum = newSaleId.hashCode.abs().toString().padLeft(5, '0');
         _showReceiptDialog(
           context,
@@ -971,6 +979,7 @@ class SalesCartPane extends ConsumerWidget {
     if (method == 'cash') return 'Наличные';
     if (method == 'card') return 'Карта';
     if (method == 'qr') return 'QR / Элсом';
+    if (method == 'debt') return 'В долг';
     return method;
   }
 
@@ -987,6 +996,17 @@ class _CartItemTile extends ConsumerWidget {
     required this.item,
     required this.currencySymbol,
   });
+
+  void _changeExecutor(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => SizedBox(
+        height: MediaQuery.of(context).size.height * 0.7,
+        child: _ExecutorPickerSheet(itemId: item.id),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1011,16 +1031,72 @@ class _CartItemTile extends ConsumerWidget {
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis),
-                    if (item.isService && item.executorName != null) ...[
-                      const SizedBox(height: 2),
+                    if (item.isService) ...[
+                      const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.person_outline,
-                              size: 12, color: AppColors.secondary),
-                          const SizedBox(width: 4),
-                          Text(item.executorName!,
-                              style: AppTypography.labelSmall
-                                  .copyWith(color: AppColors.secondary)),
+                          InkWell(
+                            onTap: () => _changeExecutor(context, ref),
+                            borderRadius: BorderRadius.circular(4),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 4, vertical: 2),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    item.executorName != null
+                                        ? Icons.person_rounded
+                                        : Icons.person_add_alt_1_rounded,
+                                    size: 14,
+                                    color: item.executorName != null
+                                        ? AppColors.secondary
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.5),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    item.executorName ?? 'Назначить мастера',
+                                    style: AppTypography.labelSmall.copyWith(
+                                      color: item.executorName != null
+                                          ? AppColors.secondary
+                                          : Theme.of(context)
+                                              .colorScheme
+                                              .onSurface
+                                              .withValues(alpha: 0.5),
+                                      fontWeight: item.executorName != null
+                                          ? FontWeight.w600
+                                          : FontWeight.normal,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          if (item.executorName != null) ...[
+                            const SizedBox(width: 4),
+                            InkWell(
+                              onTap: () {
+                                ref
+                                    .read(cartProvider.notifier)
+                                    .updateExecutor(item.id, null, null);
+                              },
+                              borderRadius: BorderRadius.circular(100),
+                              child: Padding(
+                                padding: const EdgeInsets.all(4.0),
+                                child: Icon(
+                                  Icons.close_rounded,
+                                  size: 14,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha: 0.4),
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ],
@@ -1211,71 +1287,107 @@ class _ClientSelector extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final client = ref.watch(selectedClientProvider);
+    final isDebt = ref.watch(isDebtPaymentProvider);
     final cs = Theme.of(context).colorScheme;
 
-    return InkWell(
-      onTap: () => _showClientPicker(context, ref),
-      child: Padding(
-        padding: EdgeInsets.symmetric(horizontal: pad, vertical: 12),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: client != null
-                    ? AppColors.primary.withValues(alpha: 0.1)
-                    : cs.surfaceContainerHighest,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                client != null
-                    ? Icons.person_rounded
-                    : Icons.person_add_alt_1_rounded,
-                size: 20,
-                color: client != null
-                    ? AppColors.primary
-                    : cs.onSurface.withValues(alpha: 0.5),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    client != null ? client.name : 'Выбрать клиента',
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: client != null
-                          ? cs.onSurface
-                          : cs.onSurface.withValues(alpha: 0.5),
-                      fontWeight:
-                          client != null ? FontWeight.w600 : FontWeight.normal,
-                    ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        InkWell(
+          onTap: () => _showClientPicker(context, ref),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: pad, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: client != null
+                        ? AppColors.primary.withValues(alpha: 0.1)
+                        : cs.surfaceContainerHighest,
+                    shape: BoxShape.circle,
                   ),
-                  if (client != null && client.typeLabel.isNotEmpty)
-                    Text(
-                      client.typeLabel,
-                      style: AppTypography.labelSmall.copyWith(
-                        color: cs.onSurface.withValues(alpha: 0.5),
+                  child: Icon(
+                    client != null
+                        ? Icons.person_rounded
+                        : Icons.person_add_alt_1_rounded,
+                    size: 20,
+                    color: client != null
+                        ? AppColors.primary
+                        : cs.onSurface.withValues(alpha: 0.5),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        client != null ? client.name : 'Выбрать клиента',
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: client != null
+                              ? cs.onSurface
+                              : cs.onSurface.withValues(alpha: 0.5),
+                          fontWeight:
+                              client != null ? FontWeight.w600 : FontWeight.normal,
+                        ),
                       ),
-                    ),
-                ],
+                      if (client != null && client.typeLabel.isNotEmpty)
+                        Text(
+                          client.typeLabel,
+                          style: AppTypography.labelSmall.copyWith(
+                            color: cs.onSurface.withValues(alpha: 0.5),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                if (client != null)
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded, size: 20),
+                    color: cs.onSurface.withValues(alpha: 0.4),
+                    onPressed: () =>
+                        ref.read(selectedClientProvider.notifier).state = null,
+                    visualDensity: VisualDensity.compact,
+                  )
+                else
+                  Icon(Icons.chevron_right_rounded,
+                      color: cs.onSurface.withValues(alpha: 0.3)),
+              ],
+            ),
+          ),
+        ),
+        if (client != null) ...[
+          const Divider(height: 1),
+          SwitchListTile(
+            title: Text(
+              'Оформить в долг',
+              style: AppTypography.bodyMedium.copyWith(
+                fontWeight: FontWeight.w500,
+                color: cs.onSurface,
               ),
             ),
-            if (client != null)
-              IconButton(
-                icon: const Icon(Icons.close_rounded, size: 20),
-                color: cs.onSurface.withValues(alpha: 0.4),
-                onPressed: () =>
-                    ref.read(selectedClientProvider.notifier).state = null,
-                visualDensity: VisualDensity.compact,
-              )
-            else
-              Icon(Icons.chevron_right_rounded,
-                  color: cs.onSurface.withValues(alpha: 0.3)),
-          ],
-        ),
-      ),
+            subtitle: Text(
+              isDebt ? 'Вся сумма пойдет в долг клиенту' : 'Оплата будет принята сейчас',
+              style: AppTypography.bodySmall.copyWith(
+                color: cs.onSurface.withValues(alpha: 0.5),
+              ),
+            ),
+            value: isDebt,
+            onChanged: (val) {
+              ref.read(isDebtPaymentProvider.notifier).state = val;
+              if (val) {
+                ref.read(cashReceivedProvider.notifier).state = 0.0;
+              } else {
+                ref.read(cashReceivedProvider.notifier).state = null;
+              }
+            },
+            activeColor: AppColors.primary,
+            contentPadding: EdgeInsets.symmetric(horizontal: pad),
+            dense: true,
+          ),
+        ],
+      ],
     );
   }
 }
@@ -1369,6 +1481,98 @@ class _ClientPickerSheetState extends ConsumerState<_ClientPickerSheet> {
             },
             loading: () => const Center(child: CircularProgressIndicator()),
             error: (e, _) => Center(child: Text('Ошибка: $e')),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ExecutorPickerSheet extends ConsumerStatefulWidget {
+  final String itemId;
+  const _ExecutorPickerSheet({required this.itemId});
+
+  @override
+  ConsumerState<_ExecutorPickerSheet> createState() => _ExecutorPickerSheetState();
+}
+
+class _ExecutorPickerSheetState extends ConsumerState<_ExecutorPickerSheet> {
+  String _search = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    final employeesAsync = ref.watch(employeeListProvider);
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Row(
+            children: [
+              Text('Выберите мастера',
+                  style: AppTypography.headlineMedium
+                      .copyWith(color: cs.onSurface)),
+              const Spacer(),
+              IconButton(
+                icon: const Icon(Icons.close_rounded),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+          child: TextField(
+            onChanged: (v) => setState(() => _search = v.toLowerCase()),
+            decoration: InputDecoration(
+              hintText: 'Поиск по имени...',
+              prefixIcon: Icon(Icons.search_rounded,
+                  color: cs.onSurface.withValues(alpha: 0.5)),
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Expanded(
+          child: employeesAsync.when(
+            data: (employees) {
+              final filtered = employees.where((e) {
+                if (_search.isEmpty) return true;
+                return e.name.toLowerCase().contains(_search);
+              }).toList();
+
+              if (filtered.isEmpty) {
+                return Center(
+                  child: Text('Мастера не найдены',
+                      style: AppTypography.bodyMedium.copyWith(
+                          color: cs.onSurface.withValues(alpha: 0.5))),
+                );
+              }
+
+              return ListView.builder(
+                itemCount: filtered.length,
+                itemBuilder: (context, index) {
+                  final e = filtered[index];
+                  return ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: cs.surfaceContainerHighest,
+                      child: Text(e.name[0],
+                          style: const TextStyle(color: AppColors.primary)),
+                    ),
+                    title: Text(e.name,
+                        style: const TextStyle(fontWeight: FontWeight.w500)),
+                    onTap: () {
+                      ref
+                          .read(cartProvider.notifier)
+                          .updateExecutor(widget.itemId, e.id, e.name);
+                      Navigator.pop(context);
+                    },
+                  );
+                },
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (err, stack) => Center(child: Text('Ошибка: $err')),
           ),
         ),
       ],

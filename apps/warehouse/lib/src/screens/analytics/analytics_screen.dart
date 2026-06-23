@@ -1605,8 +1605,21 @@ class _TopExecutorsAnalytics extends ConsumerWidget {
                       Divider(
                           height: 1,
                           color: cs.outline.withValues(alpha: 0.3)),
-                    Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
+                    InkWell(
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.transparent,
+                          builder: (_) => _ExecutorDetailsSheet(
+                            executorId: executors[i].executorId,
+                            executorName: executors[i].executorName,
+                          ),
+                        );
+                      },
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                         child: Row(children: [
                           Container(
                               width: 24,
@@ -1643,7 +1656,9 @@ class _TopExecutorsAnalytics extends ConsumerWidget {
                               style: AppTypography.labelMedium.copyWith(
                                   color: AppColors.secondary,
                                   fontWeight: FontWeight.w600)),
-                        ])),
+                        ]),
+                      ),
+                    ),
                   ],
                 ]);
               },
@@ -1653,5 +1668,120 @@ class _TopExecutorsAnalytics extends ConsumerWidget {
             ),
           ],
         ));
+  }
+}
+
+class _ExecutorDetailsSheet extends ConsumerWidget {
+  final String executorId;
+  final String executorName;
+
+  const _ExecutorDetailsSheet({
+    required this.executorId,
+    required this.executorName,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+    final breakdownAsync = ref.watch(executorServicesBreakdownProvider(executorId));
+    final formatPrice = ref.watch(priceFormatterProvider);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Center(
+            child: Container(
+              width: 48,
+              height: 5,
+              margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+              decoration: BoxDecoration(
+                color: cs.outline.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          ),
+          Text(
+            executorName,
+            style: AppTypography.headlineMedium.copyWith(color: cs.onSurface),
+          ),
+          Text(
+            'Выполненные услуги за период',
+            style: AppTypography.bodySmall.copyWith(color: cs.onSurface.withValues(alpha: 0.5)),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Flexible(
+            child: breakdownAsync.when(
+              data: (items) {
+                if (items.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.all(AppSpacing.xxl),
+                    child: Center(
+                      child: Text(
+                        'Нет данных по выполненным услугам',
+                        style: TextStyle(color: cs.onSurface.withValues(alpha: 0.4)),
+                      ),
+                    ),
+                  );
+                }
+                return ListView.separated(
+                  shrinkWrap: true,
+                  itemCount: items.length,
+                  separatorBuilder: (_, __) => Divider(height: 1, color: cs.outline.withValues(alpha: 0.1)),
+                  itemBuilder: (ctx, idx) {
+                    final item = items[idx];
+                    final name = item['service_name'] as String? ?? 'Услуга';
+                    final qty = (item['total_qty'] as num?)?.toInt() ?? 0;
+                    final sum = (item['total_revenue'] as num?)?.toDouble() ?? 0.0;
+
+                    return ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                      subtitle: Text('$qty шт.', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.5))),
+                      trailing: Text(
+                        formatPrice(sum),
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.secondary),
+                      ),
+                    );
+                  },
+                );
+              },
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(AppSpacing.xxl),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+              error: (e, _) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.xxl),
+                  child: Text('Ошибка загрузки: $e', style: TextStyle(color: cs.error)),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton(
+              onPressed: () => Navigator.pop(context),
+              style: FilledButton.styleFrom(
+                backgroundColor: cs.secondaryContainer,
+                foregroundColor: cs.onSecondaryContainer,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
+              ),
+              child: const Text('Закрыть'),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

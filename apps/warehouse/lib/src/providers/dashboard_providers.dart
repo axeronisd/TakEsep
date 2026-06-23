@@ -260,6 +260,26 @@ final topExecutorsProvider =
   );
 });
 
+final executorServicesBreakdownProvider =
+    FutureProvider.family<List<Map<String, dynamic>>, String>((ref, executorId) async {
+  final companyId = ref.watch(currentCompanyProvider)?.id;
+  if (companyId == null) return [];
+
+  await ref.watch(dashboardSyncProvider.future);
+
+  final warehouseId = ref.watch(selectedWarehouseIdProvider);
+  final range = ref.watch(dateRangeProvider);
+  final repo = ref.read(dashboardRepositoryProvider);
+
+  return repo.getExecutorServicesBreakdown(
+    companyId,
+    executorId,
+    range.start,
+    range.end.add(const Duration(days: 1)),
+    warehouseId: warehouseId,
+  );
+});
+
 final topClientsProvider =
     FutureProvider<List<TopClient>>((ref) async {
   final companyId = ref.watch(currentCompanyProvider)?.id;
