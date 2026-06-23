@@ -195,6 +195,35 @@ class SalesRepository {
       }
       await _supabase.from('sale_items').insert(saleItemsForSupabase);
 
+      // Update client stats on Supabase to prevent synchronization rollback
+      if (clientId != null) {
+        final addedDebt =
+            finalTotal > actualReceived ? finalTotal - actualReceived : 0.0;
+        try {
+          final clientResponse = await _supabase
+              .from('clients')
+              .select('purchases_count, total_spent, debt')
+              .eq('id', clientId)
+              .single();
+          final currentPurchases = (clientResponse['purchases_count'] as num?)?.toInt() ?? 0;
+          final currentSpent = (clientResponse['total_spent'] as num?)?.toDouble() ?? 0.0;
+          final currentDebt = (clientResponse['debt'] as num?)?.toDouble() ?? 0.0;
+
+          await _supabase
+              .from('clients')
+              .update({
+                'purchases_count': currentPurchases + 1,
+                'total_spent': currentSpent + finalTotal,
+                'debt': currentDebt + addedDebt,
+                'updated_at': now,
+              })
+              .eq('id', clientId);
+          debugPrint('[SalesRepository] Client stats updated on Supabase: $clientId');
+        } catch (clientErr) {
+          debugPrint('[SalesRepository] Error updating client stats on Supabase: $clientErr');
+        }
+      }
+
       debugPrint(
           '[SalesRepository] Sale synced to Supabase for realtime: $saleId');
     } catch (e) {
