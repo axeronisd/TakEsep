@@ -97,6 +97,7 @@ class ClientRepository {
     final rows = await powerSyncDb.getAll(
       '''
       SELECT s.*, 
+             e.name as employee_name,
              COALESCE((SELECT json_group_array(
                  json_object(
                    'id', si.id,
@@ -107,6 +108,7 @@ class ClientRepository {
                ) FROM sale_items si WHERE si.sale_id = s.id
              ), '[]') as items
       FROM sales s
+      LEFT JOIN employees e ON s.employee_id = e.id
       WHERE s.client_id = ?
       ORDER BY s.created_at DESC
       ''',
