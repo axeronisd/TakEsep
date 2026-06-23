@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takesep_core/takesep_core.dart';
 import 'package:takesep_design_system/takesep_design_system.dart';
 import '../../../providers/employee_providers.dart';
+import '../../../providers/inventory_providers.dart';
 import '../../../providers/currency_provider.dart';
 import '../../../providers/auth_providers.dart';
 import '../../../providers/dashboard_providers.dart';
@@ -187,6 +188,28 @@ class _InfoTab extends ConsumerWidget {
       });
     }
 
+    final warehousesAsync = ref.watch(warehousesProvider);
+    String allowedWarehousesStr = 'Загрузка...';
+    if (employee.allowedWarehouses == null) {
+      allowedWarehousesStr = 'Все склады';
+    } else if (employee.allowedWarehouses!.isEmpty) {
+      allowedWarehousesStr = 'Нет доступа к складам';
+    } else {
+      warehousesAsync.when(
+        data: (warehouses) {
+          final names = employee.allowedWarehouses!
+              .map((id) {
+                final wh = warehouses.where((w) => w.id == id);
+                return wh.isNotEmpty ? wh.first.name : 'Неизвестный склад';
+              })
+              .toList();
+          allowedWarehousesStr = names.join(', ');
+        },
+        loading: () => allowedWarehousesStr = 'Загрузка...',
+        error: (_, __) => allowedWarehousesStr = '${employee.allowedWarehouses!.length} складов',
+      );
+    }
+
     return SingleChildScrollView(
       controller: scrollController,
       padding: const EdgeInsets.all(AppSpacing.xl),
@@ -199,7 +222,7 @@ class _InfoTab extends ConsumerWidget {
             cs,
             Icons.warehouse_rounded,
             'Доступ к складам',
-            employee.allowedWarehouses == null ? 'Все склады' : '${employee.allowedWarehouses!.length} складов',
+            allowedWarehousesStr,
           ),
           _infoRow(cs, Icons.lock_rounded, 'Пин-код защиты', employee.pinCodeHash.isNotEmpty ? 'Установлен (••••)' : 'Не установлен'),
           _infoRow(cs, Icons.calendar_today_rounded, 'Создан', '${employee.createdAt.day.toString().padLeft(2, '0')}.${employee.createdAt.month.toString().padLeft(2, '0')}.${employee.createdAt.year}'),
@@ -327,87 +350,141 @@ class _AnalyticsTab extends ConsumerStatefulWidget {
 }
 
 class _AnalyticsTabState extends ConsumerState<_AnalyticsTab> {
+  String _period = '30days';
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final activityAsync = ref.watch(employeeActivityProvider(widget.employee.id));
+    final activityAsync = ref.watch(employeeActivityProvider('${widget.employee.id}:$_period'));
     final currency = ref.watch(currencyProvider).symbol;
 
     return SingleChildScrollView(
       controller: widget.scrollController,
       padding: const EdgeInsets.all(AppSpacing.xl),
-      child: activityAsync.when(
-        data: (data) {
-          final int salesCount = data['salesCount'] ?? 0;
-          final double totalRevenue = data['totalRevenue'] ?? 0.0;
-          final List topItems = data['topItems'] ?? [];
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildPeriodSelector(cs),
+          const SizedBox(height: AppSpacing.lg),
+          activityAsync.when(
+            data: (data) {
+              final int salesCount = data['salesCount'] ?? 0;
+              final double totalRevenue = data['totalRevenue'] ?? 0.0;
+              final List topItems = data['topItems'] ?? [];
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildStatsGrid(cs, salesCount, totalRevenue, currency),
-              const SizedBox(height: AppSpacing.xxl),
-              
-              if (topItems.isNotEmpty) ...[
-                Row(
-                  children: [
-                    Icon(Icons.star_rounded, size: 20, color: AppColors.primary),
-                    const SizedBox(width: 8),
-                    Text('Топ 5 продаж сотрудника', style: AppTypography.headlineSmall.copyWith(color: cs.onSurface)),
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildStatsGrid(cs, salesCount, totalRevenue, currency),
+                  const SizedBox(height: AppSpacing.xxl),
+                  
+                  if (topItems.isNotEmpty) ...[
+                    Row(
+                      children: [
+                        const Icon(Icons.star_rounded, size: 20, color: AppColors.primary),
+                        const SizedBox(width: 8),
+                        Text('Топ 5 продаж сотрудника', style: AppTypography.headlineSmall.copyWith(color: cs.onSurface)),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
+                        border: Border.all(color: cs.outline.withValues(alpha: 0.2)),
+                      ),
+                      child: Column(
+                        children: topItems.map((item) {
+                          final name = item['product_name'] as String? ?? 'Неизвестно';
+                          final qty = item['total_qty'] as int? ?? 0;
+                          final sum = (item['total_sum'] as num?)?.toDouble() ?? 0.0;
+                          
+                          return ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: AppColors.primary.withValues(alpha: 0.1),
+                              child: Text('$qty', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
+                            ),
+                            title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
+                            trailing: Text(formatPrice(sum, currency), style: const TextStyle(fontWeight: FontWeight.bold)),
+                            shape: Border(bottom: BorderSide(color: cs.outline.withValues(alpha: 0.1))),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ] else ...[
+                    Center(
+                      child: Column(
+                        children: [
+                          const SizedBox(height: AppSpacing.xxl),
+                          Icon(Icons.inventory_2_rounded, size: 48, color: cs.onSurface.withValues(alpha: 0.2)),
+                          const SizedBox(height: AppSpacing.sm),
+                          Text('Нет данных о продажах', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.5))),
+                        ],
+                      ),
+                    ),
                   ],
+                ],
+              );
+            },
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(AppSpacing.xxl),
+                child: CircularProgressIndicator(),
+              ),
+            ),
+            error: (e, st) => Center(
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.xxl),
+                child: Text('Ошибка загрузки: $e', style: TextStyle(color: cs.error)),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPeriodSelector(ColorScheme cs) {
+    final periods = [
+      {'key': 'today', 'label': 'Сегодня'},
+      {'key': '7days', 'label': '7 дней'},
+      {'key': '30days', 'label': '30 дней'},
+      {'key': 'month', 'label': 'Этот месяц'},
+    ];
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: periods.map((p) {
+          final isSelected = _period == p['key'];
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: ChoiceChip(
+              label: Text(p['label']!),
+              selected: isSelected,
+              onSelected: (selected) {
+                if (selected) {
+                  setState(() {
+                    _period = p['key']!;
+                  });
+                }
+              },
+              selectedColor: cs.primary.withValues(alpha: 0.15),
+              checkmarkColor: cs.primary,
+              labelStyle: TextStyle(
+                color: isSelected ? cs.primary : cs.onSurface.withValues(alpha: 0.7),
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+              ),
+              backgroundColor: cs.surfaceContainerHighest.withValues(alpha: 0.3),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
+                side: BorderSide(
+                  color: isSelected ? cs.primary.withValues(alpha: 0.5) : cs.outline.withValues(alpha: 0.1),
                 ),
-                const SizedBox(height: AppSpacing.md),
-                Container(
-                  decoration: BoxDecoration(
-                    color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
-                    borderRadius: BorderRadius.circular(AppSpacing.radiusMd),
-                    border: Border.all(color: cs.outline.withValues(alpha: 0.2)),
-                  ),
-                  child: Column(
-                    children: topItems.map((item) {
-                      final name = item['product_name'] as String? ?? 'Неизвестно';
-                      final qty = item['total_qty'] as int? ?? 0;
-                      final sum = (item['total_sum'] as num?)?.toDouble() ?? 0.0;
-                      
-                      return ListTile(
-                        leading: CircleAvatar(
-                          backgroundColor: AppColors.primary.withValues(alpha: 0.1),
-                          child: Text('$qty', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
-                        ),
-                        title: Text(name, style: const TextStyle(fontWeight: FontWeight.w500)),
-                        trailing: Text(formatPrice(sum, currency), style: const TextStyle(fontWeight: FontWeight.bold)),
-                        shape: Border(bottom: BorderSide(color: cs.outline.withValues(alpha: 0.1))),
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ] else ...[
-                Center(
-                  child: Column(
-                    children: [
-                      const SizedBox(height: AppSpacing.xxl),
-                      Icon(Icons.inventory_2_rounded, size: 48, color: cs.onSurface.withValues(alpha: 0.2)),
-                      const SizedBox(height: AppSpacing.sm),
-                      Text('Нет данных о продажах', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.5))),
-                    ],
-                  ),
-                ),
-              ],
-            ],
+              ),
+            ),
           );
-        },
-        loading: () => const Center(
-          child: Padding(
-            padding: EdgeInsets.all(AppSpacing.xxl),
-            child: CircularProgressIndicator(),
-          ),
-        ),
-        error: (e, st) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.xxl),
-            child: Text('Ошибка загрузки: $e', style: TextStyle(color: cs.error)),
-          ),
-        ),
+        }).toList(),
       ),
     );
   }
@@ -609,11 +686,37 @@ class _ExpensesTab extends ConsumerWidget {
                       color: AppColors.error.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
                     ),
-                    child: Icon(Icons.delete_rounded, color: AppColors.error),
+                    child: const Icon(Icons.delete_rounded, color: AppColors.error),
                   ),
+                  confirmDismiss: (direction) async {
+                    return await showDialog<bool>(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        backgroundColor: cs.surface,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
+                        title: Text('Удалить расход?', style: TextStyle(color: cs.onSurface)),
+                        content: Text(
+                          'Вы уверены, что хотите удалить этот расход на сумму ${formatPrice(amount, cur)}?',
+                          style: TextStyle(color: cs.onSurface.withValues(alpha: 0.7)),
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(ctx, false),
+                            child: Text('Отмена', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.5))),
+                          ),
+                          FilledButton(
+                            onPressed: () => Navigator.pop(ctx, true),
+                            style: FilledButton.styleFrom(backgroundColor: cs.error),
+                            child: const Text('Удалить'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                   onDismissed: (_) async {
                     final repo = ref.read(employeeRepositoryProvider);
-                    final deletedBy = ref.read(currentCompanyProvider)?.title ?? 'Админ';
+                    final deletedBy = ref.read(authProvider).currentEmployee?.name ?? ref.read(currentCompanyProvider)?.title ?? 'Админ';
                     await repo.deleteExpense(exp['id'] as String, deletedBy);
                     ref.invalidate(employeeExpensesProvider(employee.id));
                     ref.invalidate(dashboardKpisProvider);
@@ -746,7 +849,7 @@ class _ExpensesTab extends ConsumerWidget {
               if (companyId == null) return;
 
               final repo = ref.read(employeeRepositoryProvider);
-              final creatorName = ref.read(currentCompanyProvider)?.title ?? 'Админ';
+              final creatorName = ref.read(authProvider).currentEmployee?.name ?? ref.read(currentCompanyProvider)?.title ?? 'Админ';
               await repo.addExpense(
                 companyId: companyId,
                 employeeId: employee.id,

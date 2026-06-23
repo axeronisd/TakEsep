@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -73,12 +73,10 @@ class ExchangeRatesNotifier extends StateNotifier<AsyncValue<ExchangeRates>> {
 
   Future<void> refreshRates() async {
     try {
-      final client = HttpClient();
-      final request = await client.getUrl(Uri.parse('https://www.nbkr.kg/XML/daily.xml'));
-      final response = await request.close();
+      final response = await http.get(Uri.parse('https://www.nbkr.kg/XML/daily.xml'));
       
       if (response.statusCode == 200) {
-        final xmlString = await response.transform(utf8.decoder).join();
+        final xmlString = utf8.decode(response.bodyBytes);
         final Map<String, double> fetchedRates = {};
         
         // Simple regex parser for <Currency ISOCode="USD"> ... <Value>89.5000</Value>

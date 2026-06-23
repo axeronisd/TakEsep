@@ -210,9 +210,29 @@ final rolesListProvider = StreamProvider.autoDispose<List<Role>>((ref) {
 /// Provides analytics data (sales, revenue, top items) for a given employee.
 final employeeActivityProvider =
     FutureProvider.family<Map<String, dynamic>, String>(
-        (ref, employeeId) async {
+        (ref, arg) async {
   final repo = ref.read(employeeRepositoryProvider);
-  return repo.getEmployeeActivity(employeeId);
+  final parts = arg.split(':');
+  final employeeId = parts[0];
+  final period = parts.length > 1 ? parts[1] : '30days';
+
+  DateTime? startDate;
+  final now = DateTime.now();
+  switch (period) {
+    case 'today':
+      startDate = DateTime(now.year, now.month, now.day);
+      break;
+    case '7days':
+      startDate = now.subtract(const Duration(days: 7));
+      break;
+    case '30days':
+      startDate = now.subtract(const Duration(days: 30));
+      break;
+    case 'month':
+      startDate = DateTime(now.year, now.month, 1);
+      break;
+  }
+  return repo.getEmployeeActivity(employeeId, startDate: startDate);
 });
 
 // ─── Employee Expenses ──────────────────────────────────

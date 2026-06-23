@@ -149,10 +149,14 @@ class SupabaseRealtimeService {
       }
 
       final data = await query;
-      controller.add(data as List<Map<String, dynamic>>);
+      if (!controller.isClosed) {
+        controller.add(data as List<Map<String, dynamic>>);
+      }
     } catch (e) {
       print('❌ Error fetching initial data for $table: $e');
-      controller.addError(e);
+      if (!controller.isClosed) {
+        controller.addError(e);
+      }
     }
   }
 
@@ -165,10 +169,14 @@ class SupabaseRealtimeService {
     try {
       final data =
           await _client.from(table).select().eq('id', rowId).maybeSingle();
-      controller.add(data as Map<String, dynamic>?);
+      if (!controller.isClosed) {
+        controller.add(data as Map<String, dynamic>?);
+      }
     } catch (e) {
       print('❌ Error fetching row data for $table: $e');
-      controller.addError(e);
+      if (!controller.isClosed) {
+        controller.addError(e);
+      }
     }
   }
 
