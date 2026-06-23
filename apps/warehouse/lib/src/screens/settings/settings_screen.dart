@@ -68,8 +68,8 @@ class SettingsScreen extends ConsumerWidget {
             'Выбор принтера и настройка чека',
             action: 'receipt'),
         _SettingsItem('Ценовые правила', Icons.price_change_rounded,
-            'Наценки, оптовые цены, акции',
-            comingSoon: true),
+            'Скидки для оптовых и VIP клиентов',
+            action: 'pricing'),
         _SettingsItem('Способы оплаты', Icons.payment_rounded,
             'Кастомные способы с QR кодами',
             action: 'payment_methods'),
@@ -239,6 +239,9 @@ class SettingsScreen extends ConsumerWidget {
       case 'payment_methods':
         _showPaymentMethods(context, ref);
         break;
+      case 'pricing':
+        _showPricingSettings(context, ref);
+        break;
     }
   }
 
@@ -299,6 +302,99 @@ class SettingsScreen extends ConsumerWidget {
       shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => const PaymentMethodsSheet(),
+    );
+  }
+
+  // ═══════════════ PRICING RULES ═══════════════
+
+  void _showPricingSettings(BuildContext context, WidgetRef ref) {
+    final cs = Theme.of(context).colorScheme;
+    final settings = ref.read(clientDiscountSettingsProvider);
+    final wholesaleC = TextEditingController(text: settings.wholesale.toString());
+    final vipC = TextEditingController(text: settings.vip.toString());
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: cs.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => Padding(
+        padding: EdgeInsets.only(
+          left: AppSpacing.xl,
+          right: AppSpacing.xl,
+          top: AppSpacing.lg,
+          bottom: MediaQuery.of(ctx).viewInsets.bottom + AppSpacing.xl,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 48,
+                height: 5,
+                margin: const EdgeInsets.only(bottom: AppSpacing.xl),
+                decoration: BoxDecoration(
+                  color: cs.outline.withValues(alpha: 0.3),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('Ценовые правила',
+                    style: AppTypography.headlineMedium.copyWith(color: cs.onSurface)),
+                IconButton(icon: const Icon(Icons.close_rounded), onPressed: () => Navigator.pop(ctx)),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'Настройте проценты автоматических скидок, которые применяются при выборе соответствующих клиентов в корзине.',
+              style: AppTypography.bodySmall.copyWith(color: cs.onSurface.withValues(alpha: 0.6)),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            TextField(
+              controller: wholesaleC,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Скидка для оптовых клиентов (%)',
+                suffixText: ' %',
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: vipC,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: const InputDecoration(
+                labelText: 'Скидка для VIP-клиентов (%)',
+                suffixText: ' %',
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            SizedBox(
+              height: 48,
+              child: FilledButton(
+                onPressed: () {
+                  final wsVal = double.tryParse(wholesaleC.text);
+                  final vipVal = double.tryParse(vipC.text);
+                  if (wsVal != null && wsVal >= 0 && vipVal != null && vipVal >= 0) {
+                    ref.read(clientDiscountSettingsProvider.notifier).updateWholesale(wsVal);
+                    ref.read(clientDiscountSettingsProvider.notifier).updateVip(vipVal);
+                    Navigator.pop(ctx);
+                    showInfoSnackBar(context, ref, 'Настройки скидок сохранены');
+                  } else {
+                    showErrorSnackBar(context, 'Введите корректные положительные числа');
+                  }
+                },
+                child: const Text('Сохранить', style: TextStyle(fontSize: 16)),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

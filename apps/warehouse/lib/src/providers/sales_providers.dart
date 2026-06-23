@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:takesep_core/takesep_core.dart';
 import 'inventory_providers.dart';
 import 'auth_providers.dart';
+import 'owner_settings_provider.dart';
 import '../data/sales_repository.dart';
 
 final salesRepositoryProvider = Provider<SalesRepository>((ref) {
@@ -282,32 +283,54 @@ final cartProvider = StateNotifierProvider<CartNotifier, List<CartItem>>((ref) {
 
   // Listen to client changes — automatically apply VIP/Wholesale discounts
   ref.listen<Client?>(selectedClientProvider, (prev, next) {
+    final discountSettings = ref.read(clientDiscountSettingsProvider);
     if (next == null) {
       // If client is cleared, remove the automatic client discount if it matches the client type
       final currentDiscount = ref.read(globalDiscountProvider);
       if (currentDiscount != null &&
-          (currentDiscount.value == 10.0 || currentDiscount.value == 5.0)) {
+          (currentDiscount.value == discountSettings.wholesale ||
+              currentDiscount.value == discountSettings.vip)) {
         ref.read(globalDiscountProvider.notifier).state = null;
       }
     } else {
       // Set global discount automatically based on client type
       if (next.type == 'wholesale') {
-        ref.read(globalDiscountProvider.notifier).state = const Discount(
+        ref.read(globalDiscountProvider.notifier).state = Discount(
           type: DiscountType.percentage,
-          value: 10.0,
+          value: discountSettings.wholesale,
         );
       } else if (next.type == 'vip') {
-        ref.read(globalDiscountProvider.notifier).state = const Discount(
+        ref.read(globalDiscountProvider.notifier).state = Discount(
           type: DiscountType.percentage,
-          value: 5.0,
+          value: discountSettings.vip,
         );
       } else {
         // Retail client — clear the automatic client discount if one was applied
         final currentDiscount = ref.read(globalDiscountProvider);
         if (currentDiscount != null &&
-            (currentDiscount.value == 10.0 || currentDiscount.value == 5.0)) {
+            (currentDiscount.value == discountSettings.wholesale ||
+                currentDiscount.value == discountSettings.vip)) {
           ref.read(globalDiscountProvider.notifier).state = null;
         }
+      }
+    }
+  });
+
+  // Listen to discount settings changes — update the current cart discount if it matches the client type's previous discount
+  ref.listen<ClientDiscountSettings>(clientDiscountSettingsProvider, (prev, next) {
+    final client = ref.read(selectedClientProvider);
+    final currentDiscount = ref.read(globalDiscountProvider);
+    if (client != null && currentDiscount != null && prev != null) {
+      if (client.type == 'wholesale' && currentDiscount.value == prev.wholesale) {
+        ref.read(globalDiscountProvider.notifier).state = Discount(
+          type: DiscountType.percentage,
+          value: next.wholesale,
+        );
+      } else if (client.type == 'vip' && currentDiscount.value == prev.vip) {
+        ref.read(globalDiscountProvider.notifier).state = Discount(
+          type: DiscountType.percentage,
+          value: next.vip,
+        );
       }
     }
   });

@@ -9,6 +9,7 @@ import '../../../providers/dashboard_providers.dart';
 import '../../../providers/payment_methods_provider.dart';
 import '../../../providers/inventory_providers.dart';
 import '../../../providers/client_providers.dart';
+import '../../../providers/owner_settings_provider.dart';
 import '../../../data/sales_repository.dart';
 import '../../../providers/receipt_provider.dart';
 import '../../../providers/printer_provider.dart';
@@ -43,6 +44,7 @@ class SalesCartPane extends ConsumerWidget {
     final isMobile = MediaQuery.of(context).size.width < 600;
     final pad = isMobile ? AppSpacing.sm : AppSpacing.lg;
     final client = ref.watch(selectedClientProvider);
+    final discountSettings = ref.watch(clientDiscountSettingsProvider);
 
     return Column(
       children: [
@@ -280,15 +282,15 @@ class SalesCartPane extends ConsumerWidget {
                                         ? (client != null &&
                                                 client.type == 'wholesale' &&
                                                 summary.globalDiscount?.value ==
-                                                    10.0
-                                            ? 'Скидка (Оптовая 10%)'
+                                                    discountSettings.wholesale
+                                            ? 'Скидка (Оптовая ${discountSettings.wholesale}%)'
                                             : (client != null &&
                                                     client.type == 'vip' &&
                                                     summary
                                                             .globalDiscount
                                                             ?.value ==
-                                                        5.0
-                                                ? 'Скидка (VIP 5%)'
+                                                        discountSettings.vip
+                                                ? 'Скидка (VIP ${discountSettings.vip}%)'
                                                 : 'Скидка применена'))
                                         : 'Скидка на весь чек',
                                     style: const TextStyle(fontSize: 12)),

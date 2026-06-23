@@ -30,3 +30,42 @@ final arrivalAsExpenseProvider =
   final prefs = ref.watch(sharedPreferencesProvider);
   return ArrivalAsExpenseNotifier(prefs);
 });
+
+// ═══════════════════════════════════════════════════════════════
+// CLIENT AUTO-DISCOUNTS SETTINGS
+// ═══════════════════════════════════════════════════════════════
+
+class ClientDiscountSettings {
+  final double wholesale;
+  final double vip;
+
+  const ClientDiscountSettings({required this.wholesale, required this.vip});
+}
+
+class ClientDiscountSettingsNotifier extends StateNotifier<ClientDiscountSettings> {
+  final SharedPreferences _prefs;
+
+  ClientDiscountSettingsNotifier(this._prefs)
+      : super(const ClientDiscountSettings(wholesale: 10.0, vip: 5.0)) {
+    final wholesale = _prefs.getDouble('takesep_discount_wholesale') ?? 10.0;
+    final vip = _prefs.getDouble('takesep_discount_vip') ?? 5.0;
+    state = ClientDiscountSettings(wholesale: wholesale, vip: vip);
+  }
+
+  void updateWholesale(double value) {
+    state = ClientDiscountSettings(wholesale: value, vip: state.vip);
+    _prefs.setDouble('takesep_discount_wholesale', value);
+  }
+
+  void updateVip(double value) {
+    state = ClientDiscountSettings(wholesale: state.wholesale, vip: value);
+    _prefs.setDouble('takesep_discount_vip', value);
+  }
+}
+
+/// Dynamic VIP & Wholesale discount percentages.
+final clientDiscountSettingsProvider =
+    StateNotifierProvider<ClientDiscountSettingsNotifier, ClientDiscountSettings>((ref) {
+  final prefs = ref.watch(sharedPreferencesProvider);
+  return ClientDiscountSettingsNotifier(prefs);
+});
