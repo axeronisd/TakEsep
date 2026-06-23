@@ -24,7 +24,6 @@ class ClientListNotifier extends StateNotifier<AsyncValue<List<Client>>> {
 
   ClientListNotifier(this._repo, this._companyId)
       : super(const AsyncValue.loading()) {
-    load();
     _setupRealtimeSubscription();
   }
 
@@ -35,7 +34,10 @@ class ClientListNotifier extends StateNotifier<AsyncValue<List<Client>>> {
   }
 
   void _setupRealtimeSubscription() {
-    if (_companyId == null) return;
+    if (_companyId == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
 
     // Subscribe to real-time changes from Supabase
     final stream = realtimeService.subscribeToTable(
@@ -44,25 +46,13 @@ class ClientListNotifier extends StateNotifier<AsyncValue<List<Client>>> {
     );
 
     _subscription = stream.listen((data) {
-      // When data changes, reload from repository (which fetches from Supabase)
-      load();
-    }, onError: (e) {
-      print('ClientListNotifier realtime error: $e');
-    });
-  }
-
-  Future<void> load() async {
-    if (_companyId == null) {
-      state = const AsyncValue.data([]);
-      return;
-    }
-    try {
-      state = const AsyncValue.loading();
-      final items = await _repo.getClients(_companyId);
+      final items = data
+          .map((row) => Client.fromJson(row))
+          .toList();
       state = AsyncValue.data(items);
-    } catch (e, st) {
+    }, onError: (e, st) {
       state = AsyncValue.error(e, st);
-    }
+    });
   }
 
   Future<Client?> create({
@@ -74,7 +64,7 @@ class ClientListNotifier extends StateNotifier<AsyncValue<List<Client>>> {
   }) async {
     if (_companyId == null) return null;
     try {
-      final client = await _repo.createClient(
+      return await _repo.createClient(
         companyId: _companyId,
         name: name,
         phone: phone,
@@ -82,29 +72,28 @@ class ClientListNotifier extends StateNotifier<AsyncValue<List<Client>>> {
         type: type,
         notes: notes,
       );
-      await load();
-      return client;
     } catch (e) {
       return null;
     }
   }
 
-  Future<bool> update(
-      {required String clientId,
-      String? name,
-      String? phone,
-      String? email,
-      String? type,
-      bool? isActive}) async {
+  Future<bool> update({
+    required String clientId,
+    String? name,
+    String? phone,
+    String? email,
+    String? type,
+    bool? isActive,
+  }) async {
     try {
       await _repo.updateClient(
-          clientId: clientId,
-          name: name,
-          phone: phone,
-          email: email,
-          type: type,
-          isActive: isActive);
-      await load();
+        clientId: clientId,
+        name: name,
+        phone: phone,
+        email: email,
+        type: type,
+        isActive: isActive,
+      );
       return true;
     } catch (_) {
       return false;
@@ -114,7 +103,6 @@ class ClientListNotifier extends StateNotifier<AsyncValue<List<Client>>> {
   Future<bool> delete(String clientId) async {
     try {
       await _repo.deleteClient(clientId);
-      await load();
       return true;
     } catch (_) {
       return false;

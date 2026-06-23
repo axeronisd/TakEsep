@@ -1,15 +1,12 @@
 import 'package:takesep_core/takesep_core.dart';
-import 'package:uuid/uuid.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'powersync_db.dart';
-import 'supabase_sync.dart';
 
 /// Repository for Client CRUD operations via PowerSync.
 class ClientRepository {
-  final _uuid = const Uuid();
   final SupabaseClient _supabase = Supabase.instance.client;
 
-  /// Get all clients for a company (fetches from Supabase directly for real-time sync).
+  /// Get all clients for a company (fetches from Supabase directly).
   Future<List<Client>> getClients(String companyId) async {
     try {
       final results = await _supabase
@@ -18,38 +15,12 @@ class ClientRepository {
           .eq('company_id', companyId)
           .order('name');
 
-      final clients = (results as List)
+      return (results as List)
           .map((row) => Client.fromJson(row as Map<String, dynamic>))
           .toList();
-
-      // Cache in local DB for offline support
-      for (final c in results) {
-        await powerSyncDb.execute(
-          '''INSERT OR REPLACE INTO clients (id, company_id, name, phone, email, type,
-             total_spent, debt, purchases_count, notes, is_active, created_at, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-          [
-            c['id'],
-            c['company_id'],
-            c['name'],
-            c['phone'],
-            c['email'],
-            c['type'],
-            c['total_spent'],
-            c['debt'],
-            c['purchases_count'],
-            c['notes'],
-            c['is_active'] == true ? 1 : 0,
-            c['created_at'],
-            c['updated_at'],
-          ],
-        );
-      }
-
-      return clients;
     } catch (e) {
       print('ClientRepository getClients Supabase error: $e');
-      // Fallback to local DB if Supabase fails
+      // Fallback to local DB if Supabase fails (offline support)
       final rows = await powerSyncDb.getAll(
         'SELECT * FROM clients WHERE company_id = ? ORDER BY name',
         [companyId],
@@ -66,57 +37,28 @@ class ClientRepository {
     String type = 'retail',
     String? notes,
   }) async {
-    final id = _uuid.v4();
     final now = DateTime.now().toIso8601String();
 
-    await powerSyncDb.execute(
-      '''INSERT INTO clients (id, company_id, name, phone, email, type,
-         total_spent, debt, purchases_count, notes, is_active, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-      [
-        id,
-        companyId,
-        name,
-        phone,
-        email,
-        type,
-        0.0,
-        0.0,
-        0,
-        notes,
-        1,
-        now,
-        now
-      ],
-    );
+    final response = await _supabase
+        .from('clients')
+        .insert({
+          'company_id': companyId,
+          'name': name,
+          'phone': phone,
+          'email': email,
+          'type': type,
+          'notes': notes,
+          'total_spent': 0.0,
+          'debt': 0.0,
+          'purchases_count': 0,
+          'is_active': true,
+          'created_at': now,
+          'updated_at': now,
+        })
+        .select()
+        .single();
 
-    await SupabaseSync.upsert('clients', {
-      'id': id,
-      'company_id': companyId,
-      'name': name,
-      'phone': phone,
-      'email': email,
-      'type': type,
-      'total_spent': 0.0,
-      'debt': 0.0,
-      'purchases_count': 0,
-      'notes': notes,
-      'is_active': true,
-      'created_at': now,
-      'updated_at': now,
-    });
-
-    return Client(
-      id: id,
-      companyId: companyId,
-      name: name,
-      phone: phone,
-      email: email,
-      type: type,
-      notes: notes,
-      createdAt: DateTime.now(),
-      updatedAt: DateTime.now(),
-    );
+    return Client.fromJson(response);
   }
 
   Future<void> updateClient({
@@ -131,54 +73,6 @@ class ClientRepository {
     double? debt,
     int? purchasesCount,
   }) async {
-    final sets = <String>[];
-    final params = <Object?>[];
-    if (name != null) {
-      sets.add('name = ?');
-      params.add(name);
-    }
-    if (phone != null) {
-      sets.add('phone = ?');
-      params.add(phone);
-    }
-    if (email != null) {
-      sets.add('email = ?');
-      params.add(email);
-    }
-    if (type != null) {
-      sets.add('type = ?');
-      params.add(type);
-    }
-    if (notes != null) {
-      sets.add('notes = ?');
-      params.add(notes);
-    }
-    if (isActive != null) {
-      sets.add('is_active = ?');
-      params.add(isActive ? 1 : 0);
-    }
-    if (totalSpent != null) {
-      sets.add('total_spent = ?');
-      params.add(totalSpent);
-    }
-    if (debt != null) {
-      sets.add('debt = ?');
-      params.add(debt);
-    }
-    if (purchasesCount != null) {
-      sets.add('purchases_count = ?');
-      params.add(purchasesCount);
-    }
-    if (sets.isEmpty) return;
-    sets.add('updated_at = ?');
-    params.add(DateTime.now().toIso8601String());
-    params.add(clientId);
-    await powerSyncDb.execute(
-      'UPDATE clients SET ${sets.join(', ')} WHERE id = ?',
-      params,
-    );
-
-    // Build update map for Supabase
     final sbData = <String, dynamic>{};
     if (name != null) sbData['name'] = name;
     if (phone != null) sbData['phone'] = phone;
@@ -190,15 +84,15 @@ class ClientRepository {
     if (debt != null) sbData['debt'] = debt;
     if (purchasesCount != null) sbData['purchases_count'] = purchasesCount;
     sbData['updated_at'] = DateTime.now().toIso8601String();
-    await SupabaseSync.update('clients', clientId, sbData);
+
+    await _supabase.from('clients').update(sbData).eq('id', clientId);
   }
 
   Future<void> deleteClient(String clientId) async {
-    await powerSyncDb.execute('DELETE FROM clients WHERE id = ?', [clientId]);
-    await SupabaseSync.delete('clients', clientId);
+    await _supabase.from('clients').delete().eq('id', clientId);
   }
 
-  /// Get sales history for a specific client
+  /// Get sales history for a specific client from local cache
   Future<List<Map<String, dynamic>>> getClientSales(String clientId) async {
     final rows = await powerSyncDb.getAll(
       '''
@@ -221,20 +115,24 @@ class ClientRepository {
     return rows.toList();
   }
 
-  /// Pay off client debt directly
+  /// Pay off client debt directly on Supabase
   Future<void> payDebt({
     required String clientId,
     required double amount,
   }) async {
-    final now = DateTime.now().toIso8601String();
-
-    // Decrease debt
-    await powerSyncDb.execute(
-      '''UPDATE clients 
-         SET debt = CASE WHEN debt - ? < 0 THEN 0 ELSE debt - ? END,
-             updated_at = ?
-         WHERE id = ?''',
-      [amount, amount, now, clientId],
-    );
+    final clientResponse = await _supabase
+        .from('clients')
+        .select('debt')
+        .eq('id', clientId)
+        .single();
+    final currentDebt = (clientResponse['debt'] as num?)?.toDouble() ?? 0.0;
+    final newDebt = (currentDebt - amount) < 0 ? 0.0 : (currentDebt - amount);
+    await _supabase
+        .from('clients')
+        .update({
+          'debt': newDebt,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('id', clientId);
   }
 }
