@@ -253,6 +253,90 @@ async function sendToAllOfType(
   return sent
 }
 
+async function sendToWarehouse(
+  accessToken: string,
+  warehouseId: string,
+  title: string,
+  body: string,
+  channelId: string,
+  soundName: string,
+  data: Record<string, string> = {}
+) {
+  const sb = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
+  
+  // 1. Get organization/company id for the warehouse
+  const { data: wh, error: whError } = await sb
+    .from("warehouses")
+    .select("organization_id")
+    .eq("id", warehouseId)
+    .maybeSingle()
+
+  if (whError || !wh) {
+    console.error(`[sendToWarehouse] Warehouse not found: ${warehouseId}`, whError)
+    return 0
+  }
+  const companyId = wh.organization_id
+
+  // 2. Get all employees of this company
+  const { data: employees, error: empError } = await sb
+    .from("employees")
+    .select("id, allowed_warehouses")
+    .eq("company_id", companyId)
+
+  if (empError || !employees) {
+    console.error(`[sendToWarehouse] Failed to load employees for company ${companyId}`, empError)
+    return 0
+  }
+
+  // 3. Filter employees who have access to this warehouse
+  const targetEmployeeIds = new Set<string>()
+  for (const emp of employees) {
+    const allowedStr = emp.allowed_warehouses
+    if (!allowedStr) {
+      // access to all warehouses in the company
+      targetEmployeeIds.add(emp.id)
+    } else {
+      // allowedStr is a comma-separated list or possibly pg array '{val1,val2}'
+      const whs = allowedStr
+        .replace(/[{}]/g, "")
+        .split(",")
+        .map((s: string) => s.trim())
+        .filter((s: string) => s.length > 0)
+      if (whs.includes(warehouseId)) {
+        targetEmployeeIds.add(emp.id)
+      }
+    }
+  }
+
+  if (targetEmployeeIds.size === 0) {
+    console.log(`[sendToWarehouse] No employees with access to warehouse ${warehouseId}`)
+    return 0
+  }
+
+  // 4. Get FCM tokens for these employee user_ids
+  const { data: tokens, error: tokensError } = await sb
+    .from("user_fcm_tokens")
+    .select("fcm_token, user_id")
+    .eq("app_type", "warehouse")
+    .in("user_id", Array.from(targetEmployeeIds))
+
+  if (tokensError || !tokens || tokens.length === 0) {
+    console.log(`[sendToWarehouse] No FCM tokens found for warehouse ${warehouseId} employees`)
+    return 0
+  }
+
+  // 5. Send FCM notification to each token
+  let sent = 0
+  for (const t of tokens) {
+    const ok = await sendToToken(
+      accessToken, t.fcm_token, title, body, channelId, soundName, data, t.user_id, "warehouse"
+    )
+    if (ok) sent++
+  }
+  console.log(`[sendToWarehouse] Sent to ${sent}/${tokens.length} warehouse devices for warehouse ${warehouseId}`)
+  return sent
+}
+
 // ── Resolve customers.id / couriers.id → auth.users.id ──
 
 async function resolveUserId(id: string, table: "customers" | "couriers"): Promise<string | null> {
@@ -415,8 +499,8 @@ async function handleWebhook(accessToken: string, payload: any) {
         old_record?.status !== "pending" &&
         old_record?.status !== "courier_assigned"
       ) {
-        const sent = await sendToAllOfType(
-          accessToken, "warehouse",
+        const sent = await sendToWarehouse(
+          accessToken, record.warehouse_id,
           "Заказ отменён",
           `#${num} — заказ отменён`,
           "delivery_orders_v2", "order_cancelled",
@@ -427,8 +511,8 @@ async function handleWebhook(accessToken: string, payload: any) {
 
       // → Notify WAREHOUSE if payment verified (start assembly)
       if (status === "payment_verified" && record.warehouse_id) {
-        const sent = await sendToAllOfType(
-          accessToken, "warehouse",
+        const sent = await sendToWarehouse(
+          accessToken, record.warehouse_id,
           "Новый заказ (Оплачен)",
           `#${num} — заказ оплачен, начните сборку`,
           "delivery_orders_v2", "new_order_alert",
