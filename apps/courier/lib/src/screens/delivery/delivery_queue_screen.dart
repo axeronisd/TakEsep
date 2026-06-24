@@ -32,6 +32,7 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
   List<Map<String, dynamic>> _activeOrders = [];
   List<RouteTask> _routeTasks = [];
   List<LatLng> _roadPoints = [];
+  List<List<LatLng>> _roadSegments = [];
   bool _loading = true;
   bool _updating = false;
   RealtimeChannel? _channel;
@@ -45,6 +46,96 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
   double? _courierHeading;
 
   double _sheetPosition = 0.45;
+
+  final List<Color> _orderColors = const [
+    Color(0xFF2196F3), // Голубой
+    Color(0xFF9C27B0), // Фиолетовый
+    Color(0xFFFF9800), // Оранжевый
+    Color(0xFF4CAF50), // Зеленый
+    Color(0xFFE91E63), // Розовый
+  ];
+
+  Color _getOrderColor(String orderId) {
+    final idx = _activeOrders.indexWhere((o) => o['id'] == orderId);
+    if (idx == -1) return Colors.grey;
+    return _orderColors[idx % _orderColors.length];
+  }
+
+  String _deliveryWord(int count) {
+    final mod10 = count % 10;
+    final mod100 = count % 100;
+    if (mod10 == 1 && mod100 != 11) {
+      return 'заказ';
+    } else if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) {
+      return 'заказа';
+    } else {
+      return 'заказов';
+    }
+  }
+
+  void _showNavigationMenu(RouteTask task) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: const Color(0xFF0F0F1A),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 12),
+                  child: Text(
+                    'Открыть в навигаторе',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.map_rounded, color: Colors.green),
+                  title: const Text('Google Maps', style: TextStyle(color: Colors.white)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    final url = 'https://www.google.com/maps/search/?api=1&query=${task.lat},${task.lng}';
+                    launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.directions_car_rounded, color: Colors.red),
+                  title: const Text('Яндекс Навигатор / Карты', style: TextStyle(color: Colors.white)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    final url = 'yandexmaps://maps.yandex.ru/?pt=${task.lng},${task.lat}&z=16&l=map';
+                    final fallbackUrl = 'https://yandex.ru/maps/?pt=${task.lng},${task.lat}&z=16&l=map';
+                    launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication).catchError((_) {
+                      launchUrl(Uri.parse(fallbackUrl), mode: LaunchMode.externalApplication);
+                      return true;
+                    });
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.explore_rounded, color: Colors.blue),
+                  title: const Text('2GIS', style: TextStyle(color: Colors.white)),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    final url = 'dgis://2gis.ru/geo/${task.lng},${task.lat}';
+                    final fallbackUrl = 'https://2gis.ru/geo/${task.lng},${task.lat}';
+                    launchUrl(Uri.parse(url), mode: LaunchMode.externalApplication).catchError((_) {
+                      launchUrl(Uri.parse(fallbackUrl), mode: LaunchMode.externalApplication);
+                      return true;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
 
   void _toggleSheet() {
     setState(() {
@@ -298,12 +389,15 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
     try {
       final String profile = transportType == 'bicycle' ? 'cycling' : 'driving';
       List<LatLng> fullRoute = [];
+      List<List<LatLng>> segments = [];
+
       final r1 = await RouteService.getRoute(
         LatLng(startLat, startLng), 
         LatLng(tasks.first.lat, tasks.first.lng),
         profile: profile,
       );
       fullRoute.addAll(r1);
+      segments.add(r1);
       
       for (int i = 0; i < tasks.length - 1; i++) {
         final rN = await RouteService.getRoute(
@@ -312,11 +406,13 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
           profile: profile,
         );
         fullRoute.addAll(rN);
+        segments.add(rN);
       }
       
       if (mounted) {
         setState(() {
           _roadPoints = fullRoute;
+          _roadSegments = segments;
         });
       }
     } catch (_) {}
@@ -469,7 +565,7 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
             color: const Color(0xFF111111).withValues(alpha: 0.8),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Text('Очередь (${_activeOrders.length} заказов)', style: const TextStyle(fontSize: 16)),
+          child: Text('Очередь: ${_activeOrders.length} ${_deliveryWord(_activeOrders.length)} (${_routeTasks.length} точек)', style: const TextStyle(fontSize: 13)),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -622,6 +718,14 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
     final mapPoints = _roadPoints.isNotEmpty ? _roadPoints : points;
     final bounds = LatLngBounds.fromPoints(mapPoints);
 
+    // Group tasks by location (coordinate) to prevent overlapping markers
+    final Map<String, List<int>> locationGroups = {};
+    for (int i = 0; i < _routeTasks.length; i++) {
+      final task = _routeTasks[i];
+      final key = '${task.lat.toStringAsFixed(5)}_${task.lng.toStringAsFixed(5)}';
+      locationGroups.putIfAbsent(key, () => []).add(i);
+    }
+
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
@@ -645,7 +749,22 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
           ),
           PolylineLayer(
             polylines: [
-              if (_roadPoints.isNotEmpty) ...[
+              if (_roadSegments.isNotEmpty) ...[
+                for (int idx = 0; idx < _roadSegments.length; idx++) ...[
+                  Polyline(
+                    points: _roadSegments[idx],
+                    strokeWidth: 8,
+                    color: Colors.white.withValues(alpha: 0.3),
+                  ),
+                  Polyline(
+                    points: _roadSegments[idx],
+                    strokeWidth: 4,
+                    color: _getOrderColor(_routeTasks[idx].orderId),
+                    strokeJoin: StrokeJoin.round,
+                    strokeCap: StrokeCap.round,
+                  ),
+                ]
+              ] else if (_roadPoints.isNotEmpty) ...[
                 Polyline(
                   points: _roadPoints,
                   strokeWidth: 8,
@@ -702,32 +821,53 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
                   ),
                 ),
               // Task markers
-              ..._routeTasks.asMap().entries.map((entry) {
-              final idx = entry.key;
-              final task = entry.value;
-              return Marker(
-                point: LatLng(task.lat, task.lng),
-                width: 30,
-                height: 30,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: task.type == RouteTaskType.pickup ? Colors.blue : Colors.green,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                  child: Center(
-                    child: Text(
-                      '${idx + 1}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
+              ...locationGroups.entries.map((group) {
+                final indices = group.value;
+                final firstIdx = indices.first;
+                final firstTask = _routeTasks[firstIdx];
+                final isGrouped = indices.length > 1;
+
+                Color markerColor;
+                if (isGrouped) {
+                  markerColor = AkJolTheme.primary;
+                } else {
+                  markerColor = _getOrderColor(firstTask.orderId);
+                }
+
+                final label = indices.map((idx) => (idx + 1).toString()).join(', ');
+                final double markerWidth = isGrouped ? (30.0 + (indices.length - 1) * 12.0).clamp(30.0, 70.0) : 30.0;
+
+                return Marker(
+                  point: LatLng(firstTask.lat, firstTask.lng),
+                  width: markerWidth,
+                  height: 30,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: markerColor,
+                      borderRadius: BorderRadius.circular(15),
+                      border: Border.all(color: Colors.white, width: 2),
+                      boxShadow: [
+                        BoxShadow(
+                          color: markerColor.withValues(alpha: 0.4),
+                          blurRadius: 6,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        label,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
                       ),
                     ),
                   ),
-                ),
-              );
-            })],
+                );
+              }),
+            ],
           ),
         ],
       );
@@ -884,6 +1024,14 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
                 
                 return Row(
                   children: [
+                    IconButton(
+                      onPressed: () => _showNavigationMenu(task),
+                      icon: const Icon(Icons.navigation_outlined, color: Colors.blue, size: 20),
+                      style: IconButton.styleFrom(backgroundColor: Colors.blue.withValues(alpha: 0.15)),
+                      constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                      padding: EdgeInsets.zero,
+                    ),
+                    const SizedBox(width: 6),
                     IconButton(
                       onPressed: () => _openChat(order['id'], customerName, customerPhone),
                       icon: const Icon(Icons.chat_bubble_outline, color: Colors.white70, size: 20),
@@ -1316,7 +1464,10 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
         }
       }
     } else {
-      if (status == 'picked_up') {
+      final isPickedUp = status == 'picked_up' || status == 'arrived';
+      if (!isPickedUp) {
+        actionBtn = _buildBtn('Забрать заказ', AkJolTheme.statusAccepted, Icons.inventory_rounded, () => _updateOrderStatus(task.orderId, 'picked_up'));
+      } else if (status == 'picked_up') {
         actionBtn = _buildBtn('Я приехал', AkJolTheme.primary, Icons.location_on_rounded, () => _updateOrderStatus(task.orderId, 'arrived'));
       } else if (status == 'arrived') {
         actionBtn = _buildBtn('Доставлено', AkJolTheme.success, Icons.check_circle_rounded, () => _updateOrderStatus(task.orderId, 'delivered'));
