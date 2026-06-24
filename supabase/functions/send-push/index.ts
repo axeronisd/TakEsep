@@ -290,6 +290,9 @@ async function sendToWarehouse(
 
   // 3. Filter employees who have access to this warehouse
   const targetEmployeeIds = new Set<string>()
+  // Add company owner (their token is registered under companyId)
+  targetEmployeeIds.add(companyId)
+
   for (const emp of employees) {
     const allowedStr = emp.allowed_warehouses
     if (!allowedStr) {
