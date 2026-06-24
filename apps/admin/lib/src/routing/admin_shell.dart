@@ -719,7 +719,7 @@ Future<void> _openSite() async {
     scheme: base.scheme,
     host: base.host,
     port: base.port == 0 ? null : base.port,
-    path: '/TakEsep/',
+    path: '/',
   );
   try {
     await launchUrl(uri, webOnlyWindowName: '_self');
@@ -734,7 +734,7 @@ Future<void> _logout(BuildContext context) async {
     scheme: base.scheme,
     host: base.host,
     port: base.port == 0 ? null : base.port,
-    path: '/TakEsep/admin.html',
+    path: '/admin.html',
     queryParameters: {'logout': '1'},
   );
   try {
