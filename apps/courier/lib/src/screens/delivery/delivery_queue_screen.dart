@@ -695,7 +695,7 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
                             child: Builder(
                               builder: (context) {
                                 final displayTasks = _routeTasks.where((task) {
-                                  final isFreelance = task.order['delivery_type'] == 'freelance';
+                                  final isFreelance = task.order['delivery_type'] == 'freelance' && (task.order['items_total'] as num?)?.toDouble() == 0;
                                   if (isFreelance && task.type == RouteTaskType.dropoff) {
                                     final status = task.order['status'] ?? '';
                                     final isPickedUp = status == 'picked_up' || status == 'arrived';
@@ -1030,7 +1030,7 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
                       task.address,
                       style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14),
                     ),
-                    if (order['delivery_type'] == 'freelance' && isPickup) ...[
+                    if (order['delivery_type'] == 'freelance' && (order['items_total'] as num?)?.toDouble() == 0 && isPickup) ...[
                       const SizedBox(height: 8),
                       Row(
                         children: [
@@ -1151,7 +1151,7 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
               ),
             ),
           ],
-          if (order['delivery_type'] == 'freelance') ...[
+          if (order['delivery_type'] == 'freelance' && (order['items_total'] as num?)?.toDouble() == 0) ...[
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Container(
@@ -1199,7 +1199,7 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
               ),
             ),
           ],
-          if (order['delivery_type'] == 'freelance' && 
+          if (order['delivery_type'] == 'freelance' && (order['items_total'] as num?)?.toDouble() == 0 && 
               ((order['sender_phone'] as String?)?.isNotEmpty == true || 
                (order['recipient_phone'] as String?)?.isNotEmpty == true)) ...[
             Padding(
@@ -1468,9 +1468,10 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
 
     Widget actionBtn;
     bool canCancel = false;
-    final isFreelance = task.order['delivery_type'] == 'freelance';
+    final isFreelance = task.order['delivery_type'] == 'freelance' && (task.order['items_total'] as num?)?.toDouble() == 0;
     
     if (task.type == RouteTaskType.pickup) {
+      canCancel = true; // Allow cancelling any order before it is physically picked up
       if (status == 'payment_sent') {
         actionBtn = _buildBtn('Подтвердить оплату', Colors.blue, Icons.verified_rounded, () => _updateOrderStatus(task.orderId, 'payment_verified'));
       } else if (status == 'payment_verified' || status == 'assembling' || status == 'ready') {
@@ -1484,7 +1485,6 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
           actionBtn = _buildBtn('Я на Точке А', AkJolTheme.statusAccepted, Icons.location_on_rounded, () => _updateOrderStatus(task.orderId, 'picked_up'));
         } else {
           actionBtn = _buildBtn('Ожидание оплаты...', Colors.grey, Icons.hourglass_top_rounded, null);
-          canCancel = true; // Can cancel while waiting for payment
         }
       } else {
         // Fallback

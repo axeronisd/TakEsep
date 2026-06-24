@@ -64,11 +64,17 @@ class OrderService {
         .eq('id', orderId);
   }
 
-  /// Courier declines order (goes back to pending for another courier)
+  /// Courier declines order (goes back to pending or ready for another courier)
   Future<void> declineOrder(String orderId) async {
+    // We update the status to cancelled_by_courier and clear the courier_id.
+    // The DB trigger `trigger_order_status_change` will automatically handle
+    // the history log and reset the status back to 'ready' (for store) or 'pending' (for freelance).
     await _supabase
         .from('delivery_orders')
-        .update({'status': 'pending', 'courier_id': null})
+        .update({
+          'status': 'cancelled_by_courier',
+          'courier_id': null,
+        })
         .eq('id', orderId);
   }
 
