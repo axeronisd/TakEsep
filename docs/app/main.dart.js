@@ -8588,7 +8588,7 @@ var $async$ad8=A.x(function(a,b){if(a===1){p.push(b)
 s=q}for(;;)switch(s){case 0:m=A.LF()
 l=m.ge9()
 k=m.gjE(m)
-j=A.ef(null,k,"/TakEsep/",null,m.goy(m)===0?null:m.goy(m),null,l)
+j=A.ef(null,k,"/",null,m.goy(m)===0?null:m.goy(m),null,l)
 q=3
 s=6
 return A.j(A.RU(j,B.xu,"_self"),$async$ad8)
@@ -8612,7 +8612,7 @@ s=q}for(;;)switch(s){case 0:m=A.LF()
 l=m.ge9()
 k=m.gjE(m)
 j=m.goy(m)===0?null:m.goy(m)
-i=A.ef(null,k,"/TakEsep/admin.html",null,j,A.a6(["logout","1"],t.N,t.z),l)
+i=A.ef(null,k,"/admin.html",null,j,A.a6(["logout","1"],t.N,t.z),l)
 q=3
 s=6
 return A.j(A.RU(i,B.xu,"_self"),$async$ad7)
