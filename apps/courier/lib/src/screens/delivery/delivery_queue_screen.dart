@@ -750,7 +750,7 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
           PolylineLayer(
             polylines: [
               if (_roadSegments.isNotEmpty) ...[
-                for (int idx = 0; idx < _roadSegments.length; idx++) ...[
+                for (int idx = 0; idx < _roadSegments.length && idx < _routeTasks.length; idx++) ...[
                   Polyline(
                     points: _roadSegments[idx],
                     strokeWidth: 8,

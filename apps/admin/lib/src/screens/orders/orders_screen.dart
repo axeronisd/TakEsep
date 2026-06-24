@@ -20,6 +20,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
   bool _deleting = false;
   String _searchQuery = '';
   String _statusFilter = 'all'; // all, pending, courier_assigned, picked_up, delivered, cancelled
+  String _typeFilter = 'all'; // all, store, freelance
   final Set<String> _selectedOrderIds = {};
 
   List<Map<String, dynamic>> _orders = [];
@@ -70,6 +71,14 @@ class _OrdersScreenState extends State<OrdersScreen> {
         if (_statusFilter == 'delivered') return status == 'delivered';
         if (_statusFilter == 'cancelled') return status == 'cancelled';
         return true;
+      }).toList();
+    }
+
+    // Apply type filter
+    if (_typeFilter != 'all') {
+      result = result.where((o) {
+        final type = (o['delivery_type'] ?? '').toString().toLowerCase();
+        return type == _typeFilter;
       }).toList();
     }
 
@@ -184,6 +193,19 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     _buildStatusChip('Забран курьером (Picked Up)', 'picked_up'),
                     _buildStatusChip('Доставлено (Delivered)', 'delivered'),
                     _buildStatusChip('Отменено (Cancelled)', 'cancelled'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 10),
+
+              // Horizontal scrolling Type chips
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    _buildTypeChip('Все типы', 'all'),
+                    _buildTypeChip('Магазин (Store)', 'store'),
+                    _buildTypeChip('Фриланс (Freelance)', 'freelance'),
                   ],
                 ),
               ),
@@ -309,7 +331,14 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(number, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(number, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
+                            const SizedBox(width: 6),
+                            _buildTypeBadge(o['delivery_type']),
+                          ],
+                        ),
                         Text(
                           id.substring(0, 8),
                           style: const TextStyle(fontFamily: 'monospace', color: AppColors.darkTextTertiary, fontSize: 11),
@@ -390,7 +419,14 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     },
                   ),
                   const SizedBox(width: 4),
-                  Text('Заказ $number', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text('Заказ $number', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                      const SizedBox(width: 6),
+                      _buildTypeBadge(o['delivery_type']),
+                    ],
+                  ),
                 ],
               ),
               _buildStatusBadge(status),
@@ -497,6 +533,57 @@ class _OrdersScreenState extends State<OrdersScreen> {
           fontSize: 11,
           fontWeight: FontWeight.bold,
           color: textColor,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTypeChip(String label, String value) {
+    final isSelected = _typeFilter == value;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: ChoiceChip(
+        label: Text(label),
+        selected: isSelected,
+        onSelected: (selected) {
+          if (selected) {
+            setState(() => _typeFilter = value);
+          }
+        },
+        backgroundColor: AppColors.darkSurface,
+        selectedColor: AppColors.primary.withValues(alpha: 0.25),
+        labelStyle: TextStyle(
+          color: isSelected ? AppColors.primaryLight : AppColors.darkTextSecondary,
+          fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+          fontSize: 13,
+        ),
+        checkmarkColor: AppColors.primaryLight,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+          side: BorderSide(color: isSelected ? AppColors.primaryLight.withValues(alpha: 0.5) : AppColors.darkBorder),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTypeBadge(String? type) {
+    final isFreelance = type == 'freelance';
+    final label = isFreelance ? 'Фриланс' : 'Магазин';
+    final Color badgeColor = isFreelance ? Colors.orange : Colors.blue;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1.5),
+      decoration: BoxDecoration(
+        color: badgeColor.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: badgeColor.withValues(alpha: 0.25), width: 1),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.bold,
+          color: isFreelance ? Colors.orangeAccent : Colors.blueAccent,
         ),
       ),
     );
