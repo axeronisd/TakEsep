@@ -70,7 +70,7 @@ class RouteOptimizer {
       // Если еще не забрали — добавляем задачу Pickup
       if (!isPickedUp) {
         final wh = order['warehouses'];
-        final isFreelance = order['delivery_type'] == 'freelance' && (order['items_total'] as num?)?.toDouble() == 0;
+        final isFreelance = order['delivery_type'] == 'freelance';
         final pickupName = isFreelance ? 'Откуда (Клиент)' : (wh?['name'] ?? 'Магазин');
         final pickupAddr = isFreelance ? (order['pickup_address'] ?? '') : (wh?['address'] ?? '');
         allTasks.add(RouteTask(
@@ -85,18 +85,22 @@ class RouteOptimizer {
         ));
       }
 
-      // Задачу Dropoff добавляем всегда
-      final cust = order['customers'];
-      allTasks.add(RouteTask(
-        type: RouteTaskType.dropoff,
-        orderId: order['id'],
-        order: order,
-        lat: (cust?['latitude'] as num?)?.toDouble() ?? (order['delivery_lat'] as num?)?.toDouble() ?? 0,
-        lng: (cust?['longitude'] as num?)?.toDouble() ?? (order['delivery_lng'] as num?)?.toDouble() ?? 0,
-        title: 'Доставить клиенту: ${cust?['name'] ?? 'Клиент'}',
-        subtitle: 'Сумма: ${order['total']} сом',
-        address: order['delivery_address'] ?? '',
-      ));
+      // Задачу Dropoff добавляем всегда для свободной доставки (delivery_type == 'freelance'),
+      // а для доставки с магазина - только если заказ уже забран (isPickedUp)
+      final isFreelance = order['delivery_type'] == 'freelance';
+      if (isFreelance || isPickedUp) {
+        final cust = order['customers'];
+        allTasks.add(RouteTask(
+          type: RouteTaskType.dropoff,
+          orderId: order['id'],
+          order: order,
+          lat: (cust?['latitude'] as num?)?.toDouble() ?? (order['delivery_lat'] as num?)?.toDouble() ?? 0,
+          lng: (cust?['longitude'] as num?)?.toDouble() ?? (order['delivery_lng'] as num?)?.toDouble() ?? 0,
+          title: 'Доставить клиенту: ${cust?['name'] ?? 'Клиент'}',
+          subtitle: 'Сумма: ${order['total']} сом',
+          address: order['delivery_address'] ?? '',
+        ));
+      }
     }
 
     final List<RouteTask> route = [];

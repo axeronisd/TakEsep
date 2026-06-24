@@ -415,7 +415,9 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
           _roadSegments = segments;
         });
       }
-    } catch (_) {}
+    } catch (e, stack) {
+      debugPrint('[_loadRoadRoute] Error: $e\n$stack');
+    }
   }
 
   Future<void> _cancelOrder(String orderId) async {
@@ -690,15 +692,29 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
                               }
                               return false;
                             },
-                            child: ListView.builder(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                              itemCount: _routeTasks.length,
-                              itemBuilder: (ctx, i) {
-                                final task = _routeTasks[i];
-                                final isCurrent = i == 0;
-                                return _buildTaskCard(task, isCurrent, i + 1);
-                              },
+                            child: Builder(
+                              builder: (context) {
+                                final displayTasks = _routeTasks.where((task) {
+                                  final isFreelance = task.order['delivery_type'] == 'freelance';
+                                  if (isFreelance && task.type == RouteTaskType.dropoff) {
+                                    final status = task.order['status'] ?? '';
+                                    final isPickedUp = status == 'picked_up' || status == 'arrived';
+                                    return isPickedUp;
+                                  }
+                                  return true;
+                                }).toList();
+
+                                return ListView.builder(
+                                  physics: const AlwaysScrollableScrollPhysics(),
+                                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                                  itemCount: displayTasks.length,
+                                  itemBuilder: (ctx, i) {
+                                    final task = displayTasks[i];
+                                    final isCurrent = i == 0;
+                                    return _buildTaskCard(task, isCurrent, i + 1);
+                                  },
+                                );
+                              }
                             ),
                           ),
                         ),
@@ -1014,6 +1030,21 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
                       task.address,
                       style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 14),
                     ),
+                    if (order['delivery_type'] == 'freelance' && isPickup) ...[
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          const Icon(Icons.location_on_rounded, color: Colors.redAccent, size: 16),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              'Доставка: ${order['delivery_address'] ?? ""}',
+                              style: TextStyle(color: Colors.white.withValues(alpha: 0.6), fontSize: 13, fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -1437,19 +1468,19 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
 
     Widget actionBtn;
     bool canCancel = false;
-    final isCustomFreelance = task.order['delivery_type'] == 'freelance' && (task.order['items_total'] as num?)?.toDouble() == 0;
+    final isFreelance = task.order['delivery_type'] == 'freelance';
     
     if (task.type == RouteTaskType.pickup) {
       if (status == 'payment_sent') {
         actionBtn = _buildBtn('Подтвердить оплату', Colors.blue, Icons.verified_rounded, () => _updateOrderStatus(task.orderId, 'payment_verified'));
       } else if (status == 'payment_verified' || status == 'assembling' || status == 'ready') {
-        if (isCustomFreelance) {
+        if (isFreelance) {
           actionBtn = _buildBtn('Я на Точке А', AkJolTheme.statusAccepted, Icons.location_on_rounded, () => _updateOrderStatus(task.orderId, 'picked_up'));
         } else {
           actionBtn = _buildBtn('Забрал заказ', AkJolTheme.statusAccepted, Icons.inventory_rounded, () => _updateOrderStatus(task.orderId, 'picked_up'));
         }
       } else if (status == 'courier_assigned') {
-        if (isCustomFreelance) {
+        if (isFreelance) {
           actionBtn = _buildBtn('Я на Точке А', AkJolTheme.statusAccepted, Icons.location_on_rounded, () => _updateOrderStatus(task.orderId, 'picked_up'));
         } else {
           actionBtn = _buildBtn('Ожидание оплаты...', Colors.grey, Icons.hourglass_top_rounded, null);
@@ -1457,7 +1488,7 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
         }
       } else {
         // Fallback
-        if (isCustomFreelance) {
+        if (isFreelance) {
           actionBtn = _buildBtn('Я на Точке А', AkJolTheme.statusAccepted, Icons.location_on_rounded, () => _updateOrderStatus(task.orderId, 'picked_up'));
         } else {
           actionBtn = _buildBtn('Забрал', AkJolTheme.statusAccepted, Icons.check, () => _updateOrderStatus(task.orderId, 'picked_up'));
@@ -1466,7 +1497,7 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
     } else {
       final isPickedUp = status == 'picked_up' || status == 'arrived';
       if (!isPickedUp) {
-        actionBtn = _buildBtn('Забрать заказ', AkJolTheme.statusAccepted, Icons.inventory_rounded, () => _updateOrderStatus(task.orderId, 'picked_up'));
+        actionBtn = _buildBtn('Ожидает забора', Colors.grey, Icons.hourglass_empty_rounded, null);
       } else if (status == 'picked_up') {
         actionBtn = _buildBtn('Я приехал', AkJolTheme.primary, Icons.location_on_rounded, () => _updateOrderStatus(task.orderId, 'arrived'));
       } else if (status == 'arrived') {

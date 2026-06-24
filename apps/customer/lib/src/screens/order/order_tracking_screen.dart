@@ -396,7 +396,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final startLat = _courierLat;
     final startLng = _courierLng;
 
-    if (status == 'courier_assigned' && startLat != null && startLng != null &&
+    final isPrePickup = status == 'courier_assigned' ||
+        status == 'payment_sent' ||
+        status == 'payment_verified' ||
+        status == 'assembling' ||
+        status == 'ready';
+
+    if (isPrePickup && startLat != null && startLng != null &&
         storeLat != null && storeLng != null) {
       // Phase 1: Courier → Store
       final route = await RouteService.getRoute(
@@ -449,7 +455,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
     final order = _order!;
     final status = order['status'] ?? '';
-    final isFreelance = order['delivery_type'] == 'freelance' && order['warehouse_id'] == null;
+    final isFreelance = order['delivery_type'] == 'freelance';
     final storeName = order['warehouses']?['name'] ?? 'Магазин';
     final courierName = order['couriers']?['name'];
     final courierPhone = order['couriers']?['phone'];
@@ -459,8 +465,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final deliveryFee = (order['delivery_fee'] as num?)?.toDouble() ?? 0;
     final total = (order['total'] as num?)?.toDouble() ?? (itemsTotal + deliveryFee);
 
-    final isActive =
-        status == 'courier_assigned' || status == 'picked_up' || status == 'arrived';
+    final isPrePickup = status == 'courier_assigned' ||
+        status == 'payment_sent' ||
+        status == 'payment_verified' ||
+        status == 'assembling' ||
+        status == 'ready';
+
+    final isActive = isPrePickup || status == 'picked_up' || status == 'arrived';
     final hasLocation = _courierLat != null && _courierLng != null;
 
     return Scaffold(
@@ -480,7 +491,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           // ── Transport change notification ──
           _buildTransportChangeBanner(),
           
-          if (_courierHasOtherOrders && (status == 'picked_up' || status == 'courier_assigned'))
+          if (_courierHasOtherOrders && (status == 'picked_up' || isPrePickup))
             Container(
               margin: const EdgeInsets.only(top: 12),
               padding: const EdgeInsets.all(12),
@@ -758,7 +769,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
     // Gather coordinates
     final courierPos = LatLng(_courierLat!, _courierLng!);
-    final isFreelance = _order?['delivery_type'] == 'freelance' && _order?['warehouse_id'] == null;
+    final isFreelance = _order?['delivery_type'] == 'freelance';
     // Store location: use warehouses table (actual store location)
     final pickupLat = (_order?['warehouses']?['latitude'] as num?)?.toDouble()
         ?? (_order?['pickup_lat'] as num?)?.toDouble();
@@ -903,26 +914,79 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
     // Route polyline — changes based on delivery phase
     final status = _order?['status'] ?? '';
-    List<LatLng> polylinePoints;
+    final polylines = <Polyline>[];
+    final isPrePickup = status == 'courier_assigned' ||
+        status == 'payment_sent' ||
+        status == 'payment_verified' ||
+        status == 'assembling' ||
+        status == 'ready';
 
-    if (status == 'courier_assigned') {
-      // Phase 1: Courier going TO STORE
-      if (_routeToStore.isNotEmpty) {
-        polylinePoints = [courierPos, ..._routeToStore];
+    if (isFreelance) {
+      if (isPrePickup) {
+        // Line 1: Courier → Point A
+        final ptsToStore = _routeToStore.isNotEmpty
+            ? [courierPos, ..._routeToStore]
+            : [courierPos, if (pickupLat != null && pickupLng != null) LatLng(pickupLat, pickupLng)];
+        if (ptsToStore.length >= 2) {
+          polylines.add(Polyline(
+            points: ptsToStore,
+            color: Colors.blue,
+            strokeWidth: 4,
+            pattern: const StrokePattern.dotted(),
+          ));
+        }
+
+        // Line 2: Point A → Point B
+        final ptsToCustomer = _routeToCustomer.isNotEmpty
+            ? _routeToCustomer
+            : [if (pickupLat != null && pickupLng != null) LatLng(pickupLat, pickupLng), if (deliveryLat != null && deliveryLng != null) LatLng(deliveryLat, deliveryLng)];
+        if (ptsToCustomer.length >= 2) {
+          polylines.add(Polyline(
+            points: ptsToCustomer,
+            color: AkJolTheme.primary,
+            strokeWidth: 4,
+            pattern: const StrokePattern.dotted(),
+          ));
+        }
       } else {
-        polylinePoints = [courierPos];
-        if (pickupLat != null && pickupLng != null) {
-          polylinePoints.add(LatLng(pickupLat, pickupLng));
+        // Courier picked up: Courier → Point B (Customer)
+        final ptsToCustomer = _routeToCustomer.isNotEmpty
+            ? [courierPos, ..._routeToCustomer]
+            : [courierPos, if (deliveryLat != null && deliveryLng != null) LatLng(deliveryLat, deliveryLng)];
+        if (ptsToCustomer.length >= 2) {
+          polylines.add(Polyline(
+            points: ptsToCustomer,
+            color: AkJolTheme.primary,
+            strokeWidth: 4,
+            pattern: const StrokePattern.dotted(),
+          ));
         }
       }
     } else {
-      // Phase 2: Courier going TO CUSTOMER
-      if (_routeToCustomer.isNotEmpty) {
-        polylinePoints = [courierPos, ..._routeToCustomer];
+      // Store order
+      if (isPrePickup) {
+        final ptsToStore = _routeToStore.isNotEmpty
+            ? [courierPos, ..._routeToStore]
+            : [courierPos, if (pickupLat != null && pickupLng != null) LatLng(pickupLat, pickupLng)];
+        if (ptsToStore.length >= 2) {
+          polylines.add(Polyline(
+            points: ptsToStore,
+            color: Colors.blue,
+            strokeWidth: 4,
+            pattern: const StrokePattern.dotted(),
+          ));
+        }
       } else {
-        polylinePoints = [courierPos];
-        if (deliveryLat != null && deliveryLng != null) {
-          polylinePoints.add(LatLng(deliveryLat, deliveryLng));
+        final ptsToCustomer = _routeToCustomer.isNotEmpty
+            ? [courierPos, ..._routeToCustomer]
+            : [courierPos, if (deliveryLat != null && deliveryLng != null) LatLng(deliveryLat, deliveryLng)];
+        if (ptsToCustomer.length >= 2) {
+          polylines.add(Polyline(
+            points: ptsToCustomer,
+            color: AkJolTheme.primary,
+            strokeWidth: 4,
+            pattern: const StrokePattern.dotted(),
+          ));
         }
       }
     }
@@ -957,19 +1021,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   userAgentPackageName: 'com.akjolui.customer',
                 ),
                 // Route line
-                if (polylinePoints.length >= 2)
-                  PolylineLayer(
-                    polylines: [
-                      Polyline(
-                        points: polylinePoints,
-                        color: status == 'courier_assigned'
-                            ? Colors.blue
-                            : AkJolTheme.primary,
-                        strokeWidth: 4,
-                        pattern: const StrokePattern.dotted(),
-                      ),
-                    ],
-                  ),
+                if (polylines.isNotEmpty)
+                  PolylineLayer(polylines: polylines),
                 // Markers
                 MarkerLayer(markers: markers),
               ],
