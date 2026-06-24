@@ -1937,6 +1937,158 @@
       font-size: 0.82rem;
       border-color: var(--border);
     }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .legal-modal-card {
+      max-width: 800px;
+      width: 95%;
+      display: flex;
+      flex-direction: column;
+      max-height: 85vh;
+      padding: 24px;
+      background: var(--bg-card-solid);
+      border: 1px solid var(--border-strong);
+      border-radius: var(--radius-lg);
+    }
+
+    .legal-modal-body {
+      overflow-y: auto;
+      max-height: 60vh;
+      padding-right: 12px;
+      margin-top: 16px;
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: var(--text-secondary);
+      text-align: left;
+    }
+
+    .legal-modal-body::-webkit-scrollbar {
+      width: 6px;
+    }
+    .legal-modal-body::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.02);
+      border-radius: 3px;
+    }
+    .legal-modal-body::-webkit-scrollbar-thumb {
+      background: rgba(16, 185, 129, 0.3);
+      border-radius: 3px;
+    }
+    .legal-modal-body::-webkit-scrollbar-thumb:hover {
+      background: rgba(16, 185, 129, 0.5);
+    }
+
+    .legal-modal-body h1 {
+      display: none;
+    }
+
+    .legal-modal-body h2 {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #fff;
+      margin: 24px 0 12px;
+      border-bottom: 1px solid rgba(16, 185, 129, 0.15);
+      padding-bottom: 6px;
+    }
+
+    .legal-modal-body h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--green-2);
+      margin: 18px 0 8px;
+    }
+
+    .legal-modal-body p {
+      margin-bottom: 12px;
+    }
+
+    .legal-modal-body ul {
+      margin: 8px 0 16px 20px;
+    }
+
+    .legal-modal-body li {
+      margin-bottom: 6px;
+    }
+
+    .legal-modal-body strong {
+      color: #fff;
+    }
+
+    .legal-modal-body .warning-box {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.25);
+      border-radius: 12px;
+      padding: 16px;
+      margin: 20px 0;
+      color: #FCA5A5;
+    }
+
+    .legal-modal-body .warning-box strong {
+      color: #EF4444;
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .legal-modal-body .contact-box {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-top: 20px;
+    }
+
+    .legal-modal-body .apps-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin: 16px 0 24px;
+    }
+
+    .legal-modal-body .app-card {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .legal-modal-body .app-card strong {
+      display: block;
+      font-size: 1rem;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    .legal-modal-body .app-card span {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+    }
+
+    .legal-modal-body table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0 24px;
+      font-size: 0.88rem;
+    }
+
+    .legal-modal-body th, .legal-modal-body td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .legal-modal-body th {
+      color: var(--green-2);
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .legal-modal-body td {
+      color: var(--text-secondary);
+    }
   </style>
 </head>
 
@@ -2422,6 +2574,7 @@
       </div>
       <div class="footer-links">
         <a href="admin.html" data-translate="navAdmin">Админ-панель</a>
+        <a href="terms.html" data-translate="footTerms">Публичная оферта</a>
         <a href="privacy.html" data-translate="footPrivacy">Конфиденциальность</a>
       </div>
     </footer>
@@ -2475,6 +2628,25 @@
       <div class="modal-footer">
         <p><span data-translate="modalFooterReady">Уже выполнили шаги?</span> <a id="modal-playstore-btn" href="#"
             target="_blank" rel="noopener" data-translate="modalFooterDownload">Скачать в Google Play</a></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal for Legal Documents (Terms / Privacy) -->
+  <div id="legal-modal" class="modal-overlay" style="display: none;" onclick="closeLegalModal(event)">
+    <div class="modal-card legal-modal-card" onclick="event.stopPropagation()">
+      <button class="modal-close-btn" onclick="closeLegalModal()" aria-label="Close">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+      <div class="modal-header" style="margin-bottom: 0;">
+        <h3 id="legal-modal-title" style="font-size: 1.5rem; color: #fff;">Публичная оферта</h3>
+        <p class="modal-subtitle" id="legal-modal-subtitle" style="margin-top: 4px; color: var(--text-secondary);"></p>
+      </div>
+      <div class="legal-modal-body" id="legal-modal-body">
+        <!-- Fetched content will go here -->
       </div>
     </div>
   </div>
@@ -2546,6 +2718,7 @@
         supportTitle: "Служба поддержки",
         supportDesc: "Поможем с установкой, настройкой и подключением экосистемы к вашему бизнесу.",
         footReleases: "Все версии",
+        footTerms: "Публичная оферта",
         footPrivacy: "Конфиденциальность",
         btnMobileCTA: "Скачать для вашего устройства",
         modalTitle: "Установка через Google Play",
@@ -2635,6 +2808,7 @@
         supportTitle: "Колдоо кызматы",
         supportDesc: "Экосистеманы орнотууга, жөндөөгө жана бизнесиңизге туташтырууга жардам беребиз.",
         footReleases: "Бардык версиялар",
+        footTerms: "Ачык оферта",
         footPrivacy: "Купуялуулук",
         btnMobileCTA: "Түзмөгүңүз үчүн жүктөп алыңыз",
         modalTitle: "Google Play аркылуу орнотуу",
@@ -3022,6 +3196,76 @@
       }, 300);
     }
 
+    async function openLegalModal(docType) {
+      const modal = document.getElementById('legal-modal');
+      const titleEl = document.getElementById('legal-modal-title');
+      const subtitleEl = document.getElementById('legal-modal-subtitle');
+      const bodyEl = document.getElementById('legal-modal-body');
+
+      titleEl.textContent = docType === 'terms' ? 'Публичная оферта' : 'Политика конфиденциальности';
+      subtitleEl.textContent = docType === 'terms' ? 'Последнее обновление: 24 июня 2026 г.' : 'Последнее обновление: 4 мая 2026 г.';
+      
+      bodyEl.innerHTML = `
+        <div style="text-align: center; padding: 60px 0; color: var(--text-secondary);">
+          <svg class="spinner" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: spin 1s linear infinite; stroke: var(--brand); margin-bottom: 12px; display: inline-block;">
+            <circle cx="12" cy="12" r="10" stroke-opacity="0.25"/>
+            <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+          </svg>
+          <div>Загрузка документа...</div>
+        </div>
+      `;
+
+      modal.style.display = 'flex';
+      setTimeout(() => modal.classList.add('active'), 10);
+
+      try {
+        const url = docType === 'terms' ? 'terms.html' : 'privacy.html';
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Network response was not ok');
+        const text = await response.text();
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(text, 'text/html');
+
+        const container = doc.querySelector('.container');
+        if (container) {
+          // Remove elements we already display in the modal header or don't need
+          const backLink = container.querySelector('.back-link');
+          if (backLink) backLink.remove();
+
+          const h1 = container.querySelector('h1');
+          if (h1) h1.remove();
+
+          const lastUpdated = container.querySelector('.last-updated');
+          if (lastUpdated) lastUpdated.remove();
+
+          const footer = container.querySelector('footer');
+          if (footer) footer.remove();
+
+          bodyEl.innerHTML = container.innerHTML;
+        } else {
+          throw new Error('Could not find document container');
+        }
+      } catch (error) {
+        console.error('Failed to load legal document:', error);
+        bodyEl.innerHTML = `
+          <div style="text-align: center; padding: 40px 20px;">
+            <p style="color: #FCA5A5; margin-bottom: 20px;">Не удалось загрузить документ во всплывающем окне.</p>
+            <a href="${docType === 'terms' ? 'terms.html' : 'privacy.html'}" target="_blank" class="btn btn-primary" style="display: inline-block;">
+              Открыть документ на отдельной странице
+            </a>
+          </div>
+        `;
+      }
+    }
+
+    function closeLegalModal(event) {
+      const modal = document.getElementById('legal-modal');
+      modal.classList.remove('active');
+      setTimeout(() => {
+        modal.style.display = 'none';
+      }, 300);
+    }
+
     // ── Menu button listeners ──
     document.getElementById('menu-btn').addEventListener('click', () => {
       const menu = document.getElementById('mobile-menu');
@@ -3102,6 +3346,21 @@
       // Register scroll observers
       document.querySelectorAll('.scroll-reveal').forEach(el => {
         revealObserver.observe(el);
+      });
+
+      // Register legal links listeners
+      document.querySelectorAll('a[href="terms.html"]').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          openLegalModal('terms');
+        });
+      });
+
+      document.querySelectorAll('a[href="privacy.html"]').forEach(link => {
+        link.addEventListener('click', (e) => {
+          e.preventDefault();
+          openLegalModal('privacy');
+        });
       });
 
       renderFallbackDownloads();

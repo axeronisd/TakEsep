@@ -84,7 +84,7 @@ class AkJolAuthService {
         );
       }
 
-      // Обновить профиль с username
+      // Обновить профиль с username и офертой
       try {
         await _client.from('user_profiles').upsert({
           'id': response.user!.id,
@@ -92,6 +92,7 @@ class AkJolAuthService {
           'username': cleanUsername,
           'name': name ?? '',
           'is_customer': true,
+          'terms_accepted': true,
         }, onConflict: 'id');
       } catch (_) {
         // Триггер handle_new_user обработает

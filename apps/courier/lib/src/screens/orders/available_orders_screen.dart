@@ -8,9 +8,11 @@ import 'package:geolocator/geolocator.dart';
 import '../../services/order_service.dart';
 
 import '../../services/order_alert_service.dart';
+import '../../services/courier_auth_service.dart';
 import '../../providers/courier_providers.dart';
 import '../../theme/akjol_theme.dart';
 import '../../utils/location_disclosure.dart';
+import 'legal_documents.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -135,19 +137,23 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
       }
 
       debugPrint(
-        '🔍 Loading orders for courier: ${profile.id}, transports: ${profile.transportTypes}',
+        '🔍 Loading orders for courier: ${profile.id}, active transport: ${profile.transportType}, all approved: ${profile.transportTypes}',
       );
 
       final List<Map<String, dynamic>> orders;
+      final List<String> queryTransports = profile.allowBothTransports
+          ? ['bicycle', 'scooter']
+          : [profile.transportType];
+
       if (profile.isStoreCourier) {
         orders = await _orderService.getStoreOrders(
           warehouseIds: profile.warehouseIds,
-          transportTypes: profile.transportTypes,
+          transportTypes: queryTransports,
           courierId: profile.id,
         );
       } else {
         orders = await _orderService.getFreelanceOrders(
-          transportTypes: profile.transportTypes,
+          transportTypes: queryTransports,
           courierId: profile.id,
         );
       }
@@ -228,6 +234,16 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
   Future<void> _toggleOnline(bool value) async {
     final profile = ref.read(courierProfileProvider);
     if (profile == null) return;
+
+    if (value && !profile.termsAccepted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Необходимо принять соглашения для работы с заказами'),
+          backgroundColor: AkJolTheme.error,
+        ),
+      );
+      return;
+    }
 
     final prefs = await SharedPreferences.getInstance();
 
@@ -372,15 +388,20 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
     final profile = ref.read(courierProfileProvider);
     if (profile == null) return;
 
+    final accepted = await _showSafetyAgreementDialog(order);
+    if (!accepted) return;
+
     setState(() => _acting = true);
     try {
       recentlyAcceptedOrders.add(order['id']);
-      await _orderService.acceptOrder(order['id'], profile.id);
+      await _orderService.acceptOrder(order['id'], profile.id, safetyAccepted: true);
       if (mounted) {
         // Update active delivery count
         setState(() => _activeDeliveryCount++);
-        // Reload orders to remove the accepted order from the list
-        await _loadOrders();
+      }
+      // Reload orders to remove the accepted order from the list
+      await _loadOrders();
+      if (mounted) {
         // Show success snackbar
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -411,6 +432,389 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
     if (mounted) setState(() => _acting = false);
   }
 
+  Future<bool> _showSafetyAgreementDialog(Map<String, dynamic> order) async {
+    final result = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF161B16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(color: Colors.white10),
+          ),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 24),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'Безопасность доставки',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Внимание! Платформа AkJol Go является информационным посредником. Согласно публичной оферте и правилам сервиса, Вы обязаны подтвердить согласие с условиями ответственности перед принятием заказа:',
+                  style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+                ),
+                const SizedBox(height: 16),
+                _buildSafetyPoint(
+                  Icons.gavel_rounded,
+                  'Полная личная ответственность',
+                  'Вы несете единоличную гражданскую, административную и уголовную ответственность за легальность перевозимого груза.',
+                ),
+                const SizedBox(height: 12),
+                _buildSafetyPoint(
+                  Icons.visibility_rounded,
+                  'Обязательный досмотр груза',
+                  'Вы обязаны произвести визуальный осмотр посылки при приеме. Не принимайте закрытые коробки/пакеты без проверки содержимого.',
+                ),
+                const SizedBox(height: 12),
+                _buildSafetyPoint(
+                  Icons.cancel_outlined,
+                  'Право на отказ от заказа',
+                  'Если отправитель отказывается показать содержимое или груз вызывает любые подозрения (наркотики, запрещенные вещества и др.) — Вы обязаны отменить заказ.',
+                ),
+                const SizedBox(height: 12),
+                _buildSafetyPoint(
+                  Icons.home_outlined,
+                  'Правило забора посылок',
+                  'Забирайте груз только из жилых домов или офисов. Не принимайте посылки у дорог, в парках или без указания конкретной квартиры/офиса.',
+                ),
+              ],
+            ),
+          ),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: Text(
+                'Отказаться',
+                style: TextStyle(color: Colors.white.withOpacity(0.5), fontWeight: FontWeight.bold),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AkJolTheme.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: const Text(
+                'Я согласен и гарантирую безопасность',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    return result ?? false;
+  }
+
+  Widget _buildSafetyPoint(IconData icon, String title, String desc) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: Colors.orangeAccent, size: 20),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                desc,
+                style: TextStyle(color: Colors.white.withOpacity(0.55), fontSize: 12, height: 1.3),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTermsBlockState(dynamic profile) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+      child: Center(
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.gavel_rounded,
+                  size: 40,
+                  color: Colors.orange,
+                ),
+              ),
+              const SizedBox(height: 24),
+              const Text(
+                'Требуется согласие',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Для доступа к заказам AkJol Pro вам необходимо ознакомиться и согласиться с юридическими документами платформы.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.6),
+                  fontSize: 14,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Links box
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.04),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Colors.white.withOpacity(0.08)),
+                ),
+                child: Column(
+                  children: [
+                    _buildDocLink(
+                      'Публичная оферта',
+                      () => _showLegalSheet(
+                        context,
+                        'Публичная оферта',
+                        LegalDocuments.publicOfferText,
+                      ),
+                    ),
+                    const Divider(color: Colors.white10, height: 24),
+                    _buildDocLink(
+                      'Политика конфиденциальности',
+                      () => _showLegalSheet(
+                        context,
+                        'Политика конфиденциальности',
+                        LegalDocuments.privacyPolicyText,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 40),
+
+              // Accept Button
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton.icon(
+                  onPressed: _acting ? null : () => _handleAcceptTerms(profile.id),
+                  icon: _acting
+                      ? const SizedBox.shrink()
+                      : const Icon(Icons.check_circle_rounded, size: 20),
+                  label: _acting
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                        )
+                      : const Text(
+                          'ПРИНЯТЬ И СОГЛАСИТЬСЯ',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, letterSpacing: 0.5),
+                        ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AkJolTheme.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDocLink(String title, VoidCallback onTap) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+        child: Row(
+          children: [
+            const Icon(Icons.description_outlined, color: AkJolTheme.primary, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: Colors.white.withOpacity(0.3),
+              size: 14,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showLegalSheet(BuildContext context, String title, String content) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.85,
+          decoration: const BoxDecoration(
+            color: Color(0xFF111111),
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                decoration: const BoxDecoration(
+                  border: Border(bottom: BorderSide(color: Colors.white10)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white70),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              // Content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(
+                    content,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      height: 1.6,
+                      color: Colors.white70,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _handleAcceptTerms(String courierId) async {
+    if (_acting) return;
+    setState(() => _acting = true);
+    try {
+      final authService = CourierAuthService();
+      await authService.acceptTerms(courierId);
+      
+      // Reload profile
+      final currentProfile = ref.read(courierProfileProvider);
+      if (currentProfile != null) {
+        final reloaded = CourierProfile(
+          id: currentProfile.id,
+          userId: currentProfile.userId,
+          name: currentProfile.name,
+          phone: currentProfile.phone,
+          courierType: currentProfile.courierType,
+          transportType: currentProfile.transportType,
+          transportTypes: currentProfile.transportTypes,
+          isOnline: currentProfile.isOnline,
+          bankBalance: currentProfile.bankBalance,
+          earningRate: currentProfile.earningRate,
+          warehouses: currentProfile.warehouses,
+          isStoreCourier: currentProfile.isStoreCourier,
+          termsAccepted: true, // Now accepted!
+          allowBothTransports: currentProfile.allowBothTransports,
+        );
+        ref.read(courierProfileProvider.notifier).state = reloaded;
+      }
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text('Условия успешно приняты. Доступ открыт!'),
+            backgroundColor: AkJolTheme.primary,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Ошибка принятия соглашений: $e'),
+            backgroundColor: AkJolTheme.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _acting = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(courierProfileProvider);
@@ -434,7 +838,15 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
 
             // ── Content ──
             Expanded(
-              child: !_isOnline
+              child: profile == null
+                  ? const Center(
+                      child: CircularProgressIndicator(
+                        color: AkJolTheme.primary,
+                      ),
+                    )
+                  : !profile.termsAccepted
+                  ? _buildTermsBlockState(profile)
+                  : !_isOnline
                   ? _buildOfflineState()
                   : _loading
                   ? const Center(
@@ -457,8 +869,8 @@ class _AvailableOrdersScreenState extends ConsumerState<AvailableOrdersScreen> {
                               itemCount: visible.length,
                               itemBuilder: (_, i) => _OrderCard(
                                 order: visible[i],
-                                isStoreCourier: profile?.isStoreCourier ?? false,
-                                earningRate: profile?.earningRate ?? 0.90,
+                                isStoreCourier: profile.isStoreCourier,
+                                earningRate: profile.earningRate,
                                 onAccept: () => _acceptOrder(visible[i]),
                               ),
                             ),

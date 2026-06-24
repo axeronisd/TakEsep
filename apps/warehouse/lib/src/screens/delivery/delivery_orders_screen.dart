@@ -110,6 +110,7 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
           .or('delivery_type.neq.freelance,items_total.gt.0')
           .neq('status', 'pending')
           .neq('status', 'courier_assigned')
+          .neq('status', 'payment_sent')
           .order('created_at', ascending: false)
           .limit(200);
 
@@ -396,7 +397,31 @@ class _DeliveryOrdersScreenState extends ConsumerState<DeliveryOrdersScreen>
 
           // Dynamic action section
           Widget actionWidget;
-          if (status == 'assembling' || status == 'payment_verified') {
+          if (status == 'pending') {
+            actionWidget = ElevatedButton.icon(
+              onPressed: () => _setOrderStatus(order['id'], 'confirmed'),
+              icon: const Icon(Icons.check_rounded, color: Colors.white),
+              label: const Text('Подтвердить заказ', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                minimumSize: const Size(double.infinity, 48),
+              ),
+            );
+          } else if (status == 'confirmed') {
+            actionWidget = ElevatedButton.icon(
+              onPressed: () => _setOrderStatus(order['id'], 'assembling'),
+              icon: const Icon(Icons.play_arrow_rounded, color: Colors.white),
+              label: const Text('Начать сборку', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.info,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                minimumSize: const Size(double.infinity, 48),
+              ),
+            );
+          } else if (status == 'assembling' || status == 'payment_verified') {
             actionWidget = ElevatedButton.icon(
               onPressed: () => _setOrderStatus(order['id'], 'ready'),
               icon: const Icon(Icons.check_circle_outline_rounded, color: Colors.white),

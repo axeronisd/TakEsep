@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:akjol_auth/akjol_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../services/firebase_push_bootstrap.dart';
+import 'legal_documents.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -41,7 +42,9 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _regUsernameError;
   String? _regPassError;
   String? _regConfirmError;
+  String? _regTermsError;
 
+  bool _regTermsAccepted = false;
   bool _loading = false;
   String? _error; // Глобальная ошибка (например от сервера)
 
@@ -69,6 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _regUsernameError = null;
       _regPassError = null;
       _regConfirmError = null;
+      _regTermsError = null;
     });
   }
 
@@ -247,6 +251,71 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showLegalDocumentSheet(BuildContext context, String title, String content) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.8,
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF0B0F19) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: isDark ? Colors.white10 : Colors.black12,
+                    ),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white : Colors.black87,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                      color: isDark ? Colors.white60 : Colors.black54,
+                    ),
+                  ],
+                ),
+              ),
+              // Content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(
+                    content,
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.6,
+                      color: isDark ? Colors.white70 : Colors.black87,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -551,6 +620,101 @@ class _LoginScreenState extends State<LoginScreen> {
             onTap: () =>
                 setState(() => _regConfirmVisible = !_regConfirmVisible),
           ),
+        ),
+        const SizedBox(height: 20),
+
+        // Чекбокс согласия с условиями
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(
+              height: 24,
+              width: 24,
+              child: Checkbox(
+                value: _regTermsAccepted,
+                activeColor: const Color(0xFF00B15E),
+                checkColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                onChanged: (val) {
+                  setState(() {
+                    _regTermsAccepted = val ?? false;
+                  });
+                },
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  RichText(
+                    text: TextSpan(
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: muted,
+                        height: 1.4,
+                        fontFamily: 'Inter',
+                      ),
+                      children: [
+                        const TextSpan(text: 'Я ознакомлен и согласен с условиями '),
+                        WidgetSpan(
+                          alignment: PlaceholderAlignment.middle,
+                          child: InkWell(
+                            onTap: () => _showLegalDocumentSheet(
+                              context,
+                              LegalDocuments.publicOfferTitle,
+                              LegalDocuments.publicOfferText,
+                            ),
+                            child: const Text(
+                              'Публичной оферты',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF00B15E),
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const TextSpan(text: ' и '),
+                        WidgetSpan(
+                          alignment: PlaceholderAlignment.middle,
+                          child: InkWell(
+                            onTap: () => _showLegalDocumentSheet(
+                              context,
+                              LegalDocuments.privacyPolicyTitle,
+                              LegalDocuments.privacyPolicyText,
+                            ),
+                            child: const Text(
+                              'Политики конфиденциальности',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF00B15E),
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_regTermsError != null)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        _regTermsError!,
+                        style: const TextStyle(
+                          color: Color(0xFFEF4444),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 20),
 
@@ -1023,6 +1187,12 @@ class _LoginScreenState extends State<LoginScreen> {
       hasErr = true;
     } else if (password != confirm) {
       _regConfirmError = 'Пароли не совпадают';
+      hasErr = true;
+    }
+
+    // Согласие с условиями
+    if (!_regTermsAccepted) {
+      _regTermsError = 'Необходимо согласиться с офертой и политикой';
       hasErr = true;
     }
 

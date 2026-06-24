@@ -2651,6 +2651,7 @@ class _UsersScreenState extends State<UsersScreen>
   void _showEditTransportDialog(Map<String, dynamic> courier) {
     final currentTypes = _getTransportTypes(courier);
     final selectedTransports = <String>[...currentTypes];
+    bool allowBoth = courier['allow_both_transports'] == true;
 
     showDialog(
       context: context,
@@ -2702,6 +2703,21 @@ class _UsersScreenState extends State<UsersScreen>
                     ),
                   ],
                 ),
+                const SizedBox(height: 16),
+                const Divider(color: AppColors.darkBorder),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  title: const Text('Разрешить велик и муравей одновременно',
+                      style: TextStyle(color: Colors.white, fontSize: 14)),
+                  subtitle: const Text('Получать все заказы на оба транспорта сразу',
+                      style: TextStyle(color: AppColors.darkTextSecondary, fontSize: 11)),
+                  value: allowBoth,
+                  activeColor: AppColors.primary,
+                  contentPadding: EdgeInsets.zero,
+                  onChanged: (val) => setDialogState(() {
+                    allowBoth = val;
+                  }),
+                ),
               ],
             ),
           ),
@@ -2715,7 +2731,7 @@ class _UsersScreenState extends State<UsersScreen>
               onPressed: () async {
                 Navigator.pop(ctx);
                 await _updateCourierTransportTypes(
-                    courier['id'], selectedTransports.toList());
+                    courier['id'], selectedTransports.toList(), allowBoth);
               },
               icon: const Icon(Icons.check, size: 18),
               label: const Text('Сохранить'),
@@ -2761,12 +2777,13 @@ class _UsersScreenState extends State<UsersScreen>
   }
 
   Future<void> _updateCourierTransportTypes(
-      String courierId, List<String> transportTypes) async {
+      String courierId, List<String> transportTypes, bool allowBothTransports) async {
     try {
       await _supabase.from('couriers').update({
         'transport_type':
             transportTypes.isNotEmpty ? transportTypes.first : 'bicycle',
         'transport_types': transportTypes,
+        'allow_both_transports': allowBothTransports,
       }).eq('id', courierId);
       _loadData();
     } catch (e) {
@@ -3541,10 +3558,160 @@ class _CourierShiftsDialogState extends State<_CourierShiftsDialog> {
   List<Map<String, dynamic>> _shifts = [];
   String? _error;
 
+  double _ordersDebt = 0.0;
+  double _paymentsPaid = 0.0;
+  bool _loadingDebt = true;
+
   @override
   void initState() {
     super.initState();
     _loadShifts();
+    _loadOrdersDebt();
+  }
+
+  Future<void> _loadOrdersDebt() async {
+    if (!mounted) return;
+    setState(() {
+      _loadingDebt = true;
+    });
+    try {
+      final courierId = widget.courier['id'];
+      if (courierId == null) return;
+
+      final rawOrders = await _supabase
+          .from('delivery_orders')
+          .select('platform_earning')
+          .eq('courier_id', courierId)
+          .eq('status', 'delivered')
+          .order('delivered_at', ascending: false)
+          .limit(50);
+
+      double totalDebt = 0.0;
+      for (final o in rawOrders) {
+        final platformShare = (o['platform_earning'] as num?)?.toDouble() ?? 0.0;
+        totalDebt += platformShare;
+      }
+
+      double totalPaid = 0.0;
+      final payments = await _supabase
+          .from('courier_payments')
+          .select('amount')
+          .eq('courier_id', courierId);
+      for (final p in payments) {
+        totalPaid += (p['amount'] as num?)?.toDouble() ?? 0.0;
+      }
+
+      if (mounted) {
+        setState(() {
+          _ordersDebt = totalDebt;
+          _paymentsPaid = totalPaid;
+          _loadingDebt = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading orders debt: $e');
+      if (mounted) {
+        setState(() {
+          _loadingDebt = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _recordPayment(double amount, String note) async {
+    try {
+      final user = _supabase.auth.currentUser;
+      final adminName = user?.email ?? 'admin';
+      
+      await _supabase.from('courier_payments').insert({
+        'courier_id': widget.courier['id'],
+        'amount': amount,
+        'note': note,
+        'confirmed_by': adminName,
+      });
+      
+      await _loadOrdersDebt();
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Оплата успешно записана'), backgroundColor: AppColors.success),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка записи оплаты: $e'), backgroundColor: AppColors.error),
+        );
+      }
+    }
+  }
+
+  Future<void> _showAddPaymentDialog() async {
+    final amountCtrl = TextEditingController();
+    final noteCtrl = TextEditingController();
+    
+    await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.darkSurface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: const BorderSide(color: AppColors.darkBorder),
+        ),
+        title: const Text(
+          'Внести оплату курьера',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: amountCtrl,
+              keyboardType: TextInputType.number,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'Сумма (сом) *',
+                labelStyle: TextStyle(color: AppColors.darkTextSecondary),
+                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.darkBorder)),
+                focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: noteCtrl,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                labelText: 'Примечание',
+                labelStyle: TextStyle(color: AppColors.darkTextSecondary),
+                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.darkBorder)),
+                focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Отмена', style: TextStyle(color: AppColors.darkTextTertiary)),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+            onPressed: () async {
+              final amt = double.tryParse(amountCtrl.text.trim());
+              if (amt == null || amt <= 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Укажите корректную сумму'), backgroundColor: AppColors.error),
+                );
+                return;
+              }
+              Navigator.pop(ctx);
+              await _recordPayment(amt, noteCtrl.text.trim());
+            },
+            child: const Text('Сохранить'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _loadShifts() async {
@@ -3757,7 +3924,7 @@ class _CourierShiftsDialogState extends State<_CourierShiftsDialog> {
       'Электронная почта': widget.email.isEmpty ? '—' : widget.email,
       'Код доступа (ключ)': widget.courier['access_key'] ?? '—',
       'Процент заработка (ставка)': rateStr,
-      'Типы транспорта': transports,
+      'Типы транспорта': transports + (widget.courier['allow_both_transports'] == true ? ' (Все одновременно)' : ''),
       'Статус активности': widget.courier['is_active'] == true ? 'Активен' : 'Отключен',
       'В сети (Online)': widget.courier['is_online'] == true ? 'Да' : 'Нет',
       'Баланс банка': '${widget.courier['bank_balance'] ?? 0} с',
@@ -3842,8 +4009,80 @@ class _CourierShiftsDialogState extends State<_CourierShiftsDialog> {
       );
     }
 
+    final ordersDebtTotal = _ordersDebt - _paymentsPaid;
+
     return Column(
       children: [
+        // Orders Debt Card (matching Courier App)
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: ordersDebtTotal > 0 
+                ? AppColors.error.withValues(alpha: 0.1)
+                : AppColors.success.withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: ordersDebtTotal > 0 
+                  ? AppColors.error.withValues(alpha: 0.2)
+                  : AppColors.success.withValues(alpha: 0.2),
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(
+                ordersDebtTotal > 0 ? Icons.monetization_on_outlined : Icons.check_circle_outline_rounded,
+                color: ordersDebtTotal > 0 ? AppColors.error : AppColors.success,
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Баланс по заказам (как на телефоне курьера)',
+                      style: TextStyle(
+                        color: AppColors.darkTextSecondary,
+                        fontSize: 11,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    _loadingDebt
+                        ? const SizedBox(
+                            width: 12,
+                            height: 12,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary),
+                          )
+                        : Text(
+                            '${ordersDebtTotal.toStringAsFixed(0)} сом (Долг: ${_ordersDebt.toStringAsFixed(0)}, Оплачено: ${_paymentsPaid.toStringAsFixed(0)})',
+                            style: TextStyle(
+                              color: ordersDebtTotal > 0 ? AppColors.errorLight : AppColors.successLight,
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                  ],
+                ),
+              ),
+              if (!_loadingDebt)
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  ),
+                  onPressed: () => _showAddPaymentDialog(),
+                  icon: const Icon(Icons.add_circle_outline, size: 14),
+                  label: const Text('Внести оплату', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
         // Total Debt Card
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

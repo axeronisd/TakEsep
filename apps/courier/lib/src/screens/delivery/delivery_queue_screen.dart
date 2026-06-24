@@ -972,6 +972,129 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
               ),
             ),
           ],
+          if (order['delivery_type'] == 'freelance') ...[
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.security_rounded, color: Colors.orange, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'ЩИТ БЕЗОПАСНОСТИ КУРЬЕРА',
+                            style: TextStyle(
+                              color: Colors.orange,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            '• Запрещено возить закрытые посылки от незнакомцев без досмотра.\n'
+                            '• Попросите открыть коробку или пакет и показать содержимое.\n'
+                            '• Забирайте только из жилых адресов/офисов (не у деревьев/остановок).\n'
+                            '• При любых подозрениях на запрещенные вещества вы обязаны ОТМЕНИТЬ заказ по безопасности.',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.8),
+                              fontSize: 11,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          if (order['delivery_type'] == 'freelance' && 
+              ((order['sender_phone'] as String?)?.isNotEmpty == true || 
+               (order['recipient_phone'] as String?)?.isNotEmpty == true)) ...[
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.03),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Контакты доставки:',
+                      style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    if ((order['sender_phone'] as String?)?.isNotEmpty == true)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Отправитель:', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                          Row(
+                            children: [
+                              Text(order['sender_phone'] as String, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                onPressed: () => _callPhone(order['sender_phone'] as String),
+                                icon: const Icon(Icons.phone_outlined, color: AkJolTheme.success, size: 16),
+                                style: IconButton.styleFrom(
+                                  backgroundColor: AkJolTheme.success.withValues(alpha: 0.1),
+                                  minimumSize: const Size(28, 28),
+                                  padding: EdgeInsets.zero,
+                                ),
+                                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    if ((order['sender_phone'] as String?)?.isNotEmpty == true && 
+                        (order['recipient_phone'] as String?)?.isNotEmpty == true)
+                      const Divider(color: Colors.white10, height: 12),
+                    if ((order['recipient_phone'] as String?)?.isNotEmpty == true)
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Получатель:', style: TextStyle(color: Colors.white54, fontSize: 12)),
+                          Row(
+                            children: [
+                              Text(order['recipient_phone'] as String, style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w600)),
+                              const SizedBox(width: 8),
+                              IconButton(
+                                onPressed: () => _callPhone(order['recipient_phone'] as String),
+                                icon: const Icon(Icons.phone_outlined, color: AkJolTheme.success, size: 16),
+                                style: IconButton.styleFrom(
+                                  backgroundColor: AkJolTheme.success.withValues(alpha: 0.1),
+                                  minimumSize: const Size(28, 28),
+                                  padding: EdgeInsets.zero,
+                                ),
+                                constraints: const BoxConstraints(minWidth: 28, minHeight: 28),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ],
           
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 12),

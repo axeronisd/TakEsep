@@ -449,7 +449,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
     final order = _order!;
     final status = order['status'] ?? '';
-    final isFreelance = order['delivery_type'] == 'freelance';
+    final isFreelance = order['delivery_type'] == 'freelance' && order['warehouse_id'] == null;
     final storeName = order['warehouses']?['name'] ?? 'Магазин';
     final courierName = order['couriers']?['name'];
     final courierPhone = order['couriers']?['phone'];
@@ -758,7 +758,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
     // Gather coordinates
     final courierPos = LatLng(_courierLat!, _courierLng!);
-    final isFreelance = _order?['delivery_type'] == 'freelance';
+    final isFreelance = _order?['delivery_type'] == 'freelance' && _order?['warehouse_id'] == null;
     // Store location: use warehouses table (actual store location)
     final pickupLat = (_order?['warehouses']?['latitude'] as num?)?.toDouble()
         ?? (_order?['pickup_lat'] as num?)?.toDouble();

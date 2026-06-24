@@ -121,7 +121,7 @@ Future<void> _initPushInBackground() async {
     await NotificationService().initialize();
     await FirebasePushBootstrap.initialize();
     debugPrint('[AkJol Pro] Push notifications initialized ✅');
-  } catch (e, st) {
+  } catch (e) {
     debugPrint('[AkJol Pro] Push init FAILED (non-fatal): $e');
   }
 }

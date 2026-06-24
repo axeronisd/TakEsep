@@ -6,9 +6,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../providers/courier_providers.dart';
+import '../../services/courier_auth_service.dart';
 import '../../theme/akjol_theme.dart';
 import '../../services/firebase_push_bootstrap.dart';
 import '../../widgets/cached_image_widget.dart';
+import '../orders/legal_documents.dart';
 
 class CourierProfileScreen extends ConsumerStatefulWidget {
   const CourierProfileScreen({super.key});
@@ -298,10 +300,27 @@ class _CourierProfileScreenState extends ConsumerState<CourierProfileScreen> {
     if (_courier == null) return const SizedBox();
     final type = _courier!['transport_type'] ?? 'bicycle';
 
+    // Parse transport types to see if they can edit it
+    final rawTypes = _courier!['transport_types'];
+    List<String> transportTypes = [];
+    if (rawTypes is List) {
+      transportTypes = rawTypes.map((e) => e.toString()).toList();
+    } else if (rawTypes is String) {
+      transportTypes = rawTypes
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+    }
+    if (transportTypes.isEmpty) {
+      transportTypes = [type];
+    }
+
+    final canEdit = transportTypes.length > 1;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Container(
-        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
@@ -311,67 +330,255 @@ class _CourierProfileScreenState extends ConsumerState<CourierProfileScreen> {
             ).colorScheme.outlineVariant.withValues(alpha: 0.15),
           ),
         ),
-        child: Row(
-          children: [
-            Container(
-              width: 48,
-              height: 48,
-              decoration: BoxDecoration(
-                color: AkJolTheme.primary.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(
-                _transportIcon(type),
-                color: AkJolTheme.primary,
-                size: 26,
-              ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: canEdit
+                ? () => _showTransportSelectionSheet(transportTypes, type)
+                : null,
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
                 children: [
-                  Text(
-                    'Транспорт',
-                    style: TextStyle(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onSurface.withValues(alpha: 0.5),
-                      fontSize: 12,
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AkJolTheme.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(
+                      _transportIcon(type),
+                      color: AkJolTheme.primary,
+                      size: 26,
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _transportLabel(type),
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.onSurface,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Text(
+                              'Транспорт',
+                              style: TextStyle(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurface.withValues(alpha: 0.5),
+                                fontSize: 12,
+                              ),
+                            ),
+                            if (canEdit) ...[
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.edit_rounded,
+                                size: 12,
+                                color: AkJolTheme.primary.withValues(
+                                  alpha: 0.7,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          _transportLabel(type),
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AkJolTheme.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      _courier!['is_active'] == true ? 'Активен' : 'Отключен',
+                      style: TextStyle(
+                        color: _courier!['is_active'] == true
+                            ? AkJolTheme.primary
+                            : Colors.redAccent,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: AkJolTheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                _courier!['is_active'] == true ? 'Активен' : 'Отключен',
-                style: TextStyle(
-                  color: _courier!['is_active'] == true
-                      ? AkJolTheme.primary
-                      : Colors.redAccent,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
+    );
+  }
+
+  void _showTransportSelectionSheet(List<String> types, String currentType) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final cs = Theme.of(context).colorScheme;
+        return Container(
+          decoration: BoxDecoration(
+            color: cs.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: cs.onSurface.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
+              const Text(
+                'Выберите активный транспорт',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                'Вы будете видеть только заказы для выбранного транспорта',
+                style: TextStyle(
+                  color: cs.onSurface.withValues(alpha: 0.5),
+                  fontSize: 13,
+                ),
+              ),
+              const SizedBox(height: 16),
+              ...types.map((type) {
+                final isSelected = type == currentType;
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 4,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      side: BorderSide(
+                        color: isSelected
+                            ? AkJolTheme.primary
+                            : cs.outlineVariant.withValues(alpha: 0.15),
+                        width: isSelected ? 2 : 1,
+                      ),
+                    ),
+                    tileColor: isSelected
+                        ? AkJolTheme.primary.withValues(alpha: 0.08)
+                        : Colors.transparent,
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AkJolTheme.primary.withValues(alpha: 0.15)
+                            : cs.onSurface.withValues(alpha: 0.05),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        _transportIcon(type),
+                        color: isSelected
+                            ? AkJolTheme.primary
+                            : cs.onSurface.withValues(alpha: 0.6),
+                      ),
+                    ),
+                    title: Text(
+                      _transportLabel(type),
+                      style: TextStyle(
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        color: isSelected ? AkJolTheme.primary : cs.onSurface,
+                      ),
+                    ),
+                    trailing: isSelected
+                        ? const Icon(
+                            Icons.check_circle_rounded,
+                            color: AkJolTheme.primary,
+                          )
+                        : null,
+                    onTap: () async {
+                      Navigator.pop(context);
+                      if (isSelected) return;
+
+                      setState(() => _saving = true);
+                      try {
+                        await _supabase
+                            .from('couriers')
+                            .update({'transport_type': type})
+                            .eq('id', _courier!['id']);
+
+                        setState(() {
+                          _courier!['transport_type'] = type;
+                          _saving = false;
+                        });
+
+                        // Update Riverpod provider state so order listing updates
+                        final profile = ref.read(courierProfileProvider);
+                        if (profile != null) {
+                          final updated = CourierProfile(
+                            id: profile.id,
+                            userId: profile.userId,
+                            name: profile.name,
+                            phone: profile.phone,
+                            courierType: profile.courierType,
+                            transportType: type,
+                            transportTypes: profile.transportTypes,
+                            isOnline: profile.isOnline,
+                            bankBalance: profile.bankBalance,
+                            earningRate: profile.earningRate,
+                            warehouses: profile.warehouses,
+                            isStoreCourier: profile.isStoreCourier,
+                            termsAccepted: profile.termsAccepted,
+                            allowBothTransports: profile.allowBothTransports,
+                          );
+                          ref.read(courierProfileProvider.notifier).state = updated;
+                        }
+
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                'Активный транспорт изменен на: ${_transportLabel(type)}',
+                              ),
+                              backgroundColor: AkJolTheme.primary,
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        setState(() => _saving = false);
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Ошибка обновления транспорта: $e'),
+                              backgroundColor: AkJolTheme.error,
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  ),
+                );
+              }),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -582,6 +789,7 @@ class _CourierProfileScreenState extends ConsumerState<CourierProfileScreen> {
   // ═══════════════════════════════════════════════════════════
 
   Widget _buildSettingsSection() {
+    final profile = ref.watch(courierProfileProvider);
     final cs = Theme.of(context).colorScheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
@@ -627,6 +835,96 @@ class _CourierProfileScreenState extends ConsumerState<CourierProfileScreen> {
               color: cs.outlineVariant.withValues(alpha: 0.15),
             ),
             _SettingsTile(
+              icon: Icons.gavel_rounded,
+              label: 'Публичная оферта',
+              subtitle: 'Пользовательское соглашение',
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    profile?.termsAccepted == true ? 'Принято' : 'Не принято',
+                    style: TextStyle(
+                      color: profile?.termsAccepted == true
+                          ? Colors.green
+                          : Colors.redAccent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(
+                    profile?.termsAccepted == true
+                        ? Icons.check_circle_outline_rounded
+                        : Icons.error_outline_rounded,
+                    color: profile?.termsAccepted == true
+                        ? Colors.green
+                        : Colors.redAccent,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.chevron_right,
+                    color: cs.onSurface.withValues(alpha: 0.25),
+                    size: 20,
+                  ),
+                ],
+              ),
+              onTap: () => _showLegalSheet(
+                context,
+                LegalDocuments.publicOfferTitle,
+                LegalDocuments.publicOfferText,
+              ),
+            ),
+            Divider(
+              height: 0.5,
+              color: cs.outlineVariant.withValues(alpha: 0.15),
+            ),
+            _SettingsTile(
+              icon: Icons.privacy_tip_rounded,
+              label: 'Политика конфиденциальности',
+              subtitle: 'Правила обработки персональных данных',
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    profile?.termsAccepted == true ? 'Принято' : 'Не принято',
+                    style: TextStyle(
+                      color: profile?.termsAccepted == true
+                          ? Colors.green
+                          : Colors.redAccent,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Icon(
+                    profile?.termsAccepted == true
+                        ? Icons.check_circle_outline_rounded
+                        : Icons.error_outline_rounded,
+                    color: profile?.termsAccepted == true
+                        ? Colors.green
+                        : Colors.redAccent,
+                    size: 16,
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.chevron_right,
+                    color: cs.onSurface.withValues(alpha: 0.25),
+                    size: 20,
+                  ),
+                ],
+              ),
+              onTap: () => _showLegalSheet(
+                context,
+                LegalDocuments.privacyPolicyTitle,
+                LegalDocuments.privacyPolicyText,
+              ),
+            ),
+            Divider(
+              height: 0.5,
+              color: cs.outlineVariant.withValues(alpha: 0.15),
+            ),
+            _SettingsTile(
               icon: Icons.info_outline_rounded,
               label: 'О приложении',
               subtitle: 'AkJol Pro v1.0.0',
@@ -639,6 +937,75 @@ class _CourierProfileScreenState extends ConsumerState<CourierProfileScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showLegalSheet(BuildContext context, String title, String content) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return Container(
+          height: MediaQuery.of(context).size.height * 0.85,
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            children: [
+              // Header
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.15),
+                    ),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        Icons.close,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+              ),
+              // Content
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(
+                    content,
+                    style: TextStyle(
+                      fontSize: 14,
+                      height: 1.6,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

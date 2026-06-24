@@ -10,6 +10,7 @@ class UserProfile {
   final bool isCourier;
   final bool isDriver;
   final bool isBusinessOwner;
+  final bool termsAccepted;
   final String city;
   final String? defaultAddress;
   final double? defaultLat;
@@ -32,6 +33,7 @@ class UserProfile {
     this.isCourier = false,
     this.isDriver = false,
     this.isBusinessOwner = false,
+    this.termsAccepted = false,
     this.city = 'Бишкек',
     this.defaultAddress,
     this.defaultLat,
@@ -56,6 +58,7 @@ class UserProfile {
       isCourier: json['is_courier'] as bool? ?? false,
       isDriver: json['is_driver'] as bool? ?? false,
       isBusinessOwner: json['is_business_owner'] as bool? ?? false,
+      termsAccepted: json['terms_accepted'] as bool? ?? false,
       city: json['city'] as String? ?? 'Бишкек',
       defaultAddress: json['default_address'] as String?,
       defaultLat: (json['default_lat'] as num?)?.toDouble(),
@@ -80,6 +83,7 @@ class UserProfile {
         'is_courier': isCourier,
         'is_driver': isDriver,
         'is_business_owner': isBusinessOwner,
+        'terms_accepted': termsAccepted,
         'city': city,
         'default_address': defaultAddress,
         'default_lat': defaultLat,
@@ -123,6 +127,7 @@ class UserProfile {
     bool? isCourier,
     bool? isDriver,
     bool? isBusinessOwner,
+    bool? termsAccepted,
     String? city,
     String? defaultAddress,
     double? defaultLat,
@@ -140,6 +145,7 @@ class UserProfile {
       isCourier: isCourier ?? this.isCourier,
       isDriver: isDriver ?? this.isDriver,
       isBusinessOwner: isBusinessOwner ?? this.isBusinessOwner,
+      termsAccepted: termsAccepted ?? this.termsAccepted,
       city: city ?? this.city,
       defaultAddress: defaultAddress ?? this.defaultAddress,
       defaultLat: defaultLat ?? this.defaultLat,

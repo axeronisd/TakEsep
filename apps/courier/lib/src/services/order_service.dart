@@ -12,10 +12,14 @@ class OrderService {
 
   /// Courier accepts a pending order
   /// pending → courier_assigned
-  Future<void> acceptOrder(String orderId, String courierId) async {
+  Future<void> acceptOrder(String orderId, String courierId, {bool safetyAccepted = false}) async {
     await _supabase
         .from('delivery_orders')
-        .update({'courier_id': courierId, 'status': 'courier_assigned'})
+        .update({
+          'courier_id': courierId,
+          'status': 'courier_assigned',
+          'courier_safety_accepted': safetyAccepted,
+        })
         .eq('id', orderId);
   }
 
@@ -121,23 +125,27 @@ class OrderService {
   }) async {
     if (courierId == null) return [];
 
-    // Get orders specifically assigned to this courier
+    final nowStr = DateTime.now().toUtc().toIso8601String();
+
+    // Get orders specifically assigned to this courier:
+    // Any order (pending) OR store/freelance order that is ready
     final assigned = await _supabase
         .from('delivery_orders')
         .select(
           '*, customers(name, phone), warehouses(name, address, latitude, longitude), delivery_order_items(name, quantity, unit_price, total)',
         )
-        .eq('status', 'pending')
+        .or('status.eq.pending,status.eq.ready')
         .eq('courier_id', courierId)
         .order('created_at', ascending: false);
 
-    // Also get unassigned orders matching courier's transports (fallback)
+    // Also get unassigned orders matching courier's transports (fallback):
+    // Any order (pending) OR store/freelance order that is ready and broadcast time is reached
     var unassignedQuery = _supabase
         .from('delivery_orders')
         .select(
           '*, customers(name, phone), warehouses(name, address, latitude, longitude), delivery_order_items(name, quantity, unit_price, total)',
         )
-        .eq('status', 'pending')
+        .or('status.eq.pending,and(status.eq.ready,freelance_broadcast_at.lte.$nowStr)')
         .isFilter('courier_id', null);
 
     // Filter by courier's transport types — if list has entries, match any;

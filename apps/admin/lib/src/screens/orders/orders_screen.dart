@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:takesep_design_system/takesep_design_system.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../widgets/admin_page_body.dart';
 
 class OrdersScreen extends StatefulWidget {
@@ -499,6 +502,19 @@ class _OrdersScreenState extends State<OrdersScreen> {
     );
   }
 
+  Future<void> _launchMapUrl(double lat, double lng) async {
+    final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Не удалось открыть карту')),
+        );
+      }
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════
   // ORDER DETAILS VIEW
   // ═══════════════════════════════════════════════════════════
@@ -536,8 +552,19 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
           final customer = o['customers']?['name'] ?? '—';
           final phone = o['customers']?['phone'] ?? '—';
+          final senderPhone = o['sender_phone'] ?? phone;
+          final recipientPhone = o['recipient_phone'] ?? '—';
+
           final courier = o['couriers']?['name'] ?? 'Не назначен';
+          final courierPhone = o['couriers']?['phone'] ?? '—';
+          final safetyAccepted = o['courier_safety_accepted'] == true;
+
           final warehouse = o['warehouses']?['name'] ?? '—';
+
+          final double? pickupLat = (o['pickup_lat'] as num?)?.toDouble() ?? (o['warehouses']?['latitude'] as num?)?.toDouble();
+          final double? pickupLng = (o['pickup_lng'] as num?)?.toDouble() ?? (o['warehouses']?['longitude'] as num?)?.toDouble();
+          final double? deliveryLat = (o['delivery_lat'] as num?)?.toDouble();
+          final double? deliveryLng = (o['delivery_lng'] as num?)?.toDouble();
           
           return AlertDialog(
             backgroundColor: AppColors.darkSurface,
@@ -550,7 +577,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
               ],
             ),
             content: SizedBox(
-              width: 650,
+              width: 700,
               child: Scrollbar(
                 child: SingleChildScrollView(
                   child: Column(
@@ -561,7 +588,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       _buildDialogSectionHeader('👤 Данные клиента'),
                       Text('Имя: $customer', style: const TextStyle(color: Colors.white)),
                       const SizedBox(height: 4),
-                      Text('Телефон: $phone', style: const TextStyle(color: Colors.white)),
+                      Text('Телефон (Аккаунт): $phone', style: const TextStyle(color: Colors.white)),
                       const SizedBox(height: 4),
                       Text('Адрес доставки: ${o['delivery_address'] ?? '—'}', style: const TextStyle(color: Colors.white)),
                       
@@ -569,10 +596,224 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       // Courier & Warehouse
                       _buildDialogSectionHeader('🚚 Логистика'),
                       Text('Курьер: $courier', style: const TextStyle(color: Colors.white)),
+                      if (o['couriers'] != null) ...[
+                        const SizedBox(height: 4),
+                        Text('Телефон курьера: $courierPhone', style: const TextStyle(color: Colors.white)),
+                      ],
                       const SizedBox(height: 4),
                       Text('Склад отправки: $warehouse', style: const TextStyle(color: Colors.white)),
                       const SizedBox(height: 4),
                       Text('Тип доставки: ${o['requested_transport'] ?? 'Любой'}', style: const TextStyle(color: Colors.white)),
+
+                      const SizedBox(height: 16),
+                      // 🛡️ SECURITY AND COORDINATES (POINTS A & B)
+                      _buildDialogSectionHeader('🛡️ Безопасность и координаты (Точки А и Б)'),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: AppColors.darkSurfaceVariant,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AppColors.darkBorder),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Courier safety agreement status
+                            Row(
+                              children: [
+                                Icon(
+                                  safetyAccepted ? Icons.verified_user_rounded : Icons.gavel_rounded,
+                                  color: safetyAccepted ? AppColors.successLight : AppColors.errorLight,
+                                  size: 20,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    safetyAccepted
+                                        ? 'Согласие курьера: ОТВЕТСТВЕННОСТЬ ПОДТВЕРЖДЕНА'
+                                        : 'Согласие курьера: НЕ ПОДТВЕРЖДЕНО',
+                                    style: TextStyle(
+                                      color: safetyAccepted ? AppColors.successLight : AppColors.errorLight,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (safetyAccepted) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                'Курьер $courier ($courierPhone) подтвердил, что посылка осмотрена, не содержит запрещенных веществ и вся ответственность лежит на нем.',
+                                style: const TextStyle(color: AppColors.darkTextSecondary, fontSize: 11, height: 1.4),
+                              ),
+                            ],
+                            const SizedBox(height: 12),
+                            const Divider(color: AppColors.darkBorder),
+                            const SizedBox(height: 8),
+                            
+                            // Sender / Recipient
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('Отправитель:', style: TextStyle(color: AppColors.darkTextTertiary, fontSize: 12, fontWeight: FontWeight.bold)),
+                                      const SizedBox(height: 2),
+                                      Text(customer, style: const TextStyle(color: Colors.white, fontSize: 13)),
+                                      Text('Тел: $senderPhone', style: const TextStyle(color: AppColors.darkTextSecondary, fontSize: 12)),
+                                    ],
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('Получатель:', style: TextStyle(color: AppColors.darkTextTertiary, fontSize: 12, fontWeight: FontWeight.bold)),
+                                      const SizedBox(height: 2),
+                                      const Text('Контактное лицо', style: TextStyle(color: Colors.white, fontSize: 13)),
+                                      Text('Тел: $recipientPhone', style: const TextStyle(color: AppColors.darkTextSecondary, fontSize: 12)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            const Divider(color: AppColors.darkBorder),
+                            const SizedBox(height: 8),
+
+                            // Point A (Pickup) and Point B (Delivery)
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('Точка А (Отправление):', style: TextStyle(color: AppColors.darkTextTertiary, fontSize: 12, fontWeight: FontWeight.bold)),
+                                      const SizedBox(height: 2),
+                                      Text(o['pickup_address'] ?? warehouse, style: const TextStyle(color: Colors.white, fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
+                                      const SizedBox(height: 4),
+                                      if (pickupLat != null && pickupLng != null) ...[
+                                        Text('Координаты: ${pickupLat.toStringAsFixed(6)}, ${pickupLng.toStringAsFixed(6)}', style: const TextStyle(fontFamily: 'monospace', color: AppColors.darkTextSecondary, fontSize: 11)),
+                                        const SizedBox(height: 6),
+                                        ElevatedButton.icon(
+                                          onPressed: () => _launchMapUrl(pickupLat, pickupLng),
+                                          icon: const Icon(Icons.map_rounded, size: 14),
+                                          label: const Text('На карте', style: TextStyle(fontSize: 11)),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: AppColors.darkSurface,
+                                            foregroundColor: AppColors.primaryLight,
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                            minimumSize: Size.zero,
+                                          ),
+                                        ),
+                                      ] else ...[
+                                        const Text('Координаты не указаны', style: TextStyle(color: AppColors.darkTextTertiary, fontSize: 11)),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text('Точка Б (Доставка):', style: TextStyle(color: AppColors.darkTextTertiary, fontSize: 12, fontWeight: FontWeight.bold)),
+                                      const SizedBox(height: 2),
+                                      Text(o['delivery_address'] ?? '—', style: const TextStyle(color: Colors.white, fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
+                                      const SizedBox(height: 4),
+                                      if (deliveryLat != null && deliveryLng != null) ...[
+                                        Text('Координаты: ${deliveryLat.toStringAsFixed(6)}, ${deliveryLng.toStringAsFixed(6)}', style: const TextStyle(fontFamily: 'monospace', color: AppColors.darkTextSecondary, fontSize: 11)),
+                                        const SizedBox(height: 6),
+                                        ElevatedButton.icon(
+                                          onPressed: () => _launchMapUrl(deliveryLat, deliveryLng),
+                                          icon: const Icon(Icons.map_rounded, size: 14),
+                                          label: const Text('На карте', style: TextStyle(fontSize: 11)),
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: AppColors.darkSurface,
+                                            foregroundColor: AppColors.primaryLight,
+                                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                            minimumSize: Size.zero,
+                                          ),
+                                        ),
+                                      ] else ...[
+                                        const Text('Координаты не указаны', style: TextStyle(color: AppColors.darkTextTertiary, fontSize: 11)),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            
+                            // Embedded Route Map
+                            if (pickupLat != null && pickupLng != null && deliveryLat != null && deliveryLng != null) ...[
+                              const SizedBox(height: 14),
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: SizedBox(
+                                  height: 200,
+                                  width: double.infinity,
+                                  child: FlutterMap(
+                                    options: MapOptions(
+                                      initialCameraFit: CameraFit.bounds(
+                                        bounds: LatLngBounds.fromPoints([
+                                          LatLng(pickupLat, pickupLng),
+                                          LatLng(deliveryLat, deliveryLng),
+                                        ]),
+                                        padding: const EdgeInsets.all(32),
+                                      ),
+                                    ),
+                                    children: [
+                                      TileLayer(
+                                        urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                                        userAgentPackageName: 'com.takesep.admin',
+                                      ),
+                                      PolylineLayer(
+                                        polylines: [
+                                          Polyline(
+                                            points: [
+                                              LatLng(pickupLat, pickupLng),
+                                              LatLng(deliveryLat, deliveryLng),
+                                            ],
+                                            strokeWidth: 4,
+                                            color: AppColors.primary,
+                                          ),
+                                        ],
+                                      ),
+                                      MarkerLayer(
+                                        markers: [
+                                          Marker(
+                                            point: LatLng(pickupLat, pickupLng),
+                                            width: 32,
+                                            height: 32,
+                                            child: Container(
+                                              decoration: BoxDecoration(color: AppColors.primary, shape: BoxShape.circle, border: Border.all(color: Colors.white, width: 2)),
+                                              child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 16),
+                                            ),
+                                          ),
+                                          Marker(
+                                            point: LatLng(deliveryLat, deliveryLng),
+                                            width: 32,
+                                            height: 32,
+                                            child: Container(
+                                              decoration: const BoxDecoration(color: Colors.redAccent, shape: BoxShape.circle),
+                                              child: const Icon(Icons.location_on_rounded, color: Colors.white, size: 16),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ),
 
                       const SizedBox(height: 16),
                       // Items list table

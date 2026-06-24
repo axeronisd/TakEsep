@@ -14,6 +14,8 @@ class CourierProfile {
   final double earningRate;
   final List<CourierWarehouse> warehouses;
   final bool isStoreCourier;
+  final bool termsAccepted;
+  final bool allowBothTransports;
 
   CourierProfile({
     required this.id,
@@ -28,6 +30,8 @@ class CourierProfile {
     this.earningRate = 0.90,
     required this.warehouses,
     required this.isStoreCourier,
+    required this.termsAccepted,
+    this.allowBothTransports = false,
   });
 
   /// Get all warehouse IDs for store courier
@@ -130,6 +134,8 @@ class CourierAuthService {
         earningRate: _safeDouble(courier['earning_rate'], 0.90),
         warehouses: warehouses,
         isStoreCourier: warehouses.isNotEmpty,
+        termsAccepted: courier['terms_accepted'] == true,
+        allowBothTransports: courier['allow_both_transports'] == true,
       );
     } catch (_) {
       return null;
@@ -199,6 +205,8 @@ class CourierAuthService {
         earningRate: _safeDouble(courier['earning_rate'], 0.90),
         warehouses: warehouses,
         isStoreCourier: warehouses.isNotEmpty,
+        termsAccepted: courier['terms_accepted'] == true,
+        allowBothTransports: courier['allow_both_transports'] == true,
       );
     } catch (_) {
       return null;
@@ -232,6 +240,8 @@ class CourierAuthService {
         );
       }).toList(),
       isStoreCourier: data['is_store_courier'] == true,
+      termsAccepted: courier['terms_accepted'] == true,
+      allowBothTransports: courier['allow_both_transports'] == true,
     );
   }
 
@@ -252,6 +262,14 @@ class CourierAuthService {
     await _supabase
         .from('couriers')
         .update({'user_id': userId})
+        .eq('id', courierId);
+  }
+
+  /// Accept general Public Offer and Privacy Policy for the courier
+  Future<void> acceptTerms(String courierId) async {
+    await _supabase
+        .from('couriers')
+        .update({'terms_accepted': true})
         .eq('id', courierId);
   }
 }

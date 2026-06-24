@@ -25,10 +25,13 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
   final _noteCtrl = TextEditingController();
   final _addressACtrl = TextEditingController();
   final _addressBCtrl = TextEditingController();
+  final _senderPhoneCtrl = TextEditingController();
+  final _recipientPhoneCtrl = TextEditingController();
 
   final _focusNodeA = FocusNode();
   final _focusNodeB = FocusNode();
 
+  bool _acceptTerms = false;
   String? _addressA;
   LatLng? _coordsA;
 
@@ -101,6 +104,32 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
         });
       }
     });
+
+    final user = _supabase.auth.currentUser;
+    if (user != null) {
+      if (user.phone != null && user.phone!.isNotEmpty) {
+        _senderPhoneCtrl.text = user.phone!;
+      }
+      _loadCustomerPhone(user.id);
+    }
+  }
+
+  Future<void> _loadCustomerPhone(String userId) async {
+    try {
+      final data = await _supabase
+          .from('customers')
+          .select('phone')
+          .eq('user_id', userId)
+          .maybeSingle();
+      if (data != null && data['phone'] != null) {
+        final phone = data['phone'] as String;
+        if (phone.isNotEmpty && mounted) {
+          setState(() {
+            _senderPhoneCtrl.text = phone;
+          });
+        }
+      }
+    } catch (_) {}
   }
 
   @override
@@ -108,6 +137,8 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
     _noteCtrl.dispose();
     _addressACtrl.dispose();
     _addressBCtrl.dispose();
+    _senderPhoneCtrl.dispose();
+    _recipientPhoneCtrl.dispose();
     _focusNodeA.dispose();
     _focusNodeB.dispose();
     _searchDebounce?.cancel();
@@ -285,6 +316,22 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
   Future<void> _onSubmit() async {
     if (!_isReady) return;
 
+    final senderPhone = _senderPhoneCtrl.text.trim();
+    final recipientPhone = _recipientPhoneCtrl.text.trim();
+
+    if (senderPhone.isEmpty) {
+      setState(() => _error = 'Введите телефон отправителя');
+      return;
+    }
+    if (recipientPhone.isEmpty) {
+      setState(() => _error = 'Введите телефон получателя');
+      return;
+    }
+    if (!_acceptTerms) {
+      setState(() => _error = 'Необходимо принять условия публичной оферты');
+      return;
+    }
+
     setState(() {
       _submitting = true;
       _error = null;
@@ -385,6 +432,8 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
         'delivery_type': 'freelance',
         'delivery_fee': _deliveryFee,
         'total': _deliveryFee,
+        'sender_phone': senderPhone,
+        'recipient_phone': recipientPhone,
       }).eq('id', orderId);
 
       // 6. Insert Order Items via RPC
@@ -1159,6 +1208,10 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
 
                       // Comment input field
                       _buildCommentInput(isDark, border, text, muted, fieldBg),
+                      const SizedBox(height: 12),
+                      _buildSenderRecipientPhonesBlock(isDark, border, text, muted, fieldBg),
+                      const SizedBox(height: 12),
+                      _buildOfferAgreementCheckbox(isDark, border, text, muted),
                     ],
                   ),
                 ),
@@ -1550,6 +1603,240 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
           maxLines: 2, minLines: 1,
         ),
       ],
+    );
+  }
+
+  Widget _buildSenderRecipientPhonesBlock(bool isDark, Color border, Color text, Color muted, Color fieldBg) {
+    return Container(
+      decoration: BoxDecoration(
+        color: fieldBg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: border, width: 0.5),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.phone_in_talk_rounded, color: AkJolTheme.primary, size: 16),
+              const SizedBox(width: 8),
+              Text(
+                'Контактные данные',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: text),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+
+          // Sender phone
+          Text(
+            'Телефон отправителя *',
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: muted),
+          ),
+          const SizedBox(height: 4),
+          TextField(
+            controller: _senderPhoneCtrl,
+            keyboardType: TextInputType.phone,
+            decoration: InputDecoration(
+              hintText: '+996700000000',
+              hintStyle: TextStyle(color: muted, fontSize: 12),
+              filled: true,
+              fillColor: isDark ? const Color(0xFF161E2D) : const Color(0xFFFFFFFF),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: border, width: 0.5)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: border, width: 0.5)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AkJolTheme.primary, width: 1.5)),
+            ),
+            style: TextStyle(fontSize: 13, color: text),
+          ),
+          const SizedBox(height: 12),
+
+          // Recipient phone
+          Text(
+            'Телефон получателя *',
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: muted),
+          ),
+          const SizedBox(height: 4),
+          TextField(
+            controller: _recipientPhoneCtrl,
+            keyboardType: TextInputType.phone,
+            decoration: InputDecoration(
+              hintText: '+996700000000',
+              hintStyle: TextStyle(color: muted, fontSize: 12),
+              filled: true,
+              fillColor: isDark ? const Color(0xFF161E2D) : const Color(0xFFFFFFFF),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: border, width: 0.5)),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: border, width: 0.5)),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AkJolTheme.primary, width: 1.5)),
+            ),
+            style: TextStyle(fontSize: 13, color: text),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOfferAgreementCheckbox(bool isDark, Color border, Color text, Color muted) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Checkbox(
+          value: _acceptTerms,
+          activeColor: AkJolTheme.primary,
+          onChanged: (val) {
+            setState(() {
+              _acceptTerms = val ?? false;
+            });
+          },
+        ),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: GestureDetector(
+              onTap: () {
+                setState(() {
+                  _acceptTerms = !_acceptTerms;
+                });
+              },
+              child: Text.rich(
+                TextSpan(
+                  text: 'Я подтверждаю, что посылка не содержит запрещенных веществ, и принимаю условия ',
+                  style: TextStyle(fontSize: 12, color: text),
+                  children: [
+                    WidgetSpan(
+                      child: GestureDetector(
+                        onTap: _showPublicOfferDialog,
+                        child: const Text(
+                          'публичной оферты',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AkJolTheme.primary,
+                            fontWeight: FontWeight.bold,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showPublicOfferDialog() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final text = isDark ? Colors.white : Colors.black87;
+    final bg = isDark ? const Color(0xFF1E293B) : Colors.white;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: bg,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          expand: false,
+          builder: (context, scrollController) {
+            return Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Публичная оферта AkJol Go',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: text),
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: ListView(
+                      controller: scrollController,
+                      children: [
+                        _offerParagraph(
+                          '1. Статус платформы (Информационное посредничество)',
+                          'Сервис AkJol Go является исключительно ИТ-платформой (информационным посредником). Мы предоставляем программное обеспечение для координации заказов между независимыми отправителями и курьерами. Сервис не является транспортной или почтовой компанией, не осуществляет самостоятельную перевозку грузов и не нанимает курьеров в штат.',
+                        ),
+                        _offerParagraph(
+                          '2. Запрещенные к перевозке вещества и предметы',
+                          'Категорически запрещается передавать для доставки следующие предметы:\n'
+                          '• Наркотические, психотропные вещества и их прекурсоры;\n'
+                          '• Оружие (огнестрельное, пневматическое, холодное) и боеприпасы;\n'
+                          '• Взрывчатые, легковоспламеняющиеся, горючие и ядовитые вещества;\n'
+                          '• Крупные суммы наличных денежных средств и драгоценные металлы;\n'
+                          '• Иные предметы, оборот которых запрещен или ограничен законодательством Кыргызской Республики.',
+                        ),
+                        _offerParagraph(
+                          '3. Полная ответственность Отправителя',
+                          'Отправитель несет полную единоличную гражданскую, административную и уголовную ответственность за содержимое посылки. Отправитель обязуется передавать посылку курьеру в открытом виде для визуального осмотра. Курьер имеет право отказаться от выполнения заказа при подозрении на наличие запрещенных предметов.',
+                        ),
+                        _offerParagraph(
+                          '4. Помощь следственным органам',
+                          'В случае выявления фактов перевозки запрещенных веществ, платформа оставляет за собой право передать все логические данные (ФИО, номера телефонов отправителя и получателя, координаты точек А и Б, IP-адреса и треки перемещения) правоохранительным органам.',
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AkJolTheme.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Text('Я согласен', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _offerParagraph(String title, String body) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AkJolTheme.primary),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            body,
+            style: const TextStyle(fontSize: 12, color: Colors.grey, height: 1.4),
+          ),
+        ],
+      ),
     );
   }
 
