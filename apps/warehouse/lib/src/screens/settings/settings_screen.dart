@@ -1644,10 +1644,16 @@ class _ReceiptAndPrinterSettingsSheetState
               style: receiptTextStyle.copyWith(
                   fontWeight: FontWeight.bold, fontSize: 14),
               textAlign: TextAlign.center),
-        if (_config.showAddress)
-          Text(auth.selectedWarehouse?.address ?? 'г. Бишкек',
-              style: receiptTextStyle.copyWith(fontSize: 10),
-              textAlign: TextAlign.center),
+        if (_config.showAddress) ...[
+          (() {
+            final addr = (auth.selectedWarehouse?.address != null && auth.selectedWarehouse!.address!.trim().isNotEmpty)
+                ? auth.selectedWarehouse!.address!
+                : 'г. Бишкек';
+            return Text(addr,
+                style: receiptTextStyle.copyWith(fontSize: 10),
+                textAlign: TextAlign.center);
+          })(),
+        ],
         divider,
         if (_config.showReceiptNumber)
           Text('Чек №: 000042', style: receiptTextStyle),

@@ -1,9 +1,11 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:http/http.dart' as http;
 
 import '../../utils/snackbar_helper.dart';
 import '../../providers/auth_providers.dart';
@@ -50,6 +52,32 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
     _addressController.dispose();
     _descController.dispose();
     super.dispose();
+  }
+
+  Future<void> _reverseGeocode(LatLng point) async {
+    try {
+      final url = Uri.parse(
+        'https://nominatim.openstreetmap.org/reverse'
+        '?format=jsonv2&lat=${point.latitude}&lon=${point.longitude}'
+        '&accept-language=ru&zoom=18',
+      );
+      final response = await http.get(url, headers: {
+        'User-Agent': 'TakEsep-Warehouse/1.0',
+      });
+      if (response.statusCode == 200 && mounted) {
+        final data = json.decode(response.body);
+        final addr = data['display_name'] as String?;
+        final parts = addr?.split(',').map((s) => s.trim()).toList() ?? [];
+        final shortAddr = parts.take(3).join(', ');
+        if (shortAddr.isNotEmpty) {
+          setState(() {
+            _addressController.text = shortAddr;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error reverse geocoding: $e');
+    }
   }
 
   Future<void> _loadEcosystemZones() async {
@@ -109,6 +137,19 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
             _warehouseLocation = LatLng((wLat as num).toDouble(), (wLng as num).toDouble());
           }
         });
+
+        // Auto reverse geocode if address is empty but coordinates exist
+        if ((wh['address'] == null || wh['address'].toString().trim().isEmpty) &&
+            wh['latitude'] != null && wh['longitude'] != null) {
+          final lat = (wh['latitude'] as num).toDouble();
+          final lng = (wh['longitude'] as num).toDouble();
+          await _reverseGeocode(LatLng(lat, lng));
+        }
+      }
+
+      // Fallback: if address is still empty but _warehouseLocation is set, geocode it
+      if (_addressController.text.trim().isEmpty) {
+        await _reverseGeocode(_warehouseLocation);
       }
     } catch (_) {}
     setState(() => _loading = false);
@@ -132,13 +173,15 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
         return;
       }
       final position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      final point = LatLng(position.latitude, position.longitude);
       setState(() {
-        _warehouseLocation = LatLng(position.latitude, position.longitude);
+        _warehouseLocation = point;
         _pendingLocation = _warehouseLocation;
         _isEditingAddress = true;
       });
       _zoneMapController.move(_warehouseLocation, 15);
       if (mounted) showInfoSnackBar(context, null, 'Геолокация определена');
+      await _reverseGeocode(point);
     } catch (e) {
       if (mounted) showErrorSnackBar(context, 'Ошибка: $e');
     }
@@ -170,8 +213,8 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
         _settingsId = result['id'];
       }
 
-      // 2. Save address to warehouses if editing
-      if (_isEditingAddress) {
+      // 2. Save address to warehouses if editing or if the address controller has value
+      if (_isEditingAddress || _addressController.text.trim().isNotEmpty) {
         final newAddress = _addressController.text;
         final newLat = _pendingLocation?.latitude ?? _warehouseLocation.latitude;
         final newLng = _pendingLocation?.longitude ?? _warehouseLocation.longitude;
@@ -273,6 +316,7 @@ class _DeliverySettingsScreenState extends ConsumerState<DeliverySettingsScreen>
                       _pendingLocation = point;
                       _isEditingAddress = true;
                     });
+                    _reverseGeocode(point);
                   },
                 ),
                 children: [

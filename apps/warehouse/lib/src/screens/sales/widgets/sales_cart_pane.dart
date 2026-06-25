@@ -1,6 +1,12 @@
+import 'dart:io';
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:gal/gal.dart';
 import 'package:takesep_design_system/takesep_design_system.dart';
 import '../../../providers/sales_providers.dart';
 import '../../../providers/employee_providers.dart';
@@ -752,6 +758,8 @@ class SalesCartPane extends ConsumerWidget {
     final timeStr =
         '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
+    final boundaryKey = GlobalKey();
+
     showDialog(
       context: context,
       builder: (ctx) {
@@ -770,97 +778,126 @@ class SalesCartPane extends ConsumerWidget {
             const Text('Чек'),
           ]),
           content: SingleChildScrollView(
-            child: Container(
-              width: config.paperWidth == 58 ? 220 : 300,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(4),
-                boxShadow: [
-                  BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.08),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2)),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (config.showCompanyName)
-                    Text(auth.currentCompany?.title ?? 'TakEsep',
-                        style: receiptText.copyWith(
-                            fontWeight: FontWeight.bold, fontSize: 14),
-                        textAlign: TextAlign.center),
-                  if (config.showAddress)
-                    Text(
-                        (ref.read(warehousesProvider).valueOrNull ??
-                                    auth.availableWarehouses)
-                                .where((w) => w.id == preloadedWarehouseId)
-                                .firstOrNull
-                                ?.address ??
-                            'г. Бишкек',
-                        style: receiptText.copyWith(fontSize: 10),
-                        textAlign: TextAlign.center),
-                  divider,
-                  if (config.showReceiptNumber)
-                    Text('Чек №: $receiptNumber', style: receiptText),
-                  if (config.showDateTime)
-                    Text('$dateStr  $timeStr', style: receiptText),
-                  if (config.showCashier)
-                    Text('Кассир: ${auth.currentEmployee?.name ?? 'Не указан'}',
-                        style: receiptText),
-                  divider,
-                  ...receiptItems.map((item) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 1),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Flexible(
-                                child: Text(
-                                    '${item.productName} x${item.quantity}',
-                                    style: receiptText,
-                                    overflow: TextOverflow.ellipsis)),
-                            Text(
-                                '$cur ${_fmtNum((item.sellingPrice * item.quantity).toInt())}',
-                                style: receiptText),
-                          ],
-                        ),
-                      )),
-                  if (discountAmount > 0) ...[
+            child: RepaintBoundary(
+              key: boundaryKey,
+              child: Container(
+                width: config.paperWidth == 58 ? 220 : 300,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(4),
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2)),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (config.showCompanyName)
+                      Text(auth.currentCompany?.title ?? 'TakEsep',
+                          style: receiptText.copyWith(
+                              fontWeight: FontWeight.bold, fontSize: 14),
+                          textAlign: TextAlign.center),
+                    if (config.showAddress) ...[
+                      (() {
+                        final activeW = (ref.read(warehousesProvider).valueOrNull ?? auth.availableWarehouses)
+                            .where((w) => w.id == preloadedWarehouseId)
+                            .firstOrNull;
+                        final addr = (activeW?.address != null && activeW!.address!.trim().isNotEmpty)
+                            ? activeW.address!
+                            : 'г. Бишкек';
+                        return Text(addr,
+                            style: receiptText.copyWith(fontSize: 10),
+                            textAlign: TextAlign.center);
+                      })(),
+                    ],
+                    divider,
+                    if (config.showReceiptNumber)
+                      Text('Чек №: $receiptNumber', style: receiptText),
+                    if (config.showDateTime)
+                      Text('$dateStr  $timeStr', style: receiptText),
+                    if (config.showCashier)
+                      Text('Кассир: ${auth.currentEmployee?.name ?? 'Не указан'}',
+                          style: receiptText),
+                    divider,
+                    ...receiptItems.map((item) => Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 1),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Flexible(
+                                  child: Text(
+                                      '${item.productName} x${item.quantity}',
+                                      style: receiptText,
+                                      overflow: TextOverflow.ellipsis)),
+                              Text(
+                                  '$cur ${_fmtNum((item.sellingPrice * item.quantity).toInt())}',
+                                  style: receiptText),
+                            ],
+                          ),
+                        )),
+                    if (discountAmount > 0) ...[
+                      divider,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text('Скидка:', style: receiptText),
+                          Text('-$cur ${_fmtNum(discountAmount.toInt())}',
+                              style: receiptText.copyWith(color: Colors.red)),
+                        ],
+                      ),
+                    ],
                     divider,
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('Скидка:', style: receiptText),
-                        Text('-$cur ${_fmtNum(discountAmount.toInt())}',
-                            style: receiptText.copyWith(color: Colors.red)),
+                        Text('ИТОГО:',
+                            style: receiptText.copyWith(
+                                fontWeight: FontWeight.bold)),
+                        Text('$cur ${_fmtNum(totalAmount.toInt())}',
+                            style: receiptText.copyWith(
+                                fontWeight: FontWeight.bold)),
                       ],
                     ),
+                    if (config.showPaymentMethod)
+                      Text('Оплата: ${_paymentLabel(paymentMethod)}',
+                          style: receiptText),
+                    divider,
+                    Text(
+                        config.footerText.isNotEmpty
+                            ? config.footerText
+                            : 'Спасибо за покупку!',
+                        style: receiptText.copyWith(fontSize: 10),
+                        textAlign: TextAlign.center),
+                    divider,
+                    const SizedBox(height: 8),
+                    Image.asset(
+                      'assets/images/logo_square.png',
+                      width: 60,
+                      height: 60,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.receipt_long_rounded,
+                        size: 40,
+                        color: Colors.black54,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'TakEsep',
+                      style: TextStyle(
+                        fontFamily: 'monospace',
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Colors.black87,
+                      ),
+                    ),
                   ],
-                  divider,
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('ИТОГО:',
-                          style: receiptText.copyWith(
-                              fontWeight: FontWeight.bold)),
-                      Text('$cur ${_fmtNum(totalAmount.toInt())}',
-                          style: receiptText.copyWith(
-                              fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                  if (config.showPaymentMethod)
-                    Text('Оплата: ${_paymentLabel(paymentMethod)}',
-                        style: receiptText),
-                  divider,
-                  Text(
-                      config.footerText.isNotEmpty
-                          ? config.footerText
-                          : 'Спасибо за покупку!',
-                      style: receiptText.copyWith(fontSize: 10),
-                      textAlign: TextAlign.center),
-                ],
+                ),
               ),
             ),
           ),
@@ -875,6 +912,62 @@ class SalesCartPane extends ConsumerWidget {
               },
               child: const Text('Закрыть'),
             ),
+            TextButton.icon(
+              onPressed: () async {
+                try {
+                  final boundary = boundaryKey.currentContext?.findRenderObject() as RenderRepaintBoundary?;
+                  if (boundary == null) return;
+
+                  showInfoSnackBar(context, ref, 'Сохранение чека...');
+
+                  final image = await boundary.toImage(pixelRatio: 3.0);
+                  final byteData = await image.toByteData(format: ui.ImageByteFormat.png);
+                  if (byteData == null) throw Exception('Не удалось создать картинку чека');
+                  final pngBytes = byteData.buffer.asUint8List();
+
+                  final tempDir = await getTemporaryDirectory();
+                  final tempFile = File('${tempDir.path}/receipt_$receiptNumber.png');
+                  await tempFile.writeAsBytes(pngBytes);
+
+                  if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+                    final hasAccess = await Gal.hasAccess();
+                    if (!hasAccess) {
+                      await Gal.requestAccess();
+                    }
+                    await Gal.putImage(tempFile.path);
+                    if (context.mounted) {
+                      showInfoSnackBar(context, ref, 'Чек успешно сохранен в галерею!');
+                    }
+                  } else {
+                    if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+                      final outputFilePath = await FilePicker.platform.saveFile(
+                        dialogTitle: 'Сохранить чек как',
+                        fileName: 'receipt_$receiptNumber.png',
+                        type: FileType.custom,
+                        allowedExtensions: ['png'],
+                      );
+                      if (outputFilePath != null) {
+                        final file = File(outputFilePath);
+                        await file.writeAsBytes(pngBytes);
+                        if (context.mounted) {
+                          showInfoSnackBar(context, ref, 'Чек сохранен в: $outputFilePath');
+                        }
+                      }
+                    } else {
+                      if (context.mounted) {
+                        showErrorSnackBar(context, 'Платформа не поддерживается');
+                      }
+                    }
+                  }
+                } catch (e) {
+                  if (context.mounted) {
+                    showErrorSnackBar(context, 'Ошибка сохранения: $e');
+                  }
+                }
+              },
+              icon: const Icon(Icons.photo_library_rounded),
+              label: const Text('В галерею'),
+            ),
             FilledButton.icon(
               onPressed: () async {
                 Navigator.pop(ctx);
@@ -887,8 +980,8 @@ class SalesCartPane extends ConsumerWidget {
                 final activeW = warehouseList
                     .where((w) => w.id == warehouseId)
                     .firstOrNull;
-                final addressStr = (activeW?.address?.isNotEmpty == true)
-                    ? activeW!.address!
+                final addressStr = (activeW?.address != null && activeW!.address!.trim().isNotEmpty)
+                    ? activeW.address!
                     : 'г. Бишкек';
                 final cashierName = auth.currentEmployee?.name ?? 'Владелец';
 

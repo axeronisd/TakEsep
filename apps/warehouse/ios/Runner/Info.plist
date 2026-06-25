@@ -72,6 +72,8 @@
 	<string>Для отслеживания зон доставки в фоновом режиме</string>
 	<key>NSCameraUsageDescription</key>
 	<string>Для сканирования штрихкодов товаров</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Для сохранения чеков в галерею</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Для загрузки фотографий товаров</string>
 	<key>NSBluetoothPeripheralUsageDescription</key>

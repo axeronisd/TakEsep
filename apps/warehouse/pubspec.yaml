@@ -76,6 +76,7 @@ dependencies:
   esc_pos_utils_plus: ^2.0.4
   thermal_printer_plus: ^1.0.8
   package_info_plus: ^9.0.1
+  gal: ^2.3.2
 
 dev_dependencies:
   flutter_test:

@@ -230,6 +230,27 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
               // ── 1. Store Header ──
               _StoreHeader(store: store, isDark: isDark),
 
+              // ── 1.2 Store Description below banner ──
+              if (store.description != null && store.description!.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1F2937) : const Color(0xFFF3F4F6),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      store.description!,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDark ? Colors.white70 : Colors.black87,
+                        height: 1.4,
+                      ),
+                    ),
+                  ),
+                ),
+
               // ── 1.5 Out of Zone Banner ──
               if (isOutOfZone)
                 SliverToBoxAdapter(
