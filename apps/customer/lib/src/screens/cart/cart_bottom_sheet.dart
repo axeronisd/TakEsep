@@ -51,152 +51,180 @@ class _CartSheetContent extends ConsumerWidget {
           ),
           child: Column(
             children: [
-              // ── Drag handle ──
-              Padding(
-                padding: const EdgeInsets.only(top: 10, bottom: 6),
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: muted.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-              ),
-
-              // ── Header ──
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 8, 8),
-                child: Row(
-                  children: [
-                    Text(
-                      'Корзина',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w800,
-                        color: textColor,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    if (!cart.isEmpty) ...[
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AkJolTheme.primary.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          '${cart.itemCount}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: AkJolTheme.primary,
+              Expanded(
+                child: CustomScrollView(
+                  controller: scrollController,
+                  slivers: [
+                    // ── Drag handle ──
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 10, bottom: 6),
+                        child: Center(
+                          child: Container(
+                            width: 40,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: muted.withValues(alpha: 0.4),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
                           ),
                         ),
                       ),
-                    ],
-                    const Spacer(),
-                    if (!cart.isEmpty) ...[
-                      // Save draft
-                      IconButton(
-                        icon: Icon(
-                          Icons.bookmark_border_rounded,
-                          color: muted,
-                          size: 20,
+                    ),
+
+                    // ── Header ──
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 4, 8, 8),
+                        child: Row(
+                          children: [
+                            Text(
+                              'Корзина',
+                              style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                  color: textColor,
+                                  letterSpacing: -0.5,
+                              ),
+                            ),
+                            if (!cart.isEmpty) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AkJolTheme.primary.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  '${cart.itemCount}',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: AkJolTheme.primary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                            const Spacer(),
+                            if (!cart.isEmpty) ...[
+                              // Save draft
+                              IconButton(
+                                icon: Icon(
+                                  Icons.bookmark_border_rounded,
+                                  color: muted,
+                                  size: 20,
+                                ),
+                                onPressed: () => _saveDraft(context, ref, cart),
+                                tooltip: 'Сохранить черновик',
+                                visualDensity: VisualDensity.compact,
+                              ),
+                              // Clear
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.delete_outline_rounded,
+                                  color: AkJolTheme.error,
+                                  size: 20,
+                                ),
+                                onPressed: () => _showClearDialog(context, ref),
+                                tooltip: 'Очистить',
+                                visualDensity: VisualDensity.compact,
+                              ),
+                            ],
+                          ],
                         ),
-                        onPressed: () => _saveDraft(context, ref, cart),
-                        tooltip: 'Сохранить черновик',
-                        visualDensity: VisualDensity.compact,
                       ),
-                      // Clear
-                      IconButton(
-                        icon: const Icon(
-                          Icons.delete_outline_rounded,
-                          color: AkJolTheme.error,
-                          size: 20,
+                    ),
+
+                    // ── Body ──
+                    if (cart.isEmpty)
+                      SliverFillRemaining(
+                        hasScrollBody: false,
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.shopping_cart_outlined,
+                                size: 44,
+                                color: AkJolTheme.primary.withValues(alpha: 0.3),
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                'Корзина пуста',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: muted,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Свайпните вниз чтобы закрыть',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: muted.withValues(alpha: 0.6),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                        onPressed: () => _showClearDialog(context, ref),
-                        tooltip: 'Очистить',
-                        visualDensity: VisualDensity.compact,
+                      )
+                    else ...[
+                      // Store header sliver
+                      SliverToBoxAdapter(
+                        child: _SheetStoreHeader(
+                          cart: cart,
+                          isDark: isDark,
+                          cardBg: cardBg,
+                          borderColor: borderColor,
+                          textColor: textColor,
+                          muted: muted,
+                        ),
+                      ),
+
+                      const SliverToBoxAdapter(child: SizedBox(height: 8)),
+
+                      // Items list sliver
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        sliver: SliverList(
+                          delegate: SliverChildBuilderDelegate(
+                            (_, i) => _SheetCartItem(
+                              item: cart.items[i],
+                              isDark: isDark,
+                              cardBg: cardBg,
+                              borderColor: borderColor,
+                              textColor: textColor,
+                              muted: muted,
+                            ),
+                            childCount: cart.items.length,
+                          ),
+                        ),
                       ),
                     ],
                   ],
                 ),
               ),
 
-              // ── Body ──
-              if (cart.isEmpty)
-                Expanded(
-                  child: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.shopping_cart_outlined,
-                          size: 44,
-                          color: AkJolTheme.primary.withValues(alpha: 0.3),
-                        ),
-                        const SizedBox(height: 12),
-                        Text(
-                          'Корзина пуста',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: muted,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Свайпните вниз чтобы закрыть',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: muted.withValues(alpha: 0.6),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                )
-              else ...[
-                // Store header
-                _SheetStoreHeader(
-                  cart: cart,
-                  isDark: isDark,
-                  cardBg: cardBg,
-                  borderColor: borderColor,
-                  textColor: textColor,
-                  muted: muted,
-                ),
-
-                // Items list
-                Expanded(
-                  child: ListView.builder(
-                    controller: scrollController,
-                    padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-                    itemCount: cart.items.length,
-                    itemBuilder: (_, i) => _SheetCartItem(
-                      item: cart.items[i],
-                      isDark: isDark,
-                      cardBg: cardBg,
-                      borderColor: borderColor,
-                      textColor: textColor,
-                      muted: muted,
-                    ),
-                  ),
-                ),
-
-                // Checkout bar
+              // ── Checkout bar (Pinned at bottom) ──
+              if (!cart.isEmpty)
                 Container(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
                   decoration: BoxDecoration(
                     color: cardBg,
                     border: Border(
                       top: BorderSide(color: borderColor, width: 0.5),
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, -4),
+                      ),
+                    ],
                   ),
                   child: Row(
                     children: [
@@ -230,11 +258,13 @@ class _CartSheetContent extends ConsumerWidget {
                           backgroundColor: AkJolTheme.primary,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 20,
-                            vertical: 12,
+                            horizontal: 24,
+                            vertical: 14,
                           ),
+                          elevation: 2,
+                          shadowColor: AkJolTheme.primary.withValues(alpha: 0.4),
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(14),
                           ),
                           textStyle: const TextStyle(
                             fontSize: 14,
@@ -245,7 +275,6 @@ class _CartSheetContent extends ConsumerWidget {
                     ],
                   ),
                 ),
-              ],
             ],
           ),
         );

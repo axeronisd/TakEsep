@@ -41,6 +41,12 @@ class _SplashScreenState extends State<SplashScreen>
   final _random = Random();
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    precacheImage(const AssetImage('assets/images/akjol_logo.png'), context);
+  }
+
+  @override
   void initState() {
     super.initState();
 
@@ -245,6 +251,7 @@ class _SplashScreenState extends State<SplashScreen>
                               width: 96,
                               height: 96,
                               decoration: BoxDecoration(
+                                color: const Color(0xFF2ECC71),
                                 borderRadius: BorderRadius.circular(26),
                                 boxShadow: [
                                   BoxShadow(

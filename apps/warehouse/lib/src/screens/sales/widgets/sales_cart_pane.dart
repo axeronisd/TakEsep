@@ -8,6 +8,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:gal/gal.dart';
 import 'package:takesep_design_system/takesep_design_system.dart';
+import 'package:takesep_core/takesep_core.dart';
 import '../../../providers/sales_providers.dart';
 import '../../../providers/employee_providers.dart';
 import '../../../providers/currency_provider.dart';
@@ -53,6 +54,7 @@ class SalesCartPane extends ConsumerWidget {
     final pad = isMobile ? AppSpacing.sm : AppSpacing.lg;
     final client = ref.watch(selectedClientProvider);
     final discountSettings = ref.watch(clientDiscountSettingsProvider);
+    final warehouses = ref.watch(warehousesProvider).valueOrNull ?? [];
 
     return Column(
       children: [
@@ -706,6 +708,11 @@ class SalesCartPane extends ConsumerWidget {
                         isActive: true))
                 .name;
         final receiptNum = newSaleId.hashCode.abs().toString().padLeft(5, '0');
+        final warehouses = ref.read(warehousesProvider).valueOrNull ?? [];
+        final receiptWarehouses = warehouses.isNotEmpty
+            ? warehouses
+            : receiptAuth.availableWarehouses;
+
         _showReceiptDialog(
           context,
           ref,
@@ -719,6 +726,7 @@ class SalesCartPane extends ConsumerWidget {
           preloadedAuth: receiptAuth,
           preloadedCur: receiptCur,
           preloadedWarehouseId: receiptWarehouseId,
+          preloadedWarehouses: receiptWarehouses,
           preloadedPrinterService: receiptPrinterService,
           preloadedThermalPrinterService: receiptThermalPrinterService,
           preloadedPrinterConfig: receiptPrinterConfig,
@@ -743,6 +751,7 @@ class SalesCartPane extends ConsumerWidget {
     required AuthState preloadedAuth,
     required String preloadedCur,
     required String? preloadedWarehouseId,
+    required List<Warehouse> preloadedWarehouses,
     required PrinterService preloadedPrinterService,
     required ThermalPrinterService preloadedThermalPrinterService,
     required PrinterConfigData preloadedPrinterConfig,
@@ -804,7 +813,7 @@ class SalesCartPane extends ConsumerWidget {
                           textAlign: TextAlign.center),
                     if (config.showAddress) ...[
                       (() {
-                        final activeW = (ref.read(warehousesProvider).valueOrNull ?? auth.availableWarehouses)
+                        final activeW = preloadedWarehouses
                             .where((w) => w.id == preloadedWarehouseId)
                             .firstOrNull;
                         final addr = (activeW?.address != null && activeW!.address!.trim().isNotEmpty)
@@ -976,7 +985,7 @@ class SalesCartPane extends ConsumerWidget {
                   if (nav != null && nav.canPop()) nav.pop();
                 }
                 final warehouseId = preloadedWarehouseId;
-                final warehouseList = ref.read(warehousesProvider).valueOrNull ?? auth.availableWarehouses;
+                final warehouseList = preloadedWarehouses;
                 final activeW = warehouseList
                     .where((w) => w.id == warehouseId)
                     .firstOrNull;

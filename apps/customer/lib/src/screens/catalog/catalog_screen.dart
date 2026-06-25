@@ -271,7 +271,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
                     )
                   else
                     SliverPadding(
-                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                      padding: const EdgeInsets.fromLTRB(16, 8, 16, 100),
                       sliver: SliverGrid(
                         delegate: SliverChildBuilderDelegate(
                           (ctx, i) => _ProductCard(
@@ -410,13 +410,11 @@ class _ProductCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Фото ──
-            SizedBox(
-              height: 120,
-              width: double.infinity,
+            AspectRatio(
+              aspectRatio: 1.0,
               child: CachedImageWidget(
                 imageUrl: hasPhoto ? photos.first : null,
                 fit: BoxFit.cover,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
               ),
             ),
 

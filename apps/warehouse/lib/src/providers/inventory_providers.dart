@@ -4,6 +4,8 @@ import 'package:takesep_core/takesep_core.dart';
 import 'auth_providers.dart';
 import 'inventory_repository_provider.dart';
 import '../data/supabase_realtime_service.dart';
+import '../data/powersync_db.dart';
+
 
 // --- Category Zone Settings --------------------------------
 
@@ -94,58 +96,27 @@ final categoriesProvider =
 
 // --- Warehouses (Real-time) -----------------------------------
 
-class WarehousesNotifier extends StateNotifier<AsyncValue<List<Warehouse>>> {
-  final Ref ref;
-  StreamSubscription? _subscription;
-
-  WarehousesNotifier(this.ref) : super(const AsyncValue.loading()) {
-    _loadWarehouses();
-    _setupRealtimeSubscription();
+final warehousesProvider = StreamProvider<List<Warehouse>>((ref) {
+  final companyId = ref.watch(currentCompanyProvider)?.id;
+  if (companyId == null) {
+    return Stream.value([]);
   }
+  final employee = ref.watch(authProvider).currentEmployee;
+  final allowed = employee?.allowedWarehouses;
 
-  @override
-  void dispose() {
-    _subscription?.cancel();
-    super.dispose();
+  String sql = 'SELECT * FROM warehouses WHERE organization_id = ?';
+  final params = <dynamic>[companyId];
+
+  if (allowed != null && allowed.isNotEmpty) {
+    final placeholders = List.filled(allowed.length, '?').join(',');
+    sql += ' AND id IN ($placeholders)';
+    params.addAll(allowed);
   }
+  sql += ' ORDER BY name';
 
-  void _setupRealtimeSubscription() {
-    final companyId = ref.read(currentCompanyProvider)?.id;
-    if (companyId == null) return;
-
-    final stream = realtimeService.subscribeToTable(
-      table: 'warehouses',
-      companyId: companyId,
-    );
-
-    _subscription = stream.listen((data) {
-      _loadWarehouses();
-    }, onError: (e) {
-      print('WarehousesNotifier realtime error: $e');
-    });
-  }
-
-  Future<void> _loadWarehouses() async {
-    final companyId = ref.read(currentCompanyProvider)?.id;
-    if (companyId == null) {
-      if (mounted) state = const AsyncValue.data([]);
-      return;
-    }
-    try {
-      if (mounted) state = const AsyncValue.loading();
-      final repo = ref.read(inventoryRepositoryProvider);
-      final warehouses = await repo.getWarehouses(companyId);
-      if (mounted) state = AsyncValue.data(warehouses);
-    } catch (e, st) {
-      if (mounted) state = AsyncValue.error(e, st);
-    }
-  }
-}
-
-final warehousesProvider =
-    StateNotifierProvider<WarehousesNotifier, AsyncValue<List<Warehouse>>>(
-        (ref) {
-  return WarehousesNotifier(ref);
+  return powerSyncDb.watch(sql, parameters: params).map(
+    (rows) => rows.map((r) => Warehouse.fromJson(r)).toList()
+  );
 });
 
 // --- Inventory (Products) (Real-time) -----------------------------------

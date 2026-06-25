@@ -132,6 +132,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       // No stored key — try cached session in case employee logged in before
       _tryRestoreSession();
     }
+    await refreshWarehouses();
   }
 
   /// Save the current auth session to SharedPreferences for offline use.
