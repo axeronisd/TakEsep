@@ -23,6 +23,8 @@ class AdminShell extends StatelessWidget {
           AppColors.warning),
       _NavDef(Icons.map_rounded, 'Адреса', '/addresses', ['/addresses'],
           AppColors.secondary),
+      _NavDef(Icons.local_shipping_rounded, 'Карта курьеров', '/couriers-map', ['/couriers-map'],
+          AppColors.success),
       _NavDef(Icons.rule_rounded, 'Модерация адресов', '/moderation', ['/moderation'],
           AppColors.error),
     ]),
@@ -46,6 +48,7 @@ class AdminShell extends StatelessWidget {
     if (location.startsWith('/users')) return 'Пользователи';
     if (location.startsWith('/orders')) return 'Заказы';
     if (location.startsWith('/addresses')) return 'Адреса';
+    if (location.startsWith('/couriers-map')) return 'Карта курьеров';
     if (location.startsWith('/moderation')) return 'Модерация адресов';
     if (location.startsWith('/database')) return 'База данных';
     if (location.startsWith('/zones')) return 'Зоны экосистемы';
@@ -66,6 +69,9 @@ class AdminShell extends StatelessWidget {
     }
     if (location.startsWith('/addresses')) {
       return 'База адресов и геоданные';
+    }
+    if (location.startsWith('/couriers-map')) {
+      return 'Отслеживание местоположения курьеров в реальном времени';
     }
     if (location.startsWith('/moderation')) {
       return 'Проверка и подтверждение новых координат складов';
@@ -348,6 +354,7 @@ class _MobileShell extends StatelessWidget {
       (Icons.business_rounded, 'Компании', '/companies'),
       (Icons.people_alt_rounded, 'Пользователи', '/users'),
       (Icons.map_rounded, 'Адреса', '/addresses'),
+      (Icons.local_shipping_rounded, 'Курьеры', '/couriers-map'),
       (Icons.rule_rounded, 'Модерация', '/moderation'),
       (Icons.storage_rounded, 'База', '/database'),
     ];

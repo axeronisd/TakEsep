@@ -1071,9 +1071,10 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
   }
 
   Widget _buildMyLocationButton(bool isDark, Color cardBg) {
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
     return Positioned(
       right: 16,
-      bottom: _sheetHeight + 16,
+      bottom: _sheetHeight + 16 + keyboardHeight,
       child: Container(
         decoration: BoxDecoration(
           color: cardBg,
@@ -1096,10 +1097,11 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
 
   Widget _buildSuggestionsOverlay(bool isDark, Color bg, Color text, Color muted) {
     if (_searchResults.isEmpty) return const SizedBox.shrink();
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
     return Positioned(
       left: 16,
       right: 16,
-      bottom: _sheetHeight + 16,
+      bottom: _sheetHeight + 16 + keyboardHeight,
       child: Container(
         constraints: const BoxConstraints(maxHeight: 200),
         decoration: BoxDecoration(
@@ -1145,10 +1147,11 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
   }
 
   Widget _buildFixedSheet(bool isDark, Color bg, Color border, Color text, Color muted, Color fieldBg) {
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
     return Positioned(
       left: 0,
       right: 0,
-      bottom: 0,
+      bottom: keyboardHeight,
       child: Container(
         height: _sheetHeight,
         decoration: BoxDecoration(

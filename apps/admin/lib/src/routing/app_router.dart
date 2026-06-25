@@ -11,6 +11,7 @@ import '../screens/zones/ecosystem_zones_screen.dart';
 import '../screens/tariffs/transport_tariffs_screen.dart';
 import '../screens/users/users_screen.dart';
 import '../screens/orders/orders_screen.dart';
+import '../screens/couriers/couriers_map_screen.dart';
 import 'admin_shell.dart';
 
 final adminRouterProvider = Provider<GoRouter>((ref) {
@@ -50,6 +51,10 @@ final adminRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/orders',
             builder: (context, state) => const OrdersScreen(),
+          ),
+          GoRoute(
+            path: '/couriers-map',
+            builder: (context, state) => const CouriersMapScreen(),
           ),
           GoRoute(
             path: '/database',

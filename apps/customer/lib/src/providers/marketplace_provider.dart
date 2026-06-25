@@ -307,7 +307,8 @@ final nearbyStoresProvider =
         .from('delivery_settings')
         .select('*, warehouses(name, latitude, longitude)')
         .inFilter('warehouse_id', warehouseIds)
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .eq('hide_from_marketplace', false);
 
     final settingsMap = <String, Map<String, dynamic>>{};
     for (final s in settingsData) {

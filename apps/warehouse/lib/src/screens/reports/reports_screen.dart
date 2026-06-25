@@ -5,6 +5,7 @@ import '../../providers/dashboard_providers.dart';
 import '../../providers/date_filter_provider.dart';
 import '../../providers/currency_provider.dart';
 import '../../providers/employee_providers.dart';
+import '../../widgets/compact_date_range_dialog.dart';
 
 import '../../utils/export_helper.dart';
 import '../../utils/snackbar_helper.dart';
@@ -55,6 +56,18 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
       data = null;
     }
     if (mounted) setState(() { _detailData = data; _detailLoading = false; });
+  }
+
+  void _pickRange(BuildContext context, WidgetRef ref) async {
+    final current = ref.read(dateRangeProvider);
+    final result = await showDialog<DateTimeRange>(
+      context: context,
+      builder: (ctx) => CompactDateRangeDialog(initial: current),
+    );
+    if (result != null) {
+      ref.read(datePresetProvider.notifier).state = DatePreset.custom;
+      ref.read(customDateRangeProvider.notifier).state = result;
+    }
   }
 
   void _exportToCsv(List<Map<String, dynamic>> ops) {
@@ -283,8 +296,13 @@ class _ReportsScreenState extends ConsumerState<ReportsScreen> {
                   Padding(
                     padding: const EdgeInsets.only(right: 6),
                     child: InkWell(
-                      onTap: () =>
-                          ref.read(datePresetProvider.notifier).state = p,
+                      onTap: () {
+                        if (p == DatePreset.custom) {
+                          _pickRange(context, ref);
+                        } else {
+                          ref.read(datePresetProvider.notifier).state = p;
+                        }
+                      },
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
                         padding: const EdgeInsets.symmetric(

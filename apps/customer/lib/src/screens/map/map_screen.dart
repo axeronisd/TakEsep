@@ -47,7 +47,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       final data = await _supabase
           .from('delivery_settings')
           .select('*, warehouses(name, address, latitude, longitude)')
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .eq('hide_from_marketplace', false);
 
       if (!mounted) return;
       setState(() {

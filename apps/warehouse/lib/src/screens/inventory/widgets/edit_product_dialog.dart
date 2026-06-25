@@ -175,6 +175,55 @@ class _EditProductSheetState extends State<_EditProductSheet> {
     }
   }
 
+  Future<void> _deleteProduct() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        title: const Text('Удалить товар?'),
+        content: Text('Вы действительно хотите удалить «${widget.product.name}»? Это действие необратимо.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Отмена'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            child: const Text('Удалить'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    setState(() => _saving = true);
+    try {
+      final repo = widget.ref.read(inventoryRepositoryProvider);
+      final success = await repo.deleteProduct(widget.product.id);
+      
+      if (success) {
+        widget.ref.invalidate(inventoryProvider);
+      }
+
+      if (!mounted) return;
+      if (success) {
+        showInfoSnackBar(context, widget.ref, 'Товар удалён');
+        Navigator.of(context).pop(true);
+      } else {
+        showErrorSnackBar(context, 'Ошибка удаления');
+      }
+    } catch (e) {
+      debugPrint('⚠️ Delete product error: $e');
+      if (mounted) {
+        showErrorSnackBar(context, 'Невозможно удалить товар. Возможно, он используется в операциях.');
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
   Future<void> _save() async {
     if (_nameCtrl.text.trim().isEmpty) return;
 
@@ -381,6 +430,12 @@ class _EditProductSheetState extends State<_EditProductSheet> {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
+                ),
+                 IconButton(
+                  onPressed: _saving ? null : _deleteProduct,
+                  icon: const Icon(Icons.delete_outline_rounded,
+                      color: AppColors.error),
+                  tooltip: 'Удалить товар',
                 ),
                 IconButton(
                   onPressed: () => Navigator.pop(context),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:takesep_design_system/takesep_design_system.dart';
 import '../../providers/admin_providers.dart';
@@ -145,7 +146,166 @@ class CompanyDetailScreen extends ConsumerWidget {
                 ? _buildMobileEmployeeList(employees)
                 : _buildDesktopEmployeeTable(employees),
           ],
+
+          // Warehouses/Stores Section
+          if (warehouses.isNotEmpty) ...[
+            const SizedBox(height: 32),
+            const Text('Склады и Магазины (Настройки видимости)',
+                style: TextStyle(
+                    color: AppColors.darkTextPrimary,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600)),
+            const SizedBox(height: 16),
+            isMobile
+                ? _buildMobileWarehouseList(warehouses, context, ref)
+                : _buildDesktopWarehouseTable(warehouses, context, ref),
+          ],
         ],
+      ),
+    );
+  }
+
+  Future<void> _toggleWarehouseVisibility(
+      BuildContext context, WidgetRef ref, String companyId, String warehouseId, bool hide) async {
+    try {
+      await Supabase.instance.client.from('delivery_settings').upsert({
+        'warehouse_id': warehouseId,
+        'hide_from_marketplace': hide,
+      }, onConflict: 'warehouse_id');
+      
+      ref.invalidate(companyDetailsProvider(companyId));
+    } catch (e) {
+      debugPrint('⚠️ Toggle warehouse visibility error: $e');
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Ошибка обновления видимости: $e')),
+        );
+      }
+    }
+  }
+
+  Widget _buildMobileWarehouseList(List warehouses, BuildContext context, WidgetRef ref) {
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: warehouses.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        final wh = warehouses[index];
+        final name = wh['name'] ?? 'Без имени';
+        final address = wh['address'] ?? 'Адрес не указан';
+        final settings = wh['delivery_settings'];
+        final isHidden = settings != null && settings['hide_from_marketplace'] == true;
+
+        return Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: AppColors.darkSurface,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.darkBorder),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  color: AppColors.darkSurfaceVariant,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.storefront_rounded,
+                    color: AppColors.darkTextSecondary, size: 18),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: const TextStyle(
+                          color: AppColors.darkTextPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      address,
+                      style: const TextStyle(
+                          color: AppColors.darkTextTertiary, fontSize: 12),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text(
+                    'Скрыть',
+                    style: TextStyle(
+                        color: AppColors.darkTextTertiary, fontSize: 10),
+                  ),
+                  const SizedBox(height: 2),
+                  Switch(
+                    value: isHidden,
+                    activeColor: AppColors.primaryLight,
+                    onChanged: (val) => _toggleWarehouseVisibility(
+                        context, ref, companyId, wh['id'], val),
+                  ),
+                ],
+              )
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildDesktopWarehouseTable(List warehouses, BuildContext context, WidgetRef ref) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.darkSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.darkBorder),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: DataTable(
+          headingRowColor:
+              WidgetStateProperty.all(AppColors.darkSurfaceVariant),
+          columns: const [
+            DataColumn(
+                label: Text('Название',
+                    style: TextStyle(color: AppColors.darkTextSecondary))),
+            DataColumn(
+                label: Text('Адрес',
+                    style: TextStyle(color: AppColors.darkTextSecondary))),
+            DataColumn(
+                label: Text('Скрыть с витрины',
+                    style: TextStyle(color: AppColors.darkTextSecondary))),
+          ],
+          rows: warehouses
+              .map<DataRow>((wh) {
+                final settings = wh['delivery_settings'];
+                final isHidden = settings != null && settings['hide_from_marketplace'] == true;
+                return DataRow(cells: [
+                  DataCell(Text(wh['name'] ?? '',
+                      style: const TextStyle(color: Colors.white))),
+                  DataCell(Text(wh['address'] ?? '',
+                      style: const TextStyle(
+                          color: AppColors.darkTextSecondary))),
+                  DataCell(
+                    Switch(
+                      value: isHidden,
+                      activeColor: AppColors.primaryLight,
+                      onChanged: (val) => _toggleWarehouseVisibility(
+                          context, ref, companyId, wh['id'], val),
+                    ),
+                  ),
+                ]);
+              })
+              .toList(),
+        ),
       ),
     );
   }
