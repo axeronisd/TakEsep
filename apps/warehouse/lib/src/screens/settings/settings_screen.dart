@@ -9,6 +9,7 @@ import 'widgets/thermal_printer_selector.dart';
 import '../../providers/employee_providers.dart';
 import '../../providers/receipt_provider.dart';
 import '../../providers/printer_provider.dart';
+import '../../providers/inventory_providers.dart';
 import '../../providers/notification_settings_provider.dart';
 import '../../providers/owner_settings_provider.dart';
 import '../../services/printer_service.dart';
@@ -1263,8 +1264,13 @@ class _ReceiptAndPrinterSettingsSheetState
   void _testPrint() async {
     final svc = ref.read(printerServiceProvider);
     final config = ref.read(defaultPrinterConfigProvider);
+    final auth = ref.read(authProvider);
+    final warehouseList = ref.read(warehousesProvider).valueOrNull ?? auth.availableWarehouses;
+    final activeW = warehouseList.where((w) => w.id == auth.selectedWarehouseId).firstOrNull;
+    final addressStr = activeW?.address ?? 'г. Бишкек';
     final data = ReceiptData(
       companyName: 'Тестовая печать',
+      address: addressStr,
       receiptNumber: '0001',
       dateTime: DateTime.now(),
       items: [

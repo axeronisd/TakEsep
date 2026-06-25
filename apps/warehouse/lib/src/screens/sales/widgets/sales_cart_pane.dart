@@ -794,7 +794,8 @@ class SalesCartPane extends ConsumerWidget {
                         textAlign: TextAlign.center),
                   if (config.showAddress)
                     Text(
-                        auth.availableWarehouses
+                        (ref.read(warehousesProvider).valueOrNull ??
+                                    auth.availableWarehouses)
                                 .where((w) => w.id == preloadedWarehouseId)
                                 .firstOrNull
                                 ?.address ??
@@ -882,7 +883,8 @@ class SalesCartPane extends ConsumerWidget {
                   if (nav != null && nav.canPop()) nav.pop();
                 }
                 final warehouseId = preloadedWarehouseId;
-                final activeW = auth.availableWarehouses
+                final warehouseList = ref.read(warehousesProvider).valueOrNull ?? auth.availableWarehouses;
+                final activeW = warehouseList
                     .where((w) => w.id == warehouseId)
                     .firstOrNull;
                 final addressStr = (activeW?.address?.isNotEmpty == true)
