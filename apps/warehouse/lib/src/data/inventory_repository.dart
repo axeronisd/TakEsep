@@ -304,6 +304,31 @@ class InventoryRepository {
     }
   }
 
+  /// Delete a product
+  Future<bool> deleteProduct(String productId) async {
+    try {
+      await _db.execute('DELETE FROM products WHERE id = ?', [productId]);
+
+      // Sync to Supabase (for realtime)
+      try {
+        await _supabase.from('products').delete().eq('id', productId);
+        fd.debugPrint(
+            '[InventoryRepository] Product deleted from Supabase for realtime: $productId');
+      } catch (e) {
+        fd.debugPrint(
+            '[InventoryRepository] Error deleting product from Supabase: $e');
+        // Fallback to direct deletion helper if Supabase delete fails
+        await SupabaseSync.delete('products', productId);
+      }
+
+      return true;
+    } catch (e) {
+      print('InventoryRepository deleteProduct error: $e');
+      return false;
+    }
+  }
+
+
   /// Pull data from Supabase and seed the local PowerSync SQLite database.
   /// Call this after company login to ensure offline availability.
   Future<void> seedLocalDbFromSupabase(String companyId) async {
