@@ -1708,32 +1708,28 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const SizedBox(),
-                                  if (_distanceKm > 0.0)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: bikeSelected
-                                            ? primaryColor
-                                            : (isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF1F5F9)),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        '${math.max(1, (_distanceKm * 5).round())} мин',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w800,
-                                          color: bikeSelected
-                                              ? (isDark ? const Color(0xFF0F0F10) : Colors.white)
-                                              : muted,
-                                        ),
-                                      ),
+                              if (_distanceKm > 0.0)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: bikeSelected
+                                        ? primaryColor
+                                        : (isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF1F5F9)),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    '${math.max(1, (_distanceKm * 5).round())} мин',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                      color: bikeSelected
+                                          ? (isDark ? const Color(0xFF0F0F10) : Colors.white)
+                                          : muted,
                                     ),
-                                ],
-                              ),
+                                  ),
+                                )
+                              else
+                                const SizedBox(),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -1880,32 +1876,28 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  const SizedBox(),
-                                  if (_distanceKm > 0.0)
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: scooterSelected
-                                            ? primaryColor
-                                            : (isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF1F5F9)),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        '${math.max(1, (_distanceKm * 7).round())} мин',
-                                        style: TextStyle(
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w800,
-                                          color: scooterSelected
-                                              ? (isDark ? const Color(0xFF0F0F10) : Colors.white)
-                                              : muted,
-                                        ),
-                                      ),
+                              if (_distanceKm > 0.0)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: scooterSelected
+                                        ? primaryColor
+                                        : (isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF1F5F9)),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    '${math.max(1, (_distanceKm * 7).round())} мин',
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                      color: scooterSelected
+                                          ? (isDark ? const Color(0xFF0F0F10) : Colors.white)
+                                          : muted,
                                     ),
-                                ],
-                              ),
+                                  ),
+                                )
+                              else
+                                const SizedBox(),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
