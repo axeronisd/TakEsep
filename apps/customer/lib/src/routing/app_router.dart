@@ -101,25 +101,30 @@ class _AppShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final cart = ref.watch(cartProvider);
     final location = GoRouterState.of(context).matchedLocation;
+    print('DEBUG: _AppShell build: location=$location, child=${child.runtimeType}');
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final hideNavbar = location == '/checkout';
 
     return Scaffold(
       body: child,
-      extendBody: true,
-      bottomNavigationBar: _FloatingGlassBar(
-        currentPath: location,
-        cartCount: cart.itemCount,
-        isDark: isDark,
-        onMapTap: () => context.go('/map'),
-        onHomeTap: () => context.go('/'),
-        onCartTap: () {
-          if (Supabase.instance.client.auth.currentSession == null) {
-            _showGuestLoginDialog(context, isDark);
-          } else {
-            showCartSheet(context);
-          }
-        },
-      ),
+      extendBody: !hideNavbar,
+      bottomNavigationBar: hideNavbar
+          ? null
+          : _FloatingGlassBar(
+              currentPath: location,
+              cartCount: cart.itemCount,
+              isDark: isDark,
+              onMapTap: () => context.go('/map'),
+              onHomeTap: () => context.go('/'),
+              onCartTap: () {
+                if (Supabase.instance.client.auth.currentSession == null) {
+                  _showGuestLoginDialog(context, isDark);
+                } else {
+                  showCartSheet(context);
+                }
+              },
+            ),
     );
   }
 
@@ -175,15 +180,13 @@ class _FloatingGlassBar extends StatelessWidget {
     final isHome = currentPath == '/';
     final isMap = currentPath.startsWith('/map');
     final isCart = currentPath.startsWith('/cart');
-    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+    const muted = Color(0xFF94A3B8);
 
     final isDesktop = Theme.of(context).platform == TargetPlatform.windows ||
         Theme.of(context).platform == TargetPlatform.macOS ||
         Theme.of(context).platform == TargetPlatform.linux;
 
-    final containerColor = isDark
-        ? const Color(0xFF0F0F10).withValues(alpha: 0.35)
-        : Colors.white.withValues(alpha: 0.35);
+    final containerColor = const Color(0xFF121214).withValues(alpha: 0.85);
 
     final Widget barContent = Container(
       width: 340,
@@ -192,14 +195,12 @@ class _FloatingGlassBar extends StatelessWidget {
         color: containerColor,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: isDark
-              ? Colors.white.withValues(alpha: isDesktop ? 0.15 : 0.08)
-              : Colors.black.withValues(alpha: isDesktop ? 0.15 : 0.06),
+          color: Colors.white.withValues(alpha: isDesktop ? 0.15 : 0.08),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
+            color: Colors.black.withValues(alpha: 0.4),
             blurRadius: 24,
             offset: const Offset(0, 8),
             spreadRadius: -4,
@@ -297,11 +298,12 @@ class _GlassBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final activeColor = Theme.of(context).colorScheme.primary;
-    final onActiveColor = Theme.of(context).colorScheme.onPrimary;
+    const activeColor = Color(0xFFC2FF1D);
+    const onActiveColor = Color(0xFF0F0F10);
+    const inactiveColor = Color(0xFF94A3B8);
 
-    final iconColor = isActive ? onActiveColor : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B));
-    final textColor = isActive ? onActiveColor : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B));
+    final iconColor = isActive ? onActiveColor : inactiveColor;
+    final textColor = isActive ? onActiveColor : inactiveColor;
 
     return GestureDetector(
       onTap: onTap,
@@ -349,7 +351,7 @@ class _GlassBtn extends StatelessWidget {
                           color: isActive ? onActiveColor : activeColor,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: isActive ? activeColor : (isDark ? const Color(0xFF1E293B) : Colors.white),
+                            color: isActive ? activeColor : const Color(0xFF1E293B),
                             width: 1.5,
                           ),
                         ),

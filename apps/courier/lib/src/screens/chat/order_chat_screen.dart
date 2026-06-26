@@ -274,8 +274,11 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+
     return Scaffold(
       backgroundColor: const Color(0xFF0D0D0D),
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: const Color(0xFF1A1A1A),
         elevation: 0,
@@ -350,47 +353,62 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
           // Messages
-          Expanded(
-            child: _loading
-                ? const Center(
-                    child: CircularProgressIndicator(color: AkJolTheme.primary),
-                  )
-                : _messages.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 72,
-                          height: 72,
-                          decoration: BoxDecoration(
-                            color: AkJolTheme.primary.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
+          _loading
+              ? const Center(
+                  child: CircularProgressIndicator(color: AkJolTheme.primary),
+                )
+              : _messages.isEmpty
+              ? Padding(
+                  padding: EdgeInsets.only(
+                    bottom: (keyboardHeight > 0 ? 66 : 100) +
+                        (((_messages.isEmpty || _messages.length < 3) && keyboardHeight == 0) ? 44 : 0),
+                  ),
+                  child: Center(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 72,
+                            height: 72,
+                            decoration: BoxDecoration(
+                              color: AkJolTheme.primary.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.chat_bubble_outline_rounded,
+                              size: 32,
+                              color: AkJolTheme.primary.withValues(alpha: 0.5),
+                            ),
                           ),
-                          child: Icon(
-                            Icons.chat_bubble_outline_rounded,
-                            size: 32,
-                            color: AkJolTheme.primary.withValues(alpha: 0.5),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Начните диалог',
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.3),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Начните диалог',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.3),
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  )
-                : ListView.builder(
+                  ),
+                )
+              : Positioned.fill(
+                  child: ListView.builder(
                     controller: _scrollCtrl,
-                    padding: const EdgeInsets.fromLTRB(12, 16, 12, 8),
+                    padding: EdgeInsets.fromLTRB(
+                      12,
+                      16,
+                      12,
+                      (keyboardHeight > 0 ? 66 : 100) +
+                          (((_messages.isEmpty || _messages.length < 3) && keyboardHeight == 0) ? 44 : 0) +
+                          12,
+                    ),
                     itemCount: _messages.length,
                     itemBuilder: (_, i) {
                       final msg = _messages[i];
@@ -412,126 +430,140 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
                             );
                     },
                   ),
-          ),
-
-          // Quick replies
-          if (_messages.isEmpty || _messages.length < 3)
-            Container(
-              height: 44,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: _quickReplies
-                    .map(
-                      (reply) => Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ActionChip(
-                          label: Text(
-                            reply,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFFE2E8F0),
-                            ),
-                          ),
-                          backgroundColor: const Color(0xFF1E293B),
-                          side: const BorderSide(
-                            color: Color(0xFF334155),
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          onPressed: () => _sendMessage(reply),
-                        ),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
-
-          // Input
-          Container(
-            padding: EdgeInsets.fromLTRB(
-              12,
-              10,
-              12,
-              MediaQuery.of(context).padding.bottom + 10,
-            ),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A1A1A),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
                 ),
-              ],
-            ),
-            child: Row(
+
+          // Bottom Area (Quick replies + Input)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: TextField(
-                      controller: _msgCtrl,
-                      style: const TextStyle(color: Colors.white, fontSize: 14),
-                      maxLines: 4,
-                      minLines: 1,
-                      decoration: InputDecoration(
-                        hintText: 'Написать сообщение...',
-                        hintStyle: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.25),
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 10,
-                        ),
-                      ),
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _sendMessage(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: _sending ? null : _sendMessage,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: 46,
-                    height: 46,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AkJolTheme.primary,
-                          AkJolTheme.primary.withValues(alpha: 0.8),
-                        ],
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AkJolTheme.primary.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: _sending
-                        ? const Padding(
-                            padding: EdgeInsets.all(13),
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
+                // Quick replies (when no messages yet and keyboard is closed)
+                if ((_messages.isEmpty || _messages.length < 3) && keyboardHeight == 0)
+                  Container(
+                    height: 44,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: _quickReplies
+                          .map(
+                            (reply) => Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ActionChip(
+                                label: Text(
+                                  reply,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: Color(0xFFE2E8F0),
+                                  ),
+                                ),
+                                backgroundColor: const Color(0xFF1E293B),
+                                side: const BorderSide(
+                                  color: Color(0xFF334155),
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                onPressed: () => _sendMessage(reply),
+                              ),
                             ),
                           )
-                        : const Icon(
-                            Icons.send_rounded,
-                            color: Colors.white,
-                            size: 20,
+                          .toList(),
+                    ),
+                  ),
+
+                // Input
+                Container(
+                  padding: EdgeInsets.fromLTRB(
+                    12,
+                    10,
+                    12,
+                    (keyboardHeight > 0
+                            ? 0
+                            : MediaQuery.of(context).padding.bottom) +
+                        10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A1A1A),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.2),
+                        blurRadius: 10,
+                        offset: const Offset(0, -2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.06),
+                            borderRadius: BorderRadius.circular(24),
                           ),
+                          child: TextField(
+                            controller: _msgCtrl,
+                            style: const TextStyle(color: Colors.white, fontSize: 14),
+                            maxLines: 4,
+                            minLines: 1,
+                            decoration: InputDecoration(
+                              hintText: 'Написать сообщение...',
+                              hintStyle: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.25),
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 10,
+                              ),
+                            ),
+                            textInputAction: TextInputAction.send,
+                            onSubmitted: (_) => _sendMessage(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: _sending ? null : _sendMessage,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 46,
+                          height: 46,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                AkJolTheme.primary,
+                                AkJolTheme.primary.withValues(alpha: 0.8),
+                              ],
+                            ),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AkJolTheme.primary.withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: _sending
+                              ? const Padding(
+                                  padding: EdgeInsets.all(13),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.send_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

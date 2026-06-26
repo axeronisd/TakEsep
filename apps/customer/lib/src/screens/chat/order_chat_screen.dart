@@ -167,9 +167,11 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = Theme.of(context).scaffoldBackgroundColor;
     final cardColor = Theme.of(context).cardTheme.color ?? Colors.white;
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
 
     return Scaffold(
       backgroundColor: bgColor,
+      resizeToAvoidBottomInset: true,
       appBar: AppBar(
         backgroundColor: cardColor,
         elevation: 0,
@@ -243,55 +245,70 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
           ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          // Messages
-          Expanded(
-            child: _loading
-                ? const Center(
-                    child: CircularProgressIndicator(color: AkJolTheme.primary),
-                  )
-                : _messages.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 72,
-                          height: 72,
-                          decoration: BoxDecoration(
-                            color: AkJolTheme.primary.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
+          // Messages / empty state
+          _loading
+              ? const Center(
+                  child: CircularProgressIndicator(color: AkJolTheme.primary),
+                )
+              : _messages.isEmpty
+              ? Padding(
+                  padding: EdgeInsets.only(
+                    bottom: (keyboardHeight > 0 ? 66 : 100) +
+                        (((_messages.isEmpty || _messages.length < 3) && keyboardHeight == 0) ? 44 : 0),
+                  ),
+                  child: Center(
+                    child: SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 72,
+                            height: 72,
+                            decoration: BoxDecoration(
+                              color: AkJolTheme.primary.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.chat_bubble_outline_rounded,
+                              size: 32,
+                              color: AkJolTheme.primary.withValues(alpha: 0.5),
+                            ),
                           ),
-                          child: Icon(
-                            Icons.chat_bubble_outline_rounded,
-                            size: 32,
-                            color: AkJolTheme.primary.withValues(alpha: 0.5),
+                          const SizedBox(height: 16),
+                          Text(
+                            'Начните диалог',
+                            style: TextStyle(
+                              color: isDark ? Colors.white38 : Colors.grey[500],
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          'Начните диалог',
-                          style: TextStyle(
-                            color: isDark ? Colors.white38 : Colors.grey[500],
-                            fontSize: 15,
-                            fontWeight: FontWeight.w500,
+                          const SizedBox(height: 4),
+                          Text(
+                            'Напишите курьеру',
+                            style: TextStyle(
+                              color: isDark ? Colors.white24 : Colors.grey[400],
+                              fontSize: 13,
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Напишите курьеру',
-                          style: TextStyle(
-                            color: isDark ? Colors.white24 : Colors.grey[400],
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  )
-                : ListView.builder(
+                  ),
+                )
+              : Positioned.fill(
+                  child: ListView.builder(
                     controller: _scrollCtrl,
-                    padding: const EdgeInsets.fromLTRB(12, 16, 12, 8),
+                    padding: EdgeInsets.fromLTRB(
+                      12,
+                      16,
+                      12,
+                      (keyboardHeight > 0 ? 66 : 100) +
+                          (((_messages.isEmpty || _messages.length < 3) && keyboardHeight == 0) ? 44 : 0) +
+                          12,
+                    ),
                     itemCount: _messages.length,
                     itemBuilder: (_, i) {
                       final msg = _messages[i];
@@ -314,149 +331,163 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
                             );
                     },
                   ),
-          ),
-
-          // Quick replies (when no messages yet)
-          if (_messages.isEmpty || _messages.length < 3)
-            Container(
-              height: 44,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: _quickReplies
-                    .map(
-                      (reply) => Padding(
-                        padding: const EdgeInsets.only(right: 8),
-                        child: ActionChip(
-                          label: Text(
-                            reply,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: isDark ? const Color(0xFFE2E8F0) : AkJolTheme.primary,
-                            ),
-                          ),
-                          backgroundColor: isDark
-                              ? const Color(0xFF1E293B)
-                              : AkJolTheme.primary.withValues(alpha: 0.08),
-                          side: BorderSide(
-                            color: isDark
-                                ? const Color(0xFF334155)
-                                : AkJolTheme.primary.withValues(alpha: 0.15),
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          onPressed: () => _sendMessage(reply),
-                        ),
-                      ),
-                    )
-                    .toList(),
-              ),
-            ),
-
-          // Input
-          Container(
-            padding: EdgeInsets.fromLTRB(
-              12,
-              10,
-              12,
-              MediaQuery.of(context).padding.bottom + 10,
-            ),
-            decoration: BoxDecoration(
-              color: cardColor,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
                 ),
-              ],
-            ),
-            child: Row(
+
+          // Bottom Area (Quick replies + Input)
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Expanded(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: isDark
-                          ? const Color(0xFF1E293B)
-                          : const Color(0xFFF1F5F9),
-                      borderRadius: BorderRadius.circular(24),
-                      border: Border.all(
-                        color: isDark
-                            ? const Color(0xFF334155)
-                            : const Color(0xFFE2E8F0),
-                        width: 1,
-                      ),
-                    ),
-                    child: TextField(
-                      controller: _msgCtrl,
-                      maxLines: 4,
-                      minLines: 1,
-                      decoration: InputDecoration(
-                        hintText: 'Написать сообщение...',
-                        hintStyle: TextStyle(
-                          color: isDark ? Colors.white30 : Colors.grey[500],
-                          fontSize: 14,
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 10,
-                        ),
-                      ),
-                      style: TextStyle(
-                        color: isDark ? Colors.white : Colors.black87,
-                        fontSize: 14,
-                      ),
-                      textInputAction: TextInputAction.send,
-                      onSubmitted: (_) => _sendMessage(),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: _sending ? null : _sendMessage,
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    width: 46,
-                    height: 46,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          AkJolTheme.primary,
-                          AkJolTheme.primary.withValues(alpha: 0.8),
-                        ],
-                      ),
-                      shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: AkJolTheme.primary.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: _sending
-                        ? const Padding(
-                            padding: EdgeInsets.all(13),
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
+                // Quick replies (when no messages yet and keyboard is closed)
+                if ((_messages.isEmpty || _messages.length < 3) && keyboardHeight == 0)
+                  Container(
+                    height: 44,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: ListView(
+                      scrollDirection: Axis.horizontal,
+                      children: _quickReplies
+                          .map(
+                            (reply) => Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ActionChip(
+                                label: Text(
+                                  reply,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: isDark ? const Color(0xFFE2E8F0) : AkJolTheme.primary,
+                                  ),
+                                ),
+                                backgroundColor: isDark
+                                    ? const Color(0xFF1E293B)
+                                    : AkJolTheme.primary.withValues(alpha: 0.08),
+                                side: BorderSide(
+                                  color: isDark
+                                      ? const Color(0xFF334155)
+                                      : AkJolTheme.primary.withValues(alpha: 0.15),
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                onPressed: () => _sendMessage(reply),
+                              ),
                             ),
                           )
-                        : const Icon(
-                            Icons.send_rounded,
-                            color: Colors.white,
-                            size: 20,
+                          .toList(),
+                    ),
+                  ),
+
+                // Input
+                Container(
+                  padding: EdgeInsets.fromLTRB(
+                    12,
+                    10,
+                    12,
+                    (keyboardHeight > 0
+                            ? 0
+                            : MediaQuery.of(context).padding.bottom) +
+                        10,
+                  ),
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, -2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: isDark
+                                ? const Color(0xFF1E293B)
+                                : const Color(0xFFF1F5F9),
+                            borderRadius: BorderRadius.circular(24),
+                            border: Border.all(
+                              color: isDark
+                                  ? const Color(0xFF334155)
+                                  : const Color(0xFFE2E8F0),
+                              width: 1,
+                            ),
                           ),
+                          child: TextField(
+                            controller: _msgCtrl,
+                            maxLines: 4,
+                            minLines: 1,
+                            decoration: InputDecoration(
+                              hintText: 'Написать сообщение...',
+                              hintStyle: TextStyle(
+                                color: isDark ? Colors.white30 : Colors.grey[500],
+                                fontSize: 14,
+                              ),
+                              border: InputBorder.none,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 10,
+                              ),
+                            ),
+                            style: TextStyle(
+                              color: isDark ? Colors.white : Colors.black87,
+                              fontSize: 14,
+                            ),
+                            textInputAction: TextInputAction.send,
+                            onSubmitted: (_) => _sendMessage(),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: _sending ? null : _sendMessage,
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          width: 46,
+                          height: 46,
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                AkJolTheme.primary,
+                                AkJolTheme.primary.withValues(alpha: 0.8),
+                              ],
+                            ),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: AkJolTheme.primary.withValues(alpha: 0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: _sending
+                              ? const Padding(
+                                  padding: EdgeInsets.all(13),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.send_rounded,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
         ],
-      ),
+      )
     );
   }
 }

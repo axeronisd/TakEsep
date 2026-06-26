@@ -303,19 +303,25 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
   }
 
   double get _deliveryFee {
-    final rate = _transportRates[_selectedTransport] ?? 50.0;
+    final rate = _transportRates[_selectedTransport] ?? (_selectedTransport == 'scooter' ? 75.0 : 50.0);
     final calculated = _distanceKm * rate;
-    final baseFee = calculated < 50.0 ? 50.0 : calculated.roundToDouble();
-    final extraLoader = (_selectedTransport == 'scooter' && _needLoader) ? 100.0 : 0.0;
-    return baseFee + extraLoader;
+    final minFee = _selectedTransport == 'scooter' ? 75.0 : 50.0;
+    final baseFee = calculated < minFee ? minFee : calculated.roundToDouble();
+    if (_selectedTransport == 'scooter' && _needLoader) {
+      return (baseFee * 1.2).roundToDouble();
+    }
+    return baseFee;
   }
 
   double _calculateTempFee(String transport) {
     final rate = _transportRates[transport] ?? (transport == 'scooter' ? 75.0 : 50.0);
     final calculated = _distanceKm * rate;
-    final baseFee = calculated < 50.0 ? 50.0 : calculated.roundToDouble();
-    final extraLoader = (transport == 'scooter' && _needLoader) ? 100.0 : 0.0;
-    return baseFee + extraLoader;
+    final minFee = transport == 'scooter' ? 75.0 : 50.0;
+    final baseFee = calculated < minFee ? minFee : calculated.roundToDouble();
+    if (transport == 'scooter' && _needLoader) {
+      return (baseFee * 1.2).roundToDouble();
+    }
+    return baseFee;
   }
 
   bool get _isReady => _coordsA != null && _coordsB != null && !_loadingRoute && !_submitting;
@@ -463,8 +469,8 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
       String finalNote = _noteCtrl.text.trim();
       if (_selectedTransport == 'scooter' && _needLoader) {
         finalNote = finalNote.isEmpty
-            ? '[Грузчик: Нужен, +100 сом курьеру при получении]'
-            : '$finalNote\n[Грузчик: Нужен, +100 сом курьеру при получении]';
+            ? '[Нужна помощь в выгрузке]'
+            : '$finalNote\n[Нужна помощь в выгрузке]';
       }
 
       // 4. Create initial customer order
@@ -801,52 +807,72 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
 
     showModalBottomSheet(
       context: context,
-      backgroundColor: isDark ? const Color(0xFF161B22) : Colors.white,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (context) {
-        final textPrimary = isDark ? Colors.white : const Color(0xFF111827);
-        final textSecondary = isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280);
+        final textPrimary = isDark ? Colors.white : const Color(0xFF0F172A);
+        final textSecondary = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
+        final greenColor = isDark ? const Color(0xFF4ADE80) : const Color(0xFF16A34A);
+        final blueColor = isDark ? const Color(0xFF60A5FA) : const Color(0xFF2563EB);
+
         return SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Drag handle
                 Center(
                   child: Container(
-                    width: 40, height: 4,
+                    width: 36,
+                    height: 5,
+                    margin: const EdgeInsets.only(bottom: 20),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF30363D) : const Color(0xFFE5E7EB),
-                      borderRadius: BorderRadius.circular(2),
+                      color: isDark ? Colors.white24 : Colors.black12,
+                      borderRadius: BorderRadius.circular(2.5),
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
                 Text(
                   name,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: textPrimary),
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: textPrimary,
+                    letterSpacing: -0.5,
+                  ),
                 ),
                 if (address.isNotEmpty) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 6),
                   Text(
                     address,
-                    style: TextStyle(fontSize: 13, color: textSecondary),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: textSecondary,
+                      height: 1.4,
+                    ),
                   ),
                 ],
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
                 Row(
                   children: [
                     Expanded(
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF00B15E).withValues(alpha: 0.15),
-                          foregroundColor: const Color(0xFF00B15E),
+                          backgroundColor: greenColor.withValues(alpha: 0.12),
+                          foregroundColor: greenColor,
                           elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            side: BorderSide(
+                              color: greenColor.withValues(alpha: 0.25),
+                              width: 1,
+                            ),
+                          ),
                         ),
                         onPressed: () {
                           Navigator.pop(context);
@@ -857,19 +883,28 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                           });
                           _calculateRoute();
                         },
-                        icon: const Icon(Icons.radio_button_checked_rounded, color: Colors.green),
-                        label: const Text('Отсюда (Точка А)'),
+                        icon: Icon(Icons.radio_button_checked_rounded, color: greenColor, size: 20),
+                        label: const Text(
+                          'Отсюда (Точка А)',
+                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue.withValues(alpha: 0.15),
-                          foregroundColor: Colors.blue,
+                          backgroundColor: blueColor.withValues(alpha: 0.12),
+                          foregroundColor: blueColor,
                           elevation: 0,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                            side: BorderSide(
+                              color: blueColor.withValues(alpha: 0.25),
+                              width: 1,
+                            ),
+                          ),
                         ),
                         onPressed: () {
                           Navigator.pop(context);
@@ -880,8 +915,11 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                           });
                           _calculateRoute();
                         },
-                        icon: const Icon(Icons.location_on_rounded, color: Colors.blue),
-                        label: const Text('Сюда (Точка Б)'),
+                        icon: Icon(Icons.location_on_rounded, color: blueColor, size: 20),
+                        label: const Text(
+                          'Сюда (Точка Б)',
+                          style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                        ),
                       ),
                     ),
                   ],
@@ -1587,7 +1625,17 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
     final bikeFee = _calculateTempFee('bicycle');
     final scooterFee = _calculateTempFee('scooter');
     final primaryColor = Theme.of(context).colorScheme.primary;
-    final cardBg = isDark ? const Color(0xFF121214) : Colors.white;
+    
+    // Light grey for transport cards in light theme for better contrast against white bottom sheet
+    final transportCardBg = isDark ? const Color(0xFF121214) : const Color(0xFFF1F5F9);
+    
+    final bikeSelectedBg = bikeSelected
+        ? primaryColor.withValues(alpha: isDark ? 0.15 : 0.22)
+        : transportCardBg;
+        
+    final scooterSelectedBg = scooterSelected
+        ? primaryColor.withValues(alpha: isDark ? 0.15 : 0.22)
+        : transportCardBg;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1609,9 +1657,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                 child: Container(
                   height: 120,
                   decoration: BoxDecoration(
-                    color: bikeSelected
-                        ? primaryColor.withValues(alpha: isDark ? 0.15 : 0.12)
-                        : cardBg,
+                    color: bikeSelectedBg,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: bikeSelected ? primaryColor : border,
@@ -1692,9 +1738,9 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  (isDark ? const Color(0xFF080809) : Colors.white).withValues(alpha: 0.95),
-                                  (isDark ? const Color(0xFF080809) : Colors.white).withValues(alpha: 0.35),
-                                  Colors.transparent,
+                                  bikeSelectedBg.withValues(alpha: 0.95),
+                                  bikeSelectedBg.withValues(alpha: 0.35),
+                                  bikeSelectedBg.withValues(alpha: 0.0),
                                 ],
                                 stops: const [0.0, 0.35, 0.75],
                                 begin: Alignment.centerLeft,
@@ -1751,7 +1797,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w900,
-                                      color: bikeSelected ? primaryColor : text,
+                                      color: text,
                                     ),
                                   ),
                                 ],
@@ -1777,9 +1823,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                 child: Container(
                   height: 120,
                   decoration: BoxDecoration(
-                    color: scooterSelected
-                        ? primaryColor.withValues(alpha: isDark ? 0.15 : 0.12)
-                        : cardBg,
+                    color: scooterSelectedBg,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: scooterSelected ? primaryColor : border,
@@ -1860,9 +1904,9 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  (isDark ? const Color(0xFF080809) : Colors.white).withValues(alpha: 0.95),
-                                  (isDark ? const Color(0xFF080809) : Colors.white).withValues(alpha: 0.35),
-                                  Colors.transparent,
+                                  scooterSelectedBg.withValues(alpha: 0.95),
+                                  scooterSelectedBg.withValues(alpha: 0.35),
+                                  scooterSelectedBg.withValues(alpha: 0.0),
                                 ],
                                 stops: const [0.0, 0.35, 0.75],
                                 begin: Alignment.centerLeft,
@@ -1919,7 +1963,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w900,
-                                      color: scooterSelected ? primaryColor : text,
+                                      color: text,
                                     ),
                                   ),
                                 ],
@@ -1941,7 +1985,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
           const SizedBox(height: 10),
           Container(
             decoration: BoxDecoration(
-              color: cardBg,
+              color: transportCardBg,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: border, width: 1),
             ),
@@ -1951,7 +1995,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                 setState(() => _needLoader = val ?? false);
               },
               title: Text(
-                'Нужен грузчик (+100 сом)',
+                'Нужна помощь курьера в выгрузке (+20%)',
                 style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: text),
               ),
               subtitle: Text(
@@ -2116,12 +2160,13 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
   }
 
   Widget _buildOfferAgreementCheckbox(bool isDark, Color border, Color text, Color muted) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Checkbox(
           value: _acceptTerms,
-          activeColor: AkJolTheme.primary,
+          activeColor: primaryColor,
           onChanged: (val) {
             setState(() {
               _acceptTerms = val ?? false;
@@ -2145,11 +2190,11 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                     WidgetSpan(
                       child: GestureDetector(
                         onTap: _showPublicOfferDialog,
-                        child: const Text(
+                        child: Text(
                           'публичной оферты',
                           style: TextStyle(
                             fontSize: 12,
-                            color: AkJolTheme.primary,
+                            color: primaryColor,
                             fontWeight: FontWeight.bold,
                             decoration: TextDecoration.underline,
                           ),
@@ -2241,8 +2286,8 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                     child: ElevatedButton(
                       onPressed: () => Navigator.pop(context),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AkJolTheme.primary,
-                        foregroundColor: Colors.white,
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                       child: const Text('Я согласен', style: TextStyle(fontWeight: FontWeight.bold)),
@@ -2265,7 +2310,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
         children: [
           Text(
             title,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AkJolTheme.primary),
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Theme.of(context).colorScheme.primary),
           ),
           const SizedBox(height: 6),
           Text(

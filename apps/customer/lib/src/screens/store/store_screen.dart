@@ -1644,8 +1644,8 @@ class _ProductDetailSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF0F172A) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
+    final bg = Theme.of(context).colorScheme.surface;
+    final textColor = Theme.of(context).colorScheme.onSurface;
     final descColor = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
 
     final cart = ref.watch(cartProvider);
@@ -1654,7 +1654,7 @@ class _ProductDetailSheet extends ConsumerWidget {
 
     return Container(
       constraints: BoxConstraints(
-        maxHeight: MediaQuery.of(context).size.height * 0.85,
+        maxHeight: MediaQuery.of(context).size.height * 0.55,
       ),
       decoration: BoxDecoration(
         color: bg,
@@ -1678,80 +1678,98 @@ class _ProductDetailSheet extends ConsumerWidget {
             ),
           ),
           
-          // Scrollable content
+          // Horizontal Layout: Left Image, Right Description
           Flexible(
-            child: SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (product.imageUrl != null && product.imageUrl!.isNotEmpty)
-                    Container(
-                      height: 240,
-                      width: double.infinity,
-                      margin: const EdgeInsets.only(bottom: 20),
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(20),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Left side: Image (contains image to prevent cropping)
+                if (product.imageUrl != null && product.imageUrl!.isNotEmpty) ...[
+                  Container(
+                    width: 140,
+                    height: 140,
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: isDark ? const Color(0xFF1E1E22) : const Color(0xFFE2E8F0),
+                        width: 0.5,
                       ),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
                       child: CachedImageWidget(
                         imageUrl: product.imageUrl!,
-                        fit: BoxFit.contain,
-                        borderRadius: BorderRadius.circular(20),
+                        fit: BoxFit.cover,
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                    ),
-                  Text(
-                    product.name,
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                      color: textColor,
-                      letterSpacing: -0.5,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '${product.b2cPrice.toStringAsFixed(0)} с',
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
-                      color: AkJolTheme.primary,
-                    ),
-                  ),
-                  if (product.b2cDescription != null && product.b2cDescription!.isNotEmpty) ...[
-                    const SizedBox(height: 20),
-                    Text(
-                      'Описание',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: textColor,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      product.b2cDescription!,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: descColor,
-                        height: 1.6,
-                      ),
-                    ),
-                  ] else ...[
-                    const SizedBox(height: 20),
-                    Text(
-                      'Нет описания',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ],
-                  const SizedBox(height: 24),
+                  const SizedBox(width: 20),
                 ],
-              ),
+                
+                // Right side: Name, Price, Scrollable Description
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          product.name,
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            color: textColor,
+                            letterSpacing: -0.5,
+                            height: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          '${product.b2cPrice.toStringAsFixed(0)} с',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w900,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          'Описание',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: textColor,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        if (product.b2cDescription != null && product.b2cDescription!.isNotEmpty)
+                          Text(
+                            product.b2cDescription!,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: descColor,
+                              height: 1.5,
+                            ),
+                          )
+                        else
+                          Text(
+                            'Нет описания',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isDark ? const Color(0xFF475569) : const Color(0xFF94A3B8),
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
+          const SizedBox(height: 20),
           
           // Bottom button / counter
           Container(
@@ -1772,8 +1790,12 @@ class _ProductDetailSheet extends ConsumerWidget {
                       width: double.infinity,
                       height: 52,
                       decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                         borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                          width: 0.5,
+                        ),
                       ),
                       child: Center(
                         child: Text(
@@ -1791,16 +1813,20 @@ class _ProductDetailSheet extends ConsumerWidget {
                           width: double.infinity,
                           height: 52,
                           decoration: BoxDecoration(
-                            color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
                             borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                              width: 0.5,
+                            ),
                           ),
-                          child: const Center(
+                          child: Center(
                             child: Text(
                               'Нет в наличии',
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
-                                color: Colors.grey,
+                                color: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
                               ),
                             ),
                           ),
@@ -1819,8 +1845,8 @@ class _ProductDetailSheet extends ConsumerWidget {
                                 }
                               },
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: AkJolTheme.primary,
-                                foregroundColor: Colors.white,
+                                backgroundColor: Theme.of(context).colorScheme.primary,
+                                foregroundColor: isDark ? Colors.black : Colors.white,
                                 minimumSize: const Size(double.infinity, 52),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(14),
@@ -1858,7 +1884,7 @@ class _ProductDetailSheet extends ConsumerWidget {
                                         }
                                       },
                                       icon: const Icon(Icons.remove_rounded),
-                                      color: AkJolTheme.primary,
+                                      color: Theme.of(context).colorScheme.primary,
                                     ),
                                   ),
                                   Text(
@@ -1883,7 +1909,7 @@ class _ProductDetailSheet extends ConsumerWidget {
                                         }
                                       },
                                       icon: const Icon(Icons.add_rounded),
-                                      color: AkJolTheme.primary,
+                                      color: Theme.of(context).colorScheme.primary,
                                     ),
                                   ),
                                 ],

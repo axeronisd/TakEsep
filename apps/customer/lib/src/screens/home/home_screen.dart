@@ -106,6 +106,8 @@ final globalSearchProvider = FutureProvider<GlobalSearchResult>((ref) async {
     final productsData = await supabase
         .from('products')
         .select('id, name, b2c_price, selling_price, image_url, b2c_description, warehouse_id')
+        .eq('is_public', true)
+        .gt('quantity', 0)
         .ilike('name', '%$query%')
         .limit(30);
 
@@ -1170,13 +1172,13 @@ class _ActiveOrderBanner extends ConsumerWidget {
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Column(
         children: activeOrders.map((order) {
-          return _buildOrderCard(order, isDark);
+          return _buildOrderCard(context, order, isDark);
         }).toList(),
       ),
     );
   }
 
-  Widget _buildOrderCard(CustomerOrder order, bool isDark) {
+  Widget _buildOrderCard(BuildContext context, CustomerOrder order, bool isDark) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: GestureDetector(
@@ -1188,17 +1190,17 @@ class _ActiveOrderBanner extends ConsumerWidget {
             gradient: LinearGradient(
               colors: isDark
                   ? [
-                      AkJolTheme.primary.withValues(alpha: 0.15),
-                      AkJolTheme.primary.withValues(alpha: 0.05),
+                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.15),
+                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
                     ]
                   : [
-                      AkJolTheme.primary.withValues(alpha: 0.08),
-                      AkJolTheme.primary.withValues(alpha: 0.02),
+                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.08),
+                      Theme.of(context).colorScheme.primary.withValues(alpha: 0.02),
                     ],
             ),
             borderRadius: BorderRadius.circular(14),
             border: Border.all(
-              color: AkJolTheme.primary.withValues(alpha: 0.25),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.25),
               width: 1,
             ),
           ),
@@ -1208,14 +1210,14 @@ class _ActiveOrderBanner extends ConsumerWidget {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: AkJolTheme.primary.withValues(alpha: 0.12),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 alignment: Alignment.center,
                 child: Icon(
                   _statusIconForOrder(order.status),
                   size: 20,
-                  color: AkJolTheme.primary,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
               const SizedBox(width: 12),
@@ -1238,10 +1240,10 @@ class _ActiveOrderBanner extends ConsumerWidget {
                     const SizedBox(height: 2),
                     Text(
                       order.statusLabel,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
-                        color: AkJolTheme.primary,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
                   ],
@@ -1250,13 +1252,13 @@ class _ActiveOrderBanner extends ConsumerWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: AkJolTheme.primary.withValues(alpha: 0.1),
+                  color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(
+                child: Icon(
                   Icons.arrow_forward_rounded,
                   size: 16,
-                  color: AkJolTheme.primary,
+                  color: Theme.of(context).colorScheme.primary,
                 ),
               ),
             ],

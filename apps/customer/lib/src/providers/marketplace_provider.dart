@@ -129,9 +129,9 @@ class NearbyStore {
   }
 
   double get scooterDeliveryFee {
-    if (distanceKm == null) return 50.0;
+    if (distanceKm == null) return 75.0;
     final calculated = distanceKm! * scooterRate;
-    return calculated < 50.0 ? 50.0 : calculated.roundToDouble();
+    return calculated < 75.0 ? 75.0 : calculated.roundToDouble();
   }
 
   String get deliveryFeeDisplay {

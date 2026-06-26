@@ -18,9 +18,35 @@ class CheckoutScreen extends ConsumerStatefulWidget {
 class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
   final _addressDetailsCtrl = TextEditingController();
   final _noteCtrl = TextEditingController();
+  ErrorWidgetBuilder? _oldOnErrorBuilder;
+
+  @override
+  void initState() {
+    super.initState();
+    _oldOnErrorBuilder = ErrorWidget.builder;
+    ErrorWidget.builder = (FlutterErrorDetails details) {
+      return Scaffold(
+        backgroundColor: Colors.black,
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: SingleChildScrollView(
+              child: Text(
+                'Caught Error:\n\n${details.exception}\n\nStack:\n${details.stack}',
+                style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontFamily: 'monospace'),
+              ),
+            ),
+          ),
+        ),
+      );
+    };
+  }
 
   @override
   void dispose() {
+    if (_oldOnErrorBuilder != null) {
+      ErrorWidget.builder = _oldOnErrorBuilder!;
+    }
     _addressDetailsCtrl.dispose();
     _noteCtrl.dispose();
     super.dispose();
@@ -28,150 +54,188 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final cart = ref.watch(cartProvider);
-    final co = ref.watch(checkoutProvider);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = Theme.of(context).scaffoldBackgroundColor;
-    final cardBg = Theme.of(context).cardTheme.color ?? Colors.white;
-    final border = Theme.of(context).dividerTheme.color ?? const Color(0xFFE2E8F0);
-    final text = isDark ? Colors.white : const Color(0xFF0F172A);
-    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
+    try {
+      final cart = ref.watch(cartProvider);
+      final co = ref.watch(checkoutProvider);
+      print('DEBUG: CheckoutScreen build: loading=${co.loading}, error=${co.error}, cart.isEmpty=${cart.isEmpty}');
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final bg = Theme.of(context).scaffoldBackgroundColor;
+      final cardBg = Theme.of(context).cardTheme.color ?? Colors.white;
+      final border = Theme.of(context).dividerTheme.color ?? const Color(0xFFE2E8F0);
+      final text = isDark ? Colors.white : const Color(0xFF0F172A);
+      final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
 
-    if (cart.isEmpty) {
+      if (cart.isEmpty) {
+        return Scaffold(
+          backgroundColor: bg,
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 72, height: 72,
+                  decoration: BoxDecoration(
+                    color: AkJolTheme.primary.withValues(alpha: 0.08),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.shopping_cart_outlined, size: 32,
+                      color: AkJolTheme.primary.withValues(alpha: 0.4)),
+                ),
+                const SizedBox(height: 14),
+                Text('Корзина пуста', style: TextStyle(fontSize: 17,
+                    fontWeight: FontWeight.w700, color: text)),
+                const SizedBox(height: 6),
+                Text('Добавьте товары', style: TextStyle(fontSize: 13, color: muted)),
+                const SizedBox(height: 16),
+                FilledButton(
+                  onPressed: () => context.go('/'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AkJolTheme.primary,
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('К магазинам'),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+
+      final itemsTotal = cart.itemsTotal;
+      final fee = co.effectiveDeliveryFee(itemsTotal);
+      final total = itemsTotal + fee;
+      final isFree = co.freeDeliveryFrom > 0 && itemsTotal >= co.freeDeliveryFrom;
+
       return Scaffold(
         backgroundColor: bg,
+        body: co.loading
+            ? Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const CircularProgressIndicator(color: AkJolTheme.primary),
+                    const SizedBox(height: 12),
+                    Text('Загрузка...', style: TextStyle(color: muted, fontSize: 13)),
+                  ],
+                ),
+              )
+            : Stack(
+                children: [
+                  // ── Scrollable Content ──
+                  Positioned.fill(
+                    child: CustomScrollView(
+                      slivers: [
+                        // ── App Bar ──
+                        SliverAppBar(
+                          pinned: true,
+                          backgroundColor: cardBg,
+                          surfaceTintColor: Colors.transparent,
+                          leading: IconButton(
+                            icon: Container(
+                              width: 34, height: 34,
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(Icons.arrow_back_ios_new_rounded, size: 15, color: text),
+                            ),
+                            onPressed: () => context.go('/'),
+                          ),
+                          title: Text('Оформление', style: TextStyle(fontSize: 17,
+                              fontWeight: FontWeight.w800, color: text, letterSpacing: -0.3)),
+                          centerTitle: true,
+                          bottom: PreferredSize(
+                            preferredSize: const Size.fromHeight(1),
+                            child: Container(height: 0.5, color: border),
+                          ),
+                        ),
+
+                        SliverPadding(
+                          padding: const EdgeInsets.fromLTRB(16, 14, 16, 140),
+                          sliver: SliverList(
+                            delegate: SliverChildListDelegate([
+                              // ── 1. Store ──
+                              _buildStore(cart, co, isDark, cardBg, border, text, muted),
+                              const SizedBox(height: 12),
+
+                              // ── 2. Address ──
+                              _buildAddress(co, isDark, cardBg, border, text, muted),
+                              const SizedBox(height: 12),
+
+                              // ── 3. Transport ──
+                              _buildTransport(co, isDark, cardBg, border, text, muted),
+                              const SizedBox(height: 12),
+
+                              // ── 4. Payment Info ──
+                              _buildPaymentInfo(isDark, cardBg, border, text, muted),
+                              const SizedBox(height: 12),
+
+                              // ── 5. Note ──
+                              _buildNote(isDark, cardBg, border, text, muted),
+                              const SizedBox(height: 12),
+
+                              // ── 6. Items ──
+                              _buildItems(cart, isDark, cardBg, border, text, muted),
+
+                              if (co.error != null) ...[
+                                const SizedBox(height: 12),
+                                Container(
+                                  padding: const EdgeInsets.all(10),
+                                  decoration: BoxDecoration(
+                                    color: AkJolTheme.error.withValues(alpha: 0.08),
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Row(children: [
+                                    const Icon(Icons.error_outline, color: AkJolTheme.error, size: 16),
+                                    const SizedBox(width: 6),
+                                    Expanded(child: Text(co.error!,
+                                        style: const TextStyle(fontSize: 12, color: AkJolTheme.error))),
+                                  ]),
+                                ),
+                              ],
+                            ]),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: _BottomBar(
+                      itemsTotal: itemsTotal,
+                      fee: fee,
+                      total: total,
+                      isFree: isFree,
+                      isReady: co.isReady,
+                      submitting: co.submitting,
+                      isDark: isDark,
+                      onSubmit: _handleSubmit,
+                    ),
+                  ),
+                ],
+              ),
+      );
+    } catch (e, stack) {
+      debugPrint('🚨 [CheckoutScreen] CRITICAL BUILD ERROR: $e\n$stack');
+      return Scaffold(
+        backgroundColor: Colors.black,
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                width: 72, height: 72,
-                decoration: BoxDecoration(
-                  color: AkJolTheme.primary.withValues(alpha: 0.08),
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(Icons.shopping_cart_outlined, size: 32,
-                    color: AkJolTheme.primary.withValues(alpha: 0.4)),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: SingleChildScrollView(
+              child: Text(
+                'CheckoutScreen Build Error:\n$e\n\n$stack',
+                style: const TextStyle(color: Colors.redAccent, fontSize: 12, fontFamily: 'monospace'),
               ),
-              const SizedBox(height: 14),
-              Text('Корзина пуста', style: TextStyle(fontSize: 17,
-                  fontWeight: FontWeight.w700, color: text)),
-              const SizedBox(height: 6),
-              Text('Добавьте товары', style: TextStyle(fontSize: 13, color: muted)),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () => context.go('/'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: AkJolTheme.primary,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text('К магазинам'),
-              ),
-            ],
+            ),
           ),
         ),
       );
     }
-
-    final itemsTotal = cart.itemsTotal;
-    final fee = co.effectiveDeliveryFee(itemsTotal);
-    final total = itemsTotal + fee;
-    final isFree = co.freeDeliveryFrom > 0 && itemsTotal >= co.freeDeliveryFrom;
-
-    return Scaffold(
-      backgroundColor: bg,
-      body: co.loading
-          ? Center(child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const CircularProgressIndicator(color: AkJolTheme.primary),
-                const SizedBox(height: 12),
-                Text('Загрузка...', style: TextStyle(color: muted, fontSize: 13)),
-              ],
-            ))
-          : CustomScrollView(
-              slivers: [
-                // ── App Bar ──
-                SliverAppBar(
-                  pinned: true,
-                  backgroundColor: cardBg,
-                  surfaceTintColor: Colors.transparent,
-                  leading: IconButton(
-                    icon: Container(
-                      width: 34, height: 34,
-                      decoration: BoxDecoration(
-                        color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(Icons.arrow_back_ios_new_rounded, size: 15, color: text),
-                    ),
-                    onPressed: () => context.go('/'),
-                  ),
-                  title: Text('Оформление', style: TextStyle(fontSize: 17,
-                      fontWeight: FontWeight.w800, color: text, letterSpacing: -0.3)),
-                  centerTitle: true,
-                  bottom: PreferredSize(
-                    preferredSize: const Size.fromHeight(1),
-                    child: Container(height: 0.5, color: border),
-                  ),
-                ),
-
-                SliverPadding(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 140),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      // ── 1. Store ──
-                      _buildStore(cart, co, isDark, cardBg, border, text, muted),
-                      const SizedBox(height: 12),
-
-                      // ── 2. Address ──
-                      _buildAddress(co, isDark, cardBg, border, text, muted),
-                      const SizedBox(height: 12),
-
-                      // ── 3. Transport ──
-                      _buildTransport(co, isDark, cardBg, border, text, muted),
-                      const SizedBox(height: 12),
-
-                      // ── 4. Payment Info ──
-                      _buildPaymentInfo(isDark, cardBg, border, text, muted),
-                      const SizedBox(height: 12),
-
-                      // ── 5. Note ──
-                      _buildNote(isDark, cardBg, border, text, muted),
-                      const SizedBox(height: 12),
-
-                      // ── 6. Items ──
-                      _buildItems(cart, isDark, cardBg, border, text, muted),
-
-                      if (co.error != null) ...[
-                        const SizedBox(height: 12),
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: AkJolTheme.error.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(children: [
-                            const Icon(Icons.error_outline, color: AkJolTheme.error, size: 16),
-                            const SizedBox(width: 6),
-                            Expanded(child: Text(co.error!,
-                                style: const TextStyle(fontSize: 12, color: AkJolTheme.error))),
-                          ]),
-                        ),
-                      ],
-                    ]),
-                  ),
-                ),
-              ],
-            ),
-
-      bottomNavigationBar: cart.isEmpty || co.loading ? null : _BottomBar(
-        itemsTotal: itemsTotal, fee: fee, total: total,
-        isFree: isFree, isReady: co.isReady, submitting: co.submitting,
-        isDark: isDark, onSubmit: _handleSubmit,
-      ),
-    );
   }
 
   // ── Store card ──
@@ -268,7 +332,7 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
     return _Box(isDark: isDark, bg: bg, border: border, child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _Header(icon: Icons.delivery_dining_rounded, title: 'Транспорт', color: text),
+        _Header(title: 'Транспорт', color: text),
         const SizedBox(height: 10),
         ...kTransports.map((t) {
           final sel = co.selectedTransport == t.id;
@@ -293,11 +357,18 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                         : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Center(child: Icon(
-                    t.id == 'bicycle' ? Icons.electric_bike_rounded : Icons.electric_rickshaw_rounded,
-                    size: 18,
-                    color: sel ? AkJolTheme.primary : (isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280)),
-                  )),
+                  padding: const EdgeInsets.all(4),
+                  child: Image.asset(
+                    t.id == 'bicycle' ? 'assets/images/delivery_bike.png' : 'assets/images/delivery_trike.png',
+                    fit: BoxFit.contain,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Center(child: Icon(
+                        t.id == 'bicycle' ? Icons.electric_bike_rounded : Icons.electric_rickshaw_rounded,
+                        size: 18,
+                        color: sel ? AkJolTheme.primary : (isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280)),
+                      ));
+                    },
+                  ),
                 ),
                 const SizedBox(width: 10),
                 Expanded(child: Column(
@@ -315,6 +386,44 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
             ),
           );
         }),
+        if (co.selectedTransport == 'scooter') ...[
+          const SizedBox(height: 6),
+          Divider(color: border, height: 1, thickness: 0.5),
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: () => ref.read(checkoutProvider.notifier).setLoaderHelp(!co.loaderHelp),
+            borderRadius: BorderRadius.circular(8),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 2),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: Checkbox(
+                      value: co.loaderHelp,
+                      onChanged: (v) => ref.read(checkoutProvider.notifier).setLoaderHelp(v ?? false),
+                      activeColor: Theme.of(context).colorScheme.primary,
+                      checkColor: Theme.of(context).colorScheme.onPrimary,
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Нужна помощь курьера в выгрузке (+20%)',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: text,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ],
     ));
   }
@@ -449,10 +558,11 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
       final orderId = (result['order_id'] ?? result['id'])?.toString();
       final orderNumber = (result['order_number'] ?? '')?.toString();
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text('Заказ $orderNumber оформлен. Ищем курьера...'),
-        backgroundColor: AkJolTheme.primary,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        content: Text(
+          'Заказ $orderNumber оформлен. Ищем курьера...',
+          style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+        ),
+        backgroundColor: Theme.of(context).colorScheme.primary,
       ));
       context.go('/order/$orderId');
     }
@@ -499,15 +609,17 @@ class _Box extends StatelessWidget {
 }
 
 class _Header extends StatelessWidget {
-  final IconData icon;
+  final IconData? icon;
   final String title;
   final Color color;
-  const _Header({required this.icon, required this.title, required this.color});
+  const _Header({this.icon, required this.title, required this.color});
 
   @override
   Widget build(BuildContext context) => Row(mainAxisSize: MainAxisSize.min, children: [
-    Icon(icon, size: 15, color: AkJolTheme.primary),
-    const SizedBox(width: 5),
+    if (icon != null) ...[
+      Icon(icon!, size: 15, color: AkJolTheme.primary),
+      const SizedBox(width: 5),
+    ],
     Text(title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: color)),
   ]);
 }
@@ -542,83 +654,125 @@ class _BottomBar extends StatelessWidget {
   final VoidCallback onSubmit;
 
   const _BottomBar({
-    required this.itemsTotal, required this.fee, required this.total,
-    required this.isFree, required this.isReady, required this.submitting,
-    required this.isDark, required this.onSubmit,
+    required this.itemsTotal,
+    required this.fee,
+    required this.total,
+    required this.isFree,
+    required this.isReady,
+    required this.submitting,
+    required this.isDark,
+    required this.onSubmit,
   });
 
   @override
   Widget build(BuildContext context) {
-    final bg = Theme.of(context).cardTheme.color ?? Colors.white;
-    final brd = Theme.of(context).dividerTheme.color ?? const Color(0xFFE2E8F0);
-    final text = isDark ? Colors.white : const Color(0xFF0F172A);
-    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
+    try {
+      final bg = Theme.of(context).cardTheme.color ?? (isDark ? const Color(0xFF1E293B) : Colors.white);
+      final brd = Theme.of(context).dividerTheme.color ?? const Color(0xFFE2E8F0);
+      final text = isDark ? Colors.white : const Color(0xFF0F172A);
+      final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-      decoration: BoxDecoration(color: bg,
-        border: Border(top: BorderSide(color: brd, width: 0.5)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.05),
-            blurRadius: 10, offset: const Offset(0, -3))],
-      ),
-      child: SafeArea(top: false, child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text('Товары', style: TextStyle(fontSize: 12, color: muted)),
-            Text('${itemsTotal.toStringAsFixed(0)} с',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: text)),
-          ]),
-          const SizedBox(height: 2),
-          Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-            Text('Доставка', style: TextStyle(fontSize: 12, color: muted)),
-            Text('${fee.toStringAsFixed(0)} с',
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: text)),
-          ]),
-          const SizedBox(height: 4),
-          Divider(color: brd, height: 1),
-          const SizedBox(height: 6),
-          Row(children: [
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Итого', style: TextStyle(fontSize: 11, color: muted)),
-              Text('${total.toStringAsFixed(0)} сом',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800,
-                      color: text, letterSpacing: -0.5)),
-            ]),
-            const Spacer(),
-            SizedBox(height: 48, child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: isReady && !submitting
-                    ? const LinearGradient(colors: [Color(0xFF00B15E), Color(0xFF10B981)])
-                    : null,
-                color: isReady && !submitting ? null
-                    : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: isReady && !submitting ? [BoxShadow(
-                    color: const Color(0xFF00B15E).withValues(alpha: 0.3),
-                    blurRadius: 10, offset: const Offset(0, 3))] : null,
+      return Container(
+        padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+        decoration: BoxDecoration(
+          color: bg,
+          border: Border(top: BorderSide(color: brd, width: 0.5)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.25 : 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -3),
+            )
+          ],
+        ),
+        child: SafeArea(
+          top: false,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Товары', style: TextStyle(fontSize: 12, color: muted)),
+                  Text('${itemsTotal.toStringAsFixed(0)} с',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: text)),
+                ],
               ),
-              child: Material(color: Colors.transparent, child: InkWell(
-                borderRadius: BorderRadius.circular(14),
-                onTap: isReady && !submitting ? onSubmit : null,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 22),
-                  child: Center(child: submitting
-                      ? const SizedBox(width: 20, height: 20,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                      : const Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(Icons.search_rounded, size: 18, color: Colors.white),
-                          SizedBox(width: 6),
-                          Text('Заказать', style: TextStyle(fontSize: 15,
-                              fontWeight: FontWeight.w700, color: Colors.white)),
-                        ]),
+              const SizedBox(height: 2),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Доставка', style: TextStyle(fontSize: 12, color: muted)),
+                  Text('${fee.toStringAsFixed(0)} с',
+                      style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: text)),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Divider(color: brd, height: 1),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Итого', style: TextStyle(fontSize: 11, color: muted)),
+                      Text('${total.toStringAsFixed(0)} сом',
+                          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800,
+                              color: text, letterSpacing: -0.5)),
+                    ],
                   ),
-                ),
-              )),
-            )),
-          ]),
-        ],
-      )),
-    );
+                  const Spacer(),
+                  SizedBox(
+                    height: 48,
+                    child: FilledButton(
+                      onPressed: isReady && !submitting ? onSubmit : null,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Theme.of(context).colorScheme.primary,
+                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                        disabledBackgroundColor: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        disabledForegroundColor: isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        padding: const EdgeInsets.symmetric(horizontal: 22),
+                        elevation: 0,
+                      ),
+                      child: submitting
+                          ? SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                color: isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280),
+                                strokeWidth: 2,
+                              ),
+                            )
+                          : const Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.shopping_cart_checkout_rounded, size: 18),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Заказать',
+                                  style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      );
+    } catch (e, stack) {
+      debugPrint('🚨 [_BottomBar] build error: $e\n$stack');
+      return Container(
+        color: Colors.red,
+        padding: const EdgeInsets.all(10),
+        child: Text('BottomBar Error: $e\n$stack', style: const TextStyle(color: Colors.white, fontSize: 10)),
+      );
+    }
   }
 }

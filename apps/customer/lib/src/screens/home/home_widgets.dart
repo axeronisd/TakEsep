@@ -29,7 +29,7 @@ class AkJolHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final muted = isDark ? const Color(0xFF6E7681) : const Color(0xFF9CA3AF);
+    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
     final addressColor = isDark
         ? Colors.white.withValues(alpha: 0.75)
         : const Color(0xFF475569);
@@ -324,13 +324,16 @@ class BentoGrid extends StatelessWidget {
                     ? const [Color(0xFF0F1811), Color(0xFF0D0D0E)]
                     : const [Color(0xFFE8FDF0), Colors.white],
                 icon: Icons.local_shipping_rounded,
-                logoAsset: 'assets/images/akjol_logo.png',
                 title: 'Доставка',
                 subtitle: 'Любые точки\nоткуда угодно',
                 iconSize: 26,
                 isDark: isDark,
                 imageAsset: 'assets/images/delivery_card_bg.png',
                 fullBackground: true,
+                showIcon: false,
+                customBorderColor: isDark
+                    ? const Color(0xFFC2FF1D).withValues(alpha: 0.8)
+                    : const Color(0xFF166534).withValues(alpha: 0.5),
                 onTap: () => onCategoryTap?.call('delivery'),
               ),
             ),
@@ -354,7 +357,10 @@ class BentoGrid extends StatelessWidget {
                       badge: 'СКОРО',
                       fullBackground: true,
                       showIcon: false,
-                      onTap: () => onCategoryTap?.call('services'),
+                      enabled: false,
+                      customBorderColor: isDark
+                          ? const Color(0xFF00D2FF).withValues(alpha: 0.85)
+                          : const Color(0xFF1D4ED8).withValues(alpha: 0.6),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -370,9 +376,13 @@ class BentoGrid extends StatelessWidget {
                       iconSize: 20,
                       compact: true,
                       isDark: isDark,
+                      badge: 'СКОРО',
                       fullBackground: true,
                       showIcon: false,
-                      onTap: () => onCategoryTap?.call('food'),
+                      enabled: false,
+                      customBorderColor: isDark
+                          ? const Color(0xFFFF6D00).withValues(alpha: 0.85)
+                          : const Color(0xFFC2410C).withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -404,6 +414,8 @@ class _AnimatedBentoCard extends StatefulWidget {
   final VoidCallback? onTap;
   final bool fullBackground;
   final bool showIcon;
+  final Color? customBorderColor;
+  final bool enabled;
 
   const _AnimatedBentoCard({
     required this.gradient,
@@ -420,6 +432,8 @@ class _AnimatedBentoCard extends StatefulWidget {
     this.onTap,
     this.fullBackground = false,
     this.showIcon = true,
+    this.customBorderColor,
+    this.enabled = true,
   });
 
   @override
@@ -456,34 +470,40 @@ class _AnimatedBentoCardState extends State<_AnimatedBentoCard>
         ? (widget.isDark ? AkJolTheme.primary : AkJolTheme.primaryLight)
         : (widget.isDark ? Colors.indigoAccent : Colors.indigo);
 
+    final gradientColors = widget.gradient;
+
     final titleColor = widget.fullBackground
         ? Colors.white
         : (widget.isDark ? Colors.white : AkJolTheme.textPrimary);
+
     final subtitleColor = widget.fullBackground
         ? Colors.white.withValues(alpha: 0.75)
         : (widget.isDark ? Colors.white.withValues(alpha: 0.6) : AkJolTheme.textSecondary);
-    final borderColor = widget.fullBackground
+
+    final borderColor = widget.customBorderColor ?? (widget.fullBackground
         ? AkJolTheme.primary.withValues(alpha: 0.25)
         : (widget.isDark
             ? activeColor.withValues(alpha: 0.18)
-            : activeColor.withValues(alpha: 0.12));
+            : activeColor.withValues(alpha: 0.12)));
 
     return GestureDetector(
-      onTapDown: (_) => _controller.forward(),
-      onTapUp: (_) {
-        _controller.reverse();
-        widget.onTap?.call();
-      },
-      onTapCancel: () => _controller.reverse(),
+      onTapDown: widget.enabled ? (_) => _controller.forward() : null,
+      onTapUp: widget.enabled
+          ? (_) {
+              _controller.reverse();
+              widget.onTap?.call();
+            }
+          : null,
+      onTapCancel: widget.enabled ? () => _controller.reverse() : null,
       child: ScaleTransition(
-        scale: _scaleAnim,
+        scale: widget.enabled ? _scaleAnim : const AlwaysStoppedAnimation(1.0),
         child: Container(
           width: double.infinity,
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: widget.gradient,
+              colors: gradientColors,
             ),
             borderRadius: BorderRadius.circular(22),
             boxShadow: [
@@ -493,6 +513,12 @@ class _AnimatedBentoCardState extends State<_AnimatedBentoCard>
                 offset: const Offset(0, 6),
                 spreadRadius: -4,
               ),
+              // Легкая подсветка (glow) под цвет окантовки
+              BoxShadow(
+                color: borderColor.withValues(alpha: widget.isDark ? 0.22 : 0.35),
+                blurRadius: widget.isDark ? 12 : 16,
+                spreadRadius: widget.isDark ? 0.5 : 1.0,
+              ),
             ],
           ),
           clipBehavior: Clip.antiAlias,
@@ -501,9 +527,11 @@ class _AnimatedBentoCardState extends State<_AnimatedBentoCard>
               // Full background image if provided and enabled
               if (widget.imageAsset != null && widget.fullBackground) ...[
                 Positioned.fill(
-                  child: Image.asset(
-                    widget.imageAsset!,
-                    fit: BoxFit.cover,
+                  child: _buildImage(
+                    Image.asset(
+                      widget.imageAsset!,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
                 // Dark overlay gradient to ensure text readability
@@ -548,28 +576,32 @@ class _AnimatedBentoCardState extends State<_AnimatedBentoCard>
                 Positioned(
                   right: widget.compact ? -5 : -10,
                   bottom: widget.compact ? -5 : -15,
-                  child: Image.asset(
-                    widget.imageAsset!,
-                    width: widget.compact ? 56 : 125,
-                    height: widget.compact ? 56 : 125,
-                    fit: BoxFit.contain,
+                  child: _buildImage(
+                    Image.asset(
+                      widget.imageAsset!,
+                      width: widget.compact ? 56 : 125,
+                      height: widget.compact ? 56 : 125,
+                      fit: BoxFit.contain,
+                    ),
                   ),
                 )
               else if (widget.imageUrl != null && !widget.compact && !widget.fullBackground)
                 Positioned(
                   right: -8,
                   top: -4,
-                  child: Image.network(
-                    widget.imageUrl!,
-                    width: 120,
-                    height: 120,
-                    fit: BoxFit.contain,
-                    color: Colors.white.withValues(alpha: 0.85),
-                    colorBlendMode: BlendMode.modulate,
-                    errorBuilder: (_, __, ___) => Icon(
-                      widget.icon,
-                      size: 60,
-                      color: Colors.white.withValues(alpha: 0.06),
+                  child: _buildImage(
+                    Image.network(
+                      widget.imageUrl!,
+                      width: 120,
+                      height: 120,
+                      fit: BoxFit.contain,
+                      color: Colors.white.withValues(alpha: 0.85),
+                      colorBlendMode: BlendMode.modulate,
+                      errorBuilder: (_, __, ___) => Icon(
+                        widget.icon,
+                        size: 60,
+                        color: Colors.white.withValues(alpha: 0.06),
+                      ),
                     ),
                   ),
                 )
@@ -637,6 +669,7 @@ class _AnimatedBentoCardState extends State<_AnimatedBentoCard>
                                       size: widget.iconSize,
                                     ),
                             ),
+                          if (!widget.showIcon && widget.logoAsset == null) const Spacer(),
                           if (widget.badge != null)
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -708,8 +741,8 @@ class _AnimatedBentoCardState extends State<_AnimatedBentoCard>
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(22),
                       border: Border.all(
-                        color: borderColor,
-                        width: 1.5,
+                        color: borderColor.withValues(alpha: widget.isDark ? 0.25 : 0.12),
+                        width: 1.0,
                       ),
                     ),
                   ),
@@ -720,6 +753,10 @@ class _AnimatedBentoCardState extends State<_AnimatedBentoCard>
         ),
       ),
     );
+  }
+
+  Widget _buildImage(Widget child) {
+    return child;
   }
 }
 

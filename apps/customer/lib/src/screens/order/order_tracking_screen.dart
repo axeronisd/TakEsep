@@ -384,10 +384,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
   DateTime? _lastRouteUpdate;
 
   Future<void> _loadRoutes(Map<String, dynamic> data) async {
-    final storeLat = (data['warehouses']?['latitude'] as num?)?.toDouble()
-        ?? (data['pickup_lat'] as num?)?.toDouble();
-    final storeLng = (data['warehouses']?['longitude'] as num?)?.toDouble()
-        ?? (data['pickup_lng'] as num?)?.toDouble();
+    final storeLat = (data['pickup_lat'] as num?)?.toDouble()
+        ?? (data['warehouses']?['latitude'] as num?)?.toDouble();
+    final storeLng = (data['pickup_lng'] as num?)?.toDouble()
+        ?? (data['warehouses']?['longitude'] as num?)?.toDouble();
     final custLat = (data['delivery_lat'] as num?)?.toDouble();
     final custLng = (data['delivery_lng'] as num?)?.toDouble();
     final status = data['status'] as String? ?? '';
@@ -771,10 +771,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final courierPos = LatLng(_courierLat!, _courierLng!);
     final isFreelance = _order?['delivery_type'] == 'freelance' && (_order?['items_total'] as num?)?.toDouble() == 0;
     // Store location: use warehouses table (actual store location)
-    final pickupLat = (_order?['warehouses']?['latitude'] as num?)?.toDouble()
-        ?? (_order?['pickup_lat'] as num?)?.toDouble();
-    final pickupLng = (_order?['warehouses']?['longitude'] as num?)?.toDouble()
-        ?? (_order?['pickup_lng'] as num?)?.toDouble();
+    final pickupLat = (_order?['pickup_lat'] as num?)?.toDouble()
+        ?? (_order?['warehouses']?['latitude'] as num?)?.toDouble();
+    final pickupLng = (_order?['pickup_lng'] as num?)?.toDouble()
+        ?? (_order?['warehouses']?['longitude'] as num?)?.toDouble();
     final deliveryLat = (_order?['delivery_lat'] as num?)?.toDouble();
     final deliveryLng = (_order?['delivery_lng'] as num?)?.toDouble();
 
@@ -1128,12 +1128,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
   Widget _buildCourierCard(
       String name, String? phone, String transport, bool isActive) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: isActive
             ? BorderSide(
-                color: AkJolTheme.primary.withValues(alpha: 0.3),
+                color: primaryColor.withValues(alpha: 0.3),
                 width: 1.5)
             : const BorderSide(color: AkJolTheme.border),
       ),
@@ -1147,11 +1148,11 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: AkJolTheme.primary.withValues(alpha: 0.1),
+                    color: primaryColor.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(_transportIcon(transport),
-                      color: AkJolTheme.primary),
+                  child: Icon(Icons.person_rounded,
+                      color: primaryColor),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -1168,7 +1169,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 ),
                 if (phone != null)
                   IconButton(
-                    icon: const Icon(Icons.phone, color: AkJolTheme.primary),
+                    icon: Icon(Icons.phone, color: primaryColor),
                     onPressed: () async {
                       final uri = Uri.parse('tel:$phone');
                       if (await canLaunchUrl(uri)) {
@@ -1198,8 +1199,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                     ? 'Чат с курьером ($_unreadMessages)'
                     : 'Чат с курьером'),
                 style: OutlinedButton.styleFrom(
-                  foregroundColor: AkJolTheme.primary,
-                  side: BorderSide(color: AkJolTheme.primary.withValues(alpha: 0.3)),
+                  foregroundColor: primaryColor,
+                  side: BorderSide(color: primaryColor.withValues(alpha: 0.3)),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
               ),
@@ -1212,8 +1213,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
   void _openChatWithCourier(String name, String phone) {
     final customerId = _order?['customer_id'] ?? '';
-    Navigator.push(
-      context,
+    Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
         builder: (_) => OrderChatScreen(
           orderId: widget.orderId,
@@ -1592,50 +1592,123 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final transport = approved ?? requested;
     final deliveryFee = (_order?['delivery_fee'] as num?)?.toDouble() ?? 100;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isBike = transport == 'bicycle';
+    final isScooter = transport == 'scooter';
+
+    // Theme matching colors for the premium container card
+    final bg = isDark ? const Color(0xFF121214) : const Color(0xFFF1F5F9);
+    final border = isDark ? const Color(0xFF1E1E22) : const Color(0xFFE2E8F0);
+    final text = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
+    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
+
+    return Container(
+      margin: const EdgeInsets.symmetric(vertical: 4),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: border, width: 1),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.15 : 0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(19),
+        child: Stack(
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AkJolTheme.primary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(12),
+            // If it's bike or scooter, place the 3D asset image on the right
+            if (isBike || isScooter)
+              Positioned(
+                top: 0,
+                bottom: 0,
+                right: 8,
+                width: 90,
+                child: ShaderMask(
+                  shaderCallback: (rect) {
+                    return const LinearGradient(
+                      colors: [
+                        Colors.transparent,
+                        Colors.white,
+                      ],
+                      stops: [0.0, 0.6],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ).createShader(rect);
+                  },
+                  blendMode: BlendMode.dstIn,
+                  child: Opacity(
+                    opacity: 0.85,
+                    child: Image.asset(
+                      isBike ? 'assets/images/delivery_bike.png' : 'assets/images/delivery_trike.png',
+                      fit: BoxFit.contain,
+                      alignment: Alignment.centerRight,
+                    ),
+                  ),
+                ),
               ),
-              child: Icon(
-                _transportIcon(transport),
-                color: AkJolTheme.primary,
-                size: 22,
+            // Readability Gradient overlay
+            if (isBike || isScooter)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        bg,
+                        bg.withValues(alpha: 0.8),
+                        bg.withValues(alpha: 0.0),
+                      ],
+                      stops: const [0.0, 0.5, 0.9],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            // Content
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
                 children: [
-                  Text(
-                    _transportDisplayName(transport),
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _transportDisplayName(transport),
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: text,
+                            letterSpacing: -0.2,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          'Стоимость доставки: ${deliveryFee.toStringAsFixed(0)} сом',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: text,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  Text(
-                    'Стоимость доставки: ${deliveryFee.toStringAsFixed(0)} сом',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AkJolTheme.textTertiary,
+                  // Extra space on right if asset is visible
+                  if (isBike || isScooter)
+                    const SizedBox(width: 60)
+                  else
+                    Icon(
+                      _transportIcon(transport),
+                      size: 24,
+                      color: muted.withValues(alpha: 0.3),
                     ),
-                  ),
                 ],
               ),
-            ),
-            Icon(
-              _transportIcon(transport),
-              size: 28,
-              color: AkJolTheme.textTertiary.withValues(alpha: 0.3),
             ),
           ],
         ),
@@ -1964,25 +2037,26 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         '${eta.hour.toString().padLeft(2, '0')}:${eta.minute.toString().padLeft(2, '0')}';
 
     final isLate = remaining < 0;
+    final primaryColor = Theme.of(context).colorScheme.primary;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         color: isLate
             ? Colors.orange.withValues(alpha: 0.08)
-            : AkJolTheme.primary.withValues(alpha: 0.08),
+            : primaryColor.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isLate
               ? Colors.orange.withValues(alpha: 0.3)
-              : AkJolTheme.primary.withValues(alpha: 0.2),
+              : primaryColor.withValues(alpha: 0.2),
         ),
       ),
       child: Row(
         children: [
           Icon(
             isLate ? Icons.schedule : Icons.access_time,
-            color: isLate ? Colors.orange : AkJolTheme.primary,
+            color: isLate ? Colors.orange : primaryColor,
             size: 22,
           ),
           const SizedBox(width: 10),
@@ -1997,7 +2071,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w600,
-                    color: isLate ? Colors.orange[800] : AkJolTheme.primary,
+                    color: isLate ? Colors.orange[800] : primaryColor,
                   ),
                 ),
                 Text(
@@ -2141,7 +2215,8 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                           );
                         },
                     style: FilledButton.styleFrom(
-                      backgroundColor: AkJolTheme.primary,
+                      backgroundColor: Theme.of(ctx).colorScheme.primary,
+                      foregroundColor: Theme.of(ctx).colorScheme.onPrimary,
                       padding:
                           const EdgeInsets.symmetric(vertical: 14),
                     ),
@@ -2178,9 +2253,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
           _order?['courier_rating'] = courierRating;
         });
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Спасибо за оценку'),
-            backgroundColor: AkJolTheme.primary,
+          SnackBar(
+            content: Text('Спасибо за оценку',
+                style: TextStyle(color: Theme.of(context).colorScheme.onPrimary)),
+            backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
       }
@@ -2360,32 +2436,33 @@ class _TransportChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final label = _label(transport);
     final icon = _icon(transport);
+    final primaryColor = Theme.of(context).colorScheme.primary;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: isOld
             ? Colors.grey.withValues(alpha: 0.1)
-            : AkJolTheme.primary.withValues(alpha: 0.1),
+            : primaryColor.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
           color: isOld
               ? Colors.grey.withValues(alpha: 0.3)
-              : AkJolTheme.primary.withValues(alpha: 0.3),
+              : primaryColor.withValues(alpha: 0.3),
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 16,
-              color: isOld ? Colors.grey : AkJolTheme.primary),
+              color: isOld ? Colors.grey : primaryColor),
           const SizedBox(width: 4),
           Text(
             label,
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: isOld ? Colors.grey : AkJolTheme.primary,
+              color: isOld ? Colors.grey : primaryColor,
               decoration: isOld ? TextDecoration.lineThrough : null,
             ),
           ),
@@ -2423,19 +2500,20 @@ class _PaymentStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
     return Row(
       children: [
         Container(
           width: 22, height: 22,
           decoration: BoxDecoration(
-            color: AkJolTheme.primary.withValues(alpha: 0.15),
+            color: primaryColor.withValues(alpha: 0.15),
             shape: BoxShape.circle,
           ),
           alignment: Alignment.center,
           child: Text(num,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 11, fontWeight: FontWeight.w700,
-                color: AkJolTheme.primary)),
+                color: primaryColor)),
         ),
         const SizedBox(width: 8),
         Text(text,

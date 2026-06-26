@@ -699,7 +699,7 @@ class _EditDataSheet extends StatelessWidget {
     final bg = Theme.of(context).cardTheme.color ?? Colors.white;
     final fieldBg = isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
     final text = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
-    final muted = isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
+    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
 
     return Container(
       padding: EdgeInsets.only(
@@ -917,8 +917,8 @@ class _EditPasswordSheetState extends State<_EditPasswordSheet> {
         ? const Color(0xFFF8FAFC)
         : const Color(0xFF0F172A);
     final muted = widget.isDark
-        ? const Color(0xFF64748B)
-        : const Color(0xFF94A3B8);
+        ? const Color(0xFF94A3B8)
+        : const Color(0xFF475569);
 
     return Container(
       padding: EdgeInsets.only(

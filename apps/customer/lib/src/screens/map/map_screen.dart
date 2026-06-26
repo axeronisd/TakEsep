@@ -536,114 +536,116 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (_) => Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Handle
-          Center(
-            child: Container(
-              margin: const EdgeInsets.only(top: 12),
-              width: 40, height: 4,
-              decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF30363D) : const Color(0xFFE5E7EB),
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-          ),
-
-          // Banner
-          if (bannerUrl != null && bannerUrl.isNotEmpty)
-            Container(
-              height: 140,
-              margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                image: DecorationImage(
-                  image: NetworkImage(bannerUrl),
-                  fit: BoxFit.cover,
+      builder: (_) => SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(top: 12),
+                width: 40, height: 4,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF30363D) : const Color(0xFFE5E7EB),
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
             ),
-
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Logo + Name + Address
-                Row(
-                  children: [
-                    Container(
-                      width: 56, height: 56,
-                      decoration: BoxDecoration(
-                        color: AkJolTheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: AkJolTheme.primary.withValues(alpha: 0.2)),
-                        image: logoUrl != null && logoUrl.isNotEmpty
-                            ? DecorationImage(image: NetworkImage(logoUrl), fit: BoxFit.cover)
+  
+            // Banner
+            if (bannerUrl != null && bannerUrl.isNotEmpty)
+              Container(
+                height: 140,
+                margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  image: DecorationImage(
+                    image: NetworkImage(bannerUrl),
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+  
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Logo + Name + Address
+                  Row(
+                    children: [
+                      Container(
+                        width: 56, height: 56,
+                        decoration: BoxDecoration(
+                          color: AkJolTheme.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: AkJolTheme.primary.withValues(alpha: 0.2)),
+                          image: logoUrl != null && logoUrl.isNotEmpty
+                              ? DecorationImage(image: NetworkImage(logoUrl), fit: BoxFit.cover)
+                              : null,
+                        ),
+                        child: logoUrl == null || logoUrl.isEmpty
+                            ? const Icon(Icons.storefront_rounded, color: AkJolTheme.primary, size: 28)
                             : null,
                       ),
-                      child: logoUrl == null || logoUrl.isEmpty
-                          ? const Icon(Icons.storefront_rounded, color: AkJolTheme.primary, size: 28)
-                          : null,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(name,
-                            style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.w700,
-                              color: isDark ? Colors.white : const Color(0xFF111827),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(name,
+                              style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.w700,
+                                color: isDark ? Colors.white : const Color(0xFF111827),
+                              ),
                             ),
-                          ),
-                          if (address.isNotEmpty)
-                            Text(address,
-                              style: TextStyle(fontSize: 12, color: isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280)),
-                            ),
-                        ],
+                            if (address.isNotEmpty)
+                              Text(address,
+                                style: TextStyle(fontSize: 12, color: isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280)),
+                              ),
+                          ],
+                        ),
                       ),
+                    ],
+                  ),
+  
+                  // Description
+                  if (desc.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Text(desc,
+                      style: TextStyle(fontSize: 13, color: isDark ? Colors.white70 : Colors.grey[700], height: 1.4),
+                      maxLines: 3, overflow: TextOverflow.ellipsis,
                     ),
                   ],
-                ),
-
-                // Description
-                if (desc.isNotEmpty) ...[
-                  const SizedBox(height: 12),
-                  Text(desc,
-                    style: TextStyle(fontSize: 13, color: isDark ? Colors.white70 : Colors.grey[700], height: 1.4),
-                    maxLines: 3, overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-
-                const SizedBox(height: 16),
-
-                // Open store button
-                SafeArea(
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        context.go('/store/$wId');
-                      },
-                      icon: const Icon(Icons.storefront_rounded, size: 20),
-                      label: const Text('Открыть магазин', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AkJolTheme.primary,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+  
+                  const SizedBox(height: 16),
+  
+                  // Open store button
+                  SafeArea(
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 50,
+                      child: ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          context.go('/store/$wId');
+                        },
+                        icon: const Icon(Icons.storefront_rounded, size: 20),
+                        label: const Text('Открыть магазин', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AkJolTheme.primary,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

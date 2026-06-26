@@ -534,8 +534,7 @@ class _DeliveryQueueScreenState extends ConsumerState<DeliveryQueueScreen> {
   void _openChat(String orderId, String name, String phone) {
     final courierId = ref.read(courierIdProvider);
     if (courierId == null) return;
-    Navigator.push(
-      context,
+    Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
         builder: (_) => OrderChatScreen(
           orderId: orderId,

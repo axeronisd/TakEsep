@@ -38,7 +38,7 @@ const kTransports = [
     id: 'scooter',
     name: 'Муравей (трицикл)',
     emoji: '',
-    maxWeightKg: 20,
+    maxWeightKg: 500,
   ),
 ];
 
@@ -65,6 +65,7 @@ class CheckoutState {
 
   // Transport
   final String selectedTransport;
+  final bool loaderHelp;
 
   // Note
   final String? customerNote;
@@ -86,6 +87,7 @@ class CheckoutState {
     this.deliveryLat = 0,
     this.deliveryLng = 0,
     this.selectedTransport = 'bicycle',
+    this.loaderHelp = false,
     this.customerNote,
     this.distanceKm = 0.0,
     this.transportRates = const {
@@ -103,9 +105,14 @@ class CheckoutState {
 
   double effectiveDeliveryFee(double itemsTotal) {
     if (freeDeliveryFrom > 0 && itemsTotal >= freeDeliveryFrom) return 0;
-    final rate = transportRates[selectedTransport] ?? 50.0;
+    final rate = transportRates[selectedTransport] ?? (selectedTransport == 'scooter' ? 75.0 : 50.0);
     final calculated = distanceKm * rate;
-    return calculated < 50.0 ? 50.0 : calculated.roundToDouble();
+    final minFee = selectedTransport == 'scooter' ? 75.0 : 50.0;
+    var baseFee = calculated < minFee ? minFee : calculated;
+    if (loaderHelp && selectedTransport == 'scooter') {
+      baseFee = baseFee * 1.2;
+    }
+    return baseFee.roundToDouble();
   }
 
   bool get isReady => !loading && deliveryAddress.isNotEmpty && error == null;
@@ -126,6 +133,7 @@ class CheckoutState {
     double? deliveryLat,
     double? deliveryLng,
     String? selectedTransport,
+    bool? loaderHelp,
     String? customerNote,
     double? distanceKm,
     Map<String, double>? transportRates,
@@ -142,6 +150,7 @@ class CheckoutState {
     deliveryLat: deliveryLat ?? this.deliveryLat,
     deliveryLng: deliveryLng ?? this.deliveryLng,
     selectedTransport: selectedTransport ?? this.selectedTransport,
+    loaderHelp: loaderHelp ?? this.loaderHelp,
     customerNote: customerNote ?? this.customerNote,
     distanceKm: distanceKm ?? this.distanceKm,
     transportRates: transportRates ?? this.transportRates,
@@ -160,11 +169,13 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
   }
 
   Future<void> _init() async {
+    print('DEBUG: CheckoutNotifier._init start');
     final cart = ref.read(cartProvider);
     final location = ref.read(locationProvider);
 
     if (cart.isEmpty || cart.warehouseId == null) {
       state = state.copyWith(loading: false, error: 'Корзина пуста');
+      print('DEBUG: CheckoutNotifier._init early return: cart empty or warehouseId null');
       return;
     }
 
@@ -173,6 +184,15 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
       deliveryLat: location.lat ?? 0,
       deliveryLng: location.lng ?? 0,
     );
+
+    if (location.lat == null || location.lng == null) {
+      state = state.copyWith(
+        loading: false,
+        error: 'Укажите адрес доставки на карте',
+      );
+      print('DEBUG: CheckoutNotifier._init early return: location lat/lng null');
+      return;
+    }
 
     try {
       // Fetch dynamic transport rates from DB
@@ -191,9 +211,11 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
     try {
       await _loadDeliveryInfo(cart.warehouseId!, location.lat!, location.lng!);
       state = state.copyWith(loading: false);
+      print('DEBUG: CheckoutNotifier._init success: loading=${state.loading}, error=${state.error}');
     } catch (e) {
       debugPrint('❌ CheckoutNotifier init error: $e');
       state = state.copyWith(loading: false);
+      print('DEBUG: CheckoutNotifier._init catch error: $e');
     }
   }
 
@@ -251,7 +273,7 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
 
       final zones =
           (rpcResult as List?)
-              ?.map((e) => e as Map<String, dynamic>)
+              ?.map((e) => Map<String, dynamic>.from(e as Map))
               .toList() ??
           [];
 
@@ -259,9 +281,12 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
           .where((z) => z['warehouse_id'] == warehouseId)
           .toList();
 
-      final rate = state.transportRates[state.selectedTransport] ?? 50.0;
+      final rate = state.transportRates[state.selectedTransport] ?? (state.selectedTransport == 'scooter' ? 75.0 : 50.0);
       final calculated = distanceKm * rate;
-      final fee = calculated < 50.0 ? 50.0 : calculated.roundToDouble();
+      final minFee = state.selectedTransport == 'scooter' ? 75.0 : 50.0;
+      final fee = calculated < minFee ? minFee : calculated.roundToDouble();
+      final factor = state.selectedTransport == 'scooter' ? 7 : 5;
+      final minutes = distanceKm == 0.0 ? 60 : math.max(1, (distanceKm * factor).round());
 
       if (zone.isNotEmpty) {
         final bestZone = zone.first;
@@ -270,8 +295,7 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
           deliveryFee: fee,
           freeDeliveryFrom:
               (bestZone['free_delivery_from'] as num?)?.toDouble() ?? 0,
-          estimatedMinutes:
-              (bestZone['estimated_minutes'] as num?)?.toInt() ?? 60,
+          estimatedMinutes: minutes,
           minOrderAmount:
               (bestZone['min_order_amount'] as num?)?.toDouble() ?? 0,
           clearError: true,
@@ -280,6 +304,7 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
         state = state.copyWith(
           distanceKm: distanceKm,
           deliveryFee: fee,
+          estimatedMinutes: minutes,
           error: 'Адрес находится вне зоны доставки магазина',
         );
       }
@@ -305,17 +330,25 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
   }
 
   void setTransport(String transport) {
-    final rate = state.transportRates[transport] ?? 50.0;
+    final rate = state.transportRates[transport] ?? (transport == 'scooter' ? 75.0 : 50.0);
     final calculated = state.distanceKm * rate;
-    final fee = calculated < 50.0 ? 50.0 : calculated.roundToDouble();
+    final minFee = transport == 'scooter' ? 75.0 : 50.0;
+    final fee = calculated < minFee ? minFee : calculated.roundToDouble();
+    final factor = transport == 'scooter' ? 7 : 5;
+    final minutes = state.distanceKm == 0.0 ? 60 : math.max(1, (state.distanceKm * factor).round());
     state = state.copyWith(
       selectedTransport: transport,
       deliveryFee: fee,
+      estimatedMinutes: minutes,
     );
   }
 
   void setNote(String note) {
     state = state.copyWith(customerNote: note);
+  }
+
+  void setLoaderHelp(bool value) {
+    state = state.copyWith(loaderHelp: value);
   }
 
   /// Submit order — creates order with status 'searching_courier'
@@ -390,6 +423,11 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
       final itemsTotal = cart.itemsTotal;
       final effectiveFee = state.effectiveDeliveryFee(itemsTotal);
 
+      var note = state.customerNote ?? '';
+      if (state.loaderHelp && state.selectedTransport == 'scooter') {
+        note = note.isEmpty ? '[Нужна помощь в выгрузке]' : '$note\n[Нужна помощь в выгрузке]';
+      }
+
       final result = await _supabase.rpc(
         'create_customer_order',
         params: {
@@ -401,13 +439,13 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
           'p_delivery_lng': state.deliveryLng,
           'p_delivery_fee': effectiveFee,
           'p_payment_method': 'prepaid',
-          'p_customer_note': state.customerNote ?? '',
+          'p_customer_note': note,
           'p_items': items,
           'p_distance_km': state.distanceKm,
         },
       );
 
-      final orderData = result as Map<String, dynamic>;
+      final orderData = Map<String, dynamic>.from(result as Map);
       debugPrint('✅ Order created: ${orderData['order_number']}');
 
       final orderId = orderData['id'] ?? orderData['order_id'];
@@ -509,7 +547,8 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
 
       final rows = (result as List?) ?? [];
       if (rows.isNotEmpty) {
-        final courierId = rows.first['courier_id'];
+        final firstRow = Map<String, dynamic>.from(rows.first as Map);
+        final courierId = firstRow['courier_id'];
         debugPrint('🚀 Nearest courier found: $courierId');
 
         // Only set courier_id — do NOT change status

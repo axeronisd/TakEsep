@@ -4,7 +4,7 @@ class AkJolTheme {
   // ─── Brand Colors ──────────────────────────────
   static const Color primary = Color(0xFFC2FF1D);       // Сочный неоновый лаймовый (Neon Lime)
   static const Color primaryDark = Color(0xFF9ECE00);
-  static const Color primaryLight = Color(0xFF00B86B);  // Изумрудно-зеленый для светлой темы
+  static const Color primaryLight = Color(0xFF166534);  // Премиальный темно-зеленый (Forest Green) для светлой темы
   static const Color accent = Color(0xFFF59E0B);         // Янтарный/Золотой (amber)
   static const Color accentDark = Color(0xFFD97706);
 
