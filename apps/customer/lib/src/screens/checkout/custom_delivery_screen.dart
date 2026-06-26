@@ -88,21 +88,21 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
       }
     });
 
-    // Auto toggle active field on focus
+    // Auto toggle active field on focus and trigger UI updates
     _focusNodeA.addListener(() {
-      if (_focusNodeA.hasFocus) {
-        setState(() {
+      setState(() {
+        if (_focusNodeA.hasFocus) {
           _activeField = 'A';
-        });
-      }
+        }
+      });
     });
 
     _focusNodeB.addListener(() {
-      if (_focusNodeB.hasFocus) {
-        setState(() {
+      setState(() {
+        if (_focusNodeB.hasFocus) {
           _activeField = 'B';
-        });
-      }
+        }
+      });
     });
 
     final user = _supabase.auth.currentUser;
@@ -480,6 +480,10 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
   // ═══════════════════════════════════════
 
   Future<void> _handleMapTap(TapPosition tapPosition, LatLng point) async {
+    if (MediaQuery.of(context).viewInsets.bottom > 0) {
+      FocusManager.instance.primaryFocus?.unfocus();
+      return;
+    }
     final field = _activeField;
     try {
       final url = Uri.parse(
@@ -838,8 +842,18 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
         ? LatLng(location.lat!, location.lng!)
         : const LatLng(42.8746, 74.5698));
 
+    // Dynamic available height calculation to avoid overflow on small screens
+    final isSearching = _searchResults.isNotEmpty && (_focusNodeA.hasFocus || _focusNodeB.hasFocus);
+    final screenHeight = MediaQuery.of(context).size.height;
+    final viewInsets = MediaQuery.of(context).viewInsets;
+    final padding = MediaQuery.of(context).padding;
+    final availableHeight = screenHeight - viewInsets.bottom - padding.top - padding.bottom;
+    
+    final targetHeight = isSearching ? 360.0 : _sheetHeight;
+    final sheetHeight = math.min(targetHeight, availableHeight - 16.0);
+
     return Scaffold(
-      resizeToAvoidBottomInset: false,
+      resizeToAvoidBottomInset: true,
       body: Stack(
         children: [
           // ── 1. Map ──
@@ -982,13 +996,10 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
           _buildFloatingBackButton(isDark, text, cardBg),
 
           // ── 4. My Location (GPS) Button ──
-          _buildMyLocationButton(isDark, cardBg),
+          _buildMyLocationButton(isDark, cardBg, sheetHeight),
 
-          // ── 5. Search Suggestions Overlay ──
-          _buildSuggestionsOverlay(isDark, cardBg, text, muted),
-
-          // ── 6. Fixed Bottom Sheet Panel (1/3 of the screen) ──
-          _buildFixedSheet(isDark, bg, border, text, muted, fieldBg),
+          // ── 5. Fixed Bottom Sheet Panel (1/3 of the screen) ──
+          _buildFixedSheet(isDark, bg, border, text, muted, fieldBg, sheetHeight, isSearching),
 
           // Loading route overlay
           if (_loadingRoute)
@@ -1070,11 +1081,10 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
     );
   }
 
-  Widget _buildMyLocationButton(bool isDark, Color cardBg) {
-    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+  Widget _buildMyLocationButton(bool isDark, Color cardBg, double sheetHeight) {
     return Positioned(
       right: 16,
-      bottom: _sheetHeight + 16 + keyboardHeight,
+      bottom: sheetHeight + 16,
       child: Container(
         decoration: BoxDecoration(
           color: cardBg,
@@ -1095,65 +1105,50 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
     );
   }
 
-  Widget _buildSuggestionsOverlay(bool isDark, Color bg, Color text, Color muted) {
-    if (_searchResults.isEmpty) return const SizedBox.shrink();
-    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
-    return Positioned(
-      left: 16,
-      right: 16,
-      bottom: _sheetHeight + 16 + keyboardHeight,
-      child: Container(
-        constraints: const BoxConstraints(maxHeight: 200),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.12),
-              blurRadius: 16,
-              offset: const Offset(0, -4),
-            ),
-          ],
-          border: Border.all(color: isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0), width: 0.5),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: ListView.separated(
-            shrinkWrap: true,
-            padding: EdgeInsets.zero,
-            itemCount: _searchResults.length,
-            separatorBuilder: (_, _) => Divider(
-              height: 1,
-              color: isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0),
-            ),
-            itemBuilder: (context, index) {
-              final suggestion = _searchResults[index];
-              return ListTile(
-                dense: true,
-                leading: const Icon(Icons.location_on_rounded, color: AkJolTheme.primary, size: 16),
-                title: Text(
-                  suggestion['full_label'] ?? '',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: text),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                onTap: () => _selectSuggestion(suggestion),
-              );
-            },
-          ),
-        ),
+  Widget _buildSuggestionsList(bool isDark, Color text, Color muted) {
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: EdgeInsets.zero,
+      itemCount: _searchResults.length,
+      separatorBuilder: (_, _) => Divider(
+        height: 1,
+        color: isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0),
       ),
+      itemBuilder: (context, index) {
+        final suggestion = _searchResults[index];
+        return ListTile(
+          dense: true,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          leading: const Icon(Icons.location_on_rounded, color: AkJolTheme.primary, size: 18),
+          title: Text(
+            suggestion['full_label'] ?? '',
+            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: text),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          onTap: () => _selectSuggestion(suggestion),
+        );
+      },
     );
   }
 
-  Widget _buildFixedSheet(bool isDark, Color bg, Color border, Color text, Color muted, Color fieldBg) {
-    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+  Widget _buildFixedSheet(
+    bool isDark,
+    Color bg,
+    Color border,
+    Color text,
+    Color muted,
+    Color fieldBg,
+    double sheetHeight,
+    bool isSearching,
+  ) {
     return Positioned(
       left: 0,
       right: 0,
-      bottom: keyboardHeight,
+      bottom: 0,
       child: Container(
-        height: _sheetHeight,
+        height: sheetHeight,
         decoration: BoxDecoration(
           color: bg,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -1205,22 +1200,26 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                       _buildAddressFieldsBlock(isDark, border, text, muted, fieldBg),
                       const SizedBox(height: 12),
 
-                      // Transport Selection Horizontal Cards
-                      _buildTransportSelectorHorizontal(isDark, border, text, muted),
-                      const SizedBox(height: 12),
+                      if (isSearching) ...[
+                        _buildSuggestionsList(isDark, text, muted),
+                      ] else ...[
+                        // Transport Selection Horizontal Cards
+                        _buildTransportSelectorHorizontal(isDark, border, text, muted),
+                        const SizedBox(height: 12),
 
-                      // Comment input field
-                      _buildCommentInput(isDark, border, text, muted, fieldBg),
-                      const SizedBox(height: 12),
-                      _buildSenderRecipientPhonesBlock(isDark, border, text, muted, fieldBg),
-                      const SizedBox(height: 12),
-                      _buildOfferAgreementCheckbox(isDark, border, text, muted),
+                        // Comment input field
+                        _buildCommentInput(isDark, border, text, muted, fieldBg),
+                        const SizedBox(height: 12),
+                        _buildSenderRecipientPhonesBlock(isDark, border, text, muted, fieldBg),
+                        const SizedBox(height: 12),
+                        _buildOfferAgreementCheckbox(isDark, border, text, muted),
+                      ],
                     ],
                   ),
                 ),
               ),
 
-              if (_error != null)
+              if (!isSearching && _error != null)
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   child: Text(
@@ -1232,10 +1231,11 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                 ),
 
               // Pinned Checkout Bar at the bottom
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                child: _buildCheckoutBar(isDark, border, text, muted),
-              ),
+              if (!isSearching)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+                  child: _buildCheckoutBar(isDark, border, text, muted),
+                ),
             ],
           ),
         ),
