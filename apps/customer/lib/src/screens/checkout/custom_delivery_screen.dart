@@ -1634,21 +1634,53 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                           bottom: 8,
                           right: -5,
                           left: 45,
-                          child: Opacity(
-                            opacity: bikeSelected ? 1.0 : 0.65,
-                            child: Image.asset(
-                              'assets/images/delivery_bike.png',
-                              fit: BoxFit.contain,
-                              alignment: Alignment.centerRight,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Center(
-                                  child: Icon(
-                                    Icons.electric_bike_rounded,
-                                    color: bikeSelected ? primaryColor : muted,
-                                    size: 32,
-                                  ),
-                                );
+                          child: ShaderMask(
+                            shaderCallback: (rect) {
+                              return const LinearGradient(
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.white,
+                                  Colors.white,
+                                  Colors.transparent,
+                                ],
+                                stops: [0.0, 0.15, 0.85, 1.0],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ).createShader(rect);
+                            },
+                            blendMode: BlendMode.dstIn,
+                            child: ShaderMask(
+                              shaderCallback: (rect) {
+                                return const LinearGradient(
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.white,
+                                    Colors.white,
+                                    Colors.transparent,
+                                  ],
+                                  stops: [0.0, 0.1, 0.9, 1.0],
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                ).createShader(rect);
                               },
+                              blendMode: BlendMode.dstIn,
+                              child: Opacity(
+                                opacity: bikeSelected ? 1.0 : 0.65,
+                                child: Image.asset(
+                                  'assets/images/delivery_bike.png',
+                                  fit: BoxFit.contain,
+                                  alignment: Alignment.centerRight,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Center(
+                                      child: Icon(
+                                        Icons.electric_bike_rounded,
+                                        color: bikeSelected ? primaryColor : muted,
+                                        size: 32,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
                             ),
                           ),
                         ),
@@ -1774,21 +1806,53 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                           bottom: 8,
                           right: -5,
                           left: 45,
-                          child: Opacity(
-                            opacity: scooterSelected ? 1.0 : 0.65,
-                            child: Image.asset(
-                              'assets/images/delivery_trike.png',
-                              fit: BoxFit.contain,
-                              alignment: Alignment.centerRight,
-                              errorBuilder: (context, error, stackTrace) {
-                                return Center(
-                                  child: Icon(
-                                    Icons.electric_moped_rounded,
-                                    color: scooterSelected ? primaryColor : muted,
-                                    size: 32,
-                                  ),
-                                );
+                          child: ShaderMask(
+                            shaderCallback: (rect) {
+                              return const LinearGradient(
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.white,
+                                  Colors.white,
+                                  Colors.transparent,
+                                ],
+                                stops: [0.0, 0.15, 0.85, 1.0],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ).createShader(rect);
+                            },
+                            blendMode: BlendMode.dstIn,
+                            child: ShaderMask(
+                              shaderCallback: (rect) {
+                                return const LinearGradient(
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.white,
+                                    Colors.white,
+                                    Colors.transparent,
+                                  ],
+                                  stops: [0.0, 0.1, 0.9, 1.0],
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                ).createShader(rect);
                               },
+                              blendMode: BlendMode.dstIn,
+                              child: Opacity(
+                                opacity: scooterSelected ? 1.0 : 0.65,
+                                child: Image.asset(
+                                  'assets/images/delivery_trike.png',
+                                  fit: BoxFit.contain,
+                                  alignment: Alignment.centerRight,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Center(
+                                      child: Icon(
+                                        Icons.electric_moped_rounded,
+                                        color: scooterSelected ? primaryColor : muted,
+                                        size: 32,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
                             ),
                           ),
                         ),
