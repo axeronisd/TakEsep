@@ -1605,10 +1605,10 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                   _calculateRoute();
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  height: 120,
                   decoration: BoxDecoration(
                     color: bikeSelected
-                        ? primaryColor.withValues(alpha: isDark ? 0.1 : 0.08)
+                        ? primaryColor.withValues(alpha: isDark ? 0.15 : 0.12)
                         : cardBg,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
@@ -1618,77 +1618,115 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                     boxShadow: [
                       if (bikeSelected)
                         BoxShadow(
-                          color: primaryColor.withValues(alpha: isDark ? 0.15 : 0.08),
+                          color: primaryColor.withValues(alpha: isDark ? 0.2 : 0.12),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
                     ],
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Opacity(
-                            opacity: bikeSelected ? 1.0 : 0.65,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Stack(
+                      children: [
+                        // Image background covering the card
+                        Positioned.fill(
+                          child: Opacity(
+                            opacity: bikeSelected ? 0.95 : 0.6,
                             child: Image.asset(
                               'assets/images/delivery_bike.png',
-                              height: 36,
-                              width: 44,
-                              fit: BoxFit.contain,
+                              fit: BoxFit.cover,
+                              alignment: Alignment.center,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(
-                                  Icons.electric_bike_rounded,
-                                  color: bikeSelected ? primaryColor : muted,
-                                  size: 26,
+                                return Center(
+                                  child: Icon(
+                                    Icons.electric_bike_rounded,
+                                    color: bikeSelected ? primaryColor : muted,
+                                    size: 32,
+                                  ),
                                 );
                               },
                             ),
                           ),
-                          if (_distanceKm > 0.0)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: bikeSelected
-                                    ? primaryColor
-                                    : (isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF1F5F9)),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                '${math.max(1, (_distanceKm * 5).round())} мин',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  color: bikeSelected
-                                      ? (isDark ? const Color(0xFF0F0F10) : Colors.white)
-                                      : muted,
-                                ),
+                        ),
+                        // Readability Gradient overlay
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  (isDark ? const Color(0xFF080809) : Colors.white).withValues(alpha: 0.92),
+                                  (isDark ? const Color(0xFF080809) : Colors.white).withValues(alpha: 0.6),
+                                  Colors.transparent,
+                                ],
+                                stops: const [0.0, 0.45, 1.0],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
                               ),
                             ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Электровелосипед',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: text,
+                          ),
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${bikeFee.toStringAsFixed(0)} сом',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                          color: bikeSelected ? primaryColor : text,
+                        // Content overlay
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const SizedBox(),
+                                  if (_distanceKm > 0.0)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: bikeSelected
+                                            ? primaryColor
+                                            : (isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF1F5F9)),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        '${math.max(1, (_distanceKm * 5).round())} мин',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w800,
+                                          color: bikeSelected
+                                              ? (isDark ? const Color(0xFF0F0F10) : Colors.white)
+                                              : muted,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Электровелосипед',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800,
+                                      color: text,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${bikeFee.toStringAsFixed(0)} сом',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w900,
+                                      color: bikeSelected ? primaryColor : text,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -1703,10 +1741,10 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                   _calculateRoute();
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  height: 120,
                   decoration: BoxDecoration(
                     color: scooterSelected
-                        ? primaryColor.withValues(alpha: isDark ? 0.1 : 0.08)
+                        ? primaryColor.withValues(alpha: isDark ? 0.15 : 0.12)
                         : cardBg,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
@@ -1716,77 +1754,115 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                     boxShadow: [
                       if (scooterSelected)
                         BoxShadow(
-                          color: primaryColor.withValues(alpha: isDark ? 0.15 : 0.08),
+                          color: primaryColor.withValues(alpha: isDark ? 0.2 : 0.12),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
                     ],
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Opacity(
-                            opacity: scooterSelected ? 1.0 : 0.65,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Stack(
+                      children: [
+                        // Image background covering the card
+                        Positioned.fill(
+                          child: Opacity(
+                            opacity: scooterSelected ? 0.95 : 0.6,
                             child: Image.asset(
                               'assets/images/delivery_trike.png',
-                              height: 36,
-                              width: 44,
-                              fit: BoxFit.contain,
+                              fit: BoxFit.cover,
+                              alignment: Alignment.center,
                               errorBuilder: (context, error, stackTrace) {
-                                return Icon(
-                                  Icons.electric_moped_rounded,
-                                  color: scooterSelected ? primaryColor : muted,
-                                  size: 26,
+                                return Center(
+                                  child: Icon(
+                                    Icons.electric_moped_rounded,
+                                    color: scooterSelected ? primaryColor : muted,
+                                    size: 32,
+                                  ),
                                 );
                               },
                             ),
                           ),
-                          if (_distanceKm > 0.0)
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: scooterSelected
-                                    ? primaryColor
-                                    : (isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF1F5F9)),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                '${math.max(1, (_distanceKm * 7).round())} мин',
-                                style: TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.w800,
-                                  color: scooterSelected
-                                      ? (isDark ? const Color(0xFF0F0F10) : Colors.white)
-                                      : muted,
-                                ),
+                        ),
+                        // Readability Gradient overlay
+                        Positioned.fill(
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  (isDark ? const Color(0xFF080809) : Colors.white).withValues(alpha: 0.92),
+                                  (isDark ? const Color(0xFF080809) : Colors.white).withValues(alpha: 0.6),
+                                  Colors.transparent,
+                                ],
+                                stops: const [0.0, 0.45, 1.0],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
                               ),
                             ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Электромуравей',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w800,
-                          color: text,
+                          ),
                         ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${scooterFee.toStringAsFixed(0)} сом',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w900,
-                          color: scooterSelected ? primaryColor : text,
+                        // Content overlay
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  const SizedBox(),
+                                  if (_distanceKm > 0.0)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: scooterSelected
+                                            ? primaryColor
+                                            : (isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF1F5F9)),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        '${math.max(1, (_distanceKm * 7).round())} мин',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w800,
+                                          color: scooterSelected
+                                              ? (isDark ? const Color(0xFF0F0F10) : Colors.white)
+                                              : muted,
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Электромуравей',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w800,
+                                      color: text,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    '${scooterFee.toStringAsFixed(0)} сом',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w900,
+                                      color: scooterSelected ? primaryColor : text,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),
