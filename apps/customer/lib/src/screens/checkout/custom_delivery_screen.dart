@@ -1632,8 +1632,8 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                         Positioned(
                           top: 8,
                           bottom: 8,
-                          right: -5,
-                          left: 45,
+                          right: 8,
+                          width: 104,
                           child: ShaderMask(
                             shaderCallback: (rect) {
                               return const LinearGradient(
@@ -1643,7 +1643,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                   Colors.white,
                                   Colors.transparent,
                                 ],
-                                stops: [0.0, 0.15, 0.85, 1.0],
+                                stops: [0.0, 0.25, 0.95, 1.0],
                                 begin: Alignment.centerLeft,
                                 end: Alignment.centerRight,
                               ).createShader(rect);
@@ -1658,7 +1658,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                     Colors.white,
                                     Colors.transparent,
                                   ],
-                                  stops: [0.0, 0.1, 0.9, 1.0],
+                                  stops: [0.0, 0.08, 0.92, 1.0],
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
                                 ).createShader(rect);
@@ -1669,7 +1669,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                 child: Image.asset(
                                   'assets/images/delivery_bike.png',
                                   fit: BoxFit.contain,
-                                  alignment: Alignment.centerRight,
+                                  alignment: Alignment.center,
                                   errorBuilder: (context, error, stackTrace) {
                                     return Center(
                                       child: Icon(
@@ -1804,8 +1804,8 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                         Positioned(
                           top: 8,
                           bottom: 8,
-                          right: -5,
-                          left: 45,
+                          right: 8,
+                          width: 104,
                           child: ShaderMask(
                             shaderCallback: (rect) {
                               return const LinearGradient(
@@ -1815,7 +1815,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                   Colors.white,
                                   Colors.transparent,
                                 ],
-                                stops: [0.0, 0.15, 0.85, 1.0],
+                                stops: [0.0, 0.25, 0.95, 1.0],
                                 begin: Alignment.centerLeft,
                                 end: Alignment.centerRight,
                               ).createShader(rect);
@@ -1830,7 +1830,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                     Colors.white,
                                     Colors.transparent,
                                   ],
-                                  stops: [0.0, 0.1, 0.9, 1.0],
+                                  stops: [0.0, 0.08, 0.92, 1.0],
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
                                 ).createShader(rect);
@@ -1841,7 +1841,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                 child: Image.asset(
                                   'assets/images/delivery_trike.png',
                                   fit: BoxFit.contain,
-                                  alignment: Alignment.centerRight,
+                                  alignment: Alignment.center,
                                   errorBuilder: (context, error, stackTrace) {
                                     return Center(
                                       child: Icon(
