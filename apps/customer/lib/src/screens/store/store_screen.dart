@@ -180,9 +180,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDark
-          ? const Color(0xFF0B0F19)
-          : const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: storeAsync.when(
         data: (store) {
           if (store == null) {
@@ -238,10 +236,10 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
                     margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: isDark ? const Color(0xFF151D30) : Colors.white,
+                      color: Theme.of(context).cardTheme.color ?? Colors.white,
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0),
+                        color: Theme.of(context).dividerTheme.color ?? const Color(0xFFE2E8F0),
                         width: 0.5,
                       ),
                       boxShadow: [
@@ -498,8 +496,8 @@ class _SearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = isDark ? const Color(0xFF151D30) : Colors.white;
-    final border = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+    final bg = Theme.of(context).cardTheme.color ?? Colors.white;
+    final border = Theme.of(context).dividerTheme.color ?? const Color(0xFFE2E8F0);
     final hint = isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
 
     return Container(
@@ -1123,11 +1121,9 @@ class _ProductCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? const Color(0xFF151D30) : Colors.white;
+    final cardBg = Theme.of(context).cardTheme.color ?? Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
-    final borderColor = isDark
-        ? const Color(0xFF334155)
-        : const Color(0xFFE2E8F0);
+    final borderColor = Theme.of(context).dividerTheme.color ?? const Color(0xFFE2E8F0);
 
     final cart = ref.watch(cartProvider);
     final inCart = cart.items.where((i) => i.productId == product.id).toList();

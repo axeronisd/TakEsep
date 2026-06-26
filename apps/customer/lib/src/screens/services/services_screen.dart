@@ -44,6 +44,7 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen> {
     return Scaffold(
       backgroundColor: bg,
       body: SafeArea(
+        bottom: false,
         child: CustomScrollView(
           slivers: [
             // ── App Bar ──
@@ -161,7 +162,7 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen> {
               ),
             ),
 
-            const SliverToBoxAdapter(child: SizedBox(height: 40)),
+            const SliverToBoxAdapter(child: SizedBox(height: 100)),
           ],
         ),
       ),

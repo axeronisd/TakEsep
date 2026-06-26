@@ -165,8 +165,8 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark ? const Color(0xFF0B0F19) : const Color(0xFFF8FAFC);
-    final cardColor = isDark ? const Color(0xFF151D30) : Colors.white;
+    final bgColor = Theme.of(context).scaffoldBackgroundColor;
+    final cardColor = Theme.of(context).cardTheme.color ?? Colors.white;
 
     return Scaffold(
       backgroundColor: bgColor,

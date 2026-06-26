@@ -98,9 +98,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 end: Alignment.bottomRight,
                 colors: _isDark
                     ? [
-                        const Color(0xFF0B0F19),
-                        const Color(0xFF0B0F19),
-                        const Color(0xFF0B0F19),
+                        Theme.of(context).scaffoldBackgroundColor,
+                        Theme.of(context).scaffoldBackgroundColor,
+                        Theme.of(context).scaffoldBackgroundColor,
                       ]
                     : [
                         const Color(0xFFF0FFF4),
@@ -178,9 +178,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             decoration: BoxDecoration(
                               color: _isDark
-                                  ? const Color(
-                                      0xFF151D30,
-                                    ).withValues(alpha: 0.7)
+                                  ? (Theme.of(context).cardTheme.color ?? const Color(0xFF121214)).withValues(alpha: 0.7)
                                   : Colors.white.withValues(alpha: 0.85),
                               borderRadius: BorderRadius.circular(28),
                               border: Border.all(
@@ -264,7 +262,7 @@ class _LoginScreenState extends State<LoginScreen> {
         return Container(
           height: MediaQuery.of(context).size.height * 0.8,
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF0B0F19) : Colors.white,
+            color: isDark ? Theme.of(context).scaffoldBackgroundColor : Colors.white,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
           ),
           child: Column(

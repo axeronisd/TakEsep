@@ -109,11 +109,11 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF0B0F19) : const Color(0xFFF8FAFC);
-    final cardBg = isDark ? const Color(0xFF151D30) : Colors.white;
+    final bg = Theme.of(context).scaffoldBackgroundColor;
+    final cardBg = Theme.of(context).cardTheme.color ?? Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
     final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
-    final border = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+    final border = Theme.of(context).dividerTheme.color ?? const Color(0xFFE2E8F0);
     final filtered = _filteredProducts;
 
     return Scaffold(
@@ -378,10 +378,10 @@ class _ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cardBg = isDark ? const Color(0xFF151D30) : Colors.white;
+    final cardBg = Theme.of(context).cardTheme.color ?? Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
     final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
-    final border = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+    final border = Theme.of(context).dividerTheme.color ?? const Color(0xFFE2E8F0);
 
     final name = product['name'] as String? ?? '';
     final desc = (product['b2c_description'] as String?) ??

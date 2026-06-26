@@ -199,7 +199,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: _isDark ? const Color(0xFF151D30) : Colors.white,
+        backgroundColor: Theme.of(context).cardTheme.color ?? Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Выйти из аккаунта?'),
         content: const Text('Вы сможете войти снова в любое время.'),
@@ -237,7 +237,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: _isDark ? const Color(0xFF151D30) : Colors.white,
+        backgroundColor: Theme.of(context).cardTheme.color ?? Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           'Удалить аккаунт?',
@@ -283,7 +283,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: _isDark ? const Color(0xFF151D30) : Colors.white,
+        backgroundColor: Theme.of(context).cardTheme.color ?? Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text('Подтверждение удаления'),
         content: Column(
@@ -385,11 +385,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final user = _supabase.auth.currentUser;
-    final bg = _isDark ? const Color(0xFF0B0F19) : const Color(0xFFF8FAFC);
-    final cardBg = _isDark ? const Color(0xFF151D30) : Colors.white;
+    final bg = Theme.of(context).scaffoldBackgroundColor;
+    final cardBg = Theme.of(context).cardTheme.color ?? Colors.white;
     final text = _isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
     final muted = _isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569);
-    final border = _isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+    final border = Theme.of(context).dividerTheme.color ?? const Color(0xFFE2E8F0);
 
     if (_loading) {
       return Scaffold(
@@ -533,8 +533,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: _isDark
-              ? [const Color(0xFF062B16), const Color(0xFF0B0F19)]
-              : [const Color(0xFFE8FDF0), const Color(0xFFF8FAFC)],
+              ? [const Color(0xFF062B16), Theme.of(context).scaffoldBackgroundColor]
+              : [const Color(0xFFE8FDF0), Theme.of(context).scaffoldBackgroundColor],
         ),
       ),
       child: SafeArea(
@@ -696,7 +696,7 @@ class _EditDataSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bg = isDark ? const Color(0xFF151D30) : Colors.white;
+    final bg = Theme.of(context).cardTheme.color ?? Colors.white;
     final fieldBg = isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9);
     final text = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
     final muted = isDark ? const Color(0xFF64748B) : const Color(0xFF94A3B8);
@@ -909,7 +909,7 @@ class _EditPasswordSheetState extends State<_EditPasswordSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final bg = widget.isDark ? const Color(0xFF151D30) : Colors.white;
+    final bg = Theme.of(context).cardTheme.color ?? Colors.white;
     final fieldBg = widget.isDark
         ? const Color(0xFF1E293B)
         : const Color(0xFFF1F5F9);

@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 import 'dart:convert';
 import 'dart:async';
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -8,6 +10,8 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter_native_contact_picker/flutter_native_contact_picker.dart' as native_cp;
+import 'package:flutter_native_contact_picker/model/contact.dart' as native_cp;
 import '../../theme/akjol_theme.dart';
 import '../../services/route_service.dart';
 import '../../providers/location_provider.dart';
@@ -23,6 +27,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
   final _supabase = Supabase.instance.client;
   final _mapController = MapController();
   final _noteCtrl = TextEditingController();
+  final native_cp.FlutterNativeContactPicker _contactPicker = native_cp.FlutterNativeContactPicker();
   final _addressACtrl = TextEditingController();
   final _addressBCtrl = TextEditingController();
   final _senderPhoneCtrl = TextEditingController();
@@ -154,9 +159,11 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
         for (var t in transportsData)
           (t['id'] as String): (t['price_per_km'] as num).toDouble()
       };
-      setState(() {
-        _transportRates = rates;
-      });
+      if (mounted) {
+        setState(() {
+          _transportRates = rates;
+        });
+      }
     } catch (e) {
       debugPrint('⚠️ Fetch transport rates error: $e');
     }
@@ -186,6 +193,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
     try {
       final profile = _selectedTransport == 'scooter' ? 'driving' : 'cycling';
       final routeInfo = await RouteService.getRouteWithInfo(_coordsA!, _coordsB!, profile: profile);
+      if (!mounted) return;
       setState(() {
         _routePoints = routeInfo.points;
         _distanceKm = routeInfo.distanceKm;
@@ -195,6 +203,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
       });
       _fitRouteBounds();
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _routePoints = [_coordsA!, _coordsB!];
         _distanceKm = _haversineDistance(
@@ -207,6 +216,32 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
         _loadingRoute = false;
       });
       _fitRouteBounds();
+    }
+  }
+
+  void _swapAddresses() {
+    setState(() {
+      final tempCoords = _coordsA;
+      final tempAddress = _addressA;
+      final tempText = _addressACtrl.text;
+
+      _coordsA = _coordsB;
+      _addressA = _addressB;
+      _addressACtrl.text = _addressBCtrl.text;
+
+      _coordsB = tempCoords;
+      _addressB = tempAddress;
+      _addressBCtrl.text = tempText;
+    });
+
+    if (_coordsA != null && _coordsB != null) {
+      _calculateRoute();
+    } else {
+      setState(() {
+        _routePoints = [];
+        _distanceKm = 0.0;
+        _durationMin = 0;
+      });
     }
   }
 
@@ -232,6 +267,39 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
             math.sin(dLon / 2);
     final c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a));
     return r * c;
+  }
+
+  Future<void> _pickContactForController(TextEditingController controller) async {
+    final isMobile = !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+    if (!isMobile) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Выбор контактов поддерживается только на мобильных устройствах'),
+        ),
+      );
+      return;
+    }
+    
+    try {
+      final native_cp.Contact? contact = await _contactPicker.selectPhoneNumber();
+      if (contact != null) {
+        final phone = contact.selectedPhoneNumber ?? (contact.phoneNumbers != null && contact.phoneNumbers!.isNotEmpty ? contact.phoneNumbers!.first : null);
+        if (phone != null) {
+          final cleanedPhone = phone.replaceAll(RegExp(r'[^\d+]'), '');
+          setState(() {
+            controller.text = cleanedPhone;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error picking contact: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Не удалось выбрать контакт: $e'),
+        ),
+      );
+    }
   }
 
   double get _deliveryFee {
@@ -468,10 +536,12 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
         context.go('/order/$orderId');
       }
     } catch (e) {
-      setState(() {
-        _submitting = false;
-        _error = 'Ошибка создания заказа: $e';
-      });
+      if (mounted) {
+        setState(() {
+          _submitting = false;
+          _error = 'Ошибка создания заказа: $e';
+        });
+      }
     }
   }
 
@@ -830,12 +900,12 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
   Widget build(BuildContext context) {
     final location = ref.watch(locationProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF0D1117) : Colors.white;
-    final cardBg = isDark ? const Color(0xFF161B22) : Colors.white;
-    final border = isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0);
-    final text = isDark ? Colors.white : const Color(0xFF0F172A);
-    final muted = isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280);
-    final fieldBg = isDark ? const Color(0xFF21262D) : const Color(0xFFF3F4F6);
+    final bg = isDark ? const Color(0xFF080809) : const Color(0xFFF8FAFC);
+    final cardBg = isDark ? const Color(0xFF121214) : Colors.white;
+    final border = isDark ? const Color(0xFF1E1E22) : const Color(0xFFE2E8F0);
+    final text = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
+    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
+    final fieldBg = isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF1F5F9);
 
     // Initial center on current position or Bishkek
     final initialCenter = _coordsA ?? ((location.lat != null && location.lng != null)
@@ -1020,34 +1090,63 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
     final isAActive = _activeField == 'A';
     final textStr = isAActive ? 'Укажите на карте Точку А (Откуда)' : 'Укажите на карте Точку Б (Куда)';
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardBg = isDark ? const Color(0xFF121214) : Colors.white;
+    final border = isDark ? const Color(0xFF1E1E22) : const Color(0xFFE2E8F0);
+    final text = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
 
     return Positioned(
       top: 0,
-      left: 68,
-      right: 68,
+      left: 64,
+      right: 64,
       child: SafeArea(
         child: Container(
           margin: const EdgeInsets.only(top: 10),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF161B22) : Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            color: cardBg,
+            borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.12),
-                blurRadius: 8,
+                color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
+                blurRadius: 16,
+                offset: const Offset(0, 4),
               ),
             ],
-            border: Border.all(color: isDark ? const Color(0xFF30363D) : const Color(0xFFE2E8F0), width: 0.5),
+            border: Border.all(color: border, width: 1),
           ),
-          child: Text(
-            textStr,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: isDark ? Colors.white : const Color(0xFF0F172A),
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: isAActive ? Colors.green : Colors.blue,
+                  shape: isAActive ? BoxShape.circle : BoxShape.rectangle,
+                  borderRadius: isAActive ? null : const BorderRadius.all(Radius.circular(2)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: (isAActive ? Colors.green : Colors.blue).withValues(alpha: 0.4),
+                      blurRadius: 4,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              Flexible(
+                child: Text(
+                  textStr,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: text,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -1055,26 +1154,33 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
   }
 
   Widget _buildFloatingBackButton(bool isDark, Color text, Color cardBg) {
+    final border = isDark ? const Color(0xFF1E1E22) : const Color(0xFFE2E8F0);
     return Positioned(
       left: 16,
       top: 0,
       child: SafeArea(
         child: Container(
           margin: const EdgeInsets.only(top: 8),
+          width: 44,
+          height: 44,
           decoration: BoxDecoration(
             color: cardBg,
             shape: BoxShape.circle,
+            border: Border.all(color: border, width: 1),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+                color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
-          child: IconButton(
-            icon: Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: text),
-            onPressed: () => context.go('/'),
+          child: Center(
+            child: IconButton(
+              icon: Icon(Icons.arrow_back_ios_new_rounded, size: 16, color: text),
+              onPressed: () => context.go('/'),
+              padding: EdgeInsets.zero,
+            ),
           ),
         ),
       ),
@@ -1082,24 +1188,32 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
   }
 
   Widget _buildMyLocationButton(bool isDark, Color cardBg, double sheetHeight) {
+    final border = isDark ? const Color(0xFF1E1E22) : const Color(0xFFE2E8F0);
+    final primaryColor = Theme.of(context).colorScheme.primary;
     return Positioned(
       right: 16,
       bottom: sheetHeight + 16,
       child: Container(
+        width: 44,
+        height: 44,
         decoration: BoxDecoration(
           color: cardBg,
           shape: BoxShape.circle,
+          border: Border.all(color: border, width: 1),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
+              color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: IconButton(
-          icon: const Icon(Icons.near_me_rounded, color: AkJolTheme.primary, size: 22),
-          onPressed: _setCurrentLocation,
+        child: Center(
+          child: IconButton(
+            icon: Icon(Icons.near_me_rounded, color: primaryColor, size: 20),
+            onPressed: _setCurrentLocation,
+            padding: EdgeInsets.zero,
+          ),
         ),
       ),
     );
@@ -1164,35 +1278,35 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
           top: false,
           child: Column(
             children: [
+              // Drag Handle Indicator
+              const SizedBox(height: 8),
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: muted.withValues(alpha: 0.25),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+
               // Scrollable Content
               Expanded(
                 child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       // Header
-                      Row(
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: Colors.red.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(Icons.markunread_mailbox_rounded, color: Colors.red, size: 18),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Доставка',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w800,
-                              color: text,
-                              letterSpacing: -0.3,
-                            ),
-                          ),
-                        ],
+                      Text(
+                        'Доставка',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                          color: text,
+                          letterSpacing: -0.4,
+                        ),
                       ),
                       const SizedBox(height: 12),
 
@@ -1244,160 +1358,220 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
   }
 
   Widget _buildAddressFieldsBlock(bool isDark, Color border, Color text, Color muted, Color fieldBg) {
-    final activeBorderColor = AkJolTheme.primary;
+    final primaryColor = Theme.of(context).colorScheme.primary;
 
     return Container(
       decoration: BoxDecoration(
-        color: fieldBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: border, width: 0.5),
-      ),
-      padding: const EdgeInsets.all(12),
-      child: Stack(
-        children: [
-          // Vertical connector line
-          Positioned(
-            left: 17,
-            top: 26,
-            bottom: 26,
-            child: Container(
-              width: 1.5,
-              color: muted.withValues(alpha: 0.3),
+        color: isDark ? const Color(0xFF121214) : Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: border, width: 1),
+        boxShadow: [
+          if (!isDark)
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-          ),
-
+        ],
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Stack(
+        alignment: Alignment.centerRight,
+        children: [
+          // Inputs column
           Column(
             children: [
               // Point A
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _activeField = 'A';
-                  });
-                },
-                child: Container(
-                  color: Colors.transparent,
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 8, height: 8,
-                        margin: const EdgeInsets.symmetric(horizontal: 13),
-                        decoration: const BoxDecoration(
-                          color: Colors.green,
-                          shape: BoxShape.circle,
+              Row(
+                children: [
+                  // Dot A
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: isDark ? AkJolTheme.primary : AkJolTheme.primaryLight,
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: (isDark ? AkJolTheme.primary : AkJolTheme.primaryLight).withValues(alpha: 0.4),
+                          blurRadius: 6,
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                color: _activeField == 'A' ? activeBorderColor : border.withValues(alpha: 0.3),
-                                width: _activeField == 'A' ? 1.5 : 0.5,
-                              ),
-                            ),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: TextField(
-                            controller: _addressACtrl,
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: text),
-                            focusNode: _focusNodeA,
-                            decoration: InputDecoration(
-                              hintText: 'Откуда (Точка А)',
-                              hintStyle: TextStyle(color: muted, fontSize: 13),
-                              border: InputBorder.none,
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(vertical: 4),
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (_addressACtrl.text.isNotEmpty)
-                        IconButton(
-                          icon: Icon(Icons.close_rounded, size: 16, color: muted),
-                          onPressed: () {
-                            setState(() {
-                              _addressA = null;
-                              _coordsA = null;
-                              _addressACtrl.clear();
-                              _routePoints = [];
-                              _distanceKm = 0.0;
-                              _durationMin = 0;
-                            });
-                          },
-                        ),
-                    ],
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: _activeField == 'A'
+                            ? (isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF1F5F9))
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _activeField == 'A' ? primaryColor : Colors.transparent,
+                          width: 1.5,
+                        ),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      child: TextField(
+                        controller: _addressACtrl,
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: text),
+                        focusNode: _focusNodeA,
+                        decoration: InputDecoration(
+                          hintText: 'Откуда (Точка А)',
+                          hintStyle: TextStyle(color: muted, fontSize: 13, fontWeight: FontWeight.w400),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        onTap: () {
+                          setState(() {
+                            _activeField = 'A';
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                  if (_addressACtrl.text.isNotEmpty)
+                    IconButton(
+                      icon: Icon(Icons.close_rounded, size: 16, color: muted),
+                      onPressed: () {
+                        setState(() {
+                          _addressA = null;
+                          _coordsA = null;
+                          _addressACtrl.clear();
+                          _routePoints = [];
+                          _distanceKm = 0.0;
+                          _durationMin = 0;
+                        });
+                      },
+                    ),
+                  const SizedBox(width: 40), // Spacing for swap button
+                ],
+              ),
+              
+              // Divider & Vertical line
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 10,
+                      alignment: Alignment.center,
+                      child: Container(
+                        width: 1.5,
+                        height: 24,
+                        color: muted.withValues(alpha: 0.3),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Divider(
+                        height: 1,
+                        color: border,
+                      ),
+                    ),
+                    const SizedBox(width: 40), // Spacing for swap button
+                  ],
                 ),
               ),
-              const SizedBox(height: 12),
 
               // Point B
-              GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _activeField = 'B';
-                  });
-                },
-                child: Container(
-                  color: Colors.transparent,
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 10, height: 10,
-                        margin: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: const BoxDecoration(
-                          color: Colors.blue,
-                          shape: BoxShape.rectangle,
-                          borderRadius: BorderRadius.all(Radius.circular(2)),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            border: Border(
-                              bottom: BorderSide(
-                                color: _activeField == 'B' ? activeBorderColor : border.withValues(alpha: 0.3),
-                                width: _activeField == 'B' ? 1.5 : 0.5,
-                              ),
-                            ),
-                          ),
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: TextField(
-                            controller: _addressBCtrl,
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: text),
-                            focusNode: _focusNodeB,
-                            decoration: InputDecoration(
-                              hintText: 'Куда (Точка Б)',
-                              hintStyle: TextStyle(color: muted, fontSize: 13),
-                              border: InputBorder.none,
-                              isDense: true,
-                              contentPadding: const EdgeInsets.symmetric(vertical: 4),
-                            ),
-                          ),
-                        ),
-                      ),
-                      if (_addressBCtrl.text.isNotEmpty)
-                        IconButton(
-                          icon: Icon(Icons.close_rounded, size: 16, color: muted),
-                          onPressed: () {
-                            setState(() {
-                              _addressB = null;
-                              _coordsB = null;
-                              _addressBCtrl.clear();
-                              _routePoints = [];
-                              _distanceKm = 0.0;
-                              _durationMin = 0;
-                            });
-                          },
-                        ),
-                    ],
+              Row(
+                children: [
+                  // Square B
+                  Container(
+                    width: 10,
+                    height: 10,
+                    decoration: const BoxDecoration(
+                      color: Colors.blue,
+                      shape: BoxShape.rectangle,
+                      borderRadius: BorderRadius.all(Radius.circular(2)),
+                    ),
                   ),
-                ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: _activeField == 'B'
+                            ? (isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF1F5F9))
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _activeField == 'B' ? Colors.blue : Colors.transparent,
+                          width: 1.5,
+                        ),
+                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      child: TextField(
+                        controller: _addressBCtrl,
+                        style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: text),
+                        focusNode: _focusNodeB,
+                        decoration: InputDecoration(
+                          hintText: 'Куда (Точка Б)',
+                          hintStyle: TextStyle(color: muted, fontSize: 13, fontWeight: FontWeight.w400),
+                          border: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          focusedBorder: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        onTap: () {
+                          setState(() {
+                            _activeField = 'B';
+                          });
+                        },
+                      ),
+                    ),
+                  ),
+                  if (_addressBCtrl.text.isNotEmpty)
+                    IconButton(
+                      icon: Icon(Icons.close_rounded, size: 16, color: muted),
+                      onPressed: () {
+                        setState(() {
+                          _addressB = null;
+                          _coordsB = null;
+                          _addressBCtrl.clear();
+                          _routePoints = [];
+                          _distanceKm = 0.0;
+                          _durationMin = 0;
+                        });
+                      },
+                    ),
+                  const SizedBox(width: 40), // Spacing for swap button
+                ],
               ),
             ],
+          ),
+
+          // Vertically centered Swap button
+          Positioned(
+            right: 0,
+            child: Container(
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF1F5F9),
+                shape: BoxShape.circle,
+                border: Border.all(color: border, width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.04),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: IconButton(
+                icon: Icon(
+                  Icons.swap_vert_rounded,
+                  color: isDark ? AkJolTheme.primary : AkJolTheme.primaryLight,
+                  size: 20,
+                ),
+                onPressed: _swapAddresses,
+                tooltip: 'Поменять местами',
+              ),
+            ),
           ),
         ],
       ),
@@ -1410,6 +1584,8 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
 
     final bikeFee = _calculateTempFee('bicycle');
     final scooterFee = _calculateTempFee('scooter');
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final cardBg = isDark ? const Color(0xFF121214) : Colors.white;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1429,57 +1605,88 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                   _calculateRoute();
                 },
                 child: Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
                     color: bikeSelected
-                        ? AkJolTheme.primary.withValues(alpha: 0.08)
-                        : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
-                    borderRadius: BorderRadius.circular(16),
+                        ? primaryColor.withValues(alpha: isDark ? 0.1 : 0.08)
+                        : cardBg,
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: bikeSelected ? AkJolTheme.primary : border.withValues(alpha: 0.3),
+                      color: bikeSelected ? primaryColor : border,
                       width: bikeSelected ? 2 : 1,
                     ),
+                    boxShadow: [
+                      if (bikeSelected)
+                        BoxShadow(
+                          color: primaryColor.withValues(alpha: isDark ? 0.15 : 0.08),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: bikeSelected ? AkJolTheme.primary.withValues(alpha: 0.15) : muted.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '${_durationMin > 0 ? _durationMin : 15} мин',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            color: bikeSelected ? AkJolTheme.primary : muted,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(Icons.electric_bike_rounded, color: bikeSelected ? AkJolTheme.primary : muted, size: 24),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Электровелосипед',
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: text),
-                              maxLines: 1, overflow: TextOverflow.ellipsis,
+                          Opacity(
+                            opacity: bikeSelected ? 1.0 : 0.65,
+                            child: Image.asset(
+                              'assets/images/delivery_bike.png',
+                              height: 36,
+                              width: 44,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Icon(
+                                  Icons.electric_bike_rounded,
+                                  color: bikeSelected ? primaryColor : muted,
+                                  size: 26,
+                                );
+                              },
                             ),
                           ),
+                          if (_distanceKm > 0.0)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: bikeSelected
+                                    ? primaryColor
+                                    : (isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF1F5F9)),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '${math.max(1, (_distanceKm * 5).round())} мин',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: bikeSelected
+                                      ? (isDark ? const Color(0xFF0F0F10) : Colors.white)
+                                      : muted,
+                                ),
+                              ),
+                            ),
                         ],
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Электровелосипед',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: text,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
                       Text(
                         '${bikeFee.toStringAsFixed(0)} сом',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: text),
-                      ),
-                      Text(
-                        'Электровелик',
-                        style: TextStyle(fontSize: 10, color: muted),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: bikeSelected ? primaryColor : text,
+                        ),
                       ),
                     ],
                   ),
@@ -1496,57 +1703,88 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                   _calculateRoute();
                 },
                 child: Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                   decoration: BoxDecoration(
                     color: scooterSelected
-                        ? AkJolTheme.primary.withValues(alpha: 0.08)
-                        : (isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9)),
-                    borderRadius: BorderRadius.circular(16),
+                        ? primaryColor.withValues(alpha: isDark ? 0.1 : 0.08)
+                        : cardBg,
+                    borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: scooterSelected ? AkJolTheme.primary : border.withValues(alpha: 0.3),
+                      color: scooterSelected ? primaryColor : border,
                       width: scooterSelected ? 2 : 1,
                     ),
+                    boxShadow: [
+                      if (scooterSelected)
+                        BoxShadow(
+                          color: primaryColor.withValues(alpha: isDark ? 0.15 : 0.08),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                    ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: scooterSelected ? AkJolTheme.primary.withValues(alpha: 0.15) : muted.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(6),
-                        ),
-                        child: Text(
-                          '${_durationMin > 0 ? math.max(5, _durationMin - 5) : 7} мин',
-                          style: TextStyle(
-                            fontSize: 10,
-                            fontWeight: FontWeight.w800,
-                            color: scooterSelected ? AkJolTheme.primary : muted,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
                       Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Icon(Icons.two_wheeler_rounded, color: scooterSelected ? AkJolTheme.primary : muted, size: 24),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'Электромуравей',
-                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: text),
-                              maxLines: 1, overflow: TextOverflow.ellipsis,
+                          Opacity(
+                            opacity: scooterSelected ? 1.0 : 0.65,
+                            child: Image.asset(
+                              'assets/images/delivery_trike.png',
+                              height: 36,
+                              width: 44,
+                              fit: BoxFit.contain,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Icon(
+                                  Icons.electric_moped_rounded,
+                                  color: scooterSelected ? primaryColor : muted,
+                                  size: 26,
+                                );
+                              },
                             ),
                           ),
+                          if (_distanceKm > 0.0)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: scooterSelected
+                                    ? primaryColor
+                                    : (isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF1F5F9)),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                '${math.max(1, (_distanceKm * 7).round())} мин',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w800,
+                                  color: scooterSelected
+                                      ? (isDark ? const Color(0xFF0F0F10) : Colors.white)
+                                      : muted,
+                                ),
+                              ),
+                            ),
                         ],
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Электромуравей',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w800,
+                          color: text,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
                       Text(
                         '${scooterFee.toStringAsFixed(0)} сом',
-                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: text),
-                      ),
-                      Text(
-                        'Муравей',
-                        style: TextStyle(fontSize: 10, color: muted),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: scooterSelected ? primaryColor : text,
+                        ),
                       ),
                     ],
                   ),
@@ -1561,19 +1799,26 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
           const SizedBox(height: 10),
           Container(
             decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(12),
+              color: cardBg,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: border, width: 1),
             ),
             child: CheckboxListTile(
               value: _needLoader,
               onChanged: (val) {
                 setState(() => _needLoader = val ?? false);
               },
-              title: Text('Нужен грузчик (+100 сом)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: text)),
-              subtitle: Text('Помощь в погрузке/разгрузке тяжелых вещей', style: TextStyle(fontSize: 11, color: muted)),
+              title: Text(
+                'Нужен грузчик (+100 сом)',
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: text),
+              ),
+              subtitle: Text(
+                'Помощь в погрузке/разгрузке тяжелых вещей',
+                style: TextStyle(fontSize: 11, color: muted),
+              ),
               controlAffinity: ListTileControlAffinity.leading,
-              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
-              activeColor: AkJolTheme.primary,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+              activeColor: primaryColor,
               dense: true,
             ),
           ),
@@ -1583,6 +1828,8 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
   }
 
   Widget _buildCommentInput(bool isDark, Color border, Color text, Color muted, Color fieldBg) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1595,86 +1842,131 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
           controller: _noteCtrl,
           decoration: InputDecoration(
             hintText: 'Что везем? Детали подъезда, контакты...',
-            hintStyle: TextStyle(color: muted, fontSize: 12),
-            filled: true, fillColor: isDark ? const Color(0xFF1E293B) : const Color(0xFFF8FAFC),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: border, width: 0.5)),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: border, width: 0.5)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AkJolTheme.primary, width: 1.5)),
+            hintStyle: TextStyle(color: muted, fontSize: 13, fontWeight: FontWeight.w400),
+            filled: true,
+            fillColor: isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF1F5F9),
+            prefixIcon: Icon(Icons.chat_bubble_outline_rounded, color: primaryColor, size: 18),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide.none,
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: border, width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: primaryColor, width: 1.5),
+            ),
           ),
-          style: TextStyle(fontSize: 13, color: text),
-          maxLines: 2, minLines: 1,
+          style: TextStyle(fontSize: 13, color: text, fontWeight: FontWeight.w600),
+          maxLines: 2,
+          minLines: 1,
         ),
       ],
     );
   }
 
   Widget _buildSenderRecipientPhonesBlock(bool isDark, Color border, Color text, Color muted, Color fieldBg) {
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final cardBg = isDark ? const Color(0xFF121214) : Colors.white;
+
     return Container(
       decoration: BoxDecoration(
-        color: fieldBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: border, width: 0.5),
+        color: cardBg,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: border, width: 1),
       ),
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.phone_in_talk_rounded, color: AkJolTheme.primary, size: 16),
+              Icon(Icons.phone_in_talk_rounded, color: primaryColor, size: 18),
               const SizedBox(width: 8),
               Text(
                 'Контактные данные',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: text),
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: text),
               ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
 
           // Sender phone
           Text(
             'Телефон отправителя *',
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: muted),
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: muted),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           TextField(
             controller: _senderPhoneCtrl,
             keyboardType: TextInputType.phone,
             decoration: InputDecoration(
-              hintText: '+996700000000',
-              hintStyle: TextStyle(color: muted, fontSize: 12),
+              hintText: '+996 700 000 000',
+              hintStyle: TextStyle(color: muted, fontSize: 13, fontWeight: FontWeight.w400),
               filled: true,
-              fillColor: isDark ? const Color(0xFF161E2D) : const Color(0xFFFFFFFF),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: border, width: 0.5)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: border, width: 0.5)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AkJolTheme.primary, width: 1.5)),
+              fillColor: isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF1F5F9),
+              prefixIcon: Icon(Icons.outbox_rounded, color: primaryColor, size: 18),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.contact_phone_rounded, size: 20),
+                color: primaryColor,
+                onPressed: () => _pickContactForController(_senderPhoneCtrl),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: border, width: 0.5),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: primaryColor, width: 1.5),
+              ),
             ),
-            style: TextStyle(fontSize: 13, color: text),
+            style: TextStyle(fontSize: 13, color: text, fontWeight: FontWeight.w600),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
           // Recipient phone
           Text(
             'Телефон получателя *',
-            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: muted),
+            style: TextStyle(fontSize: 11, fontWeight: FontWeight.w800, color: muted),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           TextField(
             controller: _recipientPhoneCtrl,
             keyboardType: TextInputType.phone,
             decoration: InputDecoration(
-              hintText: '+996700000000',
-              hintStyle: TextStyle(color: muted, fontSize: 12),
+              hintText: '+996 700 000 000',
+              hintStyle: TextStyle(color: muted, fontSize: 13, fontWeight: FontWeight.w400),
               filled: true,
-              fillColor: isDark ? const Color(0xFF161E2D) : const Color(0xFFFFFFFF),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: border, width: 0.5)),
-              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: border, width: 0.5)),
-              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: AkJolTheme.primary, width: 1.5)),
+              fillColor: isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF1F5F9),
+              prefixIcon: Icon(Icons.move_to_inbox_rounded, color: Colors.blue, size: 18),
+              suffixIcon: IconButton(
+                icon: const Icon(Icons.contact_phone_rounded, size: 20),
+                color: Colors.blue,
+                onPressed: () => _pickContactForController(_recipientPhoneCtrl),
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: BorderSide(color: border, width: 0.5),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: Colors.blue, width: 1.5),
+              ),
             ),
-            style: TextStyle(fontSize: 13, color: text),
+            style: TextStyle(fontSize: 13, color: text, fontWeight: FontWeight.w600),
           ),
         ],
       ),
@@ -1845,67 +2137,69 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
 
   Widget _buildCheckoutBar(bool isDark, Color border, Color text, Color muted) {
     final fee = _calculateTempFee(_selectedTransport);
+
+    final Color buttonTextColor = _isReady
+        ? (isDark ? const Color(0xFF0F0F10) : Colors.white)
+        : (isDark ? const Color(0xFF475569) : const Color(0xFF94A3B8));
+
+    final gradientColors = isDark
+        ? const [AkJolTheme.primary, AkJolTheme.primaryDark]
+        : const [AkJolTheme.primaryLight, Color(0xFF10B981)];
+
     return Row(
       children: [
-        // Payment Method Chip
-        Container(
-          height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: 12),
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF1F5F9),
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: border.withValues(alpha: 0.3), width: 0.5),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(Icons.money_rounded, color: Colors.green, size: 20),
-              const SizedBox(width: 6),
-              Text(
-                'Наличные',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700, color: text),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 12),
-
         // Order Button
         Expanded(
           child: SizedBox(
-            height: 48,
+            height: 52,
             child: DecoratedBox(
               decoration: BoxDecoration(
                 gradient: _isReady && !_submitting
-                    ? const LinearGradient(colors: [Color(0xFF00B15E), Color(0xFF10B981)])
+                    ? LinearGradient(colors: gradientColors)
                     : null,
                 color: _isReady && !_submitting ? null
-                    : (isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0)),
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: _isReady && !_submitting ? [BoxShadow(
-                    color: const Color(0xFF00B15E).withValues(alpha: 0.3),
-                    blurRadius: 10, offset: const Offset(0, 3))] : null,
+                    : (isDark ? const Color(0xFF1C1C1F) : const Color(0xFFE2E8F0)),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: _isReady && !_submitting
+                    ? [
+                        BoxShadow(
+                          color: (isDark ? AkJolTheme.primary : AkJolTheme.primaryLight).withValues(alpha: isDark ? 0.35 : 0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        )
+                      ]
+                    : null,
               ),
               child: Material(
                 color: Colors.transparent,
                 child: InkWell(
-                  borderRadius: BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(16),
                   onTap: _isReady && !_submitting ? _onSubmit : null,
                   child: Center(
                     child: _submitting
-                        ? const SizedBox(width: 20, height: 20,
-                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        ? SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: isDark ? const Color(0xFF0F0F10) : Colors.white,
+                              strokeWidth: 2.5,
+                            ),
+                          )
                         : Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              const Icon(Icons.flash_on_rounded, size: 16, color: Colors.white),
+                              Icon(
+                                Icons.flash_on_rounded,
+                                size: 16,
+                                color: buttonTextColor,
+                              ),
                               const SizedBox(width: 6),
                               Text(
                                 _isReady ? 'Заказать (${fee.toStringAsFixed(0)} сом)' : 'Выберите адреса',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w800,
-                                  color: Colors.white,
+                                  color: buttonTextColor,
                                 ),
                               ),
                             ],

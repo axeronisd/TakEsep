@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../theme/akjol_theme.dart';
 import '../../providers/marketplace_provider.dart';
@@ -168,11 +169,10 @@ class MarketplaceStoreCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? const Color(0xFF151D30) : Colors.white;
+    final cardBg = Theme.of(context).cardTheme.color ?? Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF0F172A);
     final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF475569);
-    final borderColor =
-        isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+    final borderColor = Theme.of(context).dividerTheme.color ?? const Color(0xFFE2E8F0);
 
     return GestureDetector(
       onTap: onTap,
@@ -183,7 +183,7 @@ class MarketplaceStoreCard extends StatelessWidget {
           border: Border.all(color: borderColor, width: 0.5),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.04),
+              color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.03),
               blurRadius: 18,
               offset: const Offset(0, 8),
               spreadRadius: -2,
@@ -195,46 +195,38 @@ class MarketplaceStoreCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ── Banner area ──
-            _buildBanner(isDark),
+            _buildBanner(context, isDark),
             // ── Info area ──
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Name + Rating
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          store.name,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: textColor,
-                            letterSpacing: -0.3,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      _buildRatingBadge(isDark),
-                    ],
+                  // Name
+                  Text(
+                    store.name,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: textColor,
+                      letterSpacing: -0.3,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   if (store.description != null &&
-                      store.description!.isNotEmpty) ...[
+                      store.description!.trim().isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Text(
-                      store.description!,
+                      store.description!.trim(),
                       style: TextStyle(fontSize: 12, color: muted, height: 1.3),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
                   ],
                   const SizedBox(height: 10),
-                  // Delivery info chips
-                  _buildInfoRow(isDark, muted),
+                  // Delivery info inline metadata row
+                  _buildMetadataRow(isDark, muted),
                 ],
               ),
             ),
@@ -244,12 +236,13 @@ class MarketplaceStoreCard extends StatelessWidget {
     );
   }
 
-  Widget _buildBanner(bool isDark) {
+  Widget _buildBanner(BuildContext context, bool isDark) {
     final hasBanner = store.bannerUrl != null && store.bannerUrl!.isNotEmpty;
     final hasLogo = store.logoUrl != null && store.logoUrl!.isNotEmpty;
+    final borderColor = Theme.of(context).dividerTheme.color ?? const Color(0xFFE2E8F0);
 
     return SizedBox(
-      height: 130,
+      height: 140,
       child: Stack(
         children: [
           // Background image
@@ -268,31 +261,84 @@ class MarketplaceStoreCard extends StatelessWidget {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.3),
+                    Colors.black.withValues(alpha: 0.15),
+                    Colors.black.withValues(alpha: 0.5),
                   ],
                 ),
               ),
             ),
           ),
-          // Logo avatar
+          
+          // Floating Rating badge (top-left)
           Positioned(
-            left: 14,
-            bottom: -1,
+            left: 12,
+            top: 12,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.45),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      width: 0.5,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(
+                        Icons.star_rounded,
+                        size: 14,
+                        color: Color(0xFFFFC107),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        store.avgRating > 0 ? store.avgRating.toStringAsFixed(1) : '—',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white,
+                        ),
+                      ),
+                      if (store.totalOrders > 0) ...[
+                        Text(
+                          ' (${store.totalOrders})',
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.white.withValues(alpha: 0.6),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+
+          // Floating Logo avatar (top-right)
+          Positioned(
+            right: 12,
+            top: 12,
             child: Container(
-              width: 48,
-              height: 48,
+              width: 38,
+              height: 38,
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF161B22) : Colors.white,
-                borderRadius: BorderRadius.circular(14),
+                color: Colors.white,
+                shape: BoxShape.circle,
                 border: Border.all(
-                  color: isDark ? const Color(0xFF21262D) : Colors.white,
-                  width: 3,
+                  color: Colors.white,
+                  width: 1.5,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 8,
+                    color: Colors.black.withValues(alpha: 0.15),
+                    blurRadius: 6,
+                    offset: const Offset(0, 3),
                   ),
                 ],
               ),
@@ -304,99 +350,96 @@ class MarketplaceStoreCard extends StatelessWidget {
               ),
             ),
           ),
-
         ],
       ),
     );
   }
 
-  Widget _buildRatingBadge(bool isDark) {
-    final hasRating = store.avgRating > 0;
+  Widget _buildMetadataRow(bool isDark, Color muted) {
+    final List<Widget> items = [];
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(
-        color: hasRating
-            ? const Color(0xFFFFC107).withValues(alpha: 0.12)
-            : (isDark
-                ? const Color(0xFF21262D)
-                : const Color(0xFFF3F4F6)),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
+    // 1. Distance
+    if (store.distanceKm != null) {
+      items.add(Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            hasRating ? Icons.star_rounded : Icons.star_outline_rounded,
-            size: 14,
-            color: hasRating
-                ? const Color(0xFFFFC107)
-                : (isDark
-                    ? const Color(0xFF484F58)
-                    : const Color(0xFFD1D5DB)),
+            Icons.near_me_rounded,
+            size: 13,
+            color: isDark ? AkJolTheme.primary : AkJolTheme.primaryLight,
           ),
-          const SizedBox(width: 3),
+          const SizedBox(width: 4),
           Text(
-            store.ratingDisplay,
+            _formatDistance(store.distanceKm!),
             style: TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: hasRating
-                  ? const Color(0xFFD4A017)
-                  : (isDark
-                      ? const Color(0xFF8B949E)
-                      : const Color(0xFF9CA3AF)),
+              fontWeight: FontWeight.w600,
+              color: isDark ? Colors.white.withValues(alpha: 0.8) : const Color(0xFF334155),
             ),
           ),
-          if (store.totalOrders > 0) ...[
-            Text(
-              ' (${store.totalOrders})',
-              style: TextStyle(
-                fontSize: 10,
-                color: isDark
-                    ? const Color(0xFF484F58)
-                    : const Color(0xFFD1D5DB),
-              ),
-            ),
-          ],
         ],
+      ));
+    }
+
+    // 2. Estimated Time calculated dynamically (1 km = 5 minutes travel + 15 minutes prep)
+    final int baseMinutes;
+    if (store.distanceKm != null) {
+      baseMinutes = (store.distanceKm! * 5 + 15).round();
+    } else {
+      baseMinutes = store.estimatedMinutes ?? 25;
+    }
+    final int maxMinutes = baseMinutes + 10;
+
+    if (items.isNotEmpty) {
+      items.add(_buildDot(muted));
+    }
+    items.add(Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.access_time_filled_rounded,
+          size: 13,
+          color: isDark ? Colors.amber : Colors.orange,
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '$baseMinutes-$maxMinutes мин',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: isDark ? Colors.white.withValues(alpha: 0.8) : const Color(0xFF334155),
+          ),
+        ),
+      ],
+    ));
+
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: items,
       ),
     );
   }
 
-  Widget _buildInfoRow(bool isDark, Color muted) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 6,
-      children: [
-        // Distance
-        if (store.distanceKm != null)
-          _InfoChip(
-            icon: Icons.near_me_rounded,
-            label: _formatDistance(store.distanceKm!),
-            bg: AkJolTheme.primary.withValues(alpha: 0.08),
-            textColor: AkJolTheme.primary,
-            iconColor: AkJolTheme.primary,
-          ),
-        // Free delivery from
-        if (store.freeDeliveryFrom > 0)
-          _InfoChip(
-            icon: Icons.local_offer_rounded,
-            label:
-                'Бесплатно от ${store.freeDeliveryFrom.toStringAsFixed(0)}',
-            bg: const Color(0xFF2ECC71).withValues(alpha: 0.08),
-            textColor: const Color(0xFF2ECC71),
-            iconColor: const Color(0xFF2ECC71),
-          ),
-      ],
+  Widget _buildDot(Color muted) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Container(
+        width: 3,
+        height: 3,
+        decoration: BoxDecoration(
+          color: muted.withValues(alpha: 0.5),
+          shape: BoxShape.circle,
+        ),
+      ),
     );
   }
 
   String _formatDistance(double km) {
     if (km < 1.0) {
-      return '${(km * 1000).toStringAsFixed(0)} м от вас';
+      return '${(km * 1000).toStringAsFixed(0)} м';
     }
-    return '${km.toStringAsFixed(1)} км от вас';
+    return '${km.toStringAsFixed(1)} км';
   }
 
   Widget _gradientFallback(bool isDark) {
@@ -406,10 +449,10 @@ class MarketplaceStoreCard extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isDark
-              ? [const Color(0xFF1E293B), const Color(0xFF0B0F19)]
+              ? [const Color(0xFF121214), const Color(0xFF080809)]
               : [
-                  AkJolTheme.primary.withValues(alpha: 0.08),
-                  AkJolTheme.primary.withValues(alpha: 0.03),
+                  AkJolTheme.primaryLight.withValues(alpha: 0.08),
+                  AkJolTheme.primaryLight.withValues(alpha: 0.03),
                 ],
         ),
       ),
@@ -417,8 +460,9 @@ class MarketplaceStoreCard extends StatelessWidget {
         child: Icon(
           Icons.storefront_rounded,
           size: 40,
-          color:
-              AkJolTheme.primary.withValues(alpha: isDark ? 0.3 : 0.2),
+          color: isDark
+              ? AkJolTheme.primary.withValues(alpha: 0.3)
+              : AkJolTheme.primaryLight.withValues(alpha: 0.2),
         ),
       ),
     );
@@ -431,7 +475,7 @@ class MarketplaceStoreCard extends StatelessWidget {
         child: Text(
           name.isNotEmpty ? name[0].toUpperCase() : '?',
           style: const TextStyle(
-            fontSize: 20,
+            fontSize: 16,
             fontWeight: FontWeight.w800,
             color: AkJolTheme.primary,
           ),

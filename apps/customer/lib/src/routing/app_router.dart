@@ -175,148 +175,93 @@ class _FloatingGlassBar extends StatelessWidget {
     final isHome = currentPath == '/';
     final isMap = currentPath.startsWith('/map');
     final isCart = currentPath.startsWith('/cart');
-    final muted = isDark ? const Color(0xFF6E7681) : const Color(0xFFB0B8C1);
+    final muted = isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B);
+
+    final isDesktop = Theme.of(context).platform == TargetPlatform.windows ||
+        Theme.of(context).platform == TargetPlatform.macOS ||
+        Theme.of(context).platform == TargetPlatform.linux;
+
+    final containerColor = isDark
+        ? const Color(0xFF0F0F10).withValues(alpha: 0.35)
+        : Colors.white.withValues(alpha: 0.35);
+
+    final Widget barContent = Container(
+      width: 340,
+      height: 60,
+      decoration: BoxDecoration(
+        color: containerColor,
+        borderRadius: BorderRadius.circular(28),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: isDesktop ? 0.15 : 0.08)
+              : Colors.black.withValues(alpha: isDesktop ? 0.15 : 0.06),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 8),
+            spreadRadius: -4,
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          // ── Карта ──
+          Expanded(
+            child: _GlassBtn(
+              icon: Icons.map_outlined,
+              activeIcon: Icons.map_rounded,
+              label: 'Карта',
+              isActive: isMap,
+              muted: muted,
+              isDark: isDark,
+              onTap: onMapTap,
+            ),
+          ),
+
+          // ── Главная ──
+          Expanded(
+            child: _GlassBtn(
+              icon: Icons.home_outlined,
+              activeIcon: Icons.home_rounded,
+              label: '',
+              isActive: isHome,
+              muted: muted,
+              isDark: isDark,
+              onTap: onHomeTap,
+            ),
+          ),
+
+          // ── Корзина ──
+          Expanded(
+            child: _GlassBtn(
+              icon: Icons.shopping_bag_outlined,
+              activeIcon: Icons.shopping_bag_rounded,
+              label: 'Корзина',
+              isActive: isCart,
+              muted: muted,
+              isDark: isDark,
+              badge: cartCount,
+              onTap: onCartTap,
+            ),
+          ),
+        ],
+      ),
+    );
 
     return SafeArea(
       top: false,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 32, sigmaY: 32),
-            child: Container(
-              height: 72,
-              decoration: BoxDecoration(
-                color: isDark
-                    ? const Color(0xFF161B22).withValues(alpha: 0.72)
-                    : Colors.white.withValues(alpha: 0.75),
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(
-                  color: isDark
-                      ? Colors.white.withValues(alpha: 0.08)
-                      : Colors.white.withValues(alpha: 0.6),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.1),
-                    blurRadius: 28,
-                    offset: const Offset(0, 8),
-                    spreadRadius: -6,
-                  ),
-                  if (isHome)
-                    BoxShadow(
-                      color: AkJolTheme.primary.withValues(alpha: 0.1),
-                      blurRadius: 40,
-                    ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  // ── Карта ──
-                  Expanded(
-                    child: _GlassBtn(
-                      icon: Icons.map_outlined,
-                      activeIcon: Icons.map_rounded,
-                      label: 'Карта',
-                      isActive: isMap,
-                      muted: muted,
-                      isDark: isDark,
-                      onTap: onMapTap,
-                    ),
-                  ),
-
-                  // ── AkJol (center) ──
-                  GestureDetector(
-                    onTap: onHomeTap,
-                    child: Container(
-                      width: 54,
-                      height: 54,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: isHome
-                              ? [
-                                  const Color(0xFF2ECC71),
-                                  const Color(0xFF1ABC9C),
-                                ]
-                              : isDark
-                              ? [
-                                  const Color(0xFF21262D),
-                                  const Color(0xFF2D333B),
-                                ]
-                              : [
-                                  const Color(0xFFF0F2F5),
-                                  const Color(0xFFE4E7EB),
-                                ],
-                        ),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: isHome
-                              ? Colors.white.withValues(alpha: 0.3)
-                              : (isDark
-                                    ? Colors.white.withValues(alpha: 0.06)
-                                    : Colors.black.withValues(alpha: 0.04)),
-                          width: 1.5,
-                        ),
-                        boxShadow: [
-                          if (isHome)
-                            BoxShadow(
-                              color: AkJolTheme.primary.withValues(alpha: 0.5),
-                              blurRadius: 20,
-                              spreadRadius: -2,
-                            ),
-                          BoxShadow(
-                            color: Colors.black.withValues(
-                              alpha: isDark ? 0.3 : 0.06,
-                            ),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            isHome ? Icons.home_rounded : Icons.home_outlined,
-                            size: 22,
-                            color: isHome ? Colors.white : muted,
-                          ),
-                          const SizedBox(height: 1),
-                          Text(
-                            'AkJol',
-                            style: TextStyle(
-                              fontSize: 7,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.8,
-                              color: isHome
-                                  ? Colors.white.withValues(alpha: 0.85)
-                                  : muted,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  // ── Корзина ──
-                  Expanded(
-                    child: _GlassBtn(
-                      icon: Icons.shopping_bag_outlined,
-                      activeIcon: Icons.shopping_bag_rounded,
-                      label: 'Корзина',
-                      isActive: isCart,
-                      muted: muted,
-                      isDark: isDark,
-                      badge: cartCount,
-                      onTap: onCartTap,
-                    ),
-                  ),
-                ],
-              ),
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+              child: barContent,
             ),
           ),
         ),
@@ -352,91 +297,97 @@ class _GlassBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive ? AkJolTheme.primary : muted;
+    final activeColor = Theme.of(context).colorScheme.primary;
+    final onActiveColor = Theme.of(context).colorScheme.onPrimary;
+
+    final iconColor = isActive ? onActiveColor : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B));
+    final textColor = isActive ? onActiveColor : (isDark ? const Color(0xFF94A3B8) : const Color(0xFF64748B));
 
     return GestureDetector(
       onTap: onTap,
       behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          // Glowing dot indicator
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 250),
-            curve: Curves.easeOut,
-            width: isActive ? 4 : 0,
-            height: isActive ? 4 : 0,
-            margin: const EdgeInsets.only(bottom: 5),
-            decoration: BoxDecoration(
-              color: AkJolTheme.primary,
-              shape: BoxShape.circle,
-              boxShadow: isActive
-                  ? [
-                      BoxShadow(
-                        color: AkJolTheme.primary.withValues(alpha: 0.6),
-                        blurRadius: 8,
-                      ),
-                    ]
-                  : null,
+      child: Center(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeInOut,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: isActive
+                ? activeColor
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isActive
+                  ? activeColor
+                  : Colors.transparent,
+              width: 1,
             ),
           ),
-          // Icon + badge
-          Stack(
-            clipBehavior: Clip.none,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(isActive ? activeIcon : icon, size: 24, color: color),
-              if (badge > 0)
-                Positioned(
-                  right: -12,
-                  top: -8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 5,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF2ECC71), Color(0xFF1ABC9C)],
-                      ),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                        color: isDark ? const Color(0xFF161B22) : Colors.white,
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AkJolTheme.primary.withValues(alpha: 0.5),
-                          blurRadius: 8,
+              // Icon + badge
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Icon(
+                    isActive ? activeIcon : icon,
+                    size: 20,
+                    color: iconColor,
+                  ),
+                  if (badge > 0)
+                    Positioned(
+                      right: -10,
+                      top: -6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 4,
+                          vertical: 1.5,
                         ),
-                      ],
-                    ),
-                    constraints: const BoxConstraints(minWidth: 20),
-                    child: Text(
-                      '$badge',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                        height: 1,
+                        decoration: BoxDecoration(
+                          color: isActive ? onActiveColor : activeColor,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: isActive ? activeColor : (isDark ? const Color(0xFF1E293B) : Colors.white),
+                            width: 1.5,
+                          ),
+                        ),
+                        constraints: const BoxConstraints(minWidth: 16),
+                        child: Text(
+                          '$badge',
+                          style: TextStyle(
+                            color: isActive ? activeColor : onActiveColor,
+                            fontSize: 8,
+                            fontWeight: FontWeight.w900,
+                            height: 1,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
                       ),
-                      textAlign: TextAlign.center,
                     ),
+                ],
+              ),
+              if (label.isNotEmpty) ...[
+                const SizedBox(width: 6),
+                // Label
+                Flexible(
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: isActive ? FontWeight.w800 : FontWeight.w500, // Extra bold active label
+                      color: textColor,
+                      letterSpacing: -0.2,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+              ],
             ],
           ),
-          const SizedBox(height: 4),
-          // Label
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
-              color: color,
-              letterSpacing: -0.1,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

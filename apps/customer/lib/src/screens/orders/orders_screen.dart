@@ -11,12 +11,13 @@ class OrdersScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ordersAsync = ref.watch(customerOrdersProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bg = isDark ? const Color(0xFF0B0F19) : const Color(0xFFF8FAFC);
+    final bg = Theme.of(context).scaffoldBackgroundColor;
     final textColor = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
 
     return Scaffold(
       backgroundColor: bg,
       body: SafeArea(
+        bottom: false,
         child: Column(
           children: [
             // ── Premium Header ──
@@ -221,8 +222,8 @@ class _PremiumOrderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cardBg = isDark ? const Color(0xFF151D30) : Colors.white;
-    final borderColor = isDark ? const Color(0xFF334155) : const Color(0xFFE2E8F0);
+    final cardBg = Theme.of(context).cardTheme.color ?? Colors.white;
+    final borderColor = Theme.of(context).dividerTheme.color ?? const Color(0xFFE2E8F0);
     final textColor = isDark ? const Color(0xFFF8FAFC) : const Color(0xFF0F172A);
     final muted = isDark ? const Color(0xFFCBD5E1) : const Color(0xFF475569);
 
