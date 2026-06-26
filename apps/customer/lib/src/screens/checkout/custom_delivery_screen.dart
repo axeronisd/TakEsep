@@ -528,10 +528,12 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
       if (mounted) {
         final orderNumber = (orderData['order_number'] ?? '')?.toString();
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('Заказ $orderNumber на доставку оформлен!'),
-          backgroundColor: AkJolTheme.primary,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          content: Text(
+            'Заказ $orderNumber на доставку оформлен!',
+            style: TextStyle(color: Theme.of(context).colorScheme.onPrimary),
+          ),
+          backgroundColor: Theme.of(context).colorScheme.primary,
+          behavior: SnackBarBehavior.fixed,
         ));
         context.go('/order/$orderId');
       }
