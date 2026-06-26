@@ -1628,14 +1628,18 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                     borderRadius: BorderRadius.circular(18),
                     child: Stack(
                       children: [
-                        // Image background covering the card
-                        Positioned.fill(
+                        // Image background on the right side of the card
+                        Positioned(
+                          top: 8,
+                          bottom: 8,
+                          right: -5,
+                          left: 45,
                           child: Opacity(
-                            opacity: bikeSelected ? 0.95 : 0.6,
+                            opacity: bikeSelected ? 1.0 : 0.65,
                             child: Image.asset(
                               'assets/images/delivery_bike.png',
-                              fit: BoxFit.cover,
-                              alignment: Alignment.center,
+                              fit: BoxFit.contain,
+                              alignment: Alignment.centerRight,
                               errorBuilder: (context, error, stackTrace) {
                                 return Center(
                                   child: Icon(
@@ -1654,11 +1658,11 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  (isDark ? const Color(0xFF080809) : Colors.white).withValues(alpha: 0.92),
-                                  (isDark ? const Color(0xFF080809) : Colors.white).withValues(alpha: 0.6),
+                                  (isDark ? const Color(0xFF080809) : Colors.white).withValues(alpha: 0.95),
+                                  (isDark ? const Color(0xFF080809) : Colors.white).withValues(alpha: 0.35),
                                   Colors.transparent,
                                 ],
-                                stops: const [0.0, 0.45, 1.0],
+                                stops: const [0.0, 0.35, 0.75],
                                 begin: Alignment.centerLeft,
                                 end: Alignment.centerRight,
                               ),
@@ -1764,14 +1768,18 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                     borderRadius: BorderRadius.circular(18),
                     child: Stack(
                       children: [
-                        // Image background covering the card
-                        Positioned.fill(
+                        // Image background on the right side of the card
+                        Positioned(
+                          top: 8,
+                          bottom: 8,
+                          right: -5,
+                          left: 45,
                           child: Opacity(
-                            opacity: scooterSelected ? 0.95 : 0.6,
+                            opacity: scooterSelected ? 1.0 : 0.65,
                             child: Image.asset(
                               'assets/images/delivery_trike.png',
-                              fit: BoxFit.cover,
-                              alignment: Alignment.center,
+                              fit: BoxFit.contain,
+                              alignment: Alignment.centerRight,
                               errorBuilder: (context, error, stackTrace) {
                                 return Center(
                                   child: Icon(
@@ -1790,11 +1798,11 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [
-                                  (isDark ? const Color(0xFF080809) : Colors.white).withValues(alpha: 0.92),
-                                  (isDark ? const Color(0xFF080809) : Colors.white).withValues(alpha: 0.6),
+                                  (isDark ? const Color(0xFF080809) : Colors.white).withValues(alpha: 0.95),
+                                  (isDark ? const Color(0xFF080809) : Colors.white).withValues(alpha: 0.35),
                                   Colors.transparent,
                                 ],
-                                stops: const [0.0, 0.45, 1.0],
+                                stops: const [0.0, 0.35, 0.75],
                                 begin: Alignment.centerLeft,
                                 end: Alignment.centerRight,
                               ),
