@@ -1415,7 +1415,7 @@ class _FullWidthAddBtn extends StatelessWidget {
           ],
         ),
         child: const Center(
-          child: Icon(Icons.add_rounded, size: 18, color: Colors.white),
+          child: Icon(Icons.add_rounded, size: 18, color: Color(0xFF0F0F10)),
         ),
       ),
     );
@@ -1461,7 +1461,7 @@ class _FullWidthCounter extends StatelessWidget {
                 child: Icon(
                   Icons.remove_rounded,
                   size: 18,
-                  color: Colors.white,
+                  color: Color(0xFF0F0F10),
                 ),
               ),
             ),
@@ -1471,7 +1471,7 @@ class _FullWidthCounter extends StatelessWidget {
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w800,
-              color: Colors.white,
+              color: Color(0xFF0F0F10),
             ),
           ),
           Expanded(
@@ -1479,7 +1479,7 @@ class _FullWidthCounter extends StatelessWidget {
               onTap: onAdd,
               behavior: HitTestBehavior.opaque,
               child: const Center(
-                child: Icon(Icons.add_rounded, size: 18, color: Colors.white),
+                child: Icon(Icons.add_rounded, size: 18, color: Color(0xFF0F0F10)),
               ),
             ),
           ),

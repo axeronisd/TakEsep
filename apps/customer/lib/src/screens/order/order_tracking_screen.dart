@@ -239,14 +239,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
         SnackBar(
           content: const Row(
             children: [
-              Icon(Icons.location_on_rounded, color: Colors.white),
+              Icon(Icons.location_on_rounded, color: Color(0xFF0F0F10)),
               SizedBox(width: 8),
-              Text('Курьер приехал'),
+              Text('Курьер приехал', style: TextStyle(color: Color(0xFF0F0F10), fontWeight: FontWeight.bold)),
             ],
           ),
           backgroundColor: AkJolTheme.primary,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          behavior: SnackBarBehavior.fixed,
           duration: const Duration(seconds: 5),
         ),
       );
@@ -1381,14 +1380,14 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
               onPressed: _uploading ? null : _pickAndUploadReceipt,
               icon: _uploading
                   ? const SizedBox(width: 18, height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0F0F10)))
                   : const Icon(Icons.camera_alt_rounded, size: 20),
               label: Text(_uploading ? 'Загрузка...' : 'Отправить чек'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AkJolTheme.primary,
-                foregroundColor: Colors.white,
+                foregroundColor: const Color(0xFF0F0F10),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
               ),
             ),
           ),
@@ -1557,11 +1556,10 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Оплата подтверждена. Курьер уведомлён.'),
+          const SnackBar(
+            content: Text('Оплата подтверждена. Курьер уведомлён.'),
             backgroundColor: AkJolTheme.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            behavior: SnackBarBehavior.fixed,
           ),
         );
       }

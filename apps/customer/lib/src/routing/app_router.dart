@@ -116,7 +116,10 @@ class _AppShell extends ConsumerWidget {
               cartCount: cart.itemCount,
               isDark: isDark,
               onMapTap: () => context.go('/map'),
-              onHomeTap: () => context.go('/'),
+              onHomeTap: () {
+                ref.read(globalSearchQueryProvider.notifier).state = '';
+                context.go('/');
+              },
               onCartTap: () {
                 if (Supabase.instance.client.auth.currentSession == null) {
                   _showGuestLoginDialog(context, isDark);
@@ -252,18 +255,18 @@ class _FloatingGlassBar extends StatelessWidget {
       ),
     );
 
-    return SafeArea(
-      top: false,
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(28),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
-              child: barContent,
-            ),
+    final double bottomPadding = MediaQuery.of(context).padding.bottom;
+    final double finalBottomPadding = bottomPadding > 0 ? (bottomPadding + 4.0) : 10.0;
+
+    return Align(
+      alignment: Alignment.bottomCenter,
+      child: Padding(
+        padding: EdgeInsets.only(bottom: finalBottomPadding),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(28),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+            child: barContent,
           ),
         ),
       ),

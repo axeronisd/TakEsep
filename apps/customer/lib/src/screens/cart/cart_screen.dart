@@ -191,12 +191,9 @@ class CartScreen extends ConsumerWidget {
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Корзина сохранена как черновик'),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
+          const SnackBar(
+            content: Text('Корзина сохранена как черновик'),
+            behavior: SnackBarBehavior.fixed,
           ),
         );
       }
@@ -206,7 +203,7 @@ class CartScreen extends ConsumerWidget {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Ошибка сохранения: $e'),
-            behavior: SnackBarBehavior.floating,
+            behavior: SnackBarBehavior.fixed,
           ),
         );
       }
@@ -673,7 +670,7 @@ class _CheckoutBar extends StatelessWidget {
                 label: const Text('Оформить'),
                 style: FilledButton.styleFrom(
                   backgroundColor: AkJolTheme.primary,
-                  foregroundColor: Colors.white,
+                  foregroundColor: const Color(0xFF0F0F10),
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
                     vertical: 14,
@@ -837,12 +834,9 @@ class _DraftButton extends ConsumerWidget {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: const Text('Черновик восстановлен'),
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
+        const SnackBar(
+          content: Text('Черновик восстановлен'),
+          behavior: SnackBarBehavior.fixed,
         ),
       );
     } catch (e) {

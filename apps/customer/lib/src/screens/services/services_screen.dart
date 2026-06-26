@@ -396,19 +396,17 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen> {
                 SnackBar(
                   content: Text('Заявка на «${service.name}» отправлена'),
                   backgroundColor: AkJolTheme.success,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  behavior: SnackBarBehavior.fixed,
                 ),
               );
             }
           } catch (e) {
             if (mounted) {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: const Text('Заявка отправлена (оффлайн)'),
+                const SnackBar(
+                  content: Text('Заявка отправлена (оффлайн)'),
                   backgroundColor: Colors.orange,
-                  behavior: SnackBarBehavior.floating,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  behavior: SnackBarBehavior.fixed,
                 ),
               );
             }

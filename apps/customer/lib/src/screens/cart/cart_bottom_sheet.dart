@@ -254,7 +254,7 @@ class _CartSheetContent extends ConsumerWidget {
                         label: const Text('Оформить'),
                         style: FilledButton.styleFrom(
                           backgroundColor: AkJolTheme.primary,
-                          foregroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF0F0F10),
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
                             vertical: 14,
@@ -336,12 +336,9 @@ class _CartSheetContent extends ConsumerWidget {
       }, onConflict: 'user_id');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Text('Черновик сохранён'),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
+          const SnackBar(
+            content: Text('Черновик сохранён'),
+            behavior: SnackBarBehavior.fixed,
           ),
         );
       }

@@ -1680,8 +1680,8 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                         Positioned(
                           top: 8,
                           bottom: 8,
-                          right: 8,
-                          width: 104,
+                          right: -12,
+                          width: 124,
                           child: ShaderMask(
                             shaderCallback: (rect) {
                               return const LinearGradient(
@@ -1751,7 +1751,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                         ),
                         // Content overlay
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          padding: const EdgeInsets.only(left: 14, right: 54, top: 12, bottom: 12),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1771,7 +1771,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                       fontSize: 10,
                                       fontWeight: FontWeight.w800,
                                       color: bikeSelected
-                                          ? (isDark ? const Color(0xFF0F0F10) : Colors.white)
+                                          ? const Color(0xFF0F0F10)
                                           : muted,
                                     ),
                                   ),
@@ -1784,9 +1784,9 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                   Text(
                                     'Электровелосипед',
                                     style: TextStyle(
-                                      fontSize: 13,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w800,
-                                      color: text,
+                                      color: bikeSelected ? const Color(0xFF0F0F10) : text,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -1795,9 +1795,9 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                   Text(
                                     '${bikeFee.toStringAsFixed(0)} сом',
                                     style: TextStyle(
-                                      fontSize: 16,
+                                      fontSize: 15,
                                       fontWeight: FontWeight.w900,
-                                      color: text,
+                                      color: bikeSelected ? const Color(0xFF0F0F10) : text,
                                     ),
                                   ),
                                 ],
@@ -1846,8 +1846,8 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                         Positioned(
                           top: 8,
                           bottom: 8,
-                          right: 8,
-                          width: 104,
+                          right: -12,
+                          width: 124,
                           child: ShaderMask(
                             shaderCallback: (rect) {
                               return const LinearGradient(
@@ -1917,7 +1917,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                         ),
                         // Content overlay
                         Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          padding: const EdgeInsets.only(left: 14, right: 54, top: 12, bottom: 12),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1937,7 +1937,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                       fontSize: 10,
                                       fontWeight: FontWeight.w800,
                                       color: scooterSelected
-                                          ? (isDark ? const Color(0xFF0F0F10) : Colors.white)
+                                          ? const Color(0xFF0F0F10)
                                           : muted,
                                     ),
                                   ),
@@ -1950,9 +1950,9 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                   Text(
                                     'Электромуравей',
                                     style: TextStyle(
-                                      fontSize: 13,
+                                      fontSize: 12,
                                       fontWeight: FontWeight.w800,
-                                      color: text,
+                                      color: scooterSelected ? const Color(0xFF0F0F10) : text,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -1961,9 +1961,9 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                   Text(
                                     '${scooterFee.toStringAsFixed(0)} сом',
                                     style: TextStyle(
-                                      fontSize: 16,
+                                      fontSize: 15,
                                       fontWeight: FontWeight.w900,
-                                      color: text,
+                                      color: scooterSelected ? const Color(0xFF0F0F10) : text,
                                     ),
                                   ),
                                 ],
