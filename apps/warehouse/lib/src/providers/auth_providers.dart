@@ -210,6 +210,13 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<bool> loginCompany(String licenseKey) async {
     state = state.copyWith(isLoading: true, clearError: true);
+    if (licenseKey.trim().toUpperCase().startsWith('KT-')) {
+      state = state.copyWith(
+        isLoading: false,
+        error: 'Данный ключ предназначен только для приложения Кафе.',
+      );
+      return false;
+    }
     try {
       final company = await _repository.verifyLicenseKey(licenseKey);
       if (company != null) {

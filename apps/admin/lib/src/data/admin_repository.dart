@@ -308,10 +308,10 @@ class AdminRepository {
 
   // ═══════════════ HELPERS ═══════════════
 
-  String generateLicenseKey() {
+  String generateLicenseKey({String prefix = 'WH'}) {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     final rng = Random.secure();
     String segment() => List.generate(4, (_) => chars[rng.nextInt(chars.length)]).join();
-    return '${segment()}-${segment()}-${segment()}-${segment()}';
+    return '$prefix-${segment()}-${segment()}-${segment()}';
   }
 }

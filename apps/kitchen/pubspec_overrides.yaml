@@ -1,0 +1,10 @@
+# melos_managed_dependency_overrides: akjol_auth,takesep_api_client,takesep_core,takesep_design_system
+dependency_overrides:
+  akjol_auth:
+    path: ..\\..\\packages\\akjol_auth
+  takesep_api_client:
+    path: ..\\..\\packages\\api_client
+  takesep_core:
+    path: ..\\..\\packages\\core
+  takesep_design_system:
+    path: ..\\..\\packages\\design_system

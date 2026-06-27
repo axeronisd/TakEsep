@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "427394139285",
+    "project_id": "akjol-f479a",
+    "storage_bucket": "akjol-f479a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:427394139285:android:1b347e71b76e376bec079c",
+        "android_client_info": {
+          "package_name": "com.akjolui.courier"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNl63a9xCTPa9RTcnZr7XuhxxaWHf-rgk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:427394139285:android:62d1433d26748060ec079c",
+        "android_client_info": {
+          "package_name": "com.akjolui.customer"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNl63a9xCTPa9RTcnZr7XuhxxaWHf-rgk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:427394139285:android:3a2945b037afac8bec079c",
+        "android_client_info": {
+          "package_name": "com.takesep.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBNl63a9xCTPa9RTcnZr7XuhxxaWHf-rgk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

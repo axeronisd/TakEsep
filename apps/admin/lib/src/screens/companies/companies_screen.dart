@@ -529,54 +529,130 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
   void _showCreateCompanyDialog(BuildContext context) {
     final titleCtrl = TextEditingController();
     final repo = ref.read(adminRepositoryProvider);
-    final keyCtrl = TextEditingController(text: repo.generateLicenseKey());
+    final keyCtrl = TextEditingController(text: repo.generateLicenseKey(prefix: 'WH'));
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.darkSurface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Создать компанию',
-            style: TextStyle(color: AppColors.darkTextPrimary, fontWeight: FontWeight.w700)),
-        content: SizedBox(
-          width: 440,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleCtrl,
-                style: const TextStyle(color: Colors.white),
-                decoration: const InputDecoration(
-                  hintText: 'Название компании',
-                  hintStyle: TextStyle(color: AppColors.darkTextTertiary),
-                  prefixIcon: Icon(Icons.business_rounded, color: AppColors.darkTextTertiary),
+      builder: (ctx) {
+        String selectedPrefix = 'WH';
+        return StatefulBuilder(
+          builder: (ctx, setStateDialog) {
+            return AlertDialog(
+              backgroundColor: AppColors.darkSurface,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Text('Создать компанию',
+                  style: TextStyle(color: AppColors.darkTextPrimary, fontWeight: FontWeight.w700)),
+              content: SizedBox(
+                width: 440,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: titleCtrl,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: const InputDecoration(
+                        hintText: 'Название компании',
+                        hintStyle: TextStyle(color: AppColors.darkTextTertiary),
+                        prefixIcon: Icon(Icons.business_rounded, color: AppColors.darkTextTertiary),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ChoiceChip(
+                            label: const Text('Склад (WH)'),
+                            selected: selectedPrefix == 'WH',
+                            selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                            checkmarkColor: AppColors.primaryLight,
+                            labelStyle: TextStyle(
+                              color: selectedPrefix == 'WH'
+                                  ? AppColors.primaryLight
+                                  : AppColors.darkTextSecondary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            backgroundColor: AppColors.darkSurface,
+                            side: BorderSide(
+                              color: selectedPrefix == 'WH'
+                                  ? AppColors.primary
+                                  : AppColors.darkBorder,
+                            ),
+                            onSelected: (selected) {
+                              if (selected) {
+                                setStateDialog(() {
+                                  selectedPrefix = 'WH';
+                                  keyCtrl.text = repo.generateLicenseKey(prefix: 'WH');
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: ChoiceChip(
+                            label: const Text('Кухня (KT)'),
+                            selected: selectedPrefix == 'KT',
+                            selectedColor: AppColors.primary.withValues(alpha: 0.2),
+                            checkmarkColor: AppColors.primaryLight,
+                            labelStyle: TextStyle(
+                              color: selectedPrefix == 'KT'
+                                  ? AppColors.primaryLight
+                                  : AppColors.darkTextSecondary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            backgroundColor: AppColors.darkSurface,
+                            side: BorderSide(
+                              color: selectedPrefix == 'KT'
+                                  ? AppColors.primary
+                                  : AppColors.darkBorder,
+                            ),
+                            onSelected: (selected) {
+                              if (selected) {
+                                setStateDialog(() {
+                                  selectedPrefix = 'KT';
+                                  keyCtrl.text = repo.generateLicenseKey(prefix: 'KT');
+                                });
+                              }
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    TextField(
+                      controller: keyCtrl,
+                      style: const TextStyle(
+                        color: AppColors.primaryLight,
+                        fontFamily: 'monospace',
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'XXXX-XXXX-XXXX-XXXX',
+                        hintStyle: const TextStyle(color: AppColors.darkTextTertiary),
+                        prefixIcon: const Icon(Icons.vpn_key_rounded, color: AppColors.darkTextTertiary),
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.refresh_rounded, color: AppColors.warningLight),
+                          tooltip: 'Сгенерировать новый ключ',
+                          onPressed: () {
+                            setStateDialog(() {
+                              keyCtrl.text = repo.generateLicenseKey(prefix: selectedPrefix);
+                            });
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const SizedBox(height: 14),
-              TextField(
-                controller: keyCtrl,
-                style: const TextStyle(
-                  color: AppColors.primaryLight,
-                  fontFamily: 'monospace',
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'XXXX-XXXX-XXXX-XXXX',
-                  hintStyle: const TextStyle(color: AppColors.darkTextTertiary),
-                  prefixIcon: const Icon(Icons.vpn_key_rounded, color: AppColors.darkTextTertiary),
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.refresh_rounded, color: AppColors.warningLight),
-                    tooltip: 'Сгенерировать новый ключ',
-                    onPressed: () {
-                      keyCtrl.text = repo.generateLicenseKey();
-                    },
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+            );
+          },
+        );
+      },
+    );
+  }
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),

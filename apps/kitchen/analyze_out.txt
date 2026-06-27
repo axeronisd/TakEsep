@@ -1,0 +1,36 @@
+Analyzing lib...
+
+warning - src\screens\auth\select_warehouse_screen.dart:8:8 - Unused import: '../../data/auth_repository.dart'. Try removing the import directive. - unused_import
+   info - src\data\arrival_repository.dart:34:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\arrival_repository.dart:55:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\arrival_repository.dart:112:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\arrival_repository.dart:138:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\arrival_repository.dart:152:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\arrival_repository.dart:161:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\arrival_repository.dart:189:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\arrival_repository.dart:192:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\arrival_repository.dart:193:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\auth_repository.dart:23:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\auth_repository.dart:43:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\auth_repository.dart:62:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\auth_repository.dart:81:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\auth_repository.dart:98:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\auth_repository.dart:116:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\auth_repository.dart:132:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\auth_repository.dart:143:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\auth_repository.dart:170:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\auth_repository.dart:188:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\dashboard_repository.dart:41:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\dashboard_repository.dart:82:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\dashboard_repository.dart:123:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\dashboard_repository.dart:172:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\dashboard_repository.dart:186:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\inventory_repository.dart:19:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\inventory_repository.dart:33:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\inventory_repository.dart:47:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\inventory_repository.dart:69:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\storage_repository.dart:28:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\storage_repository.dart:42:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+   info - src\data\supabase_connector.dart:63:7 - Don't invoke 'print' in production code. Try using a logging framework. - avoid_print
+
+32 issues found.

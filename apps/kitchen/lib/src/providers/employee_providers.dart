@@ -1,0 +1,246 @@
+import 'dart:async';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:takesep_core/takesep_core.dart';
+
+import '../data/employee_repository.dart';
+import '../data/supabase_realtime_service.dart';
+import 'auth_providers.dart';
+
+// ─── Repository ─────────────────────────────────────────
+
+final employeeRepositoryProvider = Provider<EmployeeRepository>((ref) {
+  return EmployeeRepository();
+});
+
+// ─── Employee list (Real-time) ──────────────────────────
+
+/// Provides the list of employees for the current company with real-time updates.
+/// Uses Supabase Realtime to automatically refresh when data changes on other devices.
+final employeeListProvider =
+    StateNotifierProvider<EmployeeListNotifier, AsyncValue<List<Employee>>>(
+        (ref) {
+  final repo = ref.read(employeeRepositoryProvider);
+  final companyId = ref.watch(currentCompanyProvider)?.id;
+  return EmployeeListNotifier(repo, companyId);
+});
+
+class EmployeeListNotifier extends StateNotifier<AsyncValue<List<Employee>>> {
+  final EmployeeRepository _repo;
+  final String? _companyId;
+  StreamSubscription? _subscription;
+
+  EmployeeListNotifier(this._repo, this._companyId)
+      : super(const AsyncValue.loading()) {
+    load();
+    _setupRealtimeSubscription();
+  }
+
+  @override
+  void dispose() {
+    _subscription?.cancel();
+    super.dispose();
+  }
+
+  void _setupRealtimeSubscription() {
+    if (_companyId == null) return;
+
+    // Subscribe to real-time changes from Supabase
+    final stream = realtimeService.subscribeToTable(
+      table: 'employees',
+      companyId: _companyId,
+    );
+
+    _subscription = stream.listen((data) {
+      // When data changes, reload from repository (which fetches from Supabase)
+      load(silent: true);
+    }, onError: (e) {
+      print('EmployeeListNotifier realtime error: $e');
+    });
+  }
+
+  Future<void> load({bool silent = false}) async {
+    if (_companyId == null) {
+      state = const AsyncValue.data([]);
+      return;
+    }
+    try {
+      if (!silent && !state.hasValue) {
+        state = const AsyncValue.loading();
+      }
+      final employees = await _repo.getEmployees(_companyId);
+      state = AsyncValue.data(employees);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
+  }
+
+  Future<Employee?> createEmployee({
+    required String name,
+    required String pinCode,
+    String? roleId,
+    List<String>? allowedWarehouses,
+    String? phone,
+    String? inn,
+    String? passportNumber,
+    String? passportIssuedBy,
+    String? passportIssuedDate,
+    SalaryType salaryType = SalaryType.monthly,
+    double salaryAmount = 0,
+    bool salaryAutoDeduct = false,
+  }) async {
+    if (_companyId == null) return null;
+    try {
+      final employee = await _repo.createEmployee(
+        companyId: _companyId,
+        name: name,
+        pinCode: pinCode,
+        roleId: roleId,
+        allowedWarehouses: allowedWarehouses,
+        phone: phone,
+        inn: inn,
+        passportNumber: passportNumber,
+        passportIssuedBy: passportIssuedBy,
+        passportIssuedDate: passportIssuedDate,
+        salaryType: salaryType,
+        salaryAmount: salaryAmount,
+        salaryAutoDeduct: salaryAutoDeduct,
+      );
+      await load(silent: true); // Refresh list
+      return employee;
+    } catch (e) {
+      print('createEmployee error: $e');
+      return null;
+    }
+  }
+
+  Future<bool> updateEmployee({
+    required String employeeId,
+    String? name,
+    String? pinCode,
+    String? roleId,
+    bool clearRoleId = false,
+    List<String>? allowedWarehouses,
+    bool clearAllowedWarehouses = false,
+    bool? isActive,
+    String? phone,
+    bool clearPhone = false,
+    String? inn,
+    bool clearInn = false,
+    String? passportNumber,
+    bool clearPassportNumber = false,
+    String? passportIssuedBy,
+    bool clearPassportIssuedBy = false,
+    String? passportIssuedDate,
+    bool clearPassportIssuedDate = false,
+    SalaryType? salaryType,
+    double? salaryAmount,
+    bool? salaryAutoDeduct,
+  }) async {
+    try {
+      await _repo.updateEmployee(
+        employeeId: employeeId,
+        name: name,
+        pinCode: pinCode,
+        roleId: roleId,
+        clearRoleId: clearRoleId,
+        allowedWarehouses: allowedWarehouses,
+        clearAllowedWarehouses: clearAllowedWarehouses,
+        isActive: isActive,
+        phone: phone,
+        clearPhone: clearPhone,
+        inn: inn,
+        clearInn: clearInn,
+        passportNumber: passportNumber,
+        clearPassportNumber: clearPassportNumber,
+        passportIssuedBy: passportIssuedBy,
+        clearPassportIssuedBy: clearPassportIssuedBy,
+        passportIssuedDate: passportIssuedDate,
+        clearPassportIssuedDate: clearPassportIssuedDate,
+        salaryType: salaryType,
+        salaryAmount: salaryAmount,
+        salaryAutoDeduct: salaryAutoDeduct,
+      );
+      await load(silent: true);
+      return true;
+    } catch (e) {
+      print('updateEmployee error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> deleteEmployee(String employeeId) async {
+    try {
+      await _repo.deleteEmployee(employeeId);
+      await load(silent: true);
+      return true;
+    } catch (e) {
+      print('deleteEmployee error: $e');
+      return false;
+    }
+  }
+
+  Future<bool> isPinCodeTaken(String pinCode,
+      {String? excludeEmployeeId}) async {
+    if (_companyId == null) return false;
+    return _repo.isPinCodeTaken(_companyId, pinCode,
+        excludeEmployeeId: excludeEmployeeId);
+  }
+}
+
+// ─── Roles list ─────────────────────────────────────────
+
+/// Provides the list of roles for the current company (from Supabase directly) in real-time.
+final rolesListProvider = StreamProvider.autoDispose<List<Role>>((ref) {
+  final companyId = ref.watch(currentCompanyProvider)?.id;
+  if (companyId == null) {
+    return Stream.value(<Role>[]);
+  }
+
+  return realtimeService
+      .subscribeToTable(table: 'roles', companyId: companyId)
+      .map((list) {
+        final roles = list.map((e) => Role.fromJson(e)).toList();
+        roles.sort((a, b) => a.name.compareTo(b.name));
+        return roles;
+      });
+});
+
+// ─── Analytics ────────────────────────────────────────
+
+/// Provides analytics data (sales, revenue, top items) for a given employee.
+final employeeActivityProvider =
+    FutureProvider.family<Map<String, dynamic>, String>(
+        (ref, arg) async {
+  final repo = ref.read(employeeRepositoryProvider);
+  final parts = arg.split(':');
+  final employeeId = parts[0];
+  final period = parts.length > 1 ? parts[1] : '30days';
+
+  DateTime? startDate;
+  final now = DateTime.now();
+  switch (period) {
+    case 'today':
+      startDate = DateTime(now.year, now.month, now.day);
+      break;
+    case '7days':
+      startDate = now.subtract(const Duration(days: 7));
+      break;
+    case '30days':
+      startDate = now.subtract(const Duration(days: 30));
+      break;
+    case 'month':
+      startDate = DateTime(now.year, now.month, 1);
+      break;
+  }
+  return repo.getEmployeeActivity(employeeId, startDate: startDate);
+});
+
+// ─── Employee Expenses ──────────────────────────────────
+
+/// Provides expense records for a given employee.
+final employeeExpensesProvider =
+    FutureProvider.family<List<Map<String, dynamic>>, String>(
+        (ref, employeeId) async {
+  final repo = ref.read(employeeRepositoryProvider);
+  return repo.getEmployeeExpenses(employeeId);
+});

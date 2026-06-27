@@ -38,7 +38,11 @@ final _localWarehousesProvider = StreamProvider<List<Warehouse>>((ref) async* {
   final allowed = employee?.allowedWarehouses;
 
   String sql =
-      'SELECT * FROM warehouses WHERE organization_id = ?';
+      'SELECT * FROM warehouses WHERE organization_id = ? '
+      'AND id NOT IN ('
+      '  SELECT warehouse_id FROM warehouse_store_categories '
+      '  WHERE store_category_id IN (\'food\', \'cafe\', \'restaurant\')'
+      ')';
   final params = <dynamic>[companyId];
 
   // If employee has restricted warehouse access, filter by allowed IDs
@@ -643,90 +647,12 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Business Type Selection (Склад vs Кухня)
-                Row(
-                  children: [
-                    Expanded(
-                      child: InkWell(
-                        onTap: () => setDialogState(() => isKitchen = false),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: !isKitchen
-                                ? AppColors.primary.withValues(alpha: 0.1)
-                                : cs.surfaceContainerHighest.withValues(alpha: 0.3),
-                            border: Border.all(
-                              color: !isKitchen ? AppColors.primary : cs.outline.withValues(alpha: 0.2),
-                              width: 1.5,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
-                            children: [
-                              Icon(Icons.inventory_2_rounded,
-                                  color: !isKitchen ? AppColors.primary : cs.onSurface.withValues(alpha: 0.6),
-                                  size: 20),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Склад / Магазин',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: !isKitchen ? cs.onSurface : cs.onSurface.withValues(alpha: 0.6),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: InkWell(
-                        onTap: () => setDialogState(() => isKitchen = true),
-                        borderRadius: BorderRadius.circular(12),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(vertical: 10),
-                          decoration: BoxDecoration(
-                            color: isKitchen
-                                ? AppColors.primary.withValues(alpha: 0.1)
-                                : cs.surfaceContainerHighest.withValues(alpha: 0.3),
-                            border: Border.all(
-                              color: isKitchen ? AppColors.primary : cs.outline.withValues(alpha: 0.2),
-                              width: 1.5,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Column(
-                            children: [
-                              Icon(Icons.restaurant_rounded,
-                                  color: isKitchen ? AppColors.primary : cs.onSurface.withValues(alpha: 0.6),
-                                  size: 20),
-                              const SizedBox(height: 4),
-                              Text(
-                                'Кухня / Кафе',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: isKitchen ? cs.onSurface : cs.onSurface.withValues(alpha: 0.6),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-
                 TextField(
                   controller: nameController,
                   autofocus: true,
                   decoration: InputDecoration(
-                    labelText: isKitchen ? 'Название заведения *' : 'Название склада *',
-                    hintText: isKitchen ? 'Например: Кафе Ак Жол' : 'Например: Склад №1',
+                    labelText: 'Название склада *',
+                    hintText: 'Например: Склад №1',
                     prefixIcon: const Icon(Icons.store_rounded, size: 18),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
