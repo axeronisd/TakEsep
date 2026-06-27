@@ -1624,17 +1624,17 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
 
     final bikeFee = _calculateTempFee('bicycle');
     final scooterFee = _calculateTempFee('scooter');
-    final primaryColor = Theme.of(context).colorScheme.primary;
+    const brandPrimary = AkJolTheme.primary; // Neon green in both themes
     
     // Light grey for transport cards in light theme for better contrast against white bottom sheet
     final transportCardBg = isDark ? const Color(0xFF121214) : const Color(0xFFF1F5F9);
     
     final bikeSelectedBg = bikeSelected
-        ? primaryColor.withValues(alpha: isDark ? 0.15 : 0.22)
+        ? brandPrimary.withValues(alpha: isDark ? 0.15 : 0.22)
         : transportCardBg;
         
     final scooterSelectedBg = scooterSelected
-        ? primaryColor.withValues(alpha: isDark ? 0.15 : 0.22)
+        ? brandPrimary.withValues(alpha: isDark ? 0.15 : 0.22)
         : transportCardBg;
 
     return Column(
@@ -1660,13 +1660,13 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                     color: bikeSelectedBg,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: bikeSelected ? primaryColor : border,
+                      color: bikeSelected ? brandPrimary : border,
                       width: bikeSelected ? 2 : 1,
                     ),
                     boxShadow: [
                       if (bikeSelected)
                         BoxShadow(
-                          color: primaryColor.withValues(alpha: isDark ? 0.2 : 0.12),
+                          color: brandPrimary.withValues(alpha: isDark ? 0.2 : 0.12),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -1761,7 +1761,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
                                     color: bikeSelected
-                                        ? primaryColor
+                                        ? brandPrimary
                                         : (isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF1F5F9)),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
@@ -1771,7 +1771,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                       fontSize: 10,
                                       fontWeight: FontWeight.w800,
                                       color: bikeSelected
-                                          ? const Color(0xFF0F0F10)
+                                          ? (isDark ? const Color(0xFF0F0F10) : AkJolTheme.primaryLight)
                                           : muted,
                                     ),
                                   ),
@@ -1786,7 +1786,9 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w800,
-                                      color: bikeSelected ? const Color(0xFF0F0F10) : text,
+                                      color: bikeSelected
+                                          ? (isDark ? const Color(0xFF0F0F10) : AkJolTheme.primaryLight)
+                                          : text,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -1797,7 +1799,9 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                     style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w900,
-                                      color: bikeSelected ? const Color(0xFF0F0F10) : text,
+                                      color: bikeSelected
+                                          ? (isDark ? const Color(0xFF0F0F10) : AkJolTheme.primaryLight)
+                                          : text,
                                     ),
                                   ),
                                 ],
@@ -1826,13 +1830,13 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                     color: scooterSelectedBg,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: scooterSelected ? primaryColor : border,
+                      color: scooterSelected ? brandPrimary : border,
                       width: scooterSelected ? 2 : 1,
                     ),
                     boxShadow: [
                       if (scooterSelected)
                         BoxShadow(
-                          color: primaryColor.withValues(alpha: isDark ? 0.2 : 0.12),
+                          color: brandPrimary.withValues(alpha: isDark ? 0.2 : 0.12),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),
@@ -1927,7 +1931,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
                                     color: scooterSelected
-                                        ? primaryColor
+                                        ? brandPrimary
                                         : (isDark ? const Color(0xFF1C1C1F) : const Color(0xFFF1F5F9)),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
@@ -1937,7 +1941,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                       fontSize: 10,
                                       fontWeight: FontWeight.w800,
                                       color: scooterSelected
-                                          ? const Color(0xFF0F0F10)
+                                          ? (isDark ? const Color(0xFF0F0F10) : AkJolTheme.primaryLight)
                                           : muted,
                                     ),
                                   ),
@@ -1952,7 +1956,9 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w800,
-                                      color: scooterSelected ? const Color(0xFF0F0F10) : text,
+                                      color: scooterSelected
+                                          ? (isDark ? const Color(0xFF0F0F10) : AkJolTheme.primaryLight)
+                                          : text,
                                     ),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
@@ -1963,7 +1969,9 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                     style: TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w900,
-                                      color: scooterSelected ? const Color(0xFF0F0F10) : text,
+                                      color: scooterSelected
+                                          ? (isDark ? const Color(0xFF0F0F10) : AkJolTheme.primaryLight)
+                                          : text,
                                     ),
                                   ),
                                 ],

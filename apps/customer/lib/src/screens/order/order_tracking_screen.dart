@@ -235,13 +235,16 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     // Show arrived notification (only once)
     if (status == 'arrived' && mounted && !_arrivedNotified) {
       _arrivedNotified = true;
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final snackBarTextColor = isDark ? const Color(0xFF0F0F10) : AkJolTheme.primaryLight;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: const Row(
+          content: Row(
             children: [
-              Icon(Icons.location_on_rounded, color: Color(0xFF0F0F10)),
-              SizedBox(width: 8),
-              Text('Курьер приехал', style: TextStyle(color: Color(0xFF0F0F10), fontWeight: FontWeight.bold)),
+              Icon(Icons.location_on_rounded, color: snackBarTextColor),
+              const SizedBox(width: 8),
+              Text('Курьер приехал', style: TextStyle(color: snackBarTextColor, fontWeight: FontWeight.bold)),
             ],
           ),
           backgroundColor: AkJolTheme.primary,
@@ -1247,6 +1250,9 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final cardNumber = courier?['card_number'] as String? ?? '';
     final qrImageUrl = courier?['qr_url'] as String?;
 
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final buttonContentColor = isDark ? const Color(0xFF0F0F10) : AkJolTheme.primaryLight;
+
     return Container(
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.all(16),
@@ -1379,13 +1385,13 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
             child: ElevatedButton.icon(
               onPressed: _uploading ? null : _pickAndUploadReceipt,
               icon: _uploading
-                  ? const SizedBox(width: 18, height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF0F0F10)))
+                  ? SizedBox(width: 18, height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: buttonContentColor))
                   : const Icon(Icons.camera_alt_rounded, size: 20),
               label: Text(_uploading ? 'Загрузка...' : 'Отправить чек'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AkJolTheme.primary,
-                foregroundColor: const Color(0xFF0F0F10),
+                foregroundColor: buttonContentColor,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
               ),

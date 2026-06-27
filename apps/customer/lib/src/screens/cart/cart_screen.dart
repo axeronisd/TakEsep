@@ -670,7 +670,7 @@ class _CheckoutBar extends StatelessWidget {
                 label: const Text('Оформить'),
                 style: FilledButton.styleFrom(
                   backgroundColor: AkJolTheme.primary,
-                  foregroundColor: const Color(0xFF0F0F10),
+                  foregroundColor: isDark ? const Color(0xFF0F0F10) : AkJolTheme.primaryLight,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
                     vertical: 14,

@@ -1398,6 +1398,9 @@ class _FullWidthAddBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final contentColor = isDark ? const Color(0xFF0F0F10) : AkJolTheme.primaryLight;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -1414,8 +1417,8 @@ class _FullWidthAddBtn extends StatelessWidget {
             ),
           ],
         ),
-        child: const Center(
-          child: Icon(Icons.add_rounded, size: 18, color: Color(0xFF0F0F10)),
+        child: Center(
+          child: Icon(Icons.add_rounded, size: 18, color: contentColor),
         ),
       ),
     );
@@ -1437,6 +1440,9 @@ class _FullWidthCounter extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final contentColor = isDark ? const Color(0xFF0F0F10) : AkJolTheme.primaryLight;
+
     return Container(
       width: double.infinity,
       height: 32,
@@ -1457,29 +1463,29 @@ class _FullWidthCounter extends StatelessWidget {
             child: GestureDetector(
               onTap: onRemove,
               behavior: HitTestBehavior.opaque,
-              child: const Center(
+              child: Center(
                 child: Icon(
                   Icons.remove_rounded,
                   size: 18,
-                  color: Color(0xFF0F0F10),
+                  color: contentColor,
                 ),
               ),
             ),
           ),
           Text(
             '$quantity',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w800,
-              color: Color(0xFF0F0F10),
+              color: contentColor,
             ),
           ),
           Expanded(
             child: GestureDetector(
               onTap: onAdd,
               behavior: HitTestBehavior.opaque,
-              child: const Center(
-                child: Icon(Icons.add_rounded, size: 18, color: Color(0xFF0F0F10)),
+              child: Center(
+                child: Icon(Icons.add_rounded, size: 18, color: contentColor),
               ),
             ),
           ),
