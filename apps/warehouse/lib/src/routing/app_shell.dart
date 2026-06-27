@@ -993,53 +993,60 @@ class _SidebarHeader extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.all(collapsed ? AppSpacing.sm : AppSpacing.lg),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-            child: Image.asset(
-              'assets/images/logo.JPG',
-              width: collapsed ? 40 : 36,
-              height: collapsed ? 40 : 36,
-              fit: BoxFit.cover,
-            ),
-          ),
-          if (!collapsed) ...[
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-                child: Text('TakEsep',
-                    style: AppTypography.headlineMedium
-                        .copyWith(color: cs.onSurface))),
-            InkWell(
-              onTap: onToggle,
-              borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-              child: Padding(
-                padding: const EdgeInsets.all(4),
-                child: Icon(
-                  Icons.chevron_left_rounded,
-                  color: cs.onSurface.withValues(alpha: 0.4),
-                  size: 20,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        physics: const NeverScrollableScrollPhysics(),
+        child: SizedBox(
+          width: collapsed ? 56 : 202,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                child: Image.asset(
+                  'assets/images/logo.JPG',
+                  width: collapsed ? 40 : 36,
+                  height: collapsed ? 40 : 36,
+                  fit: BoxFit.cover,
                 ),
               ),
-            ),
-          ],
-          if (collapsed)
-            Flexible(
-              child: InkWell(
-                onTap: onToggle,
-                borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
-                child: Padding(
-                  padding: const EdgeInsets.all(2),
-                  child: Icon(
-                    Icons.chevron_right_rounded,
-                    color: cs.onSurface.withValues(alpha: 0.4),
-                    size: 16,
+              if (!collapsed) ...[
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                    child: Text('TakEsep',
+                        style: AppTypography.headlineMedium
+                            .copyWith(color: cs.onSurface))),
+                InkWell(
+                  onTap: onToggle,
+                  borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(
+                      Icons.chevron_left_rounded,
+                      color: cs.onSurface.withValues(alpha: 0.4),
+                      size: 20,
+                    ),
                   ),
                 ),
-              ),
-            ),
-        ],
+              ],
+              if (collapsed)
+                Flexible(
+                  child: InkWell(
+                    onTap: onToggle,
+                    borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
+                    child: Padding(
+                      padding: const EdgeInsets.all(2),
+                      child: Icon(
+                        Icons.chevron_right_rounded,
+                        color: cs.onSurface.withValues(alpha: 0.4),
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1089,42 +1096,51 @@ class _SidebarNavItem extends StatelessWidget {
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
             ),
-            child: Row(
-              mainAxisAlignment: collapsed
-                  ? MainAxisAlignment.center
-                  : MainAxisAlignment.start,
-              children: [
-                assetIcon != null
-                    ? Container(
-                        width: 20,
-                        height: 20,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: Image.asset(
-                          assetIcon!,
-                          fit: BoxFit.cover,
-                        ),
-                      )
-                    : Icon(icon ?? Icons.help_outline,
-                        size: 20,
-                        color: isSelected
-                            ? cs.primary
-                            : cs.onSurface.withValues(alpha: 0.4)),
-                if (!collapsed) ...[
-                  const SizedBox(width: AppSpacing.md),
-                  Text(label,
-                      style: TextStyle(
-                        color: isSelected
-                            ? cs.primary
-                            : cs.onSurface.withValues(alpha: 0.7),
-                        fontWeight:
-                            isSelected ? FontWeight.w600 : FontWeight.w400,
-                        fontSize: 14,
-                      )),
-                ],
-              ],
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const NeverScrollableScrollPhysics(),
+              child: SizedBox(
+                width: collapsed ? 48 : 202,
+                child: Row(
+                  mainAxisAlignment: collapsed
+                      ? MainAxisAlignment.center
+                      : MainAxisAlignment.start,
+                  children: [
+                    assetIcon != null
+                        ? Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: Image.asset(
+                              assetIcon!,
+                              fit: BoxFit.cover,
+                            ),
+                          )
+                        : Icon(icon ?? Icons.help_outline,
+                            size: 20,
+                            color: isSelected
+                                ? cs.primary
+                                : cs.onSurface.withValues(alpha: 0.4)),
+                    if (!collapsed) ...[
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Text(label,
+                            style: TextStyle(
+                              color: isSelected
+                                  ? cs.primary
+                                  : cs.onSurface.withValues(alpha: 0.7),
+                              fontWeight:
+                                  isSelected ? FontWeight.w600 : FontWeight.w400,
+                              fontSize: 14,
+                            )),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
             ),
           ),
         ),
