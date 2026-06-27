@@ -647,52 +647,49 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                   ],
                 ),
               ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Отмена', style: TextStyle(color: AppColors.darkTextSecondary)),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () async {
+                    if (titleCtrl.text.trim().isEmpty) return;
+                    final result = await repo.createCompany(
+                      title: titleCtrl.text.trim(),
+                      licenseKey: keyCtrl.text.trim(),
+                    );
+                    Navigator.pop(ctx);
+                    if (result != null) {
+                      ref.invalidate(companiesProvider);
+                      ref.invalidate(ecosystemStatsProvider);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text('Компания создана! Ключ: ${result['license_key']}')),
+                        );
+                      }
+                    } else {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('Ошибка при создании компании'),
+                              backgroundColor: AppColors.error),
+                        );
+                      }
+                    }
+                  },
+                  child: const Text('Создать'),
+                ),
+              ],
             );
           },
         );
       },
-    );
-  }
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Отмена', style: TextStyle(color: AppColors.darkTextSecondary)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () async {
-              if (titleCtrl.text.trim().isEmpty) return;
-              final result = await repo.createCompany(
-                title: titleCtrl.text.trim(),
-                licenseKey: keyCtrl.text.trim(),
-              );
-              Navigator.pop(ctx);
-              if (result != null) {
-                ref.invalidate(companiesProvider);
-                ref.invalidate(ecosystemStatsProvider);
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text('Компания создана! Ключ: ${result['license_key']}')),
-                  );
-                }
-              } else {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Ошибка при создании компании'),
-                        backgroundColor: AppColors.error),
-                  );
-                }
-              }
-            },
-            child: const Text('Создать'),
-          ),
-        ],
-      ),
     );
   }
 }
