@@ -624,11 +624,46 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
     final nameController = TextEditingController();
     final addressController = TextEditingController();
     final floorController = TextEditingController();
+    String selectedType = 'cafe';
     String? selectedGroupId;
     double? selectedLat;
     double? selectedLng;
     bool locationSelected = false;
     bool isKitchen = true;
+
+    String getHintText() {
+      switch (selectedType) {
+        case 'cafe':
+          return 'Например: Кафе Арашан';
+        case 'restaurant':
+          return 'Например: Ресторан Фрунзе';
+        case 'coffee':
+          return 'Например: Кофейня Бублик';
+        case 'kitchen':
+          return 'Например: Ашкана Бухара';
+        case 'fastfood':
+          return 'Например: Бургерная Бегемот';
+        default:
+          return 'Например: Кафе Арашан';
+      }
+    }
+
+    IconData getTypeIcon() {
+      switch (selectedType) {
+        case 'cafe':
+          return Icons.local_cafe_rounded;
+        case 'restaurant':
+          return Icons.restaurant_rounded;
+        case 'coffee':
+          return Icons.coffee_rounded;
+        case 'kitchen':
+          return Icons.soup_kitchen_rounded;
+        case 'fastfood':
+          return Icons.fastfood_rounded;
+        default:
+          return Icons.restaurant_rounded;
+      }
+    }
 
     showDialog(
       context: context,
@@ -645,13 +680,38 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                DropdownButtonFormField<String>(
+                  value: selectedType,
+                  decoration: InputDecoration(
+                    labelText: 'Тип заведения *',
+                    prefixIcon: Icon(getTypeIcon(), size: 18, color: AppColors.primary),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'cafe', child: Text('Кафе')),
+                    DropdownMenuItem(value: 'restaurant', child: Text('Ресторан')),
+                    DropdownMenuItem(value: 'coffee', child: Text('Кофейня')),
+                    DropdownMenuItem(value: 'kitchen', child: Text('Ашкана / Кухня')),
+                    DropdownMenuItem(value: 'fastfood', child: Text('Фастфуд')),
+                  ],
+                  onChanged: (val) {
+                    if (val != null) {
+                      setDialogState(() {
+                        selectedType = val;
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: AppSpacing.md),
                 TextField(
                   controller: nameController,
                   autofocus: true,
                   decoration: InputDecoration(
-                    labelText: 'Название склада *',
-                    hintText: 'Например: Склад №1',
-                    prefixIcon: const Icon(Icons.store_rounded, size: 18),
+                    labelText: 'Название заведения *',
+                    hintText: getHintText(),
+                    prefixIcon: const Icon(Icons.storefront_rounded, size: 18),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
@@ -665,8 +725,8 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
                     return DropdownButtonFormField<String?>(
                       value: selectedGroupId,
                       decoration: InputDecoration(
-                        labelText: 'Группа',
-                        prefixIcon: const Icon(Icons.folder_rounded, size: 18),
+                        labelText: 'Сеть / Группа заведений',
+                        prefixIcon: const Icon(Icons.folder_special_rounded, size: 18),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -674,7 +734,7 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
                       items: [
                         const DropdownMenuItem<String?>(
                           value: null,
-                          child: Text('Без группы'),
+                          child: Text('Без сети (одиночное кафе)'),
                         ),
                         ...groups.map((g) => DropdownMenuItem<String?>(
                               value: g.id,
@@ -686,7 +746,7 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
                             Icon(Icons.add_circle_outline_rounded,
                                 size: 18, color: AppColors.primary),
                             const SizedBox(width: 8),
-                            Text('Создать группу',
+                            Text('Создать сеть',
                                 style: TextStyle(
                                     color: AppColors.primary,
                                     fontWeight: FontWeight.w600)),
@@ -714,14 +774,14 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
                 TextField(
                   controller: addressController,
                   decoration: InputDecoration(
-                    labelText: locationSelected ? 'Адрес *' : 'Адрес (укажите на карте)',
+                    labelText: locationSelected ? 'Адрес заведения *' : 'Адрес (укажите на карте)',
                     hintText: 'Адрес будет заполнен с карты, можно редактировать',
                     prefixIcon: const Icon(Icons.location_on_rounded, size: 18),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                     ),
                     helperText: locationSelected
-                        ? 'Можете дописать: рынок, проход, ориентир'
+                        ? 'Можете дописать: ориентир, проход, этаж'
                         : null,
                     helperStyle: AppTypography.bodySmall.copyWith(
                       color: AppColors.primary.withValues(alpha: 0.6),
@@ -735,8 +795,8 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
                 TextField(
                   controller: floorController,
                   decoration: InputDecoration(
-                    labelText: 'Этаж / Помещение (опционально)',
-                    hintText: '2 этаж, офис 205',
+                    labelText: 'Ориентиры / Детали (опционально)',
+                    hintText: 'Например: 1 этаж, фудкорт, бутик 3',
                     prefixIcon: const Icon(Icons.apartment_rounded, size: 18),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -816,12 +876,12 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
                             color: AppColors.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(Icons.store_rounded,
+                          child: Icon(getTypeIcon(),
                               color: AppColors.primary, size: 20),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
-                          child: Text('Новый склад',
+                          child: Text('Новое заведение',
                               style: AppTypography.headlineSmall
                                   .copyWith(fontWeight: FontWeight.w600)),
                         ),
@@ -890,10 +950,25 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
                                         ref.read(authProvider).currentCompany?.id;
                                     if (companyId == null) return;
 
+                                    String finalName = name;
+                                    final typePrefix = selectedType == 'cafe'
+                                        ? 'Кафе'
+                                        : selectedType == 'restaurant'
+                                            ? 'Ресторан'
+                                            : selectedType == 'coffee'
+                                                ? 'Кофейня'
+                                                : selectedType == 'kitchen'
+                                                    ? 'Кухня'
+                                                    : 'Фастфуд';
+                                    
+                                    if (!name.toLowerCase().contains(typePrefix.toLowerCase())) {
+                                      finalName = '$typePrefix $name';
+                                    }
+
                                     final repo = ref.read(authRepositoryProvider);
                                     final warehouse = await repo.createWarehouse(
                                       companyId: companyId,
-                                      name: name,
+                                      name: finalName,
                                       address: addressController.text.trim().isEmpty
                                           ? null
                                           : addressController.text.trim(),
