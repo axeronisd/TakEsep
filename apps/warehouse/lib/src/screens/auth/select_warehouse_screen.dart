@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:takesep_core/takesep_core.dart';
 import 'package:takesep_design_system/takesep_design_system.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 
 import '../../data/powersync_db.dart';
@@ -625,6 +626,7 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
     double? selectedLat;
     double? selectedLng;
     bool locationSelected = false;
+    bool isKitchen = false;
 
     showDialog(
       context: context,
@@ -641,12 +643,90 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Business Type Selection (Склад vs Кухня)
+                Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => setDialogState(() => isKitchen = false),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: !isKitchen
+                                ? AppColors.primary.withValues(alpha: 0.1)
+                                : cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                            border: Border.all(
+                              color: !isKitchen ? AppColors.primary : cs.outline.withValues(alpha: 0.2),
+                              width: 1.5,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(Icons.inventory_2_rounded,
+                                  color: !isKitchen ? AppColors.primary : cs.onSurface.withValues(alpha: 0.6),
+                                  size: 20),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Склад / Магазин',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: !isKitchen ? cs.onSurface : cs.onSurface.withValues(alpha: 0.6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => setDialogState(() => isKitchen = true),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isKitchen
+                                ? AppColors.primary.withValues(alpha: 0.1)
+                                : cs.surfaceContainerHighest.withValues(alpha: 0.3),
+                            border: Border.all(
+                              color: isKitchen ? AppColors.primary : cs.outline.withValues(alpha: 0.2),
+                              width: 1.5,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Column(
+                            children: [
+                              Icon(Icons.restaurant_rounded,
+                                  color: isKitchen ? AppColors.primary : cs.onSurface.withValues(alpha: 0.6),
+                                  size: 20),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Кухня / Кафе',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: isKitchen ? cs.onSurface : cs.onSurface.withValues(alpha: 0.6),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+
                 TextField(
                   controller: nameController,
                   autofocus: true,
                   decoration: InputDecoration(
-                    labelText: 'Название склада *',
-                    hintText: 'Например: Склад №1',
+                    labelText: isKitchen ? 'Название заведения *' : 'Название склада *',
+                    hintText: isKitchen ? 'Например: Кафе Ак Жол' : 'Например: Склад №1',
                     prefixIcon: const Icon(Icons.store_rounded, size: 18),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -901,13 +981,28 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
                                           : floorController.text.trim(),
                                     );
 
-                                    if (warehouse != null && ctx.mounted) {
-                                      Navigator.pop(ctx);
-                                      ref.invalidate(_warehouseGroupsProvider);
-                                      ref.invalidate(_localWarehousesProvider);
-                                      await ref
-                                          .read(authProvider.notifier)
-                                          .refreshWarehouses();
+                                    if (warehouse != null) {
+                                      if (isKitchen) {
+                                        try {
+                                          await Supabase.instance.client
+                                              .from('warehouse_store_categories')
+                                              .insert({
+                                            'warehouse_id': warehouse.id,
+                                            'store_category_id': 'food',
+                                          });
+                                          debugPrint('✅ Kitchen store category linked');
+                                        } catch (e) {
+                                          debugPrint('⚠️ Link kitchen category error: $e');
+                                        }
+                                      }
+                                      if (ctx.mounted) {
+                                        Navigator.pop(ctx);
+                                        ref.invalidate(_warehouseGroupsProvider);
+                                        ref.invalidate(_localWarehousesProvider);
+                                        await ref
+                                            .read(authProvider.notifier)
+                                            .refreshWarehouses();
+                                      }
                                     }
                                   }
                                 : null,

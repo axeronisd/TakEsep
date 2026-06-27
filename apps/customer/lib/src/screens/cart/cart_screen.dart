@@ -355,7 +355,7 @@ class _StoreHeader extends StatelessWidget {
                     color: AkJolTheme.primary.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Text(
+                  child: Text(
                     'В магазин',
                     style: TextStyle(
                       fontSize: 11,
@@ -501,7 +501,7 @@ class _CartItemCard extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Text(
                     '${item.total.toStringAsFixed(0)} сом',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
                       color: AkJolTheme.primary,
@@ -670,7 +670,7 @@ class _CheckoutBar extends StatelessWidget {
                 label: const Text('Оформить'),
                 style: FilledButton.styleFrom(
                   backgroundColor: AkJolTheme.primary,
-                  foregroundColor: isDark ? const Color(0xFF0F0F10) : AkJolTheme.primaryLight,
+                  foregroundColor: isDark ? const Color(0xFF0F0F10) : Colors.white,
                   padding: const EdgeInsets.symmetric(
                     horizontal: 24,
                     vertical: 14,
@@ -743,7 +743,7 @@ class _DraftButton extends ConsumerWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.bookmark_rounded,
                       color: AkJolTheme.primary,
                       size: 18,
@@ -758,7 +758,7 @@ class _DraftButton extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Icon(
+                    Icon(
                       Icons.restore_rounded,
                       color: AkJolTheme.primary,
                       size: 16,

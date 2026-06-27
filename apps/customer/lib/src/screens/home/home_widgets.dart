@@ -91,7 +91,7 @@ class AkJolHeader extends StatelessWidget {
                             : const Color(0xFF374151),
                       ),
                     ),
-                    const Text(
+                    Text(
                       'JOL',
                       style: TextStyle(
                         fontSize: 16,
@@ -170,7 +170,7 @@ class AkJolHeader extends StatelessWidget {
                         ),
                         const SizedBox(width: 6),
                         if (loading)
-                          const SizedBox(
+                          SizedBox(
                             width: 10,
                             height: 10,
                             child: CircularProgressIndicator(
@@ -813,7 +813,7 @@ class SectionHeader extends StatelessWidget {
                 ),
                 child: Text(
                   action!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
                     color: AkJolTheme.primary,
@@ -933,7 +933,7 @@ class TakEsepStoreCard extends StatelessWidget {
                       if (canDeliver && distance != null)
                         Text(
                           ' • ${distance!.toStringAsFixed(1)} км',
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 11,
                             color: AkJolTheme.primary,
                             fontWeight: FontWeight.w600,
@@ -954,7 +954,7 @@ class TakEsepStoreCard extends StatelessWidget {
                       ),
                       child: Text(
                         '~$deliveryMinutes мин',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
                           color: AkJolTheme.primary,

@@ -67,7 +67,7 @@ class OrdersScreen extends ConsumerWidget {
                       color: AkJolTheme.primary.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: const Icon(Icons.receipt_long_rounded, color: AkJolTheme.primary, size: 22),
+                    child: Icon(Icons.receipt_long_rounded, color: AkJolTheme.primary, size: 22),
                   ),
                 ],
               ),
@@ -123,7 +123,7 @@ class OrdersScreen extends ConsumerWidget {
                     ),
                   );
                 },
-                loading: () => const Center(
+                loading: () => Center(
                   child: CircularProgressIndicator(color: AkJolTheme.primary),
                 ),
                 error: (_, _) => _ErrorState(isDark: isDark),
@@ -436,7 +436,7 @@ class _EmptyState extends StatelessWidget {
               ),
               borderRadius: BorderRadius.circular(28),
             ),
-            child: const Icon(
+            child: Icon(
               Icons.receipt_long_rounded,
               color: AkJolTheme.primary,
               size: 40,

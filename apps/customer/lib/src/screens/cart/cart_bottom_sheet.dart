@@ -98,7 +98,7 @@ class _CartSheetContent extends ConsumerWidget {
                                 ),
                                 child: Text(
                                   '${cart.itemCount}',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w700,
                                     color: AkJolTheme.primary,
@@ -254,7 +254,7 @@ class _CartSheetContent extends ConsumerWidget {
                         label: const Text('Оформить'),
                         style: FilledButton.styleFrom(
                           backgroundColor: AkJolTheme.primary,
-                          foregroundColor: isDark ? const Color(0xFF0F0F10) : AkJolTheme.primaryLight,
+                          foregroundColor: isDark ? const Color(0xFF0F0F10) : Colors.white,
                           padding: const EdgeInsets.symmetric(
                             horizontal: 24,
                             vertical: 14,
@@ -431,7 +431,7 @@ class _SheetStoreHeader extends StatelessWidget {
                 color: AkJolTheme.primary.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(6),
               ),
-              child: const Text(
+              child: Text(
                 'В магазин',
                 style: TextStyle(
                   fontSize: 10,
@@ -568,7 +568,7 @@ class _SheetCartItem extends ConsumerWidget {
                   const SizedBox(height: 2),
                   Text(
                     '${item.total.toStringAsFixed(0)} сом',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
                       color: AkJolTheme.primary,

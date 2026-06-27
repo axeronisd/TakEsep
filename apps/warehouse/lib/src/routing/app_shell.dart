@@ -97,10 +97,75 @@ const _navSections = <_NavSection>[
   ]),
 ];
 
+const _kitchenNavSections = <_NavSection>[
+  _NavSection(label: 'Главное', items: [
+    _NavItem(
+        icon: Icons.analytics_rounded,
+        label: 'Аналитика',
+        path: '/kitchen-analytics',
+        permissionKey: 'dashboard'),
+    _NavItem(
+        icon: Icons.delivery_dining_rounded,
+        label: 'Заказы',
+        path: '/delivery-orders',
+        permissionKey: 'delivery_orders',
+        hasBadge: true),
+  ]),
+  _NavSection(label: 'Заведение', items: [
+    _NavItem(
+        icon: Icons.point_of_sale_rounded,
+        label: 'Официант',
+        path: '/waiter-terminal',
+        permissionKey: 'sales'),
+    _NavItem(
+        icon: Icons.restaurant_rounded,
+        label: 'Кухня (KDS)',
+        path: '/kitchen-kds',
+        permissionKey: 'sales'),
+  ]),
+  _NavSection(label: 'Меню и Рецепты', items: [
+    _NavItem(
+        icon: Icons.restaurant_menu_rounded,
+        label: 'Меню',
+        path: '/kitchen-menu',
+        permissionKey: 'inventory'),
+    _NavItem(
+        icon: Icons.receipt_long_rounded,
+        label: 'Рецепты',
+        path: '/kitchen-recipes',
+        permissionKey: 'inventory'),
+  ]),
+  _NavSection(label: 'Маркетинг', items: [
+    _NavItem(
+        icon: Icons.local_offer_rounded,
+        label: 'Промокоды & Скидки',
+        path: '/kitchen-promos',
+        permissionKey: 'settings'),
+    _NavItem(
+        icon: Icons.qr_code_2_rounded,
+        label: 'Столы & QR',
+        path: '/kitchen-tables',
+        permissionKey: 'settings'),
+  ]),
+];
+
 /// Filters navigation sections based on the current role's permissions.
 List<_NavSection> _filterSections(List<String> permissions) {
   final filtered = <_NavSection>[];
   for (final section in _navSections) {
+    final items = section.items
+        .where((item) => permissions.contains(item.permissionKey))
+        .toList();
+    if (items.isNotEmpty) {
+      filtered.add(_NavSection(label: section.label, items: items));
+    }
+  }
+  return filtered;
+}
+
+List<_NavSection> _filterKitchenSections(List<String> permissions) {
+  final filtered = <_NavSection>[];
+  for (final section in _kitchenNavSections) {
     final items = section.items
         .where((item) => permissions.contains(item.permissionKey))
         .toList();
@@ -140,7 +205,8 @@ class _AppShellState extends ConsumerState<AppShell> {
     final path = _currentPath(context);
     final authState = ref.watch(authProvider);
     final permissions = authState.currentRole?.permissions ?? [];
-    final sections = _filterSections(permissions);
+    final isKitchen = ref.watch(isKitchenModeProvider);
+    final sections = isKitchen ? _filterKitchenSections(permissions) : _filterSections(permissions);
 
     if (w >= 900) {
       return GlobalBarcodeScanner(
@@ -174,6 +240,7 @@ class _AppShellState extends ConsumerState<AppShell> {
         currentPath: path,
         sections: sections,
         authState: authState,
+        isKitchen: isKitchen,
         onLogout: () => ref.read(authProvider.notifier).logoutEmployee(),
         child: widget.child,
       ),
@@ -475,12 +542,14 @@ class _MobileLayout extends StatefulWidget {
   final String currentPath;
   final List<_NavSection> sections;
   final AuthState authState;
+  final bool isKitchen;
   final VoidCallback onLogout;
   final Widget child;
   const _MobileLayout({
     required this.currentPath,
     required this.sections,
     required this.authState,
+    required this.isKitchen,
     required this.onLogout,
     required this.child,
   });
@@ -534,16 +603,16 @@ class _MobileLayoutState extends State<_MobileLayout> {
                   _MobileNavItem(
                     icon: Icons.analytics_rounded,
                     label: 'Аналитика',
-                    isSelected: widget.currentPath.startsWith('/dashboard'),
-                    onTap: () => context.go('/dashboard'),
+                    isSelected: widget.currentPath.startsWith(widget.isKitchen ? '/kitchen-analytics' : '/dashboard'),
+                    onTap: () => context.go(widget.isKitchen ? '/kitchen-analytics' : '/dashboard'),
                   ),
                 // Sales
                 if (widget.authState.hasPermission('sales'))
                   _MobileNavItem(
                     icon: Icons.point_of_sale_rounded,
-                    label: 'Продажа',
-                    isSelected: widget.currentPath.startsWith('/sales'),
-                    onTap: () => context.go('/sales'),
+                    label: widget.isKitchen ? 'Официант' : 'Продажа',
+                    isSelected: widget.currentPath.startsWith(widget.isKitchen ? '/waiter-terminal' : '/sales'),
+                    onTap: () => context.go(widget.isKitchen ? '/waiter-terminal' : '/sales'),
                   ),
                 // Scanner (conditional)
                 if (showScanner)
@@ -575,13 +644,15 @@ class _MobileLayoutState extends State<_MobileLayout> {
                       ),
                     ),
                   ),
-                // Reports
-                if (widget.authState.hasPermission('reports'))
+                // Reports / KDS
+                if (widget.isKitchen
+                    ? widget.authState.hasPermission('sales')
+                    : widget.authState.hasPermission('reports'))
                   _MobileNavItem(
-                    icon: Icons.assessment_rounded,
-                    label: 'Отчёты',
-                    isSelected: widget.currentPath.startsWith('/reports'),
-                    onTap: () => context.go('/reports'),
+                    icon: widget.isKitchen ? Icons.restaurant_rounded : Icons.assessment_rounded,
+                    label: widget.isKitchen ? 'Кухня (KDS)' : 'Отчёты',
+                    isSelected: widget.currentPath.startsWith(widget.isKitchen ? '/kitchen-kds' : '/reports'),
+                    onTap: () => context.go(widget.isKitchen ? '/kitchen-kds' : '/reports'),
                   ),
                 // More
                 _MobileNavItem(

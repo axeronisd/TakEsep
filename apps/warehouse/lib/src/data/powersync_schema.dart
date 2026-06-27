@@ -88,6 +88,7 @@ const schema = Schema([
     Column.integer('is_public'),
     Column.text('b2c_description'),
     Column.real('b2c_price'),
+    Column.text('product_type'),
     Column.text('created_at'),
     Column.text('updated_at'),
   ]),
@@ -319,6 +320,13 @@ const schema = Schema([
     Column.text('modifier_name'),
     Column.text('group_name'),
     Column.real('price_delta'),
+    Column.text('created_at'),
+  ]),
+  // ─── Recipes (Tech Cards) ──────────────────────────────────
+  Table('recipes', [
+    Column.text('dish_id'),
+    Column.text('ingredient_id'),
+    Column.real('quantity_required'),
     Column.text('created_at'),
   ]),
 ]);

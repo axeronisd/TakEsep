@@ -474,7 +474,7 @@ class MarketplaceStoreCard extends StatelessWidget {
       child: Center(
         child: Text(
           name.isNotEmpty ? name[0].toUpperCase() : '?',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w800,
             color: AkJolTheme.primary,

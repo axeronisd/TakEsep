@@ -25,6 +25,7 @@ import '../screens/delivery/courier_management_screen.dart';
 import '../screens/delivery/delivery_analytics_screen.dart';
 import '../screens/delivery/akjol_catalog_screen.dart';
 import '../screens/delivery/delivery_zones_screen.dart';
+import '../screens/kitchen/kitchen_screens.dart';
 import 'app_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -57,7 +58,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         if (!authState.hasWarehouseSelected) {
           return '/select-warehouse';
         }
-        return _firstPermittedRoute(authState);
+        return _firstPermittedRoute(authState, ref);
       }
 
       // Authenticated but no warehouse selected → always show selection
@@ -69,18 +70,25 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
       // Already selected warehouse, but on select-warehouse page
       if (authState.hasWarehouseSelected && isSelectingWh) {
-        return _firstPermittedRoute(authState);
+        return _firstPermittedRoute(authState, ref);
       }
 
       // Route-level permission guards
       const routeToPermission = <String, String>{
         '/dashboard': 'dashboard',
+        '/kitchen-analytics': 'dashboard',
         '/sales': 'sales',
+        '/waiter-terminal': 'sales',
+        '/kitchen-kds': 'sales',
         '/income': 'income',
         '/transfer': 'transfer',
         '/audit': 'audit',
         '/write-offs': 'write_offs',
         '/inventory': 'inventory',
+        '/kitchen-menu': 'inventory',
+        '/kitchen-recipes': 'inventory',
+        '/kitchen-promos': 'settings',
+        '/kitchen-tables': 'settings',
         '/services': 'services',
         '/clients': 'clients',
         '/employees': 'employees',
@@ -98,7 +106,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       if (routeToPermission.containsKey(location)) {
         final requiredPerm = routeToPermission[location]!;
         if (!authState.hasPermission(requiredPerm)) {
-          return _firstPermittedRoute(authState);
+          return _firstPermittedRoute(authState, ref);
         }
       }
 
@@ -247,6 +255,43 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             pageBuilder: (context, state) =>
                 const NoTransitionPage(child: HelpScreen()),
           ),
+
+          // ─── Кухня / Ресторан ─────────────────
+          GoRoute(
+            path: '/kitchen-analytics',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: KitchenAnalyticsScreen()),
+          ),
+          GoRoute(
+            path: '/waiter-terminal',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: WaiterTerminalScreen()),
+          ),
+          GoRoute(
+            path: '/kitchen-kds',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: KitchenKdsScreen()),
+          ),
+          GoRoute(
+            path: '/kitchen-menu',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: KitchenMenuScreen()),
+          ),
+          GoRoute(
+            path: '/kitchen-recipes',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: KitchenRecipesScreen()),
+          ),
+          GoRoute(
+            path: '/kitchen-promos',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: KitchenPromosScreen()),
+          ),
+          GoRoute(
+            path: '/kitchen-tables',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: KitchenTablesScreen()),
+          ),
         ],
       ),
     ],
@@ -254,16 +299,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 });
 
 /// Returns the first route the employee has permission to access.
-String _firstPermittedRoute(AuthState authState) {
+String _firstPermittedRoute(AuthState authState, Ref ref) {
+  final isKitchen = ref.read(isKitchenModeProvider);
   final permissions = authState.currentRole?.permissions ?? [];
-  const routeMap = <String, String>{
-    'dashboard': '/dashboard',
-    'sales': '/sales',
+  final routeMap = <String, String>{
+    'dashboard': isKitchen ? '/kitchen-analytics' : '/dashboard',
+    'sales': isKitchen ? '/waiter-terminal' : '/sales',
     'income': '/income',
     'transfer': '/transfer',
     'audit': '/audit',
     'write_offs': '/write-offs',
-    'inventory': '/inventory',
+    'inventory': isKitchen ? '/kitchen-menu' : '/inventory',
     'services': '/services',
     'clients': '/clients',
     'employees': '/employees',
@@ -279,5 +325,5 @@ String _firstPermittedRoute(AuthState authState) {
   for (final perm in permissions) {
     if (routeMap.containsKey(perm)) return routeMap[perm]!;
   }
-  return '/dashboard'; // fallback
+  return isKitchen ? '/kitchen-analytics' : '/dashboard'; // fallback
 }

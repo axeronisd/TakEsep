@@ -22,6 +22,7 @@ class Product extends Equatable {
   final String? imageUrl;
   final bool isPublic; // Added for Delivery app
   final String? b2cDescription; // AkJol-specific description
+  final String productType; // 'retail' | 'dish' | 'ingredient'
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -58,6 +59,7 @@ class Product extends Equatable {
     this.imageUrl,
     this.isPublic = false,
     this.b2cDescription,
+    this.productType = 'retail',
     required this.createdAt,
     required this.updatedAt,
     this.criticalMin,
@@ -126,6 +128,7 @@ class Product extends Equatable {
     String? imageUrl,
     bool? isPublic,
     String? b2cDescription,
+    String? productType,
     DateTime? createdAt,
     DateTime? updatedAt,
     int? criticalMin,
@@ -151,6 +154,7 @@ class Product extends Equatable {
       imageUrl: imageUrl ?? this.imageUrl,
       isPublic: isPublic ?? this.isPublic,
       b2cDescription: b2cDescription ?? this.b2cDescription,
+      productType: productType ?? this.productType,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       criticalMin: criticalMin ?? this.criticalMin,
@@ -190,6 +194,7 @@ class Product extends Equatable {
           ? isPublicValue
           : (isPublicValue as num?)?.toInt() == 1,
       b2cDescription: json['b2c_description'] as String?,
+      productType: json['product_type'] as String? ?? 'retail',
       createdAt: json['created_at'] != null
           ? DateTime.parse(json['created_at'] as String)
           : DateTime.now(),
@@ -223,6 +228,7 @@ class Product extends Equatable {
         'image_url': imageUrl,
         'is_public': isPublic,
         'b2c_description': b2cDescription,
+        'product_type': productType,
         'created_at': createdAt.toIso8601String(),
         'updated_at': updatedAt.toIso8601String(),
         'critical_min': criticalMin,

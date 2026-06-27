@@ -139,7 +139,7 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen> {
                   ),
                 );
               },
-              loading: () => const SliverFillRemaining(
+              loading: () => SliverFillRemaining(
                 child: Center(child: CircularProgressIndicator(color: AkJolTheme.primary)),
               ),
               error: (e, _) => SliverFillRemaining(
@@ -247,7 +247,7 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen> {
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Text(service.category!,
-                              style: const TextStyle(
+                              style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                   color: AkJolTheme.primary)),
@@ -259,7 +259,7 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(service.priceDisplay,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
                             color: AkJolTheme.primary)),
@@ -304,9 +304,9 @@ class _ServicesScreenState extends ConsumerState<ServicesScreen> {
                             imageUrl: service.storeLogoUrl!,
                             fit: BoxFit.cover,
                             errorWidget: (_, __, ___) =>
-                                const Icon(Icons.storefront, color: AkJolTheme.primary),
+                                Icon(Icons.storefront, color: AkJolTheme.primary),
                           )
-                        : const Icon(Icons.storefront, color: AkJolTheme.primary),
+                        : Icon(Icons.storefront, color: AkJolTheme.primary),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -608,7 +608,7 @@ class _ServiceCard extends StatelessWidget {
                               borderRadius: BorderRadius.circular(4),
                             ),
                             child: Text(service.category!,
-                                style: const TextStyle(
+                                style: TextStyle(
                                     fontSize: 10,
                                     fontWeight: FontWeight.w600,
                                     color: AkJolTheme.primary)),
@@ -631,7 +631,7 @@ class _ServiceCard extends StatelessWidget {
 
                     // Price
                     Text(service.priceDisplay,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w700,
                             color: AkJolTheme.primary)),

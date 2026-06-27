@@ -149,7 +149,7 @@ class _AppShell extends ConsumerWidget {
               Navigator.pop(ctx);
               context.push('/login');
             },
-            child: const Text('Войти', style: TextStyle(color: AkJolTheme.primary)),
+            child: Text('Войти', style: TextStyle(color: AkJolTheme.primary)),
           ),
         ],
       ),
@@ -189,7 +189,9 @@ class _FloatingGlassBar extends StatelessWidget {
         Theme.of(context).platform == TargetPlatform.macOS ||
         Theme.of(context).platform == TargetPlatform.linux;
 
-    final containerColor = const Color(0xFF121214).withValues(alpha: 0.85);
+    final containerColor = isDark
+        ? const Color(0xFF121214).withValues(alpha: 0.85)
+        : Colors.white.withValues(alpha: 0.85);
 
     final Widget barContent = Container(
       width: 340,
@@ -198,12 +200,14 @@ class _FloatingGlassBar extends StatelessWidget {
         color: containerColor,
         borderRadius: BorderRadius.circular(28),
         border: Border.all(
-          color: Colors.white.withValues(alpha: isDesktop ? 0.15 : 0.08),
+          color: isDark
+              ? Colors.white.withValues(alpha: isDesktop ? 0.15 : 0.08)
+              : Colors.black.withValues(alpha: isDesktop ? 0.15 : 0.08),
           width: 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.4),
+            color: Colors.black.withValues(alpha: isDark ? 0.4 : 0.1),
             blurRadius: 24,
             offset: const Offset(0, 8),
             spreadRadius: -4,
@@ -301,8 +305,8 @@ class _GlassBtn extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const activeColor = Color(0xFFC2FF1D);
-    const onActiveColor = Color(0xFF0F0F10);
+    final activeColor = isDark ? const Color(0xFFC2FF1D) : Theme.of(context).colorScheme.primary;
+    final onActiveColor = isDark ? const Color(0xFF0F0F10) : Colors.white;
     const inactiveColor = Color(0xFF94A3B8);
 
     final iconColor = isActive ? onActiveColor : inactiveColor;
@@ -353,10 +357,6 @@ class _GlassBtn extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: isActive ? onActiveColor : activeColor,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                            color: isActive ? activeColor : const Color(0xFF1E293B),
-                            width: 1.5,
-                          ),
                         ),
                         constraints: const BoxConstraints(minWidth: 16),
                         child: Text(

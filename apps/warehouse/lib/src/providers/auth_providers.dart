@@ -621,3 +621,22 @@ final currentRoleProvider = Provider<Role?>((ref) {
 final selectedWarehouseIdProvider = Provider<String?>((ref) {
   return ref.watch(authProvider).selectedWarehouseId;
 });
+
+/// Watches the categories associated with a warehouse in SQLite
+final warehouseCategoriesProvider = StreamProvider.family<List<String>, String>((ref, warehouseId) async* {
+  yield* powerSyncDb.watch(
+    'SELECT store_category_id FROM warehouse_store_categories WHERE warehouse_id = ?',
+    parameters: [warehouseId],
+  ).map((rows) => rows.map((r) => r['store_category_id'] as String).toList());
+});
+
+/// True if the currently selected warehouse functions as a Cafe/Restaurant/Kitchen
+final isKitchenModeProvider = Provider<bool>((ref) {
+  final warehouseId = ref.watch(selectedWarehouseIdProvider);
+  if (warehouseId == null) return false;
+  final categoriesAsync = ref.watch(warehouseCategoriesProvider(warehouseId));
+  return categoriesAsync.maybeWhen(
+    data: (list) => list.any((cat) => cat == 'food' || cat == 'cafe' || cat == 'restaurant'),
+    orElse: () => false,
+  );
+});

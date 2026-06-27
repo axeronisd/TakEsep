@@ -306,7 +306,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                                 : null,
                           ),
                           child: logoUrl == null || logoUrl.isEmpty
-                              ? const Icon(Icons.storefront_rounded, color: AkJolTheme.primary, size: 22)
+                              ? Icon(Icons.storefront_rounded, color: AkJolTheme.primary, size: 22)
                               : null,
                         ),
                       ),
@@ -434,7 +434,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                             color: isDark ? const Color(0xFF6E7681) : const Color(0xFF9CA3AF),
                             fontSize: 14,
                           ),
-                          prefixIcon: const Icon(Icons.search_rounded, color: AkJolTheme.primary, size: 20),
+                          prefixIcon: Icon(Icons.search_rounded, color: AkJolTheme.primary, size: 20),
                           suffixIcon: _searchController.text.isNotEmpty
                               ? IconButton(
                                   icon: Icon(Icons.close_rounded, size: 18, color: isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280)),
@@ -489,7 +489,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
 
                               return ListTile(
                                 dense: true,
-                                leading: Icon(icon, color: isStore ? const Color(0xFF2ECC71) : AkJolTheme.primary, size: 18),
+                                leading: Icon(icon, color: isStore ? Color(0xFF2ECC71) : AkJolTheme.primary, size: 18),
                                 title: Text(title, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: isDark ? Colors.white : const Color(0xFF111827))),
                                 subtitle: sub.trim().isNotEmpty
                                     ? Text(sub, style: TextStyle(fontSize: 11, color: isDark ? const Color(0xFF8B949E) : const Color(0xFF6B7280)))
@@ -586,7 +586,7 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                               : null,
                         ),
                         child: logoUrl == null || logoUrl.isEmpty
-                            ? const Icon(Icons.storefront_rounded, color: AkJolTheme.primary, size: 28)
+                            ? Icon(Icons.storefront_rounded, color: AkJolTheme.primary, size: 28)
                             : null,
                       ),
                       const SizedBox(width: 12),

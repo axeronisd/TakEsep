@@ -1,10 +1,29 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class AkJolTheme {
   // ─── Brand Colors ──────────────────────────────
-  static const Color primary = Color(0xFFC2FF1D);       // Сочный неоновый лаймовый (Neon Lime)
-  static const Color primaryDark = Color(0xFF9ECE00);
-  static const Color primaryLight = Color(0xFF166534);  // Премиальный темно-зеленый (Forest Green) для светлой темы
+  static Color get primary {
+    try {
+      return PlatformDispatcher.instance.platformBrightness == Brightness.light
+          ? primaryLight
+          : const Color(0xFFC2FF1D);
+    } catch (_) {
+      return const Color(0xFFC2FF1D);
+    }
+  }
+
+  static Color get primaryDark {
+    try {
+      return PlatformDispatcher.instance.platformBrightness == Brightness.light
+          ? const Color(0xFF1D4ED8) // Darker blue for light theme
+          : const Color(0xFF9ECE00);
+    } catch (_) {
+      return const Color(0xFF9ECE00);
+    }
+  }
+
+  static const Color primaryLight = Color(0xFF3563E9);  // Королевский синий / Индиго (Royal Indigo) для светлой темы
   static const Color accent = Color(0xFFF59E0B);         // Янтарный/Золотой (amber)
   static const Color accentDark = Color(0xFFD97706);
 
@@ -212,7 +231,7 @@ class AkJolTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
         ),
-        side: const BorderSide(color: primary, width: 1.5),
+        side: BorderSide(color: primary, width: 1.5),
         textStyle: const TextStyle(
           fontFamily: 'Inter',
           fontSize: 16,
@@ -235,14 +254,14 @@ class AkJolTheme {
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
-        borderSide: const BorderSide(color: primary, width: 2),
+        borderSide: BorderSide(color: primary, width: 2),
       ),
       errorBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(16),
         borderSide: const BorderSide(color: error, width: 1),
       ),
     ),
-    bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+    bottomNavigationBarTheme: BottomNavigationBarThemeData(
       backgroundColor: _darkSurface,
       selectedItemColor: primary,
       unselectedItemColor: _darkTextTertiary,
@@ -251,7 +270,7 @@ class AkJolTheme {
       selectedLabelStyle: TextStyle(fontFamily: 'Inter', fontSize: 12, fontWeight: FontWeight.w600),
       unselectedLabelStyle: TextStyle(fontFamily: 'Inter', fontSize: 12),
     ),
-    floatingActionButtonTheme: const FloatingActionButtonThemeData(
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
       backgroundColor: primary,
       foregroundColor: Color(0xFF0F0F10),
       elevation: 4,

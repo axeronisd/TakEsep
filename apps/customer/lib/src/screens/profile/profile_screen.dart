@@ -398,7 +398,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const CircularProgressIndicator(color: AkJolTheme.primary),
+              CircularProgressIndicator(color: AkJolTheme.primary),
               const SizedBox(height: 16),
               Text(
                 'Загрузка профиля...',
@@ -586,7 +586,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   padding: const EdgeInsets.only(top: 2),
                   child: Text(
                     '@$username',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 15,
                       color: AkJolTheme.primary,
                       fontWeight: FontWeight.w600,

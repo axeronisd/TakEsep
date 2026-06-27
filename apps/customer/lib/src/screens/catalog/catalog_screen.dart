@@ -134,7 +134,7 @@ class _CatalogScreenState extends ConsumerState<CatalogScreen> {
         ),
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: AkJolTheme.primary))
+          ? Center(child: CircularProgressIndicator(color: AkJolTheme.primary))
           : RefreshIndicator(
               onRefresh: _loadData,
               color: AkJolTheme.primary,
@@ -433,7 +433,7 @@ class _ProductCard extends StatelessWidget {
                     ],
                     const Spacer(),
                     // Цена
-                    Text('${price.toStringAsFixed(0)} сом', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AkJolTheme.primary)),
+                    Text('${price.toStringAsFixed(0)} сом', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: AkJolTheme.primary)),
                     const SizedBox(height: 4),
                     // Магазин + кол-во
                     Row(

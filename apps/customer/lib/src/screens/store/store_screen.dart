@@ -452,7 +452,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
                     ),
                   );
                 },
-                loading: () => const SliverFillRemaining(
+                loading: () => SliverFillRemaining(
                   hasScrollBody: false,
                   child: Center(
                     child: CircularProgressIndicator(color: AkJolTheme.primary),
@@ -466,7 +466,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
             ],
           );
         },
-        loading: () => const Center(
+        loading: () => Center(
           child: CircularProgressIndicator(color: AkJolTheme.primary),
         ),
         error: (_, __) => const Center(child: Text('Ошибка загрузки магазина')),
@@ -730,7 +730,7 @@ class _SelectedCategoryHeader extends StatelessWidget {
             ),
             child: Text(
               '${category.productCount}',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 color: AkJolTheme.primary,
@@ -1075,7 +1075,7 @@ class _StoreHeader extends ConsumerWidget {
       child: Center(
         child: Text(
           name.isNotEmpty ? name[0].toUpperCase() : '?',
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.w800,
             color: AkJolTheme.primary,
@@ -1192,7 +1192,7 @@ class _ProductCard extends ConsumerWidget {
                   // Price tag
                   Text(
                     '${product.b2cPrice.toStringAsFixed(0)} сом',
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w800,
                       color: AkJolTheme.primary,
@@ -1399,7 +1399,7 @@ class _FullWidthAddBtn extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final contentColor = isDark ? const Color(0xFF0F0F10) : AkJolTheme.primaryLight;
+    final contentColor = isDark ? const Color(0xFF0F0F10) : Colors.white;
 
     return GestureDetector(
       onTap: onTap,
@@ -1441,7 +1441,7 @@ class _FullWidthCounter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final contentColor = isDark ? const Color(0xFF0F0F10) : AkJolTheme.primaryLight;
+    final contentColor = isDark ? const Color(0xFF0F0F10) : Colors.white;
 
     return Container(
       width: double.infinity,

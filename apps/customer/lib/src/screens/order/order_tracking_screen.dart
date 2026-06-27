@@ -236,7 +236,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     if (status == 'arrived' && mounted && !_arrivedNotified) {
       _arrivedNotified = true;
       final isDark = Theme.of(context).brightness == Brightness.dark;
-      final snackBarTextColor = isDark ? const Color(0xFF0F0F10) : AkJolTheme.primaryLight;
+      final snackBarTextColor = isDark ? Color(0xFF0F0F10) : AkJolTheme.primaryLight;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -557,7 +557,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: AkJolTheme.primary.withValues(alpha: 0.3)),
               ),
-              child: const Row(
+              child: Row(
                 children: [
                   Icon(Icons.location_on_rounded, color: AkJolTheme.primary, size: 28),
                   SizedBox(width: 10),
@@ -635,7 +635,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.comment_rounded, color: AkJolTheme.primary, size: 20),
+                    Icon(Icons.comment_rounded, color: AkJolTheme.primary, size: 20),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -852,7 +852,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   : null,
             ),
             child: logoUrl == null || logoUrl.isEmpty
-                ? const Icon(Icons.storefront_rounded, color: AkJolTheme.primary, size: 18)
+                ? Icon(Icons.storefront_rounded, color: AkJolTheme.primary, size: 18)
                 : null,
           ),
         ));
@@ -1101,7 +1101,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                 child: InkWell(
                   borderRadius: BorderRadius.circular(20),
                   onTap: _openCourierOnMap,
-                  child: const Padding(
+                  child: Padding(
                     padding: EdgeInsets.all(8),
                     child: Icon(Icons.open_in_new,
                         size: 18, color: AkJolTheme.primary),
@@ -1251,7 +1251,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
     final qrImageUrl = courier?['qr_url'] as String?;
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final buttonContentColor = isDark ? const Color(0xFF0F0F10) : AkJolTheme.primaryLight;
+    final buttonContentColor = isDark ? const Color(0xFF0F0F10) : Colors.white;
 
     return Container(
       margin: const EdgeInsets.only(top: 12),
@@ -1279,7 +1279,7 @@ class _OrderTrackingScreenState extends State<OrderTrackingScreen> {
                   color: AkJolTheme.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.account_balance_wallet_rounded,
+                child: Icon(Icons.account_balance_wallet_rounded,
                     color: AkJolTheme.primary, size: 24),
               ),
               const SizedBox(width: 12),

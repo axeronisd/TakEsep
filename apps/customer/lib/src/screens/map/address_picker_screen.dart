@@ -649,7 +649,7 @@ class _AddressPickerScreenState extends ConsumerState<AddressPickerScreen> {
                       final item = _searchResults[idx];
                       return ListTile(
                         dense: true,
-                        leading: const Icon(
+                        leading: Icon(
                           Icons.location_on_rounded,
                           color: AkJolTheme.primary,
                           size: 18,

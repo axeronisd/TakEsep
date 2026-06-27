@@ -240,7 +240,7 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.phone_rounded, color: AkJolTheme.primary),
+            icon: Icon(Icons.phone_rounded, color: AkJolTheme.primary),
             onPressed: _callRecipient,
           ),
         ],
@@ -249,7 +249,7 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
         children: [
           // Messages / empty state
           _loading
-              ? const Center(
+              ? Center(
                   child: CircularProgressIndicator(color: AkJolTheme.primary),
                 )
               : _messages.isEmpty
@@ -358,7 +358,7 @@ class _OrderChatScreenState extends State<OrderChatScreen> {
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w500,
-                                    color: isDark ? const Color(0xFFE2E8F0) : AkJolTheme.primary,
+                                    color: isDark ? Color(0xFFE2E8F0) : AkJolTheme.primary,
                                   ),
                                 ),
                                 backgroundColor: isDark

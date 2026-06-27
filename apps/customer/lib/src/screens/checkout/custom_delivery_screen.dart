@@ -1089,7 +1089,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                 : null,
                           ),
                           child: logoUrl == null || logoUrl.isEmpty
-                              ? const Icon(Icons.storefront_rounded, color: AkJolTheme.primary, size: 18)
+                              ? Icon(Icons.storefront_rounded, color: AkJolTheme.primary, size: 18)
                               : null,
                         ),
                       ),
@@ -1115,7 +1115,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
           if (_loadingRoute)
             Container(
               color: Colors.black.withValues(alpha: 0.2),
-              child: const Center(
+              child: Center(
                 child: CircularProgressIndicator(color: AkJolTheme.primary),
               ),
             ),
@@ -1274,7 +1274,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
         return ListTile(
           dense: true,
           contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-          leading: const Icon(Icons.location_on_rounded, color: AkJolTheme.primary, size: 18),
+          leading: Icon(Icons.location_on_rounded, color: AkJolTheme.primary, size: 18),
           title: Text(
             suggestion['full_label'] ?? '',
             style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: text),
@@ -1624,7 +1624,8 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
 
     final bikeFee = _calculateTempFee('bicycle');
     final scooterFee = _calculateTempFee('scooter');
-    const brandPrimary = AkJolTheme.primary; // Neon green in both themes
+    final primaryColor = Theme.of(context).colorScheme.primary;
+    final brandPrimary = AkJolTheme.primary;
     
     // Light grey for transport cards in light theme for better contrast against white bottom sheet
     final transportCardBg = isDark ? const Color(0xFF121214) : const Color(0xFFF1F5F9);
@@ -1771,7 +1772,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                       fontSize: 10,
                                       fontWeight: FontWeight.w800,
                                       color: bikeSelected
-                                          ? (isDark ? const Color(0xFF0F0F10) : AkJolTheme.primaryLight)
+                                          ? (isDark ? Color(0xFF0F0F10) : AkJolTheme.primaryLight)
                                           : muted,
                                     ),
                                   ),
@@ -1787,7 +1788,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                       fontSize: 12,
                                       fontWeight: FontWeight.w800,
                                       color: bikeSelected
-                                          ? (isDark ? const Color(0xFF0F0F10) : AkJolTheme.primaryLight)
+                                          ? Theme.of(context).colorScheme.onPrimary
                                           : text,
                                     ),
                                     maxLines: 1,
@@ -1800,7 +1801,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                       fontSize: 15,
                                       fontWeight: FontWeight.w900,
                                       color: bikeSelected
-                                          ? (isDark ? const Color(0xFF0F0F10) : AkJolTheme.primaryLight)
+                                          ? Theme.of(context).colorScheme.onPrimary
                                           : text,
                                     ),
                                   ),
@@ -1941,7 +1942,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                       fontSize: 10,
                                       fontWeight: FontWeight.w800,
                                       color: scooterSelected
-                                          ? (isDark ? const Color(0xFF0F0F10) : AkJolTheme.primaryLight)
+                                          ? (isDark ? Color(0xFF0F0F10) : AkJolTheme.primaryLight)
                                           : muted,
                                     ),
                                   ),
@@ -1957,7 +1958,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                       fontSize: 12,
                                       fontWeight: FontWeight.w800,
                                       color: scooterSelected
-                                          ? (isDark ? const Color(0xFF0F0F10) : AkJolTheme.primaryLight)
+                                          ? Theme.of(context).colorScheme.onPrimary
                                           : text,
                                     ),
                                     maxLines: 1,
@@ -1970,7 +1971,7 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
                                       fontSize: 15,
                                       fontWeight: FontWeight.w900,
                                       color: scooterSelected
-                                          ? (isDark ? const Color(0xFF0F0F10) : AkJolTheme.primaryLight)
+                                          ? Theme.of(context).colorScheme.onPrimary
                                           : text,
                                     ),
                                   ),
@@ -2338,8 +2339,8 @@ class _CustomDeliveryScreenState extends ConsumerState<CustomDeliveryScreen> {
         : (isDark ? const Color(0xFF475569) : const Color(0xFF94A3B8));
 
     final gradientColors = isDark
-        ? const [AkJolTheme.primary, AkJolTheme.primaryDark]
-        : const [AkJolTheme.primaryLight, Color(0xFF10B981)];
+        ? [AkJolTheme.primary, AkJolTheme.primaryDark]
+        : [AkJolTheme.primaryLight, Color(0xFF10B981)];
 
     return Row(
       children: [

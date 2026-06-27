@@ -434,7 +434,7 @@ class SearchProductCard extends StatelessWidget {
     return Center(
       child: Text(
         name.isNotEmpty ? name[0].toUpperCase() : '?',
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w800,
           color: AkJolTheme.primary,
@@ -695,7 +695,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       ),
                     );
                   },
-                  loading: () => const SliverToBoxAdapter(
+                  loading: () => SliverToBoxAdapter(
                     child: Center(
                       child: Padding(
                         padding: EdgeInsets.all(40),
