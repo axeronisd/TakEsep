@@ -631,12 +631,49 @@ final warehouseCategoriesProvider = StreamProvider.family<List<String>, String>(
 });
 
 /// True if the currently selected warehouse functions as a Cafe/Restaurant/Kitchen
-final isKitchenModeProvider = Provider<bool>((ref) {
-  final warehouseId = ref.watch(selectedWarehouseIdProvider);
-  if (warehouseId == null) return false;
-  final categoriesAsync = ref.watch(warehouseCategoriesProvider(warehouseId));
-  return categoriesAsync.maybeWhen(
-    data: (list) => list.any((cat) => cat == 'food' || cat == 'cafe' || cat == 'restaurant'),
-    orElse: () => false,
-  );
-});
+class KitchenModeNotifier extends Notifier<bool> {
+  @override
+  bool build() {
+    final warehouseId = ref.watch(selectedWarehouseIdProvider);
+    if (warehouseId == null) return false;
+
+    // 1. Listen to the SQLite provider
+    ref.listen(warehouseCategoriesProvider(warehouseId), (previous, next) {
+      next.whenData((list) {
+        final hasKitchenCat = list.any((cat) => cat == 'food' || cat == 'cafe' || cat == 'restaurant');
+        if (hasKitchenCat != state) {
+          state = hasKitchenCat;
+        }
+      });
+    });
+
+    // 2. Trigger an async fetch from Supabase directly as a fallback/real-time override
+    _fetchDirect(warehouseId);
+
+    // Initial state check from SQLite if data is already loaded
+    final categoriesAsync = ref.read(warehouseCategoriesProvider(warehouseId));
+    return categoriesAsync.maybeWhen(
+      data: (list) => list.any((cat) => cat == 'food' || cat == 'cafe' || cat == 'restaurant'),
+      orElse: () => false,
+    );
+  }
+
+  Future<void> _fetchDirect(String warehouseId) async {
+    try {
+      final response = await Supabase.instance.client
+          .from('warehouse_store_categories')
+          .select('store_category_id')
+          .eq('warehouse_id', warehouseId);
+      
+      final list = (response as List).map((c) => c['store_category_id'] as String).toList();
+      final hasKitchenCat = list.any((cat) => cat == 'food' || cat == 'cafe' || cat == 'restaurant');
+      if (hasKitchenCat != state) {
+        state = hasKitchenCat;
+      }
+    } catch (_) {
+      // Quiet fail to fallback on SQLite
+    }
+  }
+}
+
+final isKitchenModeProvider = NotifierProvider<KitchenModeNotifier, bool>(KitchenModeNotifier.new);
