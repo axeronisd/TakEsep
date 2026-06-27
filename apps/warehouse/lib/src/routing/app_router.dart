@@ -73,6 +73,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return _firstPermittedRoute(authState, ref);
       }
 
+      // Dynamic workspace redirects based on Kitchen/Retail mode
+      final location = state.matchedLocation;
+      final isKitchen = ref.read(isKitchenModeProvider);
+      if (isKitchen) {
+        if (location == '/dashboard') return '/kitchen-analytics';
+        if (location == '/sales') return '/waiter-terminal';
+        if (location == '/inventory') return '/kitchen-menu';
+      } else {
+        if (location == '/kitchen-analytics') return '/dashboard';
+        if (location == '/waiter-terminal') return '/sales';
+        if (location == '/kitchen-menu') return '/inventory';
+      }
+
       // Route-level permission guards
       const routeToPermission = <String, String>{
         '/dashboard': 'dashboard',
@@ -102,7 +115,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         '/settings': 'settings',
       };
 
-      final location = state.matchedLocation;
       if (routeToPermission.containsKey(location)) {
         final requiredPerm = routeToPermission[location]!;
         if (!authState.hasPermission(requiredPerm)) {
