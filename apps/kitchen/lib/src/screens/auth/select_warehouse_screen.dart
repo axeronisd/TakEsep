@@ -212,7 +212,7 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
                               Builder(builder: (context) {
                                 final isMobile = MediaQuery.of(context).size.width < 600;
                                 return Text(
-                                  'Выберите склад',
+                                  'Выберите заведение',
                                   style: (isMobile ? AppTypography.headlineSmall : AppTypography.headlineMedium).copyWith(
                                     color: cs.onSurface,
                                     fontWeight: FontWeight.w700,
@@ -272,13 +272,13 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
                                     runSpacing: 8,
                                     children: [
                                       _ActionChip(
-                                        label: 'Склад',
+                                        label: 'Заведение',
                                         icon: Icons.add_rounded,
                                         color: AppColors.primary,
                                         onTap: () => _showCreateWarehouseDialog(context, ref),
                                       ),
                                       _ActionChip(
-                                        label: 'Группа',
+                                        label: 'Сеть',
                                         icon: Icons.create_new_folder_outlined,
                                         color: cs.onSurface.withValues(alpha: 0.6),
                                         onTap: () => _showCreateGroupDialog(context, ref),
@@ -301,7 +301,7 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
                                           onPressed: () =>
                                               _showCreateWarehouseDialog(context, ref),
                                           icon: const Icon(Icons.add_rounded, size: 18),
-                                          label: const Text('Склад'),
+                                          label: const Text('Заведение'),
                                           style: OutlinedButton.styleFrom(
                                             foregroundColor: AppColors.primary,
                                             side: BorderSide(
@@ -325,7 +325,7 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
                                           onPressed: () =>
                                               _showCreateGroupDialog(context, ref),
                                           icon: const Icon(Icons.create_new_folder_outlined, size: 18),
-                                          label: const Text('Группа'),
+                                          label: const Text('Сеть'),
                                           style: OutlinedButton.styleFrom(
                                             foregroundColor: cs.onSurface.withValues(alpha: 0.6),
                                             side: BorderSide(
@@ -400,18 +400,18 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
   Widget _buildOnboarding(ColorScheme cs) {
     const steps = <_OnboardingStep>[
       _OnboardingStep(
-        icon: Icons.folder_rounded,
-        title: 'Группа складов',
-        desc: 'Группа — это изолированная единица.\n'
-            'У каждой группы свой учёт, аналитика\n'
-            'и движение товаров.',
+        icon: Icons.folder_special_rounded,
+        title: 'Сеть заведений',
+        desc: 'Сеть объединяет заведения одного бренда.\n'
+            'У каждой сети свои настройки, меню,\n'
+            'аналитика и движение товаров.',
         color: Color(0xFF7C5CE0),
       ),
       _OnboardingStep(
-        icon: Icons.store_rounded,
-        title: 'Склады',
-        desc: 'Склад — физическая точка хранения.\n'
-            'Склады создаются внутри группы.\n'
+        icon: Icons.restaurant_rounded,
+        title: 'Заведения',
+        desc: 'Заведение — физическое кафе или ресторан.\n'
+            'Они создаются внутри сети.\n'
             'Перемещайте товары между ними.',
         color: AppColors.primary,
       ),
@@ -1215,7 +1215,7 @@ class _WarehouseList extends ConsumerWidget {
                   padding: const EdgeInsets.only(
                       bottom: 12, left: 4),
                   child: Text(
-                    'Нет складов в этой группе',
+                    'Нет заведений в этой сети',
                     style: AppTypography.bodySmall.copyWith(
                       color: cs.onSurface.withValues(alpha: 0.3),
                       fontStyle: FontStyle.italic,
@@ -1254,12 +1254,12 @@ class _WarehouseList extends ConsumerWidget {
             color: cs.surfaceContainerHighest.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(16),
           ),
-          child: Icon(Icons.store_mall_directory_outlined,
+          child: Icon(Icons.restaurant_rounded,
               size: 32, color: cs.onSurface.withValues(alpha: 0.25)),
         ),
         const SizedBox(height: 16),
         Text(
-          'Нет доступных складов',
+          'Нет доступных заведений',
           style: AppTypography.bodyMedium.copyWith(
             color: cs.onSurface.withValues(alpha: 0.5),
             fontWeight: FontWeight.w500,
@@ -1267,7 +1267,7 @@ class _WarehouseList extends ConsumerWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          'Создайте группу и первый склад',
+          'Создайте сеть и первое заведение',
           style: AppTypography.bodySmall.copyWith(
             color: cs.onSurface.withValues(alpha: 0.3),
           ),
@@ -1624,7 +1624,7 @@ class _WarehouseCardState extends ConsumerState<_WarehouseCard> {
             child: const Icon(Icons.edit_rounded, color: AppColors.primary, size: 20),
           ),
           const SizedBox(width: 12),
-          Text('Переименовать склад',
+          Text('Переименовать заведение',
               style: AppTypography.headlineSmall.copyWith(fontWeight: FontWeight.w600)),
         ]),
         content: SizedBox(
@@ -1656,7 +1656,7 @@ class _WarehouseCardState extends ConsumerState<_WarehouseCard> {
                 if (ctx.mounted) Navigator.pop(ctx);
                 ref.invalidate(_localWarehousesProvider);
                 if (context.mounted) {
-                  showInfoSnackBar(context, ref, 'Склад переименован в "$newName"');
+                  showInfoSnackBar(context, ref, 'Заведение переименовано в "$newName"');
                 }
               } catch (e) {
                 if (ctx.mounted) showErrorSnackBar(ctx, 'Ошибка: $e');
@@ -1696,7 +1696,7 @@ class _WarehouseCardState extends ConsumerState<_WarehouseCard> {
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: Text('Переместить в группу',
+                child: Text('Переместить в сеть',
                     style: AppTypography.headlineSmall.copyWith(fontWeight: FontWeight.w600)),
               ),
             ]),
@@ -1705,14 +1705,14 @@ class _WarehouseCardState extends ConsumerState<_WarehouseCard> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Склад: ${widget.warehouse.name}',
+                  Text('Заведение: ${widget.warehouse.name}',
                       style: AppTypography.bodyMedium.copyWith(
                           color: cs.onSurface.withValues(alpha: 0.6))),
                   const SizedBox(height: 16),
                   if (groups.isEmpty)
                     Padding(
                       padding: const EdgeInsets.all(16),
-                      child: Text('Нет доступных групп. Создайте группу.',
+                      child: Text('Нет доступных сетей. Создайте сеть.',
                           style: TextStyle(color: cs.onSurface.withValues(alpha: 0.4))),
                     )
                   else
@@ -1749,7 +1749,7 @@ class _WarehouseCardState extends ConsumerState<_WarehouseCard> {
                     ref.invalidate(_warehouseGroupsProvider);
                     final groupName = groups.firstWhere((g) => g.id == selectedGroupId).name;
                     if (context.mounted) {
-                      showInfoSnackBar(context, ref, 'Склад перемещён в "$groupName"');
+                      showInfoSnackBar(context, ref, 'Заведение перемещено в "$groupName"');
                     }
                   } catch (e) {
                     if (ctx.mounted) showErrorSnackBar(ctx, 'Ошибка: $e');
@@ -1775,7 +1775,7 @@ class _WarehouseCardState extends ConsumerState<_WarehouseCard> {
       ref.invalidate(_localWarehousesProvider);
       ref.invalidate(_warehouseGroupsProvider);
       if (context.mounted) {
-        showInfoSnackBar(context, ref, 'Склад "${widget.warehouse.name}" убран из группы');
+        showInfoSnackBar(context, ref, 'Заведение "${widget.warehouse.name}" убрано из сети');
       }
     } catch (e) {
       if (context.mounted) showErrorSnackBar(context, 'Ошибка: $e');
