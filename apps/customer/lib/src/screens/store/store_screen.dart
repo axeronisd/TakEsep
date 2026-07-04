@@ -255,7 +255,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
                     ),
                     child: Row(
                       children: [
-                        const Icon(Icons.deck_rounded, color: AkJolTheme.primary, size: 20),
+                        Icon(Icons.deck_rounded, color: AkJolTheme.primary, size: 20),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Column(
