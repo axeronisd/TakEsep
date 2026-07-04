@@ -88,6 +88,7 @@ class CartState {
   final double? deliveryLat;
   final double? deliveryLng;
   final String? customerNote;
+  final String? tableId;
 
   const CartState({
     this.warehouseId,
@@ -98,6 +99,7 @@ class CartState {
     this.deliveryLat,
     this.deliveryLng,
     this.customerNote,
+    this.tableId,
   });
 
   double get itemsTotal => items.fold(0, (sum, item) => sum + item.total);
@@ -121,6 +123,7 @@ class CartState {
     double? deliveryLat,
     double? deliveryLng,
     String? customerNote,
+    String? tableId,
   }) => CartState(
     warehouseId: warehouseId ?? this.warehouseId,
     warehouseName: warehouseName ?? this.warehouseName,
@@ -130,6 +133,7 @@ class CartState {
     deliveryLat: deliveryLat ?? this.deliveryLat,
     deliveryLng: deliveryLng ?? this.deliveryLng,
     customerNote: customerNote ?? this.customerNote,
+    tableId: tableId ?? this.tableId,
   );
 }
 
@@ -253,6 +257,11 @@ class CartNotifier extends StateNotifier<CartState> {
   /// Заметка
   void setNote(String note) {
     state = state.copyWith(customerNote: note);
+  }
+
+  /// Установить ID стола
+  void setTableId(String? tableId) {
+    state = state.copyWith(tableId: tableId);
   }
 
   /// Очистить корзину

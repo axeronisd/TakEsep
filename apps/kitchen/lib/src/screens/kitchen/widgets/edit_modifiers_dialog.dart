@@ -199,12 +199,6 @@ class _EditModifiersDialogState extends State<EditModifiersDialog> {
                   ),
                 ),
                 IconButton(
-                  icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
-                  color: AppColors.primary,
-                  onPressed: () => _addItem(gId),
-                  tooltip: 'Добавить опцию',
-                ),
-                IconButton(
                   icon: const Icon(Icons.delete_outline_rounded, size: 20),
                   color: AppColors.error,
                   onPressed: () => _deleteGroup(gId),
@@ -218,9 +212,9 @@ class _EditModifiersDialogState extends State<EditModifiersDialog> {
           // Items List
           if (items.isEmpty)
             Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg, horizontal: AppSpacing.md),
               child: Text(
-                'Нет опций в этой группе. Нажмите "+" для добавления.',
+                'В этой группе пока нет опций.',
                 style: AppTypography.bodySmall.copyWith(color: cs.onSurface.withValues(alpha: 0.4)),
                 textAlign: TextAlign.center,
               ),
@@ -266,6 +260,21 @@ class _EditModifiersDialogState extends State<EditModifiersDialog> {
                 );
               },
             ),
+          
+          const Divider(height: 1),
+          // Prominent Add Option Button at bottom of group card
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextButton.icon(
+              onPressed: () => _addItem(gId),
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('Добавить вариант (например, сыр, соус...)'),
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -275,62 +284,104 @@ class _EditModifiersDialogState extends State<EditModifiersDialog> {
     final min = group['min_selections'] as int? ?? 0;
     final max = group['max_selections'] as int? ?? 1;
     if (min > 0) {
-      return 'Обязательно: от $min до $max позиций';
+      if (max > 1) {
+        return 'Обязательно: выбрать от $min до $max опций';
+      }
+      return 'Обязательный выбор одной опции';
     }
-    return 'Необязательно: до $max позиций';
+    if (max > 1) {
+      return 'Необязательно: можно выбрать до $max опций';
+    }
+    return 'Необязательно: выбор одной опции';
   }
 
   // ─── Controller Actions ─────────────────────────────────────
 
   Future<void> _addGroup() async {
     final nameCtrl = TextEditingController();
-    final minCtrl = TextEditingController(text: '0');
-    final maxCtrl = TextEditingController(text: '1');
+    bool isRequired = false;
+    bool isMultiple = false;
+    final maxCtrl = TextEditingController(text: '5');
 
     final result = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Новая группа модификаторов'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Название (например: Выберите соус)')),
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: minCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Мин. выбора'),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) {
+          return AlertDialog(
+            title: const Text('Новая группа модификаторов'),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Название группы',
+                      hintText: 'Например: Выберите соус, Добавки к пицце',
+                      prefixIcon: Icon(Icons.label_outline_rounded),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: TextField(
-                    controller: maxCtrl,
-                    keyboardType: TextInputType.number,
-                    decoration: const InputDecoration(labelText: 'Макс. выбора'),
+                  const SizedBox(height: 16),
+                  
+                  // Required Switch
+                  SwitchListTile(
+                    title: const Text('Обязательный выбор', style: TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: const Text('Покупатель обязан выбрать хотя бы одну опцию'),
+                    value: isRequired,
+                    activeColor: AppColors.primary,
+                    contentPadding: EdgeInsets.zero,
+                    onChanged: (val) {
+                      setDialogState(() => isRequired = val);
+                    },
                   ),
-                ),
-              ],
+                  const Divider(),
+                  
+                  // Multiple Switch
+                  SwitchListTile(
+                    title: const Text('Множественный выбор', style: TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: const Text('Покупатель может выбрать более одной опции'),
+                    value: isMultiple,
+                    activeColor: AppColors.primary,
+                    contentPadding: EdgeInsets.zero,
+                    onChanged: (val) {
+                      setDialogState(() => isMultiple = val);
+                    },
+                  ),
+                  
+                  if (isMultiple) ...[
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: maxCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Максимальное количество опций',
+                        hintText: 'Обычно от 2 до 10',
+                        prefixIcon: Icon(Icons.pin_outlined),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
-          ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
-            child: const Text('Создать'),
-          ),
-        ],
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+                child: const Text('Создать'),
+              ),
+            ],
+          );
+        },
       ),
     );
 
     if (result == true && nameCtrl.text.trim().isNotEmpty) {
       final name = nameCtrl.text.trim();
-      final min = int.tryParse(minCtrl.text) ?? 0;
-      final max = int.tryParse(maxCtrl.text) ?? 1;
+      final min = isRequired ? 1 : 0;
+      final max = isMultiple ? (int.tryParse(maxCtrl.text) ?? 5) : 1;
 
       final id = const Uuid().v4();
       final now = DateTime.now().toIso8601String();
@@ -338,15 +389,16 @@ class _EditModifiersDialogState extends State<EditModifiersDialog> {
 
       try {
         await powerSyncDb.execute(
-          '''INSERT INTO product_modifier_groups (id, product_id, name, min_selections, max_selections, sort_order, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?)''',
-          [id, widget.dish.id, name, min, max, sortOrder, now],
+          '''INSERT INTO product_modifier_groups (id, product_id, name, type, min_selections, max_selections, sort_order, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+          [id, widget.dish.id, name, 'choice', min, max, sortOrder, now],
         );
 
         await SupabaseSync.upsert('product_modifier_groups', {
           'id': id,
           'product_id': widget.dish.id,
           'name': name,
+          'type': 'choice',
           'min_selections': min,
           'max_selections': max,
           'sort_order': sortOrder,
@@ -394,28 +446,43 @@ class _EditModifiersDialogState extends State<EditModifiersDialog> {
 
     final result = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Добавить опцию'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Название (например: Сырный соус)')),
-            TextField(
-              controller: priceCtrl,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'Наценка (сом)'),
+      builder: (ctx) {
+        return AlertDialog(
+          title: const Text('Добавить вариант (модификатор)'),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Название опции',
+                  hintText: 'Например: Сырный соус, С двойным сыром',
+                  prefixIcon: Icon(Icons.restaurant_menu_rounded),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: priceCtrl,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(
+                  labelText: 'Стоимость / Наценка (сом)',
+                  hintText: 'Оставьте 0, если опция бесплатная',
+                  prefixIcon: Icon(Icons.attach_money_rounded),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
+              child: const Text('Добавить'),
             ),
           ],
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Отмена')),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
-            child: const Text('Добавить'),
-          ),
-        ],
-      ),
+        );
+      },
     );
 
     if (result == true && nameCtrl.text.trim().isNotEmpty) {

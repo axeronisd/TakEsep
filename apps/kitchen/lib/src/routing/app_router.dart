@@ -26,6 +26,7 @@ import '../screens/delivery/delivery_analytics_screen.dart';
 import '../screens/delivery/akjol_catalog_screen.dart';
 import '../screens/delivery/delivery_zones_screen.dart';
 import '../screens/kitchen/kitchen_screens.dart';
+import '../screens/analytics/personal_analytics_screen.dart';
 import 'app_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -77,11 +78,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Dynamic workspace redirects based on Kitchen/Retail mode
       final location = state.matchedLocation;
       if (isKitchen) {
-        if (location == '/dashboard') return '/kitchen-analytics';
-        if (location == '/sales') return '/waiter-terminal';
+        if (location == '/waiter-terminal') return '/sales';
         if (location == '/inventory') return '/kitchen-menu';
       } else {
-        if (location == '/kitchen-analytics') return '/dashboard';
         if (location == '/waiter-terminal') return '/sales';
         if (location == '/kitchen-menu') return '/inventory';
       }
@@ -89,10 +88,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       // Route-level permission guards
       const routeToPermission = <String, String>{
         '/dashboard': 'dashboard',
-        '/kitchen-analytics': 'dashboard',
+        '/personal-analytics': 'sales',
         '/sales': 'sales',
         '/waiter-terminal': 'sales',
         '/kitchen-kds': 'sales',
+        '/bar-kds': 'sales',
         '/income': 'income',
         '/transfer': 'transfer',
         '/audit': 'audit',
@@ -148,6 +148,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: '/dashboard',
             pageBuilder: (context, state) =>
                 const NoTransitionPage(child: DashboardScreen()),
+          ),
+          GoRoute(
+            path: '/personal-analytics',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: PersonalAnalyticsScreen()),
           ),
           GoRoute(
             path: '/sales',
@@ -270,11 +275,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 
           // ─── Кухня / Ресторан ─────────────────
           GoRoute(
-            path: '/kitchen-analytics',
-            pageBuilder: (context, state) =>
-                const NoTransitionPage(child: KitchenAnalyticsScreen()),
-          ),
-          GoRoute(
             path: '/waiter-terminal',
             pageBuilder: (context, state) =>
                 const NoTransitionPage(child: WaiterTerminalScreen()),
@@ -283,6 +283,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: '/kitchen-kds',
             pageBuilder: (context, state) =>
                 const NoTransitionPage(child: KitchenKdsScreen()),
+          ),
+          GoRoute(
+            path: '/bar-kds',
+            pageBuilder: (context, state) =>
+                const NoTransitionPage(child: BarKdsScreen()),
           ),
           GoRoute(
             path: '/kitchen-menu',
@@ -302,7 +307,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(
             path: '/kitchen-tables',
             pageBuilder: (context, state) =>
-                const NoTransitionPage(child: KitchenTablesScreen()),
+                const NoTransitionPage(child: TableDesignerScreen()),
           ),
         ],
       ),
@@ -314,8 +319,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
 String _firstPermittedRoute(AuthState authState, bool isKitchen) {
   final permissions = authState.currentRole?.permissions ?? [];
   final routeMap = <String, String>{
-    'dashboard': isKitchen ? '/kitchen-analytics' : '/dashboard',
-    'sales': isKitchen ? '/waiter-terminal' : '/sales',
+    'dashboard': '/dashboard',
+    'sales': '/sales',
     'income': '/income',
     'transfer': '/transfer',
     'audit': '/audit',
@@ -336,5 +341,5 @@ String _firstPermittedRoute(AuthState authState, bool isKitchen) {
   for (final perm in permissions) {
     if (routeMap.containsKey(perm)) return routeMap[perm]!;
   }
-  return isKitchen ? '/kitchen-analytics' : '/dashboard'; // fallback
+  return '/dashboard'; // fallback
 }

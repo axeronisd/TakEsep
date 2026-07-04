@@ -11,6 +11,7 @@ import '../../providers/location_provider.dart';
 import '../../providers/marketplace_provider.dart';
 import 'package:latlong2/latlong.dart';
 import 'modifier_sheet.dart';
+import 'widgets/table_scanner_dialog.dart';
 
 // ═══════════════════════════════════════════════════════════════
 //  SMART SEARCH HELPER — fuzzy + transliteration
@@ -152,7 +153,8 @@ class _SmartSearch {
 
 class StoreScreen extends ConsumerStatefulWidget {
   final String storeId;
-  const StoreScreen({super.key, required this.storeId});
+  final String? tableId;
+  const StoreScreen({super.key, required this.storeId, this.tableId});
 
   @override
   ConsumerState<StoreScreen> createState() => _StoreScreenState();
@@ -162,6 +164,16 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
   String _searchQuery = '';
   final _searchController = TextEditingController();
   final _searchFocusNode = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (widget.tableId != null) {
+        ref.read(cartProvider.notifier).setTableId(widget.tableId);
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -177,6 +189,7 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
     final categoriesAsync = ref.watch(storeProductCategoriesProvider(storeId));
     final productsAsync = ref.watch(storeProductsProvider(storeId));
     final selectedCat = ref.watch(selectedProductCategoryProvider(storeId));
+    final cart = ref.watch(cartProvider);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -228,6 +241,58 @@ class _StoreScreenState extends ConsumerState<StoreScreen> {
             slivers: [
               // ── 1. Store Header ──
               _StoreHeader(store: store, isDark: isDark),
+
+              // ── 1.1 Active Table Banner ──
+              if (cart.tableId != null)
+                SliverToBoxAdapter(
+                  child: Container(
+                    margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: AkJolTheme.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: AkJolTheme.primary.withValues(alpha: 0.2)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.deck_rounded, color: AkJolTheme.primary, size: 20),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Вы за столом в заведении',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold,
+                                  color: isDark ? Colors.white : const Color(0xFF111827),
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                'ID стола: ${cart.tableId}',
+                                style: const TextStyle(fontSize: 11, color: AkJolTheme.textTertiary),
+                              ),
+                            ],
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            ref.read(cartProvider.notifier).setTableId(null);
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: AkJolTheme.error,
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text('Сбросить', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
 
               // ── 1.2 Store Description / Info Panel below banner ──
               if (store.description != null && store.description!.trim().isNotEmpty)
@@ -889,6 +954,75 @@ class _StoreHeader extends ConsumerWidget {
           ),
         ),
       ),
+      actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: ClipOval(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+              child: GestureDetector(
+                onTap: () async {
+                  final scannedValue = await openTableScanner(context);
+                  if (scannedValue != null) {
+                    try {
+                      final uri = Uri.parse(scannedValue);
+                      final tableId = uri.queryParameters['tableId'];
+                      if (tableId != null && tableId.isNotEmpty) {
+                        ref.read(cartProvider.notifier).setTableId(tableId);
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Стол успешно привязан!'),
+                              backgroundColor: AkJolTheme.success,
+                            ),
+                          );
+                        }
+                      } else {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Неверный формат QR-кода стола'),
+                              backgroundColor: AkJolTheme.error,
+                            ),
+                          );
+                        }
+                      }
+                    } catch (e) {
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('Ошибка привязки стола: $e'),
+                            backgroundColor: AkJolTheme.error,
+                          ),
+                        );
+                      }
+                    }
+                  }
+                },
+                child: Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withValues(alpha: 0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.qr_code_scanner_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
       flexibleSpace: FlexibleSpaceBar(
         background: Stack(
           fit: StackFit.expand,

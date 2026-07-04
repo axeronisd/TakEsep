@@ -329,4 +329,33 @@ const schema = Schema([
     Column.real('quantity_required'),
     Column.text('created_at'),
   ]),
+  // ─── Kitchen Dining Tables ─────────────────────────────────
+  Table('kitchen_tables', [
+    Column.text('warehouse_id'),
+    Column.text('name'),
+    Column.text('status'),
+    Column.text('created_at'),
+    Column.text('updated_at'),
+  ]),
+  // ─── Kitchen Active/Closed Orders ──────────────────────────
+  Table('kitchen_orders', [
+    Column.text('table_id'),
+    Column.text('warehouse_id'),
+    Column.text('waiter_id'),
+    Column.text('status'),
+    Column.real('service_charge_percent'),
+    Column.real('total_amount'),
+    Column.text('created_at'),
+    Column.text('updated_at'),
+  ]),
+  // ─── Kitchen Order Items ───────────────────────────────────
+  Table('kitchen_order_items', [
+    Column.text('order_id'),
+    Column.text('product_id'),
+    Column.real('quantity'),
+    Column.text('comment'),
+    Column.text('status'),
+    Column.real('price'),
+    Column.text('created_at'),
+  ]),
 ]);

@@ -128,6 +128,10 @@ class InventoryNotifier extends StateNotifier<AsyncValue<List<Product>>> {
   InventoryNotifier(this.ref) : super(const AsyncValue.loading()) {
     _loadProducts();
     _setupRealtimeSubscription();
+    
+    ref.listen<bool>(isKitchenModeProvider, (prev, next) {
+      _loadProducts();
+    });
   }
 
   @override
@@ -172,8 +176,12 @@ class InventoryNotifier extends StateNotifier<AsyncValue<List<Product>>> {
         state = const AsyncValue.loading();
       }
       final repo = ref.read(inventoryRepositoryProvider);
-      final products =
+      var products =
           await repo.getProducts(companyId, warehouseId: warehouseId);
+      final isKitchen = ref.read(isKitchenModeProvider);
+      if (isKitchen) {
+        products = products.where((p) => p.productType != 'dish').toList();
+      }
       if (mounted) state = AsyncValue.data(products);
     } catch (e, st) {
       // Don't crash on error, keep existing data if available

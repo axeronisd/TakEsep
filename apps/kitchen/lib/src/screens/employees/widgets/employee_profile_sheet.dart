@@ -7,6 +7,7 @@ import '../../../providers/inventory_providers.dart';
 import '../../../providers/currency_provider.dart';
 import '../../../providers/auth_providers.dart';
 import '../../../providers/dashboard_providers.dart';
+import '../../../providers/kitchen_direct_providers.dart';
 import 'edit_employee_sheet.dart';
 
 /// Detailed Employee profile with Tabs (Info & Analytics).
@@ -25,7 +26,9 @@ class _EmployeeProfileSheetState extends ConsumerState<EmployeeProfileSheet> wit
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    final authState = ref.read(authProvider);
+    final canSeeFinance = authState.hasPermission('dashboard') || authState.hasPermission('reports');
+    _tabController = TabController(length: canSeeFinance ? 3 : 1, vsync: this);
   }
 
   @override
@@ -42,6 +45,9 @@ class _EmployeeProfileSheetState extends ConsumerState<EmployeeProfileSheet> wit
       (e) => e.id == widget.employee.id,
       orElse: () => widget.employee,
     );
+
+    final authState = ref.watch(authProvider);
+    final canSeeFinance = authState.hasPermission('dashboard') || authState.hasPermission('reports');
 
     final cs = Theme.of(context).colorScheme;
     
@@ -135,33 +141,34 @@ class _EmployeeProfileSheetState extends ConsumerState<EmployeeProfileSheet> wit
               ),
             ),
             
-            const SizedBox(height: AppSpacing.lg),
-            
             // Tabs
-            TabBar(
-              controller: _tabController,
-              labelColor: cs.primary,
-              unselectedLabelColor: cs.onSurface.withValues(alpha: 0.5),
-              indicatorColor: cs.primary,
-              indicatorSize: TabBarIndicatorSize.tab,
-              dividerColor: cs.outline.withValues(alpha: 0.1),
-              tabs: const [
-                Tab(child: Text('Информация', style: TextStyle(fontWeight: FontWeight.w600))),
-                Tab(child: Text('Аналитика', style: TextStyle(fontWeight: FontWeight.w600))),
-                Tab(child: Text('Расходы', style: TextStyle(fontWeight: FontWeight.w600))),
-              ],
-            ),
+            if (canSeeFinance)
+              TabBar(
+                controller: _tabController,
+                labelColor: cs.primary,
+                unselectedLabelColor: cs.onSurface.withValues(alpha: 0.5),
+                indicatorColor: cs.primary,
+                indicatorSize: TabBarIndicatorSize.tab,
+                dividerColor: cs.outline.withValues(alpha: 0.1),
+                tabs: const [
+                  Tab(child: Text('Информация', style: TextStyle(fontWeight: FontWeight.w600))),
+                  Tab(child: Text('Аналитика', style: TextStyle(fontWeight: FontWeight.w600))),
+                  Tab(child: Text('Выплаты и авансы', style: TextStyle(fontWeight: FontWeight.w600))),
+                ],
+              ),
             
             // Tab Views
             Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _InfoTab(employee: currentEmployee, scrollController: scrollController),
-                  _AnalyticsTab(employee: currentEmployee, scrollController: scrollController),
-                  _ExpensesTab(employee: currentEmployee, scrollController: scrollController),
-                ],
-              ),
+              child: canSeeFinance
+                  ? TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _InfoTab(employee: currentEmployee, scrollController: scrollController),
+                        _AnalyticsTab(employee: currentEmployee, scrollController: scrollController),
+                        _ExpensesTab(employee: currentEmployee, scrollController: scrollController),
+                      ],
+                    )
+                  : _InfoTab(employee: currentEmployee, scrollController: scrollController),
             ),
           ],
         ),
@@ -191,22 +198,22 @@ class _InfoTab extends ConsumerWidget {
     final warehousesAsync = ref.watch(warehousesProvider);
     String allowedWarehousesStr = 'Загрузка...';
     if (employee.allowedWarehouses == null) {
-      allowedWarehousesStr = 'Все склады';
+      allowedWarehousesStr = 'Все заведения';
     } else if (employee.allowedWarehouses!.isEmpty) {
-      allowedWarehousesStr = 'Нет доступа к складам';
+      allowedWarehousesStr = 'Нет доступа к заведениям';
     } else {
       warehousesAsync.when(
         data: (warehouses) {
           final names = employee.allowedWarehouses!
               .map((id) {
                 final wh = warehouses.where((w) => w.id == id);
-                return wh.isNotEmpty ? wh.first.name : 'Неизвестный склад';
+                return wh.isNotEmpty ? wh.first.name : 'Неизвестное заведение';
               })
               .toList();
           allowedWarehousesStr = names.join(', ');
         },
         loading: () => allowedWarehousesStr = 'Загрузка...',
-        error: (_, __) => allowedWarehousesStr = '${employee.allowedWarehouses!.length} складов',
+        error: (_, __) => allowedWarehousesStr = '${employee.allowedWarehouses!.length} заведений',
       );
     }
 
@@ -220,8 +227,8 @@ class _InfoTab extends ConsumerWidget {
           _infoRow(cs, Icons.shield_rounded, 'Роль', roleName),
           _infoRow(
             cs,
-            Icons.warehouse_rounded,
-            'Доступ к складам',
+            Icons.restaurant_rounded,
+            'Доступ к заведениям',
             allowedWarehousesStr,
           ),
           _infoRow(cs, Icons.lock_rounded, 'Пин-код защиты', employee.pinCodeHash.isNotEmpty ? 'Установлен (••••)' : 'Не установлен'),
@@ -242,16 +249,57 @@ class _InfoTab extends ConsumerWidget {
             const SizedBox(height: AppSpacing.lg),
           ],
 
-          _sectionHeader(cs, 'Оплата труда', Icons.payments_rounded),
-          const SizedBox(height: AppSpacing.md),
-          _infoRow(cs, Icons.work_history_rounded, 'Тип', employee.salaryType.label),
           Consumer(
             builder: (context, ref, _) {
+              final authState = ref.watch(authProvider);
+              final canSeeFinance = authState.hasPermission('dashboard') || authState.hasPermission('reports');
+              if (!canSeeFinance) return const SizedBox.shrink();
+
               final currency = ref.watch(currencyProvider).symbol;
-              return _infoRow(cs, Icons.account_balance_wallet_rounded, 'Ставка', employee.salaryAmount > 0 ? formatPrice(employee.salaryAmount, currency) : 'Не указана (бесплатно)');
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _sectionHeader(cs, 'Оплата труда', Icons.payments_rounded),
+                  const SizedBox(height: AppSpacing.md),
+                  _infoRow(cs, Icons.work_history_rounded, 'Тип', employee.salaryType.label),
+                  _infoRow(cs, Icons.account_balance_wallet_rounded, 'Ставка', employee.salaryAmount > 0 ? formatPrice(employee.salaryAmount, currency) : 'Не указана (бесплатно)'),
+                  _infoRow(cs, Icons.autorenew_rounded, 'Начисление в оборот', employee.salaryAutoDeduct ? 'Автоматическое (ежедневно/ежемесячно)' : 'Ручное (администратор)'),
+                  
+                  // Waiter Commission
+                  Consumer(
+                    builder: (context, ref, _) {
+                      final settingsAsync = ref.watch(directWaiterSettingsProvider);
+                      return settingsAsync.when(
+                        data: (settingsList) {
+                          final setting = settingsList.where((s) => s.employeeId == employee.id).firstOrNull;
+                          final percent = setting?.commissionPercent ?? 0.0;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _infoRow(cs, Icons.percent_rounded, 'Комиссия официанта', '$percent%'),
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                                child: Align(
+                                  alignment: Alignment.centerRight,
+                                  child: TextButton.icon(
+                                    onPressed: () => _showEditCommissionDialog(context, ref, employee.id, percent),
+                                    icon: const Icon(Icons.edit_rounded, size: 16),
+                                    label: const Text('Изменить процент'),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                        loading: () => const SizedBox.shrink(),
+                        error: (_, __) => const SizedBox.shrink(),
+                      );
+                    }
+                  ),
+                ],
+              );
             }
           ),
-          _infoRow(cs, Icons.autorenew_rounded, 'Начисление в оборот', employee.salaryAutoDeduct ? 'Автоматическое (ежедневно/ежемесячно)' : 'Ручное (администратор)'),
 
           const SizedBox(height: AppSpacing.xxl),
 
@@ -332,6 +380,48 @@ class _InfoTab extends ConsumerWidget {
             },
             style: FilledButton.styleFrom(backgroundColor: cs.error),
             child: const Text('Удалить'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEditCommissionDialog(BuildContext context, WidgetRef ref, String employeeId, double currentPercent) {
+    final ctrl = TextEditingController(text: currentPercent == 0.0 ? '' : currentPercent.toStringAsFixed(1));
+    final cs = Theme.of(context).colorScheme;
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: cs.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusMd)),
+        title: const Text('Комиссия официанта (%)'),
+        content: TextField(
+          controller: ctrl,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Процент от продаж',
+            suffixText: ' %',
+            hintText: '0.0',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Отмена', style: TextStyle(color: cs.onSurface.withValues(alpha: 0.5))),
+          ),
+          FilledButton(
+            onPressed: () async {
+              final double? percent = double.tryParse(ctrl.text.replaceAll(',', '.'));
+              if (percent != null && percent >= 0.0 && percent <= 100.0) {
+                await KitchenDirectMutator.saveWaiterCommission(employeeId, percent);
+              } else if (ctrl.text.isEmpty) {
+                await KitchenDirectMutator.saveWaiterCommission(employeeId, 0.0);
+              }
+              if (ctx.mounted) Navigator.pop(ctx);
+            },
+            child: const Text('Сохранить'),
           ),
         ],
       ),
@@ -594,12 +684,12 @@ class _ExpensesTab extends ConsumerWidget {
                     Icon(Icons.receipt_long_rounded, size: 64,
                         color: cs.onSurface.withValues(alpha: 0.15)),
                     const SizedBox(height: AppSpacing.md),
-                    Text('Нет расходов',
+                    Text('Нет выплат и авансов',
                         style: TextStyle(
                             color: cs.onSurface.withValues(alpha: 0.4),
                             fontSize: 16)),
                     const SizedBox(height: 4),
-                    Text('Нажмите + чтобы добавить',
+                    Text('Нажмите + чтобы выдать',
                         style: TextStyle(
                             color: cs.onSurface.withValues(alpha: 0.3),
                             fontSize: 12)),
@@ -647,7 +737,7 @@ class _ExpensesTab extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Всего расходов',
+                            Text('Выдано всего',
                                 style: TextStyle(
                                     color: cs.onSurface.withValues(alpha: 0.6),
                                     fontSize: 11)),

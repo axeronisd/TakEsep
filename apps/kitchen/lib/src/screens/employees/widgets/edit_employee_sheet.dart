@@ -95,6 +95,7 @@ class _EditEmployeeSheetState extends ConsumerState<EditEmployeeSheet> {
     
     // Auth and Data providers
     final authState = ref.watch(authProvider);
+    final canSeeFinance = authState.hasPermission('dashboard') || authState.hasPermission('reports');
     final rolesAsync = ref.watch(rolesListProvider);
     final warehouses = authState.availableWarehouses;
     
@@ -235,7 +236,7 @@ class _EditEmployeeSheetState extends ConsumerState<EditEmployeeSheet> {
                   ),
                   
                   const SizedBox(height: AppSpacing.md),
-                  Text('Доступные склады', style: AppTypography.labelMedium.copyWith(color: cs.onSurface.withValues(alpha: 0.7))),
+                   Text('Доступные заведения', style: AppTypography.labelMedium.copyWith(color: cs.onSurface.withValues(alpha: 0.7))),
                   const SizedBox(height: AppSpacing.xs),
                   Container(
                     decoration: BoxDecoration(
@@ -246,7 +247,7 @@ class _EditEmployeeSheetState extends ConsumerState<EditEmployeeSheet> {
                       children: [
                         CheckboxListTile(
                           value: _allWarehouses,
-                          title: Text('Все склады', style: TextStyle(color: cs.onSurface, fontWeight: _allWarehouses ? FontWeight.bold : FontWeight.normal)),
+                          title: Text('Все заведения', style: TextStyle(color: cs.onSurface, fontWeight: _allWarehouses ? FontWeight.bold : FontWeight.normal)),
                           controlAffinity: ListTileControlAffinity.leading,
                           visualDensity: VisualDensity.compact,
                           onChanged: (val) {
@@ -279,46 +280,48 @@ class _EditEmployeeSheetState extends ConsumerState<EditEmployeeSheet> {
                     ),
                   ),
 
-                  const SizedBox(height: AppSpacing.xl),
-                  _sectionHeader(cs, 'Зарплата', Icons.payments_rounded),
-                  const SizedBox(height: AppSpacing.md),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: DropdownButtonFormField<SalaryType>(
-                          value: _salaryType,
-                          decoration: InputDecoration(
-                            labelText: 'Схема оплаты',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
-                          ),
-                          items: SalaryType.values.map((t) => DropdownMenuItem(
-                            value: t,
-                            child: Text(t.label),
-                          )).toList(),
-                          onChanged: (val) => setState(() => _salaryType = val!),
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: TextField(
-                          controller: _salaryAmountController,
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            labelText: 'Ставка / %',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
+                  if (canSeeFinance) ...[
+                    const SizedBox(height: AppSpacing.xl),
+                    _sectionHeader(cs, 'Зарплата', Icons.payments_rounded),
+                    const SizedBox(height: AppSpacing.md),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: DropdownButtonFormField<SalaryType>(
+                            value: _salaryType,
+                            decoration: InputDecoration(
+                              labelText: 'Схема оплаты',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
+                            ),
+                            items: SalaryType.values.map((t) => DropdownMenuItem(
+                              value: t,
+                              child: Text(t.label),
+                            )).toList(),
+                            onChanged: (val) => setState(() => _salaryType = val!),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  SwitchListTile(
-                    value: _salaryAutoDeduct,
-                    title: const Text('Автоматически начислять'),
-                    subtitle: const Text('Система будет сама считать ЗП по графику', style: TextStyle(fontSize: 11)),
-                    contentPadding: EdgeInsets.zero,
-                    onChanged: (val) => setState(() => _salaryAutoDeduct = val),
-                  ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: TextField(
+                            controller: _salaryAmountController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: 'Ставка / %',
+                              border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppSpacing.radiusSm)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    SwitchListTile(
+                      value: _salaryAutoDeduct,
+                      title: const Text('Автоматически начислять'),
+                      subtitle: const Text('Система будет сама считать ЗП по графику', style: TextStyle(fontSize: 11)),
+                      contentPadding: EdgeInsets.zero,
+                      onChanged: (val) => setState(() => _salaryAutoDeduct = val),
+                    ),
+                  ],
 
                   const SizedBox(height: AppSpacing.xl),
                   _sectionHeader(cs, 'Паспортные данные', Icons.badge_rounded),
@@ -461,6 +464,19 @@ class _EditEmployeeSheetState extends ConsumerState<EditEmployeeSheet> {
       return;
     }
 
+    final authState = ref.read(authProvider);
+    final canSeeFinance = authState.hasPermission('dashboard') || authState.hasPermission('reports');
+
+    final salaryType = canSeeFinance 
+        ? _salaryType 
+        : (widget.employee?.salaryType ?? SalaryType.monthly);
+    final salaryAmount = canSeeFinance 
+        ? (double.tryParse(_salaryAmountController.text) ?? 0.0)
+        : (widget.employee?.salaryAmount ?? 0.0);
+    final salaryAutoDeduct = canSeeFinance 
+        ? _salaryAutoDeduct 
+        : (widget.employee?.salaryAutoDeduct ?? false);
+
     final allowedWarehouses = _allWarehouses ? null : _selectedWarehouses;
     bool success = false;
 
@@ -485,9 +501,9 @@ class _EditEmployeeSheetState extends ConsumerState<EditEmployeeSheet> {
         clearPassportIssuedBy: _passportIssuedByController.text.trim().isEmpty,
         passportIssuedDate: _passportIssuedDateController.text.trim(),
         clearPassportIssuedDate: _passportIssuedDateController.text.trim().isEmpty,
-        salaryType: _salaryType,
-        salaryAmount: double.tryParse(_salaryAmountController.text) ?? 0,
-        salaryAutoDeduct: _salaryAutoDeduct,
+        salaryType: salaryType,
+        salaryAmount: salaryAmount,
+        salaryAutoDeduct: salaryAutoDeduct,
       );
     } else {
       final employee = await notifier.createEmployee(
@@ -500,9 +516,9 @@ class _EditEmployeeSheetState extends ConsumerState<EditEmployeeSheet> {
         passportNumber: _passportNumberController.text.trim(),
         passportIssuedBy: _passportIssuedByController.text.trim(),
         passportIssuedDate: _passportIssuedDateController.text.trim(),
-        salaryType: _salaryType,
-        salaryAmount: double.tryParse(_salaryAmountController.text) ?? 0,
-        salaryAutoDeduct: _salaryAutoDeduct,
+        salaryType: salaryType,
+        salaryAmount: salaryAmount,
+        salaryAutoDeduct: salaryAutoDeduct,
       );
       success = employee != null;
     }

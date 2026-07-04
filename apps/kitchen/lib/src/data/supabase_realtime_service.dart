@@ -67,7 +67,7 @@ class SupabaseRealtimeService {
             print('⚠️ Realtime disconnected from $table');
           } else if (error != null) {
             print('❌ Realtime error on $table: $error');
-            _scheduleReconnect(channelKey);
+            // Reconnection is handled automatically by the Supabase client.
           }
         });
       },
@@ -118,7 +118,7 @@ class SupabaseRealtimeService {
             print('⚠️ Realtime disconnected from $table row $rowId');
           } else if (error != null) {
             print('❌ Realtime error on $table row $rowId: $error');
-            _scheduleReconnect(channelKey);
+            // Reconnection is handled automatically by the Supabase client.
           }
         });
       },
@@ -145,7 +145,11 @@ class SupabaseRealtimeService {
         query = query.eq('company_id', companyId);
       }
       if (warehouseId != null) {
-        query = query.eq('warehouse_id', warehouseId);
+        if (table == 'transfers') {
+          query = query.or('from_warehouse_id.eq.$warehouseId,to_warehouse_id.eq.$warehouseId');
+        } else {
+          query = query.eq('warehouse_id', warehouseId);
+        }
       }
 
       final data = await query;
@@ -191,21 +195,21 @@ class SupabaseRealtimeService {
     _fetchInitialData(controller, table, companyId, warehouseId);
   }
 
-  /// Schedule reconnection attempt
-  void _scheduleReconnect(String channelKey) {
-    _reconnectTimer?.cancel();
-    _reconnectTimer = Timer(const Duration(seconds: 5), () {
-      _reconnectChannel(channelKey);
-    });
-  }
-
-  /// Reconnect a specific channel
-  void _reconnectChannel(String channelKey) {
-    final channel = _channels[channelKey];
-    if (channel != null) {
-      channel.subscribe();
-    }
-  }
+  // /// Schedule reconnection attempt
+  // void _scheduleReconnect(String channelKey) {
+  //   _reconnectTimer?.cancel();
+  //   _reconnectTimer = Timer(const Duration(seconds: 5), () {
+  //     _reconnectChannel(channelKey);
+  //   });
+  // }
+  //
+  // /// Reconnect a specific channel
+  // void _reconnectChannel(String channelKey) {
+  //   final channel = _channels[channelKey];
+  //   if (channel != null) {
+  //     channel.subscribe();
+  //   }
+  // }
 
   /// Unsubscribe from a specific table
   void unsubscribeFromTable({

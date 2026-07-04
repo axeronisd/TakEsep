@@ -315,13 +315,13 @@ class ArrivalRepository {
 
       if (query != null && query.isNotEmpty) {
         final results = await _db.getAll(
-          'SELECT * FROM products WHERE company_id = ?$whFilter AND (name LIKE ? OR barcode LIKE ?) LIMIT 50',
+          'SELECT * FROM products WHERE company_id = ?$whFilter AND NOT EXISTS (SELECT 1 FROM recipes r WHERE r.dish_id = products.id) AND (name LIKE ? OR barcode LIKE ?) LIMIT 50',
           [companyId, ...whParam, '%$query%', '%$query%'],
         );
         return results.map((row) => Product.fromJson(row)).toList();
       } else {
         final results = await _db.getAll(
-          'SELECT * FROM products WHERE company_id = ?$whFilter LIMIT 50',
+          'SELECT * FROM products WHERE company_id = ?$whFilter AND NOT EXISTS (SELECT 1 FROM recipes r WHERE r.dish_id = products.id) LIMIT 50',
           [companyId, ...whParam],
         );
         return results.map((row) => Product.fromJson(row)).toList();

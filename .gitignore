@@ -62,3 +62,6 @@ docs/app/
 *.p12.b64
 *.mobileprovision
 *.b64
+
+# Melos overrides
+pubspec_overrides.yaml

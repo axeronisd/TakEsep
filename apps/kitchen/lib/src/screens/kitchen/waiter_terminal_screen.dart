@@ -8,6 +8,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../providers/dashboard_providers.dart';
 import '../../providers/auth_providers.dart';
 import '../../providers/currency_provider.dart';
+import '../../providers/kitchen_direct_providers.dart';
+import '../../providers/inventory_providers.dart';
 import '../../data/powersync_db.dart';
 import '../../data/sales_repository.dart';
 import '../../providers/sales_providers.dart';
@@ -80,6 +82,8 @@ class _WaiterTerminalScreenState extends ConsumerState<WaiterTerminalScreen> {
                       for (final s in sales) s['client_name'] as String: s
                     };
 
+                    final currency = ref.watch(currencyProvider).symbol;
+
                     return GridView.builder(
                       itemCount: _tables.length,
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -94,6 +98,7 @@ class _WaiterTerminalScreenState extends ConsumerState<WaiterTerminalScreen> {
                         return _TableGridCard(
                           tableName: tableName,
                           activeSale: activeSale,
+                          currency: currency,
                           onTap: () => _handleTableTap(context, tableName, activeSale),
                         );
                       },
@@ -128,11 +133,13 @@ class _WaiterTerminalScreenState extends ConsumerState<WaiterTerminalScreen> {
 class _TableGridCard extends StatelessWidget {
   final String tableName;
   final Map<String, dynamic>? activeSale;
+  final String currency;
   final VoidCallback onTap;
 
   const _TableGridCard({
     required this.tableName,
     required this.activeSale,
+    required this.currency,
     required this.onTap,
   });
 
@@ -213,7 +220,7 @@ class _TableGridCard extends StatelessWidget {
               children: [
                 if (hasActiveOrder) ...[
                   Text(
-                    '${amount.toStringAsFixed(0)} ₸',
+                    '${amount.toStringAsFixed(0)} $currency',
                     style: AppTypography.headlineSmall.copyWith(
                       fontWeight: FontWeight.bold,
                       color: cs.onSurface,
@@ -256,6 +263,8 @@ class _TableOrderSheetState extends ConsumerState<_TableOrderSheet> {
   final List<Map<String, dynamic>> _currentItems = [];
   bool _loading = false;
   final _notesCtrl = TextEditingController();
+  int _mobileTabIndex = 0;
+  String? _selectedCategoryId;
 
   @override
   void initState() {
@@ -301,16 +310,305 @@ class _TableOrderSheetState extends ConsumerState<_TableOrderSheet> {
     }
   }
 
+  Widget _buildMenu(BuildContext context, ColorScheme cs, dynamic dishesAsync, dynamic categoriesAsync, String currency) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              'Добавить позиции',
+              style: AppTypography.headlineMedium.copyWith(fontWeight: FontWeight.bold),
+            ),
+            if (MediaQuery.of(context).size.width < 900)
+              IconButton(
+                icon: const Icon(Icons.close_rounded),
+                onPressed: () => Navigator.pop(context),
+              ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.sm),
+
+        // Horizontal Category Chips
+        categoriesAsync.when(
+          data: (categories) {
+            return SizedBox(
+              height: 44,
+              child: ListView.builder(
+                scrollDirection: Axis.horizontal,
+                itemCount: categories.length + 1,
+                itemBuilder: (ctx, idx) {
+                  final isAll = idx == 0;
+                  final cat = isAll ? null : categories[idx - 1];
+                  final isSelected = _selectedCategoryId == (isAll ? null : cat.id);
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: FilterChip(
+                      selected: isSelected,
+                      label: Text(isAll ? 'Все' : cat.name),
+                      selectedColor: cs.primaryContainer,
+                      checkmarkColor: cs.primary,
+                      labelStyle: TextStyle(
+                        fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                        color: isSelected ? cs.primary : cs.onSurface,
+                      ),
+                      onSelected: (_) {
+                        setState(() {
+                          _selectedCategoryId = isAll ? null : cat.id;
+                        });
+                      },
+                    ),
+                  );
+                },
+              ),
+            );
+          },
+          loading: () => const SizedBox(height: 44),
+          error: (_, __) => const SizedBox.shrink(),
+        ),
+        const SizedBox(height: AppSpacing.md),
+
+        Expanded(
+          child: dishesAsync.when(
+            data: (dishes) {
+              final available = dishes.where((d) => d.isPublic).toList();
+              final filtered = _selectedCategoryId == null
+                  ? available
+                  : available.where((d) => d.categoryId == _selectedCategoryId).toList();
+
+              if (filtered.isEmpty) {
+                return const Center(child: Text('В этой категории нет блюд.'));
+              }
+              final isDesktop = MediaQuery.of(context).size.width >= 900;
+              return GridView.builder(
+                itemCount: filtered.length,
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: isDesktop ? 2 : 1,
+                  crossAxisSpacing: AppSpacing.sm,
+                  mainAxisSpacing: AppSpacing.sm,
+                  childAspectRatio: isDesktop ? 1.6 : 2.5,
+                ),
+                itemBuilder: (ctx, idx) {
+                  final dish = filtered[idx];
+                  final prepTime = dish.minQuantity;
+                  return Card(
+                    elevation: 0,
+                    color: cs.surfaceContainerLow,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: cs.outline.withValues(alpha: 0.1)),
+                    ),
+                    child: InkWell(
+                      onTap: () => _addDishToOrder(dish),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                dish.name,
+                                style: AppTypography.bodyLarge.copyWith(fontWeight: FontWeight.bold, height: 1.2),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  '$currency ${dish.price.toStringAsFixed(0)}',
+                                  style: AppTypography.bodyLarge.copyWith(
+                                    color: cs.primary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                if (prepTime > 0)
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.access_time_rounded, size: 14, color: cs.onSurface.withValues(alpha: 0.4)),
+                                      const SizedBox(width: 2),
+                                      Text(
+                                        '$prepTime мин',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: cs.onSurface.withValues(alpha: 0.5),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+            loading: () => const Center(child: CircularProgressIndicator()),
+            error: (e, _) => Center(child: Text('Ошибка: $e')),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCart(BuildContext context, ColorScheme cs, String currency, double totalAmount) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: cs.surfaceContainerHighest.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: cs.outline.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Заказ: ${widget.tableName}',
+                style: AppTypography.headlineSmall.copyWith(fontWeight: FontWeight.bold),
+              ),
+              if (MediaQuery.of(context).size.width < 900)
+                IconButton(
+                  icon: const Icon(Icons.close_rounded),
+                  onPressed: () => Navigator.pop(context),
+                ),
+            ],
+          ),
+          const Divider(height: 20),
+          Expanded(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _currentItems.isEmpty
+                    ? const Center(child: Text('Заказ пуст.'))
+                    : ListView.separated(
+                        itemCount: _currentItems.length,
+                        separatorBuilder: (_, __) => const Divider(height: 1),
+                        itemBuilder: (ctx, idx) {
+                          final item = _currentItems[idx];
+                          final qty = item['quantity'] as int;
+                          return ListTile(
+                            dense: true,
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              item['name'] as String,
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            subtitle: Text(
+                              '$currency ${(item['price'] as double).toStringAsFixed(0)} x $qty',
+                            ),
+                            trailing: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.remove_circle_outline, size: 20),
+                                  onPressed: () => _updateQuantity(idx, -1),
+                                ),
+                                Text('$qty'),
+                                IconButton(
+                                  icon: const Icon(Icons.add_circle_outline, size: 20),
+                                  onPressed: () => _updateQuantity(idx, 1),
+                                ),
+                              ],
+                            ),
+                          );
+                        },
+                      ),
+          ),
+          const Divider(height: 20),
+          TextField(
+            controller: _notesCtrl,
+            decoration: const InputDecoration(
+              hintText: 'Комментарий к заказу...',
+              border: OutlineInputBorder(),
+              contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('Итого к оплате:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Text(
+                '$currency ${totalAmount.toStringAsFixed(0)}',
+                style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              if (widget.activeSale != null) ...[
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: _cancelOrder,
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.error,
+                      side: BorderSide(color: AppColors.error),
+                      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: const Text('Удалить'),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Expanded(
+                child: FilledButton(
+                  onPressed: _currentItems.isEmpty ? null : _saveOrder,
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.secondary,
+                    padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Отправить'),
+                ),
+              ),
+            ],
+          ),
+          if (widget.activeSale != null) ...[
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              onPressed: () => _checkout(totalAmount),
+              icon: const Icon(Icons.payment_rounded),
+              label: const Text('Оплатить заказ'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final dishesAsync = ref.watch(kitchenDishesProvider);
+    final categoriesAsync = ref.watch(categoriesProvider);
     final currency = ref.watch(currencyProvider).symbol;
 
     double totalAmount = 0;
     for (final item in _currentItems) {
       totalAmount += (item['price'] as double) * (item['quantity'] as int);
     }
+    final totalQty = _currentItems.fold<int>(0, (s, i) => s + (i['quantity'] as int));
+
+    final isDesktop = MediaQuery.of(context).size.width >= 900;
 
     return Container(
       height: MediaQuery.of(context).size.height * 0.85,
@@ -319,199 +617,48 @@ class _TableOrderSheetState extends ConsumerState<_TableOrderSheet> {
         borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
       ),
       padding: const EdgeInsets.all(AppSpacing.lg),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Left part: dishes selector from menu
-          Expanded(
-            flex: 3,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: isDesktop
+          ? Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(
-                  'Добавить блюда в заказ',
-                  style: AppTypography.headlineMedium.copyWith(fontWeight: FontWeight.bold),
+                Expanded(
+                  flex: 3,
+                  child: _buildMenu(context, cs, dishesAsync, categoriesAsync, currency),
+                ),
+                const SizedBox(width: AppSpacing.lg),
+                Expanded(
+                  flex: 2,
+                  child: _buildCart(context, cs, currency, totalAmount),
+                ),
+              ],
+            )
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SegmentedButton<int>(
+                  selected: {_mobileTabIndex},
+                  onSelectionChanged: (val) {
+                    setState(() {
+                      _mobileTabIndex = val.first;
+                    });
+                  },
+                  segments: [
+                    const ButtonSegment(value: 0, label: Text('Меню'), icon: Icon(Icons.restaurant_menu_rounded)),
+                    ButtonSegment(
+                      value: 1,
+                      label: Text('Корзина ($totalQty)'),
+                      icon: const Icon(Icons.shopping_cart_rounded),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Expanded(
-                  child: dishesAsync.when(
-                    data: (dishes) {
-                      final available = dishes.where((d) => d.isPublic).toList();
-                      if (available.isEmpty) {
-                        return const Center(child: Text('В меню нет активных блюд.'));
-                      }
-                      return GridView.builder(
-                        itemCount: available.length,
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: AppSpacing.sm,
-                          mainAxisSpacing: AppSpacing.sm,
-                          childAspectRatio: 1.5,
-                        ),
-                        itemBuilder: (ctx, idx) {
-                          final dish = available[idx];
-                          return Card(
-                            elevation: 0,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: cs.outline.withValues(alpha: 0.2)),
-                            ),
-                            child: InkWell(
-                              onTap: () => _addDishToOrder(dish),
-                              borderRadius: BorderRadius.circular(12),
-                              child: Padding(
-                                padding: const EdgeInsets.all(AppSpacing.sm),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      dish.name,
-                                      style: AppTypography.bodyMedium.copyWith(fontWeight: FontWeight.bold),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    Text(
-                                      '$currency ${dish.price.toStringAsFixed(0)}',
-                                      style: AppTypography.bodySmall.copyWith(
-                                        color: AppColors.primary,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          );
-                        },
-                      );
-                    },
-                    loading: () => const Center(child: CircularProgressIndicator()),
-                    error: (e, _) => Center(child: Text('Ошибка: $e')),
-                  ),
+                  child: _mobileTabIndex == 0
+                      ? _buildMenu(context, cs, dishesAsync, categoriesAsync, currency)
+                      : _buildCart(context, cs, currency, totalAmount),
                 ),
               ],
             ),
-          ),
-          const SizedBox(width: AppSpacing.lg),
-
-          // Right part: current order items
-          Expanded(
-            flex: 2,
-            child: Container(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: cs.surfaceContainerHighest.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: cs.outline.withValues(alpha: 0.15)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Заказ: ${widget.tableName}',
-                    style: AppTypography.headlineSmall.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                  const Divider(height: 20),
-                  Expanded(
-                    child: _loading
-                        ? const Center(child: CircularProgressIndicator())
-                        : _currentItems.isEmpty
-                            ? const Center(child: Text('Заказ пуст.'))
-                            : ListView.separated(
-                                itemCount: _currentItems.length,
-                                separatorBuilder: (_, __) => const Divider(height: 1),
-                                itemBuilder: (ctx, idx) {
-                                  final item = _currentItems[idx];
-                                  final qty = item['quantity'] as int;
-                                  return ListTile(
-                                    dense: true,
-                                    contentPadding: EdgeInsets.zero,
-                                    title: Text(
-                                      item['name'] as String,
-                                      style: const TextStyle(fontWeight: FontWeight.bold),
-                                    ),
-                                    subtitle: Text(
-                                      '$currency ${(item['price'] as double).toStringAsFixed(0)} x $qty',
-                                    ),
-                                    trailing: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        IconButton(
-                                          icon: const Icon(Icons.remove_circle_outline, size: 20),
-                                          onPressed: () => _updateQuantity(idx, -1),
-                                        ),
-                                        Text('$qty'),
-                                        IconButton(
-                                          icon: const Icon(Icons.add_circle_outline, size: 20),
-                                          onPressed: () => _updateQuantity(idx, 1),
-                                        ),
-                                      ],
-                                    ),
-                                  );
-                                },
-                              ),
-                  ),
-                  const Divider(height: 20),
-                  TextField(
-                    controller: _notesCtrl,
-                    decoration: const InputDecoration(
-                      hintText: 'Комментарий к заказу...',
-                      border: OutlineInputBorder(),
-                      contentPadding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Итого к оплате:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      Text(
-                        '$currency ${totalAmount.toStringAsFixed(0)}',
-                        style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold, fontSize: 18),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      if (widget.activeSale != null) ...[
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: _cancelOrder,
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.error,
-                              side: BorderSide(color: AppColors.error),
-                            ),
-                            child: const Text('Удалить'),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                      Expanded(
-                        child: FilledButton(
-                          onPressed: _currentItems.isEmpty ? null : _saveOrder,
-                          style: FilledButton.styleFrom(backgroundColor: AppColors.secondary),
-                          child: const Text('На кухню'),
-                        ),
-                      ),
-                    ],
-                  ),
-                  if (widget.activeSale != null) ...[
-                    const SizedBox(height: 8),
-                    FilledButton.icon(
-                      onPressed: () => _checkout(totalAmount),
-                      icon: const Icon(Icons.payment_rounded),
-                      label: const Text('Оплатить заказ'),
-                      style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 

@@ -2,7 +2,10 @@ name: takesep
 repository: https://github.com/axeronis/takesep
 
 packages:
-  - apps/**
+  - apps/admin
+  - apps/courier
+  - apps/customer
+  - apps/warehouse
   - packages/**
 
 command:
@@ -33,37 +36,17 @@ scripts:
     packageFilters:
       scope: "warehouse"
 
-  build:kitchen:android:
-    exec: flutter build apk --release
-    packageFilters:
-      scope: "kitchen"
-
   build:ios:
     exec: flutter build ios --release
     packageFilters:
       scope: "warehouse"
-
-  build:kitchen:ios:
-    exec: flutter build ios --release
-    packageFilters:
-      scope: "kitchen"
 
   build:windows:
     exec: flutter build windows --release
     packageFilters:
       scope: "warehouse"
 
-  build:kitchen:windows:
-    exec: flutter build windows --release
-    packageFilters:
-      scope: "kitchen"
-
   build:macos:
     exec: flutter build macos --release
     packageFilters:
       scope: "warehouse"
-
-  build:kitchen:macos:
-    exec: flutter build macos --release
-    packageFilters:
-      scope: "kitchen"

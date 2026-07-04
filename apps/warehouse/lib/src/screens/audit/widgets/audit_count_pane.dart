@@ -413,6 +413,7 @@ class _AuditItemCard extends ConsumerStatefulWidget {
 class _AuditItemCardState extends ConsumerState<_AuditItemCard> {
   late TextEditingController _qtyController;
   int? _localQty; // real-time local value for instant diff display
+  late final FocusNode _focusNode;
 
   @override
   void initState() {
@@ -420,6 +421,8 @@ class _AuditItemCardState extends ConsumerState<_AuditItemCard> {
     _qtyController = TextEditingController(
         text: widget.item.actualQuantity?.toString() ?? '');
     _localQty = widget.item.actualQuantity;
+    _focusNode = FocusNode();
+    _focusNode.addListener(_onFocusChange);
   }
 
   @override
@@ -434,7 +437,15 @@ class _AuditItemCardState extends ConsumerState<_AuditItemCard> {
   @override
   void dispose() {
     _qtyController.dispose();
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
     super.dispose();
+  }
+
+  void _onFocusChange() {
+    if (!_focusNode.hasFocus) {
+      _saveQuantity();
+    }
   }
 
   void _onQtyChanged(String value) {
@@ -567,6 +578,7 @@ class _AuditItemCardState extends ConsumerState<_AuditItemCard> {
                     width: 60,
                     height: 32,
                     child: TextField(
+                      focusNode: _focusNode,
                       controller: _qtyController,
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],

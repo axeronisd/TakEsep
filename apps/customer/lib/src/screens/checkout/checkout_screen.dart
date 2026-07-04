@@ -159,13 +159,89 @@ class _CheckoutScreenState extends ConsumerState<CheckoutScreen> {
                               _buildStore(cart, co, isDark, cardBg, border, text, muted),
                               const SizedBox(height: 12),
 
-                              // ── 2. Address ──
-                              _buildAddress(co, isDark, cardBg, border, text, muted),
-                              const SizedBox(height: 12),
+                              if (cart.tableId != null) ...[
+                                // ── Table Info ──
+                                _Box(
+                                  isDark: isDark,
+                                  bg: cardBg,
+                                  border: border,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      _Header(icon: Icons.table_restaurant_rounded, title: 'Стол', color: text),
+                                      const SizedBox(height: 10),
+                                      Row(
+                                        children: [
+                                          Icon(Icons.deck_rounded, color: AkJolTheme.primary, size: 24),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Стол в заведении',
+                                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: text),
+                                                ),
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  'Заказ будет подан к вашему столику',
+                                                  style: TextStyle(fontSize: 11, color: muted),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                              ] else if (co.selectedTransport == 'takeaway') ...[
+                                // ── Takeaway Info ──
+                                _Box(
+                                  isDark: isDark,
+                                  bg: cardBg,
+                                  border: border,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      _Header(icon: Icons.shopping_bag_rounded, title: 'Способ получения', color: text),
+                                      const SizedBox(height: 10),
+                                      Row(
+                                        children: [
+                                          Icon(Icons.storefront_rounded, color: AkJolTheme.primary, size: 24),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  'Самовывоз (На вынос)',
+                                                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: text),
+                                                ),
+                                                const SizedBox(height: 2),
+                                                Text(
+                                                  'Заберите заказ по адресу заведения',
+                                                  style: TextStyle(fontSize: 11, color: muted),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 12),
+                              ] else ...[
+                                // ── 2. Address ──
+                                _buildAddress(co, isDark, cardBg, border, text, muted),
+                                const SizedBox(height: 12),
 
-                              // ── 3. Transport ──
-                              _buildTransport(co, isDark, cardBg, border, text, muted),
-                              const SizedBox(height: 12),
+                                // ── 3. Transport ──
+                                _buildTransport(co, isDark, cardBg, border, text, muted),
+                                const SizedBox(height: 12),
+                              ],
 
                               // ── 4. Payment Info ──
                               _buildPaymentInfo(isDark, cardBg, border, text, muted),

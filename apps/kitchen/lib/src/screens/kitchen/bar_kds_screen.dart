@@ -8,8 +8,8 @@ import '../../providers/auth_providers.dart';
 import '../../data/powersync_db.dart';
 import '../../data/supabase_sync.dart';
 
-/// Realtime provider for KDS orders (pending sales only)
-final kdsOrdersProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
+/// Realtime provider for Bar KDS orders (pending sales only with bar items)
+final barKdsOrdersProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
   final warehouseId = ref.watch(selectedWarehouseIdProvider);
   if (warehouseId == null) return const Stream.empty();
   return powerSyncDb.watch(
@@ -20,21 +20,21 @@ final kdsOrdersProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
            JOIN products p ON si.product_id = p.id
            WHERE si.sale_id = s.id
              AND p.product_type = 'dish'
-             AND COALESCE(p.sku, 'kitchen') != 'bar'
+             AND p.sku = 'bar'
          )
        ORDER BY s.created_at ASC""",
     parameters: [warehouseId],
   );
 });
 
-class KitchenKdsScreen extends ConsumerWidget {
-  const KitchenKdsScreen({super.key});
+class BarKdsScreen extends ConsumerWidget {
+  const BarKdsScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final cs = Theme.of(context).colorScheme;
     final isDesktop = MediaQuery.of(context).size.width >= 900;
-    final ordersAsync = ref.watch(kdsOrdersProvider);
+    final ordersAsync = ref.watch(barKdsOrdersProvider);
 
     return Scaffold(
       backgroundColor: cs.surface,
@@ -52,12 +52,12 @@ class KitchenKdsScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Монитор повара (KDS)',
+                        'Монитор бармена (KDS)',
                         style: AppTypography.displaySmall.copyWith(color: cs.onSurface),
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
-                        'Очередь заказов на приготовление в реальном времени',
+                        'Очередь напитков и десертов в реальном времени',
                         style: AppTypography.bodyMedium.copyWith(
                           color: cs.onSurface.withValues(alpha: 0.6),
                         ),
@@ -77,7 +77,7 @@ class KitchenKdsScreen extends ConsumerWidget {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.restaurant_menu_rounded, size: 64, color: cs.onSurface.withValues(alpha: 0.2)),
+                            Icon(Icons.local_bar_rounded, size: 64, color: cs.onSurface.withValues(alpha: 0.2)),
                             const SizedBox(height: AppSpacing.md),
                             Text(
                               'Нет активных заказов',
@@ -85,7 +85,7 @@ class KitchenKdsScreen extends ConsumerWidget {
                             ),
                             const SizedBox(height: AppSpacing.xs),
                             Text(
-                              'Новые заказы официантов появятся здесь мгновенно',
+                              'Новые напитки и десерты появятся здесь мгновенно',
                               style: AppTypography.bodyMedium.copyWith(color: cs.onSurface.withValues(alpha: 0.3)),
                             ),
                           ],
@@ -103,7 +103,7 @@ class KitchenKdsScreen extends ConsumerWidget {
                       ),
                       itemBuilder: (ctx, idx) {
                         final order = orders[idx];
-                        return _KdsTicketCard(order: order);
+                        return _BarKdsTicketCard(order: order);
                       },
                     );
                   },
@@ -119,18 +119,18 @@ class KitchenKdsScreen extends ConsumerWidget {
   }
 }
 
-// ─── KDS Ticket Card Widget ───────────────────────────────────
+// ─── Bar KDS Ticket Card Widget ───────────────────────────────
 
-class _KdsTicketCard extends ConsumerStatefulWidget {
+class _BarKdsTicketCard extends ConsumerStatefulWidget {
   final Map<String, dynamic> order;
 
-  const _KdsTicketCard({required this.order});
+  const _BarKdsTicketCard({required this.order});
 
   @override
-  ConsumerState<_KdsTicketCard> createState() => _KdsTicketCardState();
+  ConsumerState<_BarKdsTicketCard> createState() => _BarKdsTicketCardState();
 }
 
-class _KdsTicketCardState extends ConsumerState<_KdsTicketCard> {
+class _BarKdsTicketCardState extends ConsumerState<_BarKdsTicketCard> {
   List<Map<String, dynamic>> _items = [];
   bool _loading = true;
   late final DateTime _createdAt;
@@ -158,7 +158,7 @@ class _KdsTicketCardState extends ConsumerState<_KdsTicketCard> {
            JOIN products p ON si.product_id = p.id
            WHERE si.sale_id = ?
              AND p.product_type = 'dish'
-             AND COALESCE(p.sku, 'kitchen') != 'bar''',
+             AND p.sku = 'bar' ''',
         [saleId],
       );
 
@@ -182,7 +182,7 @@ class _KdsTicketCardState extends ConsumerState<_KdsTicketCard> {
         });
       }
     } catch (e) {
-      debugPrint('Error loading order items for KDS: $e');
+      debugPrint('Error loading order items for Bar KDS: $e');
       if (mounted) setState(() => _loading = false);
     }
   }
@@ -202,40 +202,6 @@ class _KdsTicketCardState extends ConsumerState<_KdsTicketCard> {
         'updated_at': now,
       });
 
-      // Deduct ingredients according to recipes
-      for (final item in _items) {
-        final productId = item['product_id'] as String;
-        final qtyOrdered = (item['quantity'] as num).toDouble();
-
-        final recipes = await powerSyncDb.getAll(
-          'SELECT ingredient_id, quantity_required FROM recipes WHERE dish_id = ?',
-          [productId],
-        );
-
-        for (final r in recipes) {
-          final ingrId = r['ingredient_id'] as String;
-          final qtyReq = (r['quantity_required'] as num).toDouble();
-          final totalDeduct = qtyReq * qtyOrdered;
-
-          await powerSyncDb.execute(
-            'UPDATE products SET quantity = quantity - ?, updated_at = ? WHERE id = ?',
-            [totalDeduct, now, ingrId],
-          );
-
-          final currentIngr = await powerSyncDb.get(
-            'SELECT quantity FROM products WHERE id = ?',
-            [ingrId],
-          );
-          if (currentIngr != null) {
-            final newQty = (currentIngr['quantity'] as num).toDouble();
-            await SupabaseSync.update('products', ingrId, {
-              'quantity': newQty,
-              'updated_at': now,
-            });
-          }
-        }
-      }
-
       // Notify waiter via Supabase Edge Function send-push
       final waiterId = widget.order['employee_id'] as String?;
       if (waiterId != null) {
@@ -245,7 +211,7 @@ class _KdsTicketCardState extends ConsumerState<_KdsTicketCard> {
           body: {
             'user_id': waiterId,
             'title': 'Заказ готов!',
-            'body': 'Блюда для стола "$tableName" готовы к выдаче!',
+            'body': 'Напитки/десерты для стола "$tableName" готовы к выдаче!',
             'app_type': 'employee',
           },
         ).catchError((e) {
@@ -254,107 +220,118 @@ class _KdsTicketCardState extends ConsumerState<_KdsTicketCard> {
       }
 
       // Invalidate the provider
-      ref.invalidate(kdsOrdersProvider);
+      ref.invalidate(barKdsOrdersProvider);
     } catch (e) {
-      debugPrint('Error completing KDS order: $e');
+      debugPrint('Error completing Bar KDS order: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
-    final diff = DateTime.now().difference(_createdAt);
-    final isLate = diff.inMinutes >= 15;
+    final tableName = widget.order['client_name'] as String? ?? 'Заказ';
+    final notes = widget.order['notes'] as String? ?? '';
 
-    Color headerColor = isLate ? AppColors.error : AppColors.secondary;
-
-    return Card(
-      elevation: 4,
-      shadowColor: cs.shadow.withValues(alpha: 0.1),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: headerColor.withValues(alpha: 0.3), width: 1.5),
-      ),
-      clipBehavior: Clip.antiAlias,
+    return TECard(
+      padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-            color: headerColor.withValues(alpha: 0.1),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    widget.order['client_name'] as String? ?? 'Стол №?',
-                    style: AppTypography.headlineMedium.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: headerColor,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                  ),
+          // Header of Ticket
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Text(
+                  tableName,
+                  style: AppTypography.headlineMedium.copyWith(color: cs.onSurface, fontWeight: FontWeight.bold),
+                  overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(width: AppSpacing.sm),
-                Text(
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: cs.primaryContainer,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
                   _elapsedStr,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: isLate ? AppColors.error : cs.onSurface.withValues(alpha: 0.5),
-                  ),
+                  style: TextStyle(color: cs.primary, fontSize: 11, fontWeight: FontWeight.bold),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
+          const SizedBox(height: AppSpacing.md),
 
-          // Dishes List
+          // Notes if exist
+          if (notes.isNotEmpty) ...[
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: cs.errorContainer.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: cs.error.withValues(alpha: 0.1)),
+              ),
+              child: Text(
+                'Комментарий: $notes',
+                style: TextStyle(color: cs.error, fontSize: 12, fontWeight: FontWeight.w600),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+
+          const Divider(),
+
+          // Items list
           Expanded(
             child: _loading
                 ? const Center(child: CircularProgressIndicator())
-                : ListView.separated(
-                    padding: const EdgeInsets.all(AppSpacing.md),
+                : ListView.builder(
                     itemCount: _items.length,
-                    separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (ctx, idx) {
-                      final item = _items[idx];
-                      final name = item['product_name'] as String;
+                    itemBuilder: (ctx, index) {
+                      final item = _items[index];
+                      final name = item['product_name'] as String? ?? '';
                       final qty = (item['quantity'] as num).toInt();
+                      final modifiers = item['modifiers'] as List<Map<String, dynamic>>? ?? [];
                       final prepTime = item['prep_time'] as num? ?? 0;
                       final prepTimeText = prepTime > 0 ? ' ($prepTime мин)' : '';
-                      final mods = item['modifiers'] as List<Map<String, dynamic>>? ?? [];
-                      final modsText = mods.isNotEmpty
-                          ? '\n(${mods.map((m) => m['modifier_name']).join(', ')})'
-                          : '';
 
                       return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 6),
-                        child: Row(
+                        padding: const EdgeInsets.symmetric(vertical: 4),
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: cs.primaryContainer,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
-                              child: Text(
-                                '${qty}x',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: cs.onPrimaryContainer,
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    '$name$prepTimeText',
+                                    style: AppTypography.bodyLarge.copyWith(fontWeight: FontWeight.bold, color: cs.onSurface),
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.sm),
+                                Text(
+                                  'x$qty',
+                                  style: AppTypography.bodyLarge.copyWith(fontWeight: FontWeight.bold, color: cs.primary),
+                                ),
+                              ],
+                            ),
+                            if (modifiers.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(left: AppSpacing.md, top: 2),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: modifiers.map((mod) {
+                                    final modName = mod['modifier_name'] as String? ?? '';
+                                    return Text(
+                                      '+ $modName',
+                                      style: AppTypography.bodySmall.copyWith(color: cs.onSurface.withValues(alpha: 0.5)),
+                                    );
+                                  }).toList(),
                                 ),
                               ),
-                            ),
-                            const SizedBox(width: AppSpacing.md),
-                             Expanded(
-                               child: Text(
-                                 '$name$prepTimeText$modsText',
-                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                               ),
-                             ),
                           ],
                         ),
                       );
@@ -362,47 +339,18 @@ class _KdsTicketCardState extends ConsumerState<_KdsTicketCard> {
                   ),
           ),
 
-          // Notes if present
-          if (widget.order['notes'] != null && (widget.order['notes'] as String).isNotEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.warning.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.warning.withValues(alpha: 0.2)),
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Icon(Icons.info_outline, size: 16, color: AppColors.warning),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        widget.order['notes'] as String,
-                        style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 8),
-          ],
+          const SizedBox(height: AppSpacing.md),
 
-          // Footer buttons
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: FilledButton.icon(
-              onPressed: _markReady,
-              icon: const Icon(Icons.check_circle_rounded),
-              label: const Text('Готово к выдаче'),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.success,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
+          // Confirm ready button
+          FilledButton.icon(
+            onPressed: _loading ? null : _markReady,
+            icon: const Icon(Icons.check_circle_rounded),
+            label: const Text('Готово'),
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.success,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ],

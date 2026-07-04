@@ -29,6 +29,7 @@ class AuditRepository {
   }) async {
     final now = DateTime.now();
     final auditId = _uuid.v4();
+    final cleanEmployeeId = employeeId?.replaceAll('owner-', '');
 
     // 1. Get products to snapshot — filter by WAREHOUSE not company
     String productQuery = '''
@@ -56,7 +57,7 @@ class AuditRepository {
         companyId,
         warehouseId,
         warehouseName,
-        employeeId,
+        cleanEmployeeId,
         employeeName,
         type.name,
         AuditStatus.inProgress.name,
@@ -112,6 +113,33 @@ class AuditRepository {
       ));
     }
 
+    // Sync audit items to Supabase
+    if (items.isNotEmpty) {
+      try {
+        final supabaseItems = items.map((item) => {
+          'id': item.id,
+          'audit_id': item.auditId,
+          'product_id': item.productId,
+          'product_name': item.productName,
+          'product_sku': item.productSku,
+          'product_barcode': item.productBarcode,
+          'snapshot_quantity': item.snapshotQuantity,
+          'movements_during_audit': item.movementsDuringAudit,
+          'actual_quantity': item.actualQuantity,
+          'cost_price': item.costPrice,
+          'is_checked': false,
+          'comment': item.comment,
+          'photos': item.photos.join(','),
+          'created_at': now.toIso8601String(),
+        }).toList();
+
+        await _supabase.from('audit_items').insert(supabaseItems);
+        debugPrint('[AuditRepository] Batch inserted ${supabaseItems.length} audit items to Supabase');
+      } catch (e) {
+        debugPrint('[AuditRepository] Error batch syncing audit items: $e');
+      }
+    }
+
     // Sync audit to Supabase (for realtime)
     // Write directly to Supabase for immediate realtime sync
     try {
@@ -120,7 +148,7 @@ class AuditRepository {
         'company_id': companyId,
         'warehouse_id': warehouseId,
         'warehouse_name': warehouseName,
-        'employee_id': employeeId,
+        'employee_id': cleanEmployeeId,
         'employee_name': employeeName,
         'type': type.name,
         'status': AuditStatus.inProgress.name,
@@ -141,7 +169,7 @@ class AuditRepository {
         'company_id': companyId,
         'warehouse_id': warehouseId,
         'warehouse_name': warehouseName,
-        'employee_id': employeeId,
+        'employee_id': cleanEmployeeId,
         'employee_name': employeeName,
         'type': type.name,
         'status': AuditStatus.inProgress.name,
@@ -158,7 +186,7 @@ class AuditRepository {
       companyId: companyId,
       warehouseId: warehouseId,
       warehouseName: warehouseName,
-      employeeId: employeeId,
+      employeeId: cleanEmployeeId,
       employeeName: employeeName,
       type: type,
       status: AuditStatus.inProgress,
@@ -192,6 +220,18 @@ class AuditRepository {
         auditItemId,
       ],
     );
+
+    // Sync to Supabase directly
+    try {
+      await _supabase.from('audit_items').update({
+        'actual_quantity': actualQuantity,
+        'is_checked': true,
+        'comment': comment,
+        'photos': photos?.join(','),
+      }).eq('id', auditItemId);
+    } catch (e) {
+      print('AuditRepository updateActualQuantity Supabase sync error: $e');
+    }
   }
 
   /// Increment actualQuantity by 1 (for barcode scanning).
@@ -206,11 +246,22 @@ class AuditRepository {
 
     final current = rows.first['actual_quantity'] as int? ?? 0;
     final isChecked = rows.first['is_checked'] == 1;
+    final newQty = isChecked ? current + 1 : 1;
 
     await _db.execute(
       'UPDATE audit_items SET actual_quantity = ?, is_checked = 1 WHERE id = ?',
-      [isChecked ? current + 1 : 1, auditItemId],
+      [newQty, auditItemId],
     );
+
+    // Sync to Supabase directly
+    try {
+      await _supabase.from('audit_items').update({
+        'actual_quantity': newQty,
+        'is_checked': true,
+      }).eq('id', auditItemId);
+    } catch (e) {
+      print('AuditRepository scanItem Supabase sync error: $e');
+    }
   }
 
   // ═══════════════ COMPLETE / CANCEL ═══════════════
@@ -219,9 +270,9 @@ class AuditRepository {
   /// Only items with isChecked=true get their product.quantity updated.
   Future<bool> completeAudit(String auditId) async {
     try {
-      // Get all checked items
+      // Get all checked items with expected metrics for live audit calculations
       final items = await _db.getAll(
-        '''SELECT product_id, actual_quantity
+        '''SELECT product_id, actual_quantity, snapshot_quantity, movements_during_audit
            FROM audit_items
            WHERE audit_id = ? AND is_checked = 1 AND actual_quantity IS NOT NULL''',
         [auditId],
@@ -231,24 +282,36 @@ class AuditRepository {
       for (final item in items) {
         final productId = item['product_id'] as String;
         final actualQty = item['actual_quantity'] as int;
+        final snapshotQty = item['snapshot_quantity'] as int;
+        final movements = item['movements_during_audit'] as int;
+        final expectedQty = snapshotQty + movements;
+        final discrepancy = actualQty - expectedQty;
         final now = DateTime.now().toIso8601String();
+
+        // Get current real-time quantity from local DB
+        final prodRow = await _db.getOptional(
+          'SELECT quantity FROM products WHERE id = ?',
+          [productId],
+        );
+        final currentQty = prodRow != null ? (prodRow['quantity'] as int? ?? 0) : expectedQty;
+        final newQty = (currentQty + discrepancy).clamp(0, 999999999);
 
         await _db.execute(
           'UPDATE products SET quantity = ?, updated_at = ? WHERE id = ?',
-          [actualQty, now, productId],
+          [newQty, now, productId],
         );
 
         // Sync updated product to Supabase (for realtime)
         try {
           await _supabase.from('products').update({
-            'quantity': actualQty,
+            'quantity': newQty,
             'updated_at': now,
           }).eq('id', productId);
         } catch (e) {
           debugPrint('[AuditRepository] Error syncing product to Supabase: $e');
           // Fallback to PowerSync sync if direct Supabase write fails
           await SupabaseSync.update('products', productId, {
-            'quantity': actualQty,
+            'quantity': newQty,
             'updated_at': now,
           });
         }
@@ -288,24 +351,32 @@ class AuditRepository {
 
   /// Save audit as draft without applying corrections.
   Future<void> saveDraft(String auditId) async {
+    final now = DateTime.now().toIso8601String();
     await _db.execute(
       'UPDATE audits SET status = ?, updated_at = ? WHERE id = ?',
-      [AuditStatus.draft.name, DateTime.now().toIso8601String(), auditId],
+      [AuditStatus.draft.name, now, auditId],
     );
+    try {
+      await _supabase.from('audits').update({
+        'status': AuditStatus.draft.name,
+        'updated_at': now,
+      }).eq('id', auditId);
+    } catch (e) {
+      print('saveDraft Supabase sync error: $e');
+    }
   }
 
   /// Cancel an audit (no corrections applied).
   Future<void> cancelAudit(String auditId) async {
     final now = DateTime.now().toIso8601String();
     await _db.execute(
-      'UPDATE audits SET status = ?, updated_at = ? WHERE id = ?',
-      [AuditStatus.cancelled.name, now, auditId],
+      'UPDATE audits SET status = ?, completed_at = ?, updated_at = ? WHERE id = ?',
+      [AuditStatus.cancelled.name, now, now, auditId],
     );
-
-    // Sync status (for realtime)
     try {
       await _supabase.from('audits').update({
         'status': AuditStatus.cancelled.name,
+        'completed_at': now,
         'updated_at': now,
       }).eq('id', auditId);
     } catch (e) {
@@ -314,6 +385,7 @@ class AuditRepository {
       // Fallback to PowerSync sync if direct Supabase write fails
       await SupabaseSync.update('audits', auditId, {
         'status': AuditStatus.cancelled.name,
+        'completed_at': now,
         'updated_at': now,
       });
     }
@@ -321,10 +393,19 @@ class AuditRepository {
 
   /// Resume an audit from draft → inProgress.
   Future<void> resumeAudit(String auditId) async {
+    final now = DateTime.now().toIso8601String();
     await _db.execute(
       'UPDATE audits SET status = ?, updated_at = ? WHERE id = ?',
-      [AuditStatus.inProgress.name, DateTime.now().toIso8601String(), auditId],
+      [AuditStatus.inProgress.name, now, auditId],
     );
+    try {
+      await _supabase.from('audits').update({
+        'status': AuditStatus.inProgress.name,
+        'updated_at': now,
+      }).eq('id', auditId);
+    } catch (e) {
+      print('resumeAudit Supabase sync error: $e');
+    }
   }
 
   // ═══════════════ QUERIES ═══════════════

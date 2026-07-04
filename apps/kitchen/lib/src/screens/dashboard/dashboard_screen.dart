@@ -7,6 +7,7 @@ import 'package:takesep_core/takesep_core.dart';
 import '../../providers/dashboard_providers.dart';
 import '../../providers/date_filter_provider.dart';
 import '../../providers/currency_provider.dart';
+import '../../providers/auth_providers.dart';
 import '../../data/mock_data.dart';
 import '../onboarding/dashboard_onboarding_overlay.dart';
 
@@ -18,6 +19,7 @@ class DashboardScreen extends ConsumerWidget {
     final w = MediaQuery.of(context).size.width;
     final isMobile = w < 600;
     final isDesktop = w >= 1100;
+    final isKitchen = ref.watch(isKitchenModeProvider);
     final pad =
         isDesktop ? AppSpacing.xxl : (w >= 600 ? AppSpacing.lg : AppSpacing.md);
 
@@ -43,13 +45,17 @@ class DashboardScreen extends ConsumerWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Expanded(child: _DashGoodsCard()),
-                      const SizedBox(width: AppSpacing.lg),
-                      Expanded(child: _DashServicesCard()),
+                      if (!isKitchen) ...[
+                        const SizedBox(width: AppSpacing.lg),
+                        Expanded(child: _DashServicesCard()),
+                      ],
                     ]),
               ] else ...[
                 _DashGoodsCard(),
-                const SizedBox(height: AppSpacing.lg),
-                _DashServicesCard(),
+                if (!isKitchen) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  _DashServicesCard(),
+                ],
               ],
               const SizedBox(height: AppSpacing.xl),
 
@@ -782,7 +788,7 @@ class _KpiCardState extends ConsumerState<_KpiCard> {
   Widget _buildProfitBreakdown(ColorScheme cs, KpiBreakdown bd, String Function(double) fmt) {
     final products = bd.topProducts;
     if (products.isEmpty) {
-      return Text('Нет данных о товарах',
+      return Text('Нет данных о позициях',
           style: TextStyle(
               color: cs.onSurface.withValues(alpha: 0.4), fontSize: 11));
     }
@@ -795,7 +801,7 @@ class _KpiCardState extends ConsumerState<_KpiCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Топ товары по прибыли:',
+        Text('Топ позиции по прибыли:',
             style: TextStyle(
                 color: cs.onSurface.withValues(alpha: 0.5),
                 fontSize: 10,
@@ -989,7 +995,7 @@ class _KpiCardState extends ConsumerState<_KpiCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Недостача товаров:',
+        Text('Недостача позиций:',
             style: TextStyle(
                 color: cs.onSurface.withValues(alpha: 0.5),
                 fontSize: 10,
@@ -1203,7 +1209,7 @@ class _TopProductsCardState extends ConsumerState<_TopProductsCard> {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(
-                child: Text('\u0422\u043e\u043f \u0442\u043e\u0432\u0430\u0440\u043e\u0432',
+                child: Text('Топ позиций',
                     style: AppTypography.headlineSmall
                         .copyWith(color: cs.onSurface))),
             for (int i = 0; i < limits.length; i++) ...[
@@ -1331,7 +1337,7 @@ class _TopProductsCardState extends ConsumerState<_TopProductsCard> {
               child: CircularProgressIndicator(),
             )),
             error: (e, _) => const Center(
-                child: Text('\u041e\u0448\u0438\u0431\u043a\u0430 \u0437\u0430\u0433\u0440\u0443\u0437\u043a\u0438 \u0442\u043e\u043f-\u0442\u043e\u0432\u0430\u0440\u043e\u0432')),
+                child: Text('Ошибка загрузки топ-позиций')),
           ),
         ]));
   }
@@ -1517,7 +1523,7 @@ class _OpsCardState extends ConsumerState<_OpsCard> {
                                         _Info('Недостача', '${visible[i]['shortageCount'] ?? 0}', cs),
                                       ] else
                                       _Info(
-                                          'Товаров',
+                                          'Позиций',
                                           '${visible[i]['itemsCount']} поз. (${visible[i]['totalQty']} шт)',
                                           cs),
                                       if (visible[i]['notes'] != null &&
@@ -1697,7 +1703,7 @@ class _StockCardState extends ConsumerState<_StockCard> {
                 return Padding(
                     padding: const EdgeInsets.all(AppSpacing.lg),
                     child: Center(
-                        child: Text('Все товары в норме',
+                        child: Text('Все позиции в норме',
                             style: TextStyle(
                                 color:
                                     cs.onSurface.withValues(alpha: 0.4)))));
@@ -2025,10 +2031,10 @@ class _DashGoodsCardState extends ConsumerState<_DashGoodsCard> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Товары', style: AppTypography.headlineSmall.copyWith(
+                          Text('Позиции меню', style: AppTypography.headlineSmall.copyWith(
                             color: cs.onSurface, fontWeight: FontWeight.w700)),
                           const SizedBox(height: 2),
-                          Text('Выручка от товаров', style: TextStyle(
+                          Text('Выручка от позиций меню', style: TextStyle(
                             color: cs.onSurface.withValues(alpha: 0.5), fontSize: 12)),
                         ],
                       ),
@@ -2085,7 +2091,7 @@ class _DashGoodsCardState extends ConsumerState<_DashGoodsCard> {
         ),
         error: (e, _) => Padding(
           padding: const EdgeInsets.all(AppSpacing.xl),
-          child: Text('Ошибка загрузки товаров: $e',
+          child: Text('Ошибка загрузки позиций меню: $e',
               style: const TextStyle(color: Colors.red, fontSize: 12)),
         ),
       ),

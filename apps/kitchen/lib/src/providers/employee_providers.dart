@@ -59,6 +59,7 @@ class EmployeeListNotifier extends StateNotifier<AsyncValue<List<Employee>>> {
   }
 
   Future<void> load({bool silent = false}) async {
+    if (!mounted) return;
     if (_companyId == null) {
       state = const AsyncValue.data([]);
       return;
@@ -68,8 +69,10 @@ class EmployeeListNotifier extends StateNotifier<AsyncValue<List<Employee>>> {
         state = const AsyncValue.loading();
       }
       final employees = await _repo.getEmployees(_companyId);
+      if (!mounted) return;
       state = AsyncValue.data(employees);
     } catch (e, st) {
+      if (!mounted) return;
       state = AsyncValue.error(e, st);
     }
   }

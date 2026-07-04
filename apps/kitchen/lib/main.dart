@@ -18,6 +18,9 @@ import 'src/data/powersync_db.dart';
 import 'src/services/firebase_push_bootstrap.dart';
 import 'src/services/notification_service.dart';
 
+Zone? _bindingZone;
+bool _showingError = false;
+
 void main() {
   const showErrorScreen = bool.fromEnvironment('dart.vm.product') == false;
 
@@ -47,6 +50,7 @@ void main() {
   };
 
   runZonedGuarded(() async {
+    _bindingZone = Zone.current;
     WidgetsFlutterBinding.ensureInitialized();
     try {
       await _bootstrapApp();
@@ -154,6 +158,12 @@ bool _isNetworkError(Object error) {
 }
 
 void _showErrorOnScreen(String message, String? stack) {
+  if (_showingError) {
+    debugPrint('[TakEsep] Recursive error prevented: $message');
+    return;
+  }
+  _showingError = true;
+
   debugPrint('═══════════════════════════════════════');
   debugPrint('🔴 ERROR: $message');
   if (stack != null) {
@@ -163,7 +173,14 @@ void _showErrorOnScreen(String message, String? stack) {
   debugPrint('═══════════════════════════════════════');
 
   try {
-    runApp(_ErrorApp(message: message, stack: stack));
+    final bindingZone = _bindingZone;
+    if (bindingZone != null && Zone.current != bindingZone) {
+      bindingZone.run(() {
+        runApp(_ErrorApp(message: message, stack: stack));
+      });
+    } else {
+      runApp(_ErrorApp(message: message, stack: stack));
+    }
   } catch (e) {
     debugPrint('[TakEsep] Even error screen failed: $e');
   }

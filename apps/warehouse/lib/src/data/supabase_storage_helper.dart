@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'package:path/path.dart' as p;
@@ -23,6 +24,26 @@ class SupabaseStorageHelper {
       return storage.getPublicUrl(fileName);
     } catch (e) {
       print('SupabaseStorageHelper.uploadImage error: $e');
+      throw Exception('Supabase upload error: $e');
+    }
+  }
+
+  /// Uploads image bytes to the Supabase 'images' bucket (cross-platform safe for Web & Desktop).
+  static Future<String> uploadImageBytes(String name, Uint8List bytes) async {
+    try {
+      final ext = p.extension(name);
+      final fileName = '${const Uuid().v4()}$ext';
+      final storage = Supabase.instance.client.storage.from('images');
+
+      await storage.uploadBinary(
+        fileName,
+        bytes,
+        fileOptions: const FileOptions(cacheControl: '31536000', upsert: false),
+      );
+
+      return storage.getPublicUrl(fileName);
+    } catch (e) {
+      print('SupabaseStorageHelper.uploadImageBytes error: $e');
       throw Exception('Supabase upload error: $e');
     }
   }

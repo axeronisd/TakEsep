@@ -74,7 +74,7 @@ String generateEAN13() {
 //  CONSTANTS
 // ═══════════════════════════════════════════════════
 
-const List<String> _unitOptions = ['шт', 'кг', 'г', 'л', 'мл', 'уп', 'м'];
+const List<String> _unitOptions = ['шт', 'кг', 'г', 'л', 'мл'];
 
 // ═══════════════════════════════════════════════════
 //  DIALOG WIDGET
@@ -274,15 +274,11 @@ class _QuickCreateProductDialogState
     final name = _nameController.text.trim();
     final barcode = _barcodeController.text.trim();
     final costStr = _costController.text.trim().replaceAll(',', '.');
-    final priceStr = _priceController.text.trim().replaceAll(',', '.');
-    final qty = int.tryParse(_quantityController.text.trim()) ?? 1;
+    final qtyStr = _quantityController.text.trim().replaceAll(',', '.');
+    final minStockStr = _minStockController.text.trim().replaceAll(',', '.');
 
     if (name.isEmpty) {
       _showError('Введите название товара');
-      return;
-    }
-    if (priceStr.isEmpty) {
-      _showError('Введите цену продажи');
       return;
     }
     if (barcode.isEmpty) {
@@ -294,9 +290,27 @@ class _QuickCreateProductDialogState
       return;
     }
 
-    final double price = double.tryParse(priceStr) ?? 0;
-    final double? cost = costStr.isNotEmpty ? double.tryParse(costStr) : null;
-    final int minStock = int.tryParse(_minStockController.text.trim()) ?? 0;
+    final double qtyDouble = double.tryParse(qtyStr) ?? 1.0;
+    final double? costDouble = costStr.isNotEmpty ? double.tryParse(costStr) : null;
+    final double minStockDouble = double.tryParse(minStockStr) ?? 0.0;
+
+    String targetUnit = _selectedUnit;
+    double? cost = costDouble;
+    int qty = qtyDouble.round();
+    int minStock = minStockDouble.round();
+
+    // Convert weight/volume units to base sub-units (grams, milliliters)
+    if (_selectedUnit == 'кг') {
+      targetUnit = 'г';
+      if (cost != null) cost = cost / 1000.0;
+      qty = (qtyDouble * 1000).round();
+      minStock = (minStockDouble * 1000).round();
+    } else if (_selectedUnit == 'л') {
+      targetUnit = 'мл';
+      if (cost != null) cost = cost / 1000.0;
+      qty = (qtyDouble * 1000).round();
+      minStock = (minStockDouble * 1000).round();
+    }
 
     final companyId = ref.read(authProvider).currentCompany?.id;
     final warehouseId = ref.read(selectedWarehouseIdProvider) ?? '';
@@ -324,22 +338,19 @@ class _QuickCreateProductDialogState
         companyId: companyId,
         name: name,
         barcode: barcode,
-        categoryId: _selectedCategoryId ?? 'uncategorized',
-        price: price,
+        categoryId: 'uncategorized',
+        price: 0.0, // Stock items received on arrival don't have a retail selling price directly
         costPrice: cost,
-        b2cPrice: _isPublic ? price : null,
-        b2cDescription: _isPublic && _descriptionController.text.trim().isNotEmpty
-            ? _descriptionController.text.trim()
-            : null,
+        b2cPrice: null,
+        b2cDescription: null,
         quantity: 0,
         minQuantity: minStock,
-        unit: _selectedUnit,
-        description: _descriptionController.text.trim().isNotEmpty
-            ? _descriptionController.text.trim()
-            : null,
+        unit: targetUnit,
+        description: null,
         warehouseId: warehouseId,
         imageUrl: imageUrl,
-        isPublic: _isPublic,
+        isPublic: false,
+        productType: 'ingredient',
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
@@ -462,7 +473,7 @@ class _QuickCreateProductDialogState
                 const SizedBox(height: AppSpacing.sm),
                 _buildNameField(cs),
                 const SizedBox(height: AppSpacing.md),
-                _buildCategoryAndUnitRow(cs, categoriesAsync),
+                _buildUnitDropdown(cs),
                 SizedBox(height: isMobile ? AppSpacing.lg : AppSpacing.xl),
 
                 // ── Section: Цены и количество ──
@@ -472,15 +483,6 @@ class _QuickCreateProductDialogState
                 _buildPriceRow(cs, cur),
                 const SizedBox(height: AppSpacing.md),
                 _buildQuantityAndMinStockRow(cs),
-                SizedBox(height: isMobile ? AppSpacing.lg : AppSpacing.xl),
-
-                // ── Section: Дополнительно ──
-                _buildSectionLabel('Дополнительно', Icons.tune_rounded),
-                const SizedBox(height: AppSpacing.sm),
-                _buildDescriptionField(cs),
-                const SizedBox(height: AppSpacing.md),
-                _buildB2CToggle(cs),
-                // Extra bottom padding on mobile for keyboard
                 if (isMobile) const SizedBox(height: AppSpacing.xxl),
               ],
             ),
@@ -1066,8 +1068,7 @@ class _QuickCreateProductDialogState
   // ═══════════════════════════════════════════════════
 
   Widget _buildPriceRow(ColorScheme cs, String cur) {
-    final isMobile = MediaQuery.of(context).size.width < 600;
-    final costField = TextField(
+    return TextField(
       controller: _costController,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
       decoration: InputDecoration(
@@ -1080,37 +1081,6 @@ class _QuickCreateProductDialogState
       ),
       enabled: !_isSaving,
       textInputAction: TextInputAction.next,
-    );
-    final priceField = TextField(
-      controller: _priceController,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      decoration: InputDecoration(
-        labelText: 'Продажа ($cur) *',
-        hintText: '0',
-        prefixIcon: const Icon(Icons.arrow_upward_rounded,
-            size: 18, color: AppColors.primary),
-        filled: true,
-        fillColor: cs.surfaceContainerHighest.withValues(alpha: 0.1),
-      ),
-      enabled: !_isSaving,
-      textInputAction: TextInputAction.next,
-    );
-
-    if (isMobile) {
-      return Column(
-        children: [
-          costField,
-          const SizedBox(height: AppSpacing.sm),
-          priceField,
-        ],
-      );
-    }
-    return Row(
-      children: [
-        Expanded(child: costField),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(child: priceField),
-      ],
     );
   }
 

@@ -48,11 +48,6 @@ const _navSections = <_NavSection>[
   ]),
   _NavSection(label: 'Каталог', items: [
     _NavItem(
-        icon: Icons.inventory_2_rounded,
-        label: 'Товары',
-        path: '/inventory',
-        permissionKey: 'inventory'),
-    _NavItem(
         icon: Icons.build_circle_rounded,
         label: 'Услуги',
         path: '/services',
@@ -102,7 +97,7 @@ const _kitchenNavSections = <_NavSection>[
     _NavItem(
         icon: Icons.analytics_rounded,
         label: 'Аналитика',
-        path: '/kitchen-analytics',
+        path: '/dashboard',
         permissionKey: 'dashboard'),
     _NavItem(
         icon: Icons.delivery_dining_rounded,
@@ -115,12 +110,17 @@ const _kitchenNavSections = <_NavSection>[
     _NavItem(
         icon: Icons.point_of_sale_rounded,
         label: 'Официант',
-        path: '/waiter-terminal',
+        path: '/sales',
         permissionKey: 'sales'),
     _NavItem(
         icon: Icons.restaurant_rounded,
         label: 'Кухня (KDS)',
         path: '/kitchen-kds',
+        permissionKey: 'sales'),
+    _NavItem(
+        icon: Icons.local_bar_rounded,
+        label: 'Бар (KDS)',
+        path: '/bar-kds',
         permissionKey: 'sales'),
   ]),
   _NavSection(label: 'Меню и Рецепты', items: [
@@ -142,38 +142,224 @@ const _kitchenNavSections = <_NavSection>[
         path: '/kitchen-promos',
         permissionKey: 'settings'),
     _NavItem(
-        icon: Icons.qr_code_2_rounded,
-        label: 'Столы & QR',
+        icon: Icons.table_bar_rounded,
+        label: 'Редактор столов',
         path: '/kitchen-tables',
         permissionKey: 'settings'),
   ]),
 ];
+List<_NavSection> _getMergedSections(bool isKitchen, List<String> permissions) {
+  final sections = <_NavSection>[];
 
-/// Filters navigation sections based on the current role's permissions.
-List<_NavSection> _filterSections(List<String> permissions) {
-  final filtered = <_NavSection>[];
-  for (final section in _navSections) {
-    final items = section.items
-        .where((item) => permissions.contains(item.permissionKey))
-        .toList();
-    if (items.isNotEmpty) {
-      filtered.add(_NavSection(label: section.label, items: items));
+  // 1. Главное
+  final mainItems = <_NavItem>[];
+  if (permissions.contains('dashboard')) {
+    mainItems.add(_NavItem(
+      icon: Icons.analytics_rounded,
+      label: 'Аналитика',
+      path: '/dashboard',
+      permissionKey: 'dashboard',
+    ));
+  } else if (isKitchen) {
+    mainItems.add(_NavItem(
+      icon: Icons.analytics_rounded,
+      label: 'Моя аналитика',
+      path: '/personal-analytics',
+      permissionKey: 'sales',
+    ));
+  }
+  if (isKitchen) {
+    if (permissions.contains('sales')) {
+      mainItems.add(_NavItem(
+        icon: Icons.point_of_sale_rounded,
+        label: 'Официант',
+        path: '/sales',
+        permissionKey: 'sales',
+      ));
+      mainItems.add(_NavItem(
+        icon: Icons.restaurant_rounded,
+        label: 'Кухня (KDS)',
+        path: '/kitchen-kds',
+        permissionKey: 'sales',
+      ));
+      mainItems.add(_NavItem(
+        icon: Icons.local_bar_rounded,
+        label: 'Бар (KDS)',
+        path: '/bar-kds',
+        permissionKey: 'sales',
+      ));
+    }
+  } else {
+    if (permissions.contains('sales')) {
+      mainItems.add(_NavItem(
+        icon: Icons.point_of_sale_rounded,
+        label: 'Продажа',
+        path: '/sales',
+        permissionKey: 'sales',
+      ));
     }
   }
-  return filtered;
-}
+  if (mainItems.isNotEmpty) {
+    sections.add(_NavSection(label: 'Главное', items: mainItems));
+  }
 
-List<_NavSection> _filterKitchenSections(List<String> permissions) {
-  final filtered = <_NavSection>[];
-  for (final section in _kitchenNavSections) {
-    final items = section.items
-        .where((item) => permissions.contains(item.permissionKey))
-        .toList();
-    if (items.isNotEmpty) {
-      filtered.add(_NavSection(label: section.label, items: items));
+  // 2. Операции
+  final opItems = <_NavItem>[];
+  if (permissions.contains('income')) {
+    opItems.add(_NavItem(
+      icon: Icons.download_rounded,
+      label: 'Приход',
+      path: '/income',
+      permissionKey: 'income',
+    ));
+  }
+  if (permissions.contains('transfer')) {
+    opItems.add(_NavItem(
+      icon: Icons.swap_horiz_rounded,
+      label: 'Перемещение',
+      path: '/transfer',
+      permissionKey: 'transfer',
+    ));
+  }
+  if (permissions.contains('audit')) {
+    opItems.add(_NavItem(
+      icon: Icons.fact_check_rounded,
+      label: 'Ревизия',
+      path: '/audit',
+      permissionKey: 'audit',
+    ));
+  }
+  if (permissions.contains('write_offs')) {
+    opItems.add(_NavItem(
+      icon: Icons.delete_sweep_rounded,
+      label: 'Списание',
+      path: '/write-offs',
+      permissionKey: 'write_offs',
+    ));
+  }
+  if (opItems.isNotEmpty) {
+    sections.add(_NavSection(label: 'Операции', items: opItems));
+  }
+
+  // 3. Каталог / Меню
+  final catalogItems = <_NavItem>[];
+
+  if (isKitchen && permissions.contains('inventory')) {
+    catalogItems.add(_NavItem(
+      icon: Icons.restaurant_menu_rounded,
+      label: 'Меню',
+      path: '/kitchen-menu',
+      permissionKey: 'inventory',
+    ));
+    catalogItems.add(_NavItem(
+      icon: Icons.receipt_long_rounded,
+      label: 'Рецепты',
+      path: '/kitchen-recipes',
+      permissionKey: 'inventory',
+    ));
+  }
+  if (!isKitchen && permissions.contains('services')) {
+    catalogItems.add(_NavItem(
+      icon: Icons.build_circle_rounded,
+      label: 'Услуги',
+      path: '/services',
+      permissionKey: 'services',
+    ));
+  }
+  if (catalogItems.isNotEmpty) {
+    sections.add(_NavSection(label: isKitchen ? 'Каталог и Меню' : 'Каталог', items: catalogItems));
+  }
+
+  // 4. Заведение & Маркетинг (только в кухонном режиме)
+  if (isKitchen) {
+    final marketingItems = <_NavItem>[];
+    if (permissions.contains('settings')) {
+      marketingItems.add(_NavItem(
+        icon: Icons.local_offer_rounded,
+        label: 'Промокоды & Скидки',
+        path: '/kitchen-promos',
+        permissionKey: 'settings',
+      ));
+      marketingItems.add(_NavItem(
+        icon: Icons.table_bar_rounded,
+        label: 'Редактор столов',
+        path: '/kitchen-tables',
+        permissionKey: 'settings',
+      ));
+    }
+    if (marketingItems.isNotEmpty) {
+      sections.add(_NavSection(label: 'Заведение', items: marketingItems));
     }
   }
-  return filtered;
+
+  // 5. Контакты
+  final contactItems = <_NavItem>[];
+  if (permissions.contains('clients')) {
+    contactItems.add(_NavItem(
+      icon: Icons.people_rounded,
+      label: 'Клиенты',
+      path: '/clients',
+      permissionKey: 'clients',
+    ));
+  }
+  if (permissions.contains('employees')) {
+    contactItems.add(_NavItem(
+      icon: Icons.badge_rounded,
+      label: 'Сотрудники',
+      path: '/employees',
+      permissionKey: 'employees',
+    ));
+  }
+  if (contactItems.isNotEmpty) {
+    sections.add(_NavSection(label: 'Контакты', items: contactItems));
+  }
+
+  // 6. Доставка AkJol
+  final deliveryItems = <_NavItem>[];
+  if (permissions.contains('delivery_orders')) {
+    deliveryItems.add(_NavItem(
+      icon: Icons.delivery_dining_rounded,
+      label: 'Заказы',
+      path: '/delivery-orders',
+      permissionKey: 'delivery_orders',
+      hasBadge: true,
+    ));
+  }
+  if (permissions.contains('delivery_settings')) {
+    deliveryItems.add(_NavItem(
+      icon: Icons.tune_rounded,
+      label: 'Настройки доставки',
+      path: '/delivery-settings',
+      permissionKey: 'delivery_settings',
+    ));
+  }
+  if (permissions.contains('akjol_catalog')) {
+    deliveryItems.add(_NavItem(
+      assetIcon: 'assets/images/akjol_logo.png',
+      label: 'Каталог AkJol',
+      path: '/akjol-catalog',
+      permissionKey: 'akjol_catalog',
+    ));
+  }
+  if (deliveryItems.isNotEmpty) {
+    sections.add(_NavSection(label: 'Доставка AkJol', items: deliveryItems));
+  }
+
+  // 7. Отчётность
+  final reportItems = <_NavItem>[];
+  if (permissions.contains('reports')) {
+    reportItems.add(_NavItem(
+      icon: Icons.assessment_rounded,
+      label: 'Отчёты',
+      path: '/reports',
+      permissionKey: 'reports',
+    ));
+  }
+  if (reportItems.isNotEmpty) {
+    sections.add(_NavSection(label: 'Отчётность', items: reportItems));
+  }
+
+  return sections;
 }
 
 /// Adaptive app shell — reads colors from Theme + permissions from Role.
@@ -206,7 +392,7 @@ class _AppShellState extends ConsumerState<AppShell> {
     final authState = ref.watch(authProvider);
     final permissions = authState.currentRole?.permissions ?? [];
     final isKitchen = ref.watch(isKitchenModeProvider);
-    final sections = isKitchen ? _filterKitchenSections(permissions) : _filterSections(permissions);
+    final sections = _getMergedSections(isKitchen, permissions);
 
     if (w >= 900) {
       return GlobalBarcodeScanner(
@@ -599,20 +785,20 @@ class _MobileLayoutState extends State<_MobileLayout> {
             child: Row(
               children: [
                 // Аналитика
-                if (widget.authState.hasPermission('dashboard'))
+                if (widget.authState.hasPermission('dashboard') || widget.isKitchen)
                   _MobileNavItem(
                     icon: Icons.analytics_rounded,
-                    label: 'Аналитика',
-                    isSelected: widget.currentPath.startsWith(widget.isKitchen ? '/kitchen-analytics' : '/dashboard'),
-                    onTap: () => context.go(widget.isKitchen ? '/kitchen-analytics' : '/dashboard'),
+                    label: widget.authState.hasPermission('dashboard') ? 'Аналитика' : 'Моя аналитика',
+                    isSelected: widget.currentPath.startsWith('/dashboard') || widget.currentPath.startsWith('/personal-analytics'),
+                    onTap: () => context.go(widget.authState.hasPermission('dashboard') ? '/dashboard' : '/personal-analytics'),
                   ),
                 // Sales
                 if (widget.authState.hasPermission('sales'))
                   _MobileNavItem(
                     icon: Icons.point_of_sale_rounded,
                     label: widget.isKitchen ? 'Официант' : 'Продажа',
-                    isSelected: widget.currentPath.startsWith(widget.isKitchen ? '/waiter-terminal' : '/sales'),
-                    onTap: () => context.go(widget.isKitchen ? '/waiter-terminal' : '/sales'),
+                    isSelected: widget.currentPath.startsWith('/sales'),
+                    onTap: () => context.go('/sales'),
                   ),
                 // Scanner (conditional)
                 if (showScanner)
@@ -1173,42 +1359,63 @@ class _UserCard extends StatelessWidget {
           color: cs.surfaceContainerHighest,
           borderRadius: BorderRadius.circular(AppSpacing.radiusSm),
         ),
-        child: Row(children: [
-          CircleAvatar(
-            radius: 16,
-            backgroundColor: cs.primary.withValues(alpha: 0.1),
-            child: Icon(Icons.person, size: 18, color: cs.primary),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          physics: const NeverScrollableScrollPhysics(),
+          child: SizedBox(
+            width: 170,
+            child: Row(
               children: [
-                Text(employee?.name ?? 'Сотрудник',
-                    style: TextStyle(
-                        color: cs.onSurface,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500)),
-                Text(
-                    '${role?.name ?? ''} ${warehouse != null ? '• ${warehouse.name}' : ''}',
-                    style: TextStyle(
-                        color: cs.onSurface.withValues(alpha: 0.4),
-                        fontSize: 11),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis),
+                CircleAvatar(
+                  radius: 16,
+                  backgroundColor: cs.primary.withValues(alpha: 0.1),
+                  child: Icon(Icons.person, size: 18, color: cs.primary),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        employee?.name ?? 'Сотрудник',
+                        style: TextStyle(
+                          color: cs.onSurface,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Text(
+                        '${role?.name ?? ''} ${warehouse != null ? '• ${warehouse.name}' : ''}',
+                        style: TextStyle(
+                          color: cs.onSurface.withValues(alpha: 0.4),
+                          fontSize: 11,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                InkWell(
+                  onTap: onLogout,
+                  borderRadius: BorderRadius.circular(4),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: Icon(
+                      Icons.logout_rounded,
+                      size: 16,
+                      color: cs.onSurface.withValues(alpha: 0.5),
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
-          InkWell(
-            onTap: onLogout,
-            borderRadius: BorderRadius.circular(4),
-            child: Padding(
-              padding: const EdgeInsets.all(4),
-              child: Icon(Icons.logout_rounded,
-                  size: 16, color: cs.onSurface.withValues(alpha: 0.4)),
-            ),
-          ),
-        ]),
+        ),
       ),
     );
   }

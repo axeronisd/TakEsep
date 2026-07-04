@@ -20,6 +20,8 @@ import '../../utils/snackbar_helper.dart';
 import 'widgets/edit_role_sheet.dart';
 import 'widgets/payment_methods_sheet.dart';
 import 'widgets/storefront_settings_sheet.dart';
+import '../kitchen/waiter_commission_settings_screen.dart';
+import '../kitchen/table_designer_screen.dart';
 
 /// Settings screen — organization, warehouses, roles, integrations, theme toggle.
 class SettingsScreen extends ConsumerWidget {
@@ -49,10 +51,10 @@ class SettingsScreen extends ConsumerWidget {
             'Витрина магазина', Icons.storefront_rounded, 'Логотип, баннер и описание',
             action: 'storefront'),
         _SettingsItem(
-            'Группы складов', Icons.category_rounded, 'Управление группами',
+            'Сети заведений', Icons.category_rounded, 'Управление сетями заведений',
             action: 'groups'),
         _SettingsItem(
-            'Склады', Icons.store_rounded, 'Управление складами и магазинами',
+            'Заведения', Icons.restaurant_rounded, 'Управление заведениями (кафе / кухнями)',
             action: 'warehouses'),
       ]),
       if (hasEmployeesPerm)
@@ -63,6 +65,9 @@ class SettingsScreen extends ConsumerWidget {
           _SettingsItem('Безопасность', Icons.security_rounded,
               'PIN-коды сотрудников',
               action: 'security'),
+          _SettingsItem('Комиссии официантов', Icons.percent_rounded,
+              'Процентные ставки сотрудников',
+              action: 'waiter_commissions'),
         ]),
       _SettingsSection('Продажи', [
         _SettingsItem('Чековый принтер', Icons.receipt_long_rounded,
@@ -204,7 +209,7 @@ class SettingsScreen extends ConsumerWidget {
             ],
 
             Center(
-                child: Text('TakEsep Склад v0.1.0 MVP',
+                child: Text('TakEsep Kitchen v0.1.0 MVP',
                     style: AppTypography.bodySmall
                         .copyWith(color: cs.onSurface.withValues(alpha: 0.3)))),
             const SizedBox(height: AppSpacing.lg),
@@ -242,6 +247,18 @@ class SettingsScreen extends ConsumerWidget {
         break;
       case 'pricing':
         _showPricingSettings(context, ref);
+        break;
+      case 'waiter_commissions':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const WaiterCommissionSettingsScreen()),
+        );
+        break;
+      case 'table_designer':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const TableDesignerScreen()),
+        );
         break;
     }
   }
@@ -484,7 +501,7 @@ class SettingsScreen extends ConsumerWidget {
                       ? '${company.createdAt.day.toString().padLeft(2, '0')}.${company.createdAt.month.toString().padLeft(2, '0')}.${company.createdAt.year}'
                       : '—'),
               _sheetInfoRow(
-                  cs, Icons.warehouse_rounded, 'Складов',
+                  cs, Icons.restaurant_rounded, 'Заведений',
                   '${auth.availableWarehouses.length}'),
             ],
           ),
@@ -523,11 +540,11 @@ class SettingsScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _handleBar(cs),
-                  Text('Группы складов',
+                  Text('Сети заведений',
                       style: AppTypography.headlineMedium
                           .copyWith(color: cs.onSurface)),
                   const SizedBox(height: AppSpacing.xs),
-                  Text('Склады в одной группе могут перемещать товары',
+                  Text('Заведения в одной сети могут перемещать ингредиенты и товары',
                       style: AppTypography.bodySmall.copyWith(
                           color: cs.onSurface.withValues(alpha: 0.5))),
                   const SizedBox(height: AppSpacing.xl),
@@ -535,7 +552,7 @@ class SettingsScreen extends ConsumerWidget {
                     const Center(child: CircularProgressIndicator())
                   else if (groups.isEmpty)
                     _emptyState(cs, Icons.category_rounded,
-                        'Нет групп складов')
+                        'Нет зарегистрированных сетей заведений')
                   else
                     for (final group in groups) ...[
                       _buildGroupTile(
@@ -584,7 +601,7 @@ class SettingsScreen extends ConsumerWidget {
                 borderRadius:
                     BorderRadius.circular(AppSpacing.radiusFull),
               ),
-              child: Text('${warehousesInGroup.length} скл.',
+              child: Text('${warehousesInGroup.length} зав.',
                   style: AppTypography.labelSmall.copyWith(
                       color: AppColors.primary,
                       fontWeight: FontWeight.w600)),
@@ -634,11 +651,11 @@ class SettingsScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               _handleBar(cs),
-              Text('Склады',
+              Text('Заведения',
                   style: AppTypography.headlineMedium
                       .copyWith(color: cs.onSurface)),
               const SizedBox(height: AppSpacing.xs),
-              Text('${auth.availableWarehouses.length} складов',
+              Text('${auth.availableWarehouses.length} заведений',
                   style: AppTypography.bodySmall.copyWith(
                       color: cs.onSurface.withValues(alpha: 0.5))),
               const SizedBox(height: AppSpacing.xl),
@@ -1014,8 +1031,8 @@ class SettingsScreen extends ConsumerWidget {
                       fontWeight: FontWeight.w500)),
               Text(
                 emp.allowedWarehouses == null
-                    ? 'Все склады'
-                    : '${emp.allowedWarehouses!.length} складов',
+                    ? 'Все заведения'
+                    : '${emp.allowedWarehouses!.length} заведений',
                 style: AppTypography.bodySmall.copyWith(
                     color: cs.onSurface.withValues(alpha: 0.5)),
               ),

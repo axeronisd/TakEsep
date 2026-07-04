@@ -68,8 +68,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           GoRoute(path: '/profile', builder: (_, __) => const ProfileScreen()),
           GoRoute(
             path: '/store/:id',
-            builder: (_, state) =>
-                StoreScreen(storeId: state.pathParameters['id']!),
+            builder: (_, state) {
+              final storeId = state.pathParameters['id']!;
+              final tableId = state.uri.queryParameters['tableId'];
+              return StoreScreen(storeId: storeId, tableId: tableId);
+            },
           ),
           GoRoute(path: '/cart', builder: (_, __) => const CartScreen()),
           GoRoute(

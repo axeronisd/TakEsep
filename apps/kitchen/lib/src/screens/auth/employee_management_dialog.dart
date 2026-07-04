@@ -545,14 +545,14 @@ class _EmployeesTab extends ConsumerWidget {
                     const SizedBox(height: 14),
 
                     // Warehouse access
-                    Text('Доступ к складам',
+                    Text('Доступ к заведениям',
                         style: AppTypography.labelMedium.copyWith(
                             color: cs.onSurface.withValues(alpha: 0.6))),
                     const SizedBox(height: 4),
                     whAsync.when(
                       data: (warehouses) {
                         if (warehouses.isEmpty) {
-                          return Text('Нет складов',
+                          return Text('Нет заведений',
                               style: AppTypography.bodySmall.copyWith(
                                   color: cs.onSurface
                                       .withValues(alpha: 0.3)));
@@ -566,13 +566,14 @@ class _EmployeesTab extends ConsumerWidget {
                                   if (val == true) selectedWarehouses.clear();
                                 });
                               },
-                              title: Text('Все склады',
+                              title: Text('Все заведения',
                                   style: AppTypography.bodySmall
                                       .copyWith(fontWeight: FontWeight.w600)),
                               controlAffinity:
                                   ListTileControlAffinity.leading,
                               dense: true,
                               contentPadding: EdgeInsets.zero,
+                              activeColor: AppColors.primary,
                             ),
                             ...warehouses.map((wh) => CheckboxListTile(
                                   value:
@@ -592,13 +593,14 @@ class _EmployeesTab extends ConsumerWidget {
                                       ListTileControlAffinity.leading,
                                   dense: true,
                                   contentPadding: EdgeInsets.zero,
+                                  activeColor: AppColors.primary,
                                 )),
                           ],
                         );
                       },
                       loading: () => const LinearProgressIndicator(),
                       error: (_, __) =>
-                          const Text('Ошибка загрузки складов'),
+                          const Text('Ошибка загрузки заведений'),
                     ),
 
                     if (!isNew) ...[

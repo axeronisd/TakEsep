@@ -453,11 +453,15 @@ class _ArrivalProductTile extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                            '$currencySymbol ${_fmtNum((product.costPrice ?? 0).toInt())}',
-                            style: AppTypography.bodySmall.copyWith(
-                                color: AppColors.primary,
-                                fontWeight: FontWeight.w700)),
+                        Expanded(
+                          child: Text(
+                              '$currencySymbol ${_fmtNum((product.costPrice ?? 0).toInt())}',
+                              style: AppTypography.bodySmall.copyWith(
+                                  color: AppColors.primary,
+                                  fontWeight: FontWeight.w700),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis),
+                        ),
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 5, vertical: 1),

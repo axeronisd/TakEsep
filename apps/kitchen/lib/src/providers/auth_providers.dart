@@ -636,50 +636,19 @@ final warehouseCategoriesProvider = StreamProvider.family<List<String>, String>(
     parameters: [warehouseId],
   ).map((rows) => rows.map((r) => r['store_category_id'] as String).toList());
 });
-
-/// True if the currently selected warehouse functions as a Cafe/Restaurant/Kitchen
 class KitchenModeNotifier extends Notifier<bool> {
+  static const _kPrefKey = 'takesep_kitchen_is_kitchen_mode';
+  late final SharedPreferences _prefs;
+
   @override
   bool build() {
-    final warehouseId = ref.watch(selectedWarehouseIdProvider);
-    if (warehouseId == null) return false;
-
-    // 1. Listen to the SQLite provider
-    ref.listen(warehouseCategoriesProvider(warehouseId), (previous, next) {
-      next.whenData((list) {
-        final hasKitchenCat = list.any((cat) => cat == 'food' || cat == 'cafe' || cat == 'restaurant');
-        if (hasKitchenCat != state) {
-          state = hasKitchenCat;
-        }
-      });
-    });
-
-    // 2. Trigger an async fetch from Supabase directly as a fallback/real-time override
-    _fetchDirect(warehouseId);
-
-    // Initial state check from SQLite if data is already loaded
-    final categoriesAsync = ref.read(warehouseCategoriesProvider(warehouseId));
-    return categoriesAsync.maybeWhen(
-      data: (list) => list.any((cat) => cat == 'food' || cat == 'cafe' || cat == 'restaurant'),
-      orElse: () => false,
-    );
+    _prefs = ref.watch(sharedPreferencesProvider);
+    return _prefs.getBool(_kPrefKey) ?? false;
   }
 
-  Future<void> _fetchDirect(String warehouseId) async {
-    try {
-      final response = await Supabase.instance.client
-          .from('warehouse_store_categories')
-          .select('store_category_id')
-          .eq('warehouse_id', warehouseId);
-      
-      final list = (response as List).map((c) => c['store_category_id'] as String).toList();
-      final hasKitchenCat = list.any((cat) => cat == 'food' || cat == 'cafe' || cat == 'restaurant');
-      if (hasKitchenCat != state) {
-        state = hasKitchenCat;
-      }
-    } catch (_) {
-      // Quiet fail to fallback on SQLite
-    }
+  void setMode(bool value) {
+    _prefs.setBool(_kPrefKey, value);
+    state = value;
   }
 }
 

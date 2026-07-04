@@ -1441,12 +1441,18 @@ class DashboardRepository {
       String companyId, DateTime startDate, DateTime endDate,
       {String? warehouseId}) async {
     try {
-      final whFilterP = warehouseId != null ? ' AND warehouse_id = ?' : '';
+      final whFilterP = warehouseId != null ? ' AND p.warehouse_id = ?' : '';
       final whFilterS = warehouseId != null ? ' AND s.warehouse_id = ?' : '';
       final whParam = warehouseId != null ? [warehouseId] : <String>[];
 
       final results = await _db.getAll(
-        "SELECT * FROM products WHERE company_id = ?$whFilterP",
+        """SELECT p.* FROM products p
+           WHERE p.company_id = ?$whFilterP
+             AND (
+               p.product_type != 'dish'
+               OR p.product_type IS NULL
+               OR NOT EXISTS (SELECT 1 FROM recipes r WHERE r.dish_id = p.id)
+             )""",
         [companyId, ...whParam],
       );
 

@@ -40,8 +40,10 @@ class PaymentMethodsNotifier extends StateNotifier<AsyncValue<List<PaymentMethod
         'SELECT * FROM payment_methods WHERE company_id = ? ORDER BY created_at ASC',
         [companyId],
       );
+      if (!mounted) return;
       state = AsyncValue.data(rows.map((r) => PaymentMethod.fromJson(r)).toList());
     } catch (e, st) {
+      if (!mounted) return;
       state = AsyncValue.error(e, st);
     }
   }
@@ -84,6 +86,7 @@ class PaymentMethodsNotifier extends StateNotifier<AsyncValue<List<PaymentMethod
       [active ? 1 : 0, id],
     );
     await SupabaseSync.update('payment_methods', id, {'is_active': active});
+    if (!mounted) return;
     if (state.hasValue) {
       state = AsyncValue.data(
         state.value!.map((m) => m.id == id ? PaymentMethod(
@@ -97,6 +100,7 @@ class PaymentMethodsNotifier extends StateNotifier<AsyncValue<List<PaymentMethod
   Future<void> deleteMethod(String id) async {
     await powerSyncDb.execute('DELETE FROM payment_methods WHERE id = ?', [id]);
     await SupabaseSync.delete('payment_methods', id);
+    if (!mounted) return;
     if (state.hasValue) {
       state = AsyncValue.data(state.value!.where((m) => m.id != id).toList());
     }

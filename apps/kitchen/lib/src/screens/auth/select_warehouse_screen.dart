@@ -249,7 +249,28 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
                               // ─── Warehouse list ───
                               _WarehouseList(
                                 warehouses: warehouses,
-                                onSelect: (warehouseId) {
+                                onSelect: (warehouseId) async {
+                                  // Fetch categories directly from Supabase to check if it's a food establishment
+                                  try {
+                                    final res = await Supabase.instance.client
+                                        .from('warehouse_store_categories')
+                                        .select('store_category_id')
+                                        .eq('warehouse_id', warehouseId);
+                                    
+                                    final categories = (res as List)
+                                        .map((r) => r['store_category_id'] as String)
+                                        .toList();
+                                    
+                                    final isKit = categories.any((c) =>
+                                        c == 'food' || c == 'cafe' || c == 'restaurant');
+                                    
+                                    ref.read(isKitchenModeProvider.notifier).setMode(isKit);
+                                  } catch (e) {
+                                    debugPrint('⚠️ Error fetching categories on select: $e');
+                                    // Fallback to false if query fails
+                                    ref.read(isKitchenModeProvider.notifier).setMode(false);
+                                  }
+
                                   ref
                                       .read(authProvider.notifier)
                                       .selectWarehouse(warehouseId);
@@ -624,46 +645,11 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
     final nameController = TextEditingController();
     final addressController = TextEditingController();
     final floorController = TextEditingController();
-    String selectedType = 'cafe';
     String? selectedGroupId;
     double? selectedLat;
     double? selectedLng;
     bool locationSelected = false;
     bool isKitchen = true;
-
-    String getHintText() {
-      switch (selectedType) {
-        case 'cafe':
-          return 'Например: Кафе Арашан';
-        case 'restaurant':
-          return 'Например: Ресторан Фрунзе';
-        case 'coffee':
-          return 'Например: Кофейня Бублик';
-        case 'kitchen':
-          return 'Например: Ашкана Бухара';
-        case 'fastfood':
-          return 'Например: Бургерная Бегемот';
-        default:
-          return 'Например: Кафе Арашан';
-      }
-    }
-
-    IconData getTypeIcon() {
-      switch (selectedType) {
-        case 'cafe':
-          return Icons.local_cafe_rounded;
-        case 'restaurant':
-          return Icons.restaurant_rounded;
-        case 'coffee':
-          return Icons.coffee_rounded;
-        case 'kitchen':
-          return Icons.soup_kitchen_rounded;
-        case 'fastfood':
-          return Icons.fastfood_rounded;
-        default:
-          return Icons.restaurant_rounded;
-      }
-    }
 
     showDialog(
       context: context,
@@ -680,37 +666,12 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                DropdownButtonFormField<String>(
-                  value: selectedType,
-                  decoration: InputDecoration(
-                    labelText: 'Тип заведения *',
-                    prefixIcon: Icon(getTypeIcon(), size: 18, color: AppColors.primary),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'cafe', child: Text('Кафе')),
-                    DropdownMenuItem(value: 'restaurant', child: Text('Ресторан')),
-                    DropdownMenuItem(value: 'coffee', child: Text('Кофейня')),
-                    DropdownMenuItem(value: 'kitchen', child: Text('Ашкана / Кухня')),
-                    DropdownMenuItem(value: 'fastfood', child: Text('Фастфуд')),
-                  ],
-                  onChanged: (val) {
-                    if (val != null) {
-                      setDialogState(() {
-                        selectedType = val;
-                      });
-                    }
-                  },
-                ),
-                const SizedBox(height: AppSpacing.md),
                 TextField(
                   controller: nameController,
                   autofocus: true,
                   decoration: InputDecoration(
                     labelText: 'Название заведения *',
-                    hintText: getHintText(),
+                    hintText: 'Например: Кафе Арашан',
                     prefixIcon: const Icon(Icons.storefront_rounded, size: 18),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -876,7 +837,7 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
                             color: AppColors.primary.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: Icon(getTypeIcon(),
+                          child: const Icon(Icons.restaurant_rounded,
                               color: AppColors.primary, size: 20),
                         ),
                         const SizedBox(width: 12),
@@ -950,25 +911,10 @@ class _SelectWarehouseScreenState extends ConsumerState<SelectWarehouseScreen>
                                         ref.read(authProvider).currentCompany?.id;
                                     if (companyId == null) return;
 
-                                    String finalName = name;
-                                    final typePrefix = selectedType == 'cafe'
-                                        ? 'Кафе'
-                                        : selectedType == 'restaurant'
-                                            ? 'Ресторан'
-                                            : selectedType == 'coffee'
-                                                ? 'Кофейня'
-                                                : selectedType == 'kitchen'
-                                                    ? 'Кухня'
-                                                    : 'Фастфуд';
-                                    
-                                    if (!name.toLowerCase().contains(typePrefix.toLowerCase())) {
-                                      finalName = '$typePrefix $name';
-                                    }
-
                                     final repo = ref.read(authRepositoryProvider);
                                     final warehouse = await repo.createWarehouse(
                                       companyId: companyId,
-                                      name: finalName,
+                                      name: name,
                                       address: addressController.text.trim().isEmpty
                                           ? null
                                           : addressController.text.trim(),

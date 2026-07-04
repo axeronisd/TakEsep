@@ -61,7 +61,47 @@ class AuditScreen extends ConsumerWidget {
                             textAlign: TextAlign.center,
                             style: AppTypography.bodyLarge.copyWith(
                                 color: cs.onSurface.withValues(alpha: 0.6))),
-                        const SizedBox(height: AppSpacing.xxl),
+                        const SizedBox(height: AppSpacing.lg),
+
+                        // Information notice about how inventory reconciliation works
+                        Container(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          decoration: BoxDecoration(
+                            color: AppColors.info.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: AppColors.info.withValues(alpha: 0.2)),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(Icons.info_outline_rounded, color: AppColors.info, size: 20),
+                              const SizedBox(width: AppSpacing.sm),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Как работает учет остатков:',
+                                      style: AppTypography.bodyMedium.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                        color: cs.onSurface,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'Остатки изменятся только после нажатия кнопки «Завершить ревизию». Во время подсчета можно продолжать продажи и приходы — система автоматически скорректирует расхождения.',
+                                      style: AppTypography.bodySmall.copyWith(
+                                        color: cs.onSurface.withValues(alpha: 0.7),
+                                        height: 1.3,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xl),
 
                         // ── Start new ──
                         SizedBox(

@@ -49,13 +49,24 @@ class SalesRepository {
                  WHERE r.dish_id = ?''',
               [item.productId],
             );
-            for (final recipe in recipeItems) {
-              final reqQty = (recipe['quantity_required'] as num).toDouble() * item.quantity;
-              final available = (recipe['quantity'] as num).toDouble();
-              if (available < reqQty) {
+            if (recipeItems.isNotEmpty) {
+              for (final recipe in recipeItems) {
+                final reqQty = (recipe['quantity_required'] as num).toDouble() * item.quantity;
+                final available = (recipe['quantity'] as num).toDouble();
+                if (available < reqQty) {
+                  throw StateError(
+                    'Недостаточно ингредиента «${recipe['name']}» для приготовления «${product['name']}»: '
+                    'доступно ${available.toStringAsFixed(1)}, требуется ${reqQty.toStringAsFixed(1)}',
+                  );
+                }
+              }
+            } else {
+              // Dish with no recipe (pre-made item like drink/dessert). Validate its own stock.
+              final available = (product['quantity'] as num?)?.toInt() ?? 0;
+              if (available < item.quantity) {
                 throw StateError(
-                  'Недостаточно ингредиента «${recipe['name']}» для приготовления «${product['name']}»: '
-                  'доступно ${available.toStringAsFixed(1)}, требуется ${reqQty.toStringAsFixed(1)}',
+                  'Недостаточно товара «${product['name']}» на складе: '
+                  'доступно $available, запрошено ${item.quantity}',
                 );
               }
             }
@@ -165,46 +176,57 @@ class SalesRepository {
             [item.productId],
           );
 
-          for (final recipe in recipeItems) {
-            final ingredientId = recipe['ingredient_id'] as String;
-            final ingredientName = recipe['name'] as String;
-            final reqQty = (recipe['quantity_required'] as num).toDouble() * item.quantity;
-            final currentQty = (recipe['quantity'] as num).toDouble();
-            final newQty = (currentQty - reqQty).round().clamp(0, 999999999);
-            final ingredientCost = (recipe['cost_price'] as num?)?.toDouble() ?? 0.0;
+          if (recipeItems.isNotEmpty) {
+            for (final recipe in recipeItems) {
+              final ingredientId = recipe['ingredient_id'] as String;
+              final ingredientName = recipe['name'] as String;
+              final reqQty = (recipe['quantity_required'] as num).toDouble() * item.quantity;
+              final currentQty = (recipe['quantity'] as num).toDouble();
+              final newQty = (currentQty - reqQty).round().clamp(0, 999999999);
+              final ingredientCost = (recipe['cost_price'] as num?)?.toDouble() ?? 0.0;
 
-            await _db.execute(
-              '''UPDATE products 
-                 SET quantity = ?,
-                     sold_last_30_days = sold_last_30_days + ?,
-                     updated_at = ?
-                 WHERE id = ?''',
-              [newQty, item.quantity, now, ingredientId],
-            );
+              await _db.execute(
+                '''UPDATE products 
+                   SET quantity = ?,
+                       sold_last_30_days = sold_last_30_days + ?,
+                       updated_at = ?
+                   WHERE id = ?''',
+                [newQty, item.quantity, now, ingredientId],
+              );
 
-            // Sync updated product stock to Supabase
-            final updatedProduct = await _db.getOptional(
-              'SELECT quantity, sold_last_30_days FROM products WHERE id = ?',
-              [ingredientId],
-            );
-            if (updatedProduct != null) {
-              await SupabaseSync.update('products', ingredientId, {
-                'quantity': updatedProduct['quantity'],
-                'sold_last_30_days': updatedProduct['sold_last_30_days'],
-                'updated_at': now,
+              // Sync updated product stock to Supabase
+              final updatedProduct = await _db.getOptional(
+                'SELECT quantity, sold_last_30_days FROM products WHERE id = ?',
+                [ingredientId],
+              );
+              if (updatedProduct != null) {
+                await SupabaseSync.update('products', ingredientId, {
+                  'quantity': updatedProduct['quantity'],
+                  'sold_last_30_days': updatedProduct['sold_last_30_days'],
+                  'updated_at': now,
+                });
+              }
+
+              // Store info for production_usage write-off logging
+              ingredientsToDeduct.add({
+                'id': ingredientId,
+                'name': ingredientName,
+                'quantity': reqQty.round().clamp(1, 999999999),
+                'cost_price': ingredientCost,
               });
             }
-
-            // Store info for production_usage write-off logging
-            ingredientsToDeduct.add({
-              'id': ingredientId,
-              'name': ingredientName,
-              'quantity': reqQty.round().clamp(1, 999999999),
-              'cost_price': ingredientCost,
-            });
+          } else {
+            // No recipe: decrement quantity of the dish itself (pre-made item)
+            await _db.execute(
+              '''UPDATE products 
+                 SET quantity = MAX(quantity - ?, 0),
+                     updated_at = ?
+                 WHERE id = ?''',
+              [item.quantity, now, item.productId],
+            );
           }
 
-          // For the dish itself, we still update sold_last_30_days
+          // For the dish itself, we still update sold_last_30_days (and quantity if no recipe)
           await _db.execute(
             '''UPDATE products 
                  SET sold_last_30_days = sold_last_30_days + ?,
@@ -213,11 +235,12 @@ class SalesRepository {
             [item.quantity, now, item.productId],
           );
           final updatedProduct = await _db.getOptional(
-            'SELECT sold_last_30_days FROM products WHERE id = ?',
+            'SELECT quantity, sold_last_30_days FROM products WHERE id = ?',
             [item.productId],
           );
           if (updatedProduct != null) {
             await SupabaseSync.update('products', item.productId, {
+              'quantity': updatedProduct['quantity'],
               'sold_last_30_days': updatedProduct['sold_last_30_days'],
               'updated_at': now,
             });
@@ -517,13 +540,24 @@ class SalesRepository {
                  WHERE r.dish_id = ?''',
               [item.productId],
             );
-            for (final recipe in recipeItems) {
-              final reqQty = (recipe['quantity_required'] as num).toDouble() * item.quantity;
-              final available = (recipe['quantity'] as num).toDouble();
-              if (available < reqQty) {
+            if (recipeItems.isNotEmpty) {
+              for (final recipe in recipeItems) {
+                final reqQty = (recipe['quantity_required'] as num).toDouble() * item.quantity;
+                final available = (recipe['quantity'] as num).toDouble();
+                if (available < reqQty) {
+                  throw StateError(
+                    'Недостаточно ингредиента «${recipe['name']}» для приготовления «${product['name']}»: '
+                    'доступно ${available.toStringAsFixed(1)}, требуется ${reqQty.toStringAsFixed(1)}',
+                  );
+                }
+              }
+            } else {
+              // Dish with no recipe (pre-made item). Validate its own stock.
+              final available = (product['quantity'] as num?)?.toInt() ?? 0;
+              if (available < item.quantity) {
                 throw StateError(
-                  'Недостаточно ингредиента «${recipe['name']}» для приготовления «${product['name']}»: '
-                  'доступно ${available.toStringAsFixed(1)}, требуется ${reqQty.toStringAsFixed(1)}',
+                  'Недостаточно товара «${product['name']}» на складе: '
+                  'доступно $available, запрошено ${item.quantity}',
                 );
               }
             }
@@ -580,44 +614,55 @@ class SalesRepository {
             [item.productId],
           );
 
-          for (final recipe in recipeItems) {
-            final ingredientId = recipe['ingredient_id'] as String;
-            final ingredientName = recipe['name'] as String;
-            final reqQty = (recipe['quantity_required'] as num).toDouble() * item.quantity;
-            final currentQty = (recipe['quantity'] as num).toDouble();
-            final newQty = (currentQty - reqQty).round().clamp(0, 999999999);
-            final ingredientCost = (recipe['cost_price'] as num?)?.toDouble() ?? 0.0;
+          if (recipeItems.isNotEmpty) {
+            for (final recipe in recipeItems) {
+              final ingredientId = recipe['ingredient_id'] as String;
+              final ingredientName = recipe['name'] as String;
+              final reqQty = (recipe['quantity_required'] as num).toDouble() * item.quantity;
+              final currentQty = (recipe['quantity'] as num).toDouble();
+              final newQty = (currentQty - reqQty).round().clamp(0, 999999999);
+              final ingredientCost = (recipe['cost_price'] as num?)?.toDouble() ?? 0.0;
 
-            await _db.execute(
-              '''UPDATE products 
-                 SET quantity = ?,
-                     sold_last_30_days = sold_last_30_days + ?,
-                     updated_at = ?
-                 WHERE id = ?''',
-              [newQty, item.quantity, now, ingredientId],
-            );
+              await _db.execute(
+                '''UPDATE products 
+                   SET quantity = ?,
+                       sold_last_30_days = sold_last_30_days + ?,
+                       updated_at = ?
+                   WHERE id = ?''',
+                [newQty, item.quantity, now, ingredientId],
+              );
 
-            final updatedProduct = await _db.getOptional(
-              'SELECT quantity, sold_last_30_days FROM products WHERE id = ?',
-              [ingredientId],
-            );
-            if (updatedProduct != null) {
-              await SupabaseSync.update('products', ingredientId, {
-                'quantity': updatedProduct['quantity'],
-                'sold_last_30_days': updatedProduct['sold_last_30_days'],
-                'updated_at': now,
+              final updatedProduct = await _db.getOptional(
+                'SELECT quantity, sold_last_30_days FROM products WHERE id = ?',
+                [ingredientId],
+              );
+              if (updatedProduct != null) {
+                await SupabaseSync.update('products', ingredientId, {
+                  'quantity': updatedProduct['quantity'],
+                  'sold_last_30_days': updatedProduct['sold_last_30_days'],
+                  'updated_at': now,
+                });
+              }
+
+              ingredientsToDeduct.add({
+                'id': ingredientId,
+                'name': ingredientName,
+                'quantity': reqQty.round().clamp(1, 999999999),
+                'cost_price': ingredientCost,
               });
             }
-
-            ingredientsToDeduct.add({
-              'id': ingredientId,
-              'name': ingredientName,
-              'quantity': reqQty.round().clamp(1, 999999999),
-              'cost_price': ingredientCost,
-            });
+          } else {
+            // No recipe: decrement quantity of the dish itself (pre-made item)
+            await _db.execute(
+              '''UPDATE products 
+                 SET quantity = MAX(quantity - ?, 0),
+                     updated_at = ?
+                 WHERE id = ?''',
+              [item.quantity, now, item.productId],
+            );
           }
 
-          // For the dish itself, update sold_last_30_days
+          // For the dish itself, update sold_last_30_days (and quantity if no recipe)
           await _db.execute(
             '''UPDATE products 
                  SET sold_last_30_days = sold_last_30_days + ?,
@@ -626,11 +671,12 @@ class SalesRepository {
             [item.quantity, now, item.productId],
           );
           final updatedProduct = await _db.getOptional(
-            'SELECT sold_last_30_days FROM products WHERE id = ?',
+            'SELECT quantity, sold_last_30_days FROM products WHERE id = ?',
             [item.productId],
           );
           if (updatedProduct != null) {
             await SupabaseSync.update('products', item.productId, {
+              'quantity': updatedProduct['quantity'],
               'sold_last_30_days': updatedProduct['sold_last_30_days'],
               'updated_at': now,
             });
@@ -834,6 +880,42 @@ class SalesRepository {
         ],
       );
 
+      // Insert selected modifiers
+      if (item.selectedModifiers != null) {
+        for (final mod in item.selectedModifiers!) {
+          final modId = const Uuid().v4();
+          await _db.execute(
+            '''INSERT INTO delivery_order_item_modifiers (
+                id, order_item_id, modifier_id, modifier_name, group_name, price_delta, created_at
+              ) VALUES (?, ?, ?, ?, ?, ?, ?)''',
+            [
+              modId,
+              itemId,
+              mod['id'] ?? const Uuid().v4(),
+              mod['modifier_name'] ?? mod['name'] ?? '',
+              mod['group_name'] ?? 'Модификаторы',
+              (mod['price_delta'] as num?)?.toDouble() ?? 0.0,
+              now,
+            ],
+          );
+
+          try {
+            await _supabase.from('delivery_order_item_modifiers').insert({
+              'id': modId,
+              'order_item_id': itemId,
+              'modifier_id': mod['id'] ?? const Uuid().v4(),
+              'modifier_name': mod['modifier_name'] ?? mod['name'] ?? '',
+              'group_name': mod['group_name'] ?? 'Модификаторы',
+              'price_delta': (mod['price_delta'] as num?)?.toDouble() ?? 0.0,
+              'created_at': now,
+            });
+          } catch (e) {
+            // Log or ignore if offline
+            debugPrint('Error syncing item modifier to Supabase: $e');
+          }
+        }
+      }
+
       saleItemsForSupabase.add({
         'id': itemId,
         'sale_id': saleId,
@@ -916,6 +998,7 @@ class SaleItemData {
   final String itemType;
   final String? executorId;
   final String? executorName;
+  final List<Map<String, dynamic>>? selectedModifiers;
 
   SaleItemData({
     required this.productId,
@@ -927,5 +1010,6 @@ class SaleItemData {
     this.itemType = 'product',
     this.executorId,
     this.executorName,
+    this.selectedModifiers,
   });
 }

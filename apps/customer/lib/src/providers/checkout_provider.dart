@@ -40,6 +40,12 @@ const kTransports = [
     emoji: '',
     maxWeightKg: 500,
   ),
+  TransportOption(
+    id: 'takeaway',
+    name: 'На вынос (самовывоз)',
+    emoji: '🛍️',
+    maxWeightKg: 100,
+  ),
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -94,7 +100,8 @@ class CheckoutState {
       'bicycle': 50.0,
       'scooter': 75.0,
       'motorcycle': 50.0,
-      'truck': 100.0
+      'truck': 100.0,
+      'takeaway': 0.0
     },
   });
 
@@ -104,6 +111,7 @@ class CheckoutState {
   );
 
   double effectiveDeliveryFee(double itemsTotal) {
+    if (selectedTransport == 'takeaway') return 0;
     if (freeDeliveryFrom > 0 && itemsTotal >= freeDeliveryFrom) return 0;
     final rate = transportRates[selectedTransport] ?? (selectedTransport == 'scooter' ? 75.0 : 50.0);
     final calculated = distanceKm * rate;
@@ -115,7 +123,7 @@ class CheckoutState {
     return baseFee.roundToDouble();
   }
 
-  bool get isReady => !loading && deliveryAddress.isNotEmpty && error == null;
+  bool get isReady => !loading && (selectedTransport == 'takeaway' || deliveryAddress.isNotEmpty) && error == null;
 
   // Night time is removed from tariffs calculation
 
@@ -176,6 +184,22 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
     if (cart.isEmpty || cart.warehouseId == null) {
       state = state.copyWith(loading: false, error: 'Корзина пуста');
       print('DEBUG: CheckoutNotifier._init early return: cart empty or warehouseId null');
+      return;
+    }
+
+    final isKitchen = cart.tableId != null || cart.selectedTransport == 'takeaway';
+
+    if (isKitchen) {
+      state = state.copyWith(
+        loading: false,
+        deliveryAddress: cart.tableId != null ? 'Заказ за столом' : 'Самовывоз',
+        deliveryLat: 0.0,
+        deliveryLng: 0.0,
+        distanceKm: 0.0,
+        deliveryFee: 0.0,
+        selectedTransport: 'takeaway',
+      );
+      print('DEBUG: CheckoutNotifier._init kitchen/takeaway bypass success');
       return;
     }
 
@@ -426,6 +450,50 @@ class CheckoutNotifier extends StateNotifier<CheckoutState> {
       var note = state.customerNote ?? '';
       if (state.loaderHelp && state.selectedTransport == 'scooter') {
         note = note.isEmpty ? '[Нужна помощь в выгрузке]' : '$note\n[Нужна помощь в выгрузке]';
+      }
+
+      final isKitchen = cart.tableId != null || state.selectedTransport == 'takeaway';
+
+      if (isKitchen) {
+        final result = await _supabase.rpc(
+          'create_kitchen_customer_order',
+          params: {
+            'p_warehouse_id': cart.warehouseId,
+            'p_customer_id': customerId,
+            'p_table_id': cart.tableId,
+            'p_order_type': cart.tableId != null ? 'dine_in' : 'takeaway',
+            'p_items': items,
+            'p_customer_note': note,
+          },
+        );
+
+        final orderData = Map<String, dynamic>.from(result as Map);
+        debugPrint('✅ Kitchen Order created: ${orderData['client_name']}');
+
+        // Notify cooks via send-push Edge Function
+        try {
+          final employees = await _supabase
+              .from('employees')
+              .select('id')
+              .eq('company_id', orderData['company_id'] ?? '')
+              .eq('role', 'cook');
+          for (final emp in employees) {
+            final empId = emp['id'] as String;
+            await _supabase.functions.invoke(
+              'send-push',
+              body: {
+                'user_id': empId,
+                'title': 'Новый заказ!',
+                'body': 'Новый заказ с приложения Акжол поступил на кухню.',
+                'app_type': 'employee',
+              },
+            );
+          }
+        } catch (_) {}
+
+        ref.read(cartProvider.notifier).clear();
+        state = state.copyWith(submitting: false);
+        return orderData;
       }
 
       final result = await _supabase.rpc(
