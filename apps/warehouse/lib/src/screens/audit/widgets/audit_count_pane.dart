@@ -47,7 +47,7 @@ class _AuditCountPaneState extends ConsumerState<AuditCountPane> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final isMobile = MediaQuery.of(context).size.width < 600;
-    final audit = widget.audit;
+    final audit = ref.watch(currentAuditProvider) ?? widget.audit;
     final cur = ref.watch(currencyProvider).symbol;
     final items = ref.watch(filteredAuditItemsProvider);
 
@@ -303,7 +303,7 @@ class _AuditCountPaneState extends ConsumerState<AuditCountPane> {
   }
 
   Future<void> _showCompleteDialog() async {
-    final audit = widget.audit;
+    final audit = ref.read(currentAuditProvider) ?? widget.audit;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) {

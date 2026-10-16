@@ -132,5 +132,5 @@ class AuditItem extends Equatable {
       };
 
   @override
-  List<Object?> get props => [id, auditId, productId];
+  List<Object?> get props => [id, auditId, productId, actualQuantity, isChecked, snapshotQuantity, movementsDuringAudit];
 }

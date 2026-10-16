@@ -31,20 +31,17 @@ class AuditRepository {
     final auditId = _uuid.v4();
     final cleanEmployeeId = employeeId?.replaceAll('owner-', '');
 
-    // 1. Get products to snapshot — filter by WAREHOUSE not company
-    String productQuery = '''
-      SELECT id, name, sku, barcode, quantity, cost_price, image_url
-      FROM products
-      WHERE warehouse_id = ?
-    ''';
-    final params = <dynamic>[warehouseId];
+    // 1. Get products to snapshot from Supabase — filter by WAREHOUSE
+    var sbQuery = _supabase
+        .from('products')
+        .select('id, name, sku, barcode, quantity, cost_price, image_url')
+        .eq('warehouse_id', warehouseId);
 
     if (type == AuditType.category && categoryId != null) {
-      productQuery += ' AND category_id = ?';
-      params.add(categoryId);
+      sbQuery = sbQuery.eq('category_id', categoryId);
     }
 
-    final rows = await _db.getAll(productQuery, params);
+    final rows = await sbQuery;
 
     // 2. Insert audit record
     await _db.execute(
@@ -113,35 +110,7 @@ class AuditRepository {
       ));
     }
 
-    // Sync audit items to Supabase
-    if (items.isNotEmpty) {
-      try {
-        final supabaseItems = items.map((item) => {
-          'id': item.id,
-          'audit_id': item.auditId,
-          'product_id': item.productId,
-          'product_name': item.productName,
-          'product_sku': item.productSku,
-          'product_barcode': item.productBarcode,
-          'snapshot_quantity': item.snapshotQuantity,
-          'movements_during_audit': item.movementsDuringAudit,
-          'actual_quantity': item.actualQuantity,
-          'cost_price': item.costPrice,
-          'is_checked': false,
-          'comment': item.comment,
-          'photos': item.photos.join(','),
-          'created_at': now.toIso8601String(),
-        }).toList();
-
-        await _supabase.from('audit_items').insert(supabaseItems);
-        debugPrint('[AuditRepository] Batch inserted ${supabaseItems.length} audit items to Supabase');
-      } catch (e) {
-        debugPrint('[AuditRepository] Error batch syncing audit items: $e');
-      }
-    }
-
-    // Sync audit to Supabase (for realtime)
-    // Write directly to Supabase for immediate realtime sync
+    // 4. Sync audit to Supabase FIRST (so foreign key constraint on audit_items is satisfied)
     try {
       await _supabase.from('audits').insert({
         'id': auditId,
@@ -179,6 +148,33 @@ class AuditRepository {
         'created_at': now.toIso8601String(),
         'updated_at': now.toIso8601String(),
       });
+    }
+
+    // 5. Sync audit items to Supabase AFTER audit exists in Supabase
+    if (items.isNotEmpty) {
+      try {
+        final supabaseItems = items.map((item) => {
+          'id': item.id,
+          'audit_id': item.auditId,
+          'product_id': item.productId,
+          'product_name': item.productName,
+          'product_sku': item.productSku,
+          'product_barcode': item.productBarcode,
+          'snapshot_quantity': item.snapshotQuantity,
+          'movements_during_audit': item.movementsDuringAudit,
+          'actual_quantity': item.actualQuantity,
+          'cost_price': item.costPrice,
+          'is_checked': false,
+          'comment': item.comment,
+          'photos': item.photos.join(','),
+          'created_at': now.toIso8601String(),
+        }).toList();
+
+        await _supabase.from('audit_items').insert(supabaseItems);
+        debugPrint('[AuditRepository] Batch inserted ${supabaseItems.length} audit items to Supabase');
+      } catch (e) {
+        debugPrint('[AuditRepository] Error batch syncing audit items: $e');
+      }
     }
 
     return Audit(
@@ -469,86 +465,68 @@ class AuditRepository {
 
   /// Get a single audit with all its items (fetches from Supabase directly for real-time sync).
   Future<Audit?> getAuditWithItems(String auditId) async {
-    try {
-      final auditRows =
-          await _supabase.from('audits').select().eq('id', auditId).single();
+    // Read from local SQLite first — data is always written here reliably
+    final auditRows =
+        await _db.getAll('SELECT * FROM audits WHERE id = ?', [auditId]);
+    if (auditRows.isEmpty) return null;
 
-      final itemRows = await _supabase
+    final audit = Audit.fromJson(auditRows.first);
+    final localItemRows = await _db.getAll(
+      'SELECT * FROM audit_items WHERE audit_id = ? ORDER BY product_name',
+      [auditId],
+    );
+    final items = localItemRows.map((r) => AuditItem.fromJson(r)).toList();
+
+    // Try to pull any remote updates (e.g. from another device) in background
+    try {
+      final remoteItems = await _supabase
           .from('audit_items')
           .select()
           .eq('audit_id', auditId)
           .order('product_name');
 
-      // Cache in local DB for offline support
-      await _db.execute(
-        '''INSERT OR REPLACE INTO audits (id, company_id, warehouse_id, warehouse_name,
-           employee_id, employee_name, type, status, category_id, category_name,
-           started_at, completed_at, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-        [
-          auditRows['id'],
-          auditRows['company_id'],
-          auditRows['warehouse_id'],
-          auditRows['warehouse_name'],
-          auditRows['employee_id'],
-          auditRows['employee_name'],
-          auditRows['type'],
-          auditRows['status'],
-          auditRows['category_id'],
-          auditRows['category_name'],
-          auditRows['started_at'],
-          auditRows['completed_at'],
-          auditRows['created_at'],
-          auditRows['updated_at'],
-        ],
-      );
+      if (remoteItems.isNotEmpty) {
+        // Merge remote updates into local DB
+        for (final item in remoteItems) {
+          await _db.execute(
+            '''INSERT OR REPLACE INTO audit_items (id, audit_id, product_id, product_name,
+               product_sku, product_barcode, product_image_url,
+               snapshot_quantity, movements_during_audit,
+               actual_quantity, cost_price, is_checked, comment, photos, created_at)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+            [
+              item['id'],
+              item['audit_id'],
+              item['product_id'],
+              item['product_name'],
+              item['product_sku'],
+              item['product_barcode'],
+              item['product_image_url'],
+              item['snapshot_quantity'],
+              item['movements_during_audit'],
+              item['actual_quantity'],
+              item['cost_price'],
+              item['is_checked'] == true ? 1 : 0,
+              item['comment'],
+              item['photos'],
+              item['created_at'],
+            ],
+          );
+        }
 
-      for (final item in itemRows) {
-        await _db.execute(
-          '''INSERT OR REPLACE INTO audit_items (id, audit_id, product_id, product_name,
-             product_sku, product_barcode, product_image_url,
-             snapshot_quantity, movements_during_audit,
-             actual_quantity, cost_price, is_checked, comment, photos, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
-          [
-            item['id'],
-            item['audit_id'],
-            item['product_id'],
-            item['product_name'],
-            item['product_sku'],
-            item['product_barcode'],
-            item['product_image_url'],
-            item['snapshot_quantity'],
-            item['movements_during_audit'],
-            item['actual_quantity'],
-            item['cost_price'],
-            item['is_checked'] == true ? 1 : 0,
-            item['comment'],
-            item['photos'],
-            item['created_at'],
-          ],
+        // Re-read merged items from local DB
+        final mergedRows = await _db.getAll(
+          'SELECT * FROM audit_items WHERE audit_id = ? ORDER BY product_name',
+          [auditId],
         );
+        final mergedItems = mergedRows.map((r) => AuditItem.fromJson(r)).toList();
+        return audit.copyWith(items: mergedItems);
       }
-
-      final audit = Audit.fromJson(auditRows);
-      final items = itemRows.map((r) => AuditItem.fromJson(r)).toList();
-      return audit.copyWith(items: items);
     } catch (e) {
-      print('AuditRepository getAuditWithItems Supabase error: $e');
-      // Fallback to local DB if Supabase fails
-      final auditRows =
-          await _db.getAll('SELECT * FROM audits WHERE id = ?', [auditId]);
-      if (auditRows.isEmpty) return null;
-
-      final audit = Audit.fromJson(auditRows.first);
-      final itemRows = await _db.getAll(
-        'SELECT * FROM audit_items WHERE audit_id = ? ORDER BY product_name',
-        [auditId],
-      );
-      final items = itemRows.map((r) => AuditItem.fromJson(r)).toList();
-
-      return audit.copyWith(items: items);
+      debugPrint('[AuditRepository] Remote sync skipped: $e');
     }
+
+    return audit.copyWith(items: items);
   }
 
   /// Get draft audits for the current warehouse (fetches from Supabase directly for real-time sync).

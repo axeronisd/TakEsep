@@ -166,5 +166,5 @@ class Audit extends Equatable {
       };
 
   @override
-  List<Object?> get props => [id, companyId, warehouseId];
+  List<Object?> get props => [id, companyId, warehouseId, status, items, updatedAt];
 }
