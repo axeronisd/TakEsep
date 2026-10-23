@@ -62,21 +62,21 @@ class AdminSearchField extends StatelessWidget {
       child: TextField(
         controller: controller,
         onChanged: onChanged,
-        style: const TextStyle(color: AppColors.darkTextPrimary),
+        style: const TextStyle(color: AppColors.adminTextPrimary),
         decoration: InputDecoration(
           hintText: hint,
           prefixIcon: const Icon(Icons.search_rounded,
-              color: AppColors.darkTextTertiary, size: 20),
+              color: AppColors.adminTextTertiary, size: 20),
           filled: true,
-          fillColor: AppColors.darkSurface,
+          fillColor: AppColors.adminSurface,
           contentPadding: const EdgeInsets.symmetric(vertical: 14),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AppColors.darkBorder),
+            borderSide: const BorderSide(color: AppColors.adminBorder),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: const BorderSide(color: AppColors.darkBorder),
+            borderSide: const BorderSide(color: AppColors.adminBorder),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
@@ -114,17 +114,17 @@ class AdminEmptyState extends StatelessWidget {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: AppColors.darkSurfaceVariant,
+                color: AppColors.adminSurfaceVariant,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.darkBorder),
+                border: Border.all(color: AppColors.adminBorder),
               ),
-              child: Icon(icon, size: 32, color: AppColors.darkTextTertiary),
+              child: Icon(icon, size: 32, color: AppColors.adminTextTertiary),
             ),
             const SizedBox(height: 16),
             Text(
               title,
               style: const TextStyle(
-                color: AppColors.darkTextPrimary,
+                color: AppColors.adminTextPrimary,
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
               ),
@@ -135,7 +135,7 @@ class AdminEmptyState extends StatelessWidget {
                 subtitle!,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: AppColors.darkTextTertiary,
+                  color: AppColors.adminTextTertiary,
                   fontSize: 13,
                 ),
               ),

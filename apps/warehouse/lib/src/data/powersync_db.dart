@@ -27,7 +27,26 @@ Future<void> initPowerSync() async {
 
   // Open the local database only — no cloud sync
   await powerSyncDb.initialize();
-  
+
+  // Durable outbox for writes that must reach Supabase even after a timeout,
+  // an app restart or a temporary network loss.
+  await powerSyncDb.execute('''
+    CREATE TABLE IF NOT EXISTS sync_outbox (
+      seq INTEGER PRIMARY KEY AUTOINCREMENT,
+      id TEXT NOT NULL UNIQUE,
+      table_name TEXT NOT NULL,
+      operation TEXT NOT NULL,
+      payload TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      last_error TEXT,
+      synced_at TEXT
+    )
+  ''');
+  await powerSyncDb.execute(
+    'CREATE INDEX IF NOT EXISTS idx_sync_outbox_pending ON sync_outbox(synced_at, seq)',
+  );
+
   // NOTE: We intentionally do NOT call powerSyncDb.connect()
   // PowerSync Cloud is no longer used. All writes go directly to Supabase.
   print('[TakEsep] Local SQLite initialized (no cloud sync)');

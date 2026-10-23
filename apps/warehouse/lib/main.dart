@@ -15,6 +15,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'firebase_options.dart';
 import 'src/providers/auth_providers.dart';
 import 'src/data/powersync_db.dart';
+import 'src/data/sync_outbox.dart';
 import 'src/services/firebase_push_bootstrap.dart';
 import 'src/services/notification_service.dart';
 
@@ -88,6 +89,7 @@ Future<void> _bootstrapApp() async {
   // Initialize PowerSync offline-first database
   try {
     await initPowerSync();
+    await SyncOutbox.start();
     debugPrint('[TakEsep] PowerSync initialized ✅');
   } catch (e, st) {
     debugPrint('[TakEsep] PowerSync init FAILED: $e');

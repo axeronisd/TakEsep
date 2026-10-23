@@ -28,6 +28,19 @@ class AppColors {
   static const lightTextSecondary = Color(0xFF475569); // Slate-600
   static const lightTextTertiary = Color(0xFF94A3B8); // Slate-400
 
+  // ─── Admin dark palette (warm graphite + violet) ──────────
+  static const adminBackground = Color(0xFF17171F);
+  static const adminSurface = Color(0xFF1F1F29);
+  static const adminSurfaceVariant = Color(0xFF2A2A35);
+  static const adminSurfaceElevated = Color(0xFF24242F);
+  static const adminBorder = Color(0xFF34343F);
+  static const adminTextPrimary = Color(0xFFF7F5F1);
+  static const adminTextSecondary = Color(0xFFB9B4C6);
+  static const adminTextTertiary = Color(0xFF8C8794);
+  static const adminPrimary = Color(0xFF6C5CE7);
+  static const adminPrimarySoft = Color(0xFF2D2845);
+  static const adminDanger = Color(0xFFF07171);
+
   // ─── Shared Accent Colors (Electric/Vibrant) ───────────────
   static const primary = Color(0xFF4F46E5); // Indigo-600 (Main Branding)
   static const primaryLight = Color(0xFF818CF8); // Indigo-400

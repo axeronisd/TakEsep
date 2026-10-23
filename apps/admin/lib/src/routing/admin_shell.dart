@@ -92,14 +92,14 @@ class AdminShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final location = GoRouterState.of(context).matchedLocation;
     final width = MediaQuery.sizeOf(context).width;
-    final isMobile = width < 760;
+    final isMobile = width < 900;
 
     if (isMobile) {
       return _MobileShell(location: location, child: child);
     }
 
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
+      backgroundColor: AppColors.adminBackground,
       body: Row(
         children: [
           _Sidebar(location: location),
@@ -140,22 +140,22 @@ class _Sidebar extends StatelessWidget {
     return Container(
       width: 264,
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: AppColors.adminSurface,
         border: Border(
-          right: BorderSide(color: AppColors.darkBorder.withValues(alpha: 0.9)),
+          right: BorderSide(color: AppColors.adminBorder.withValues(alpha: 0.9)),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 20),
+            padding: const EdgeInsets.fromLTRB(20, 18, 20, 16),
             child: Row(
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: Image.network(
-                    '/TakEsep/logo.png',
+                    Uri.base.resolve('../logo-256.png').toString(),
                     width: 40,
                     height: 40,
                     fit: BoxFit.cover,
@@ -177,9 +177,9 @@ class _Sidebar extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'TakEsep Admin',
+                        'TakEsep',
                         style: TextStyle(
-                          color: AppColors.darkTextPrimary,
+                          color: AppColors.adminTextPrimary,
                           fontSize: 15,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.3,
@@ -187,12 +187,12 @@ class _Sidebar extends StatelessWidget {
                       ),
                       SizedBox(height: 2),
                       Text(
-                        'Super Admin',
+                        'Панель владельца',
                         style: TextStyle(
-                          color: AppColors.darkTextTertiary,
-                          fontSize: 11,
+                          color: AppColors.adminTextTertiary,
+                          fontSize: 10,
                           fontWeight: FontWeight.w600,
-                          letterSpacing: 0.4,
+                          letterSpacing: 0.2,
                         ),
                       ),
                     ],
@@ -201,7 +201,7 @@ class _Sidebar extends StatelessWidget {
               ],
             ),
           ),
-          const Divider(height: 1, color: AppColors.darkBorder),
+          const Divider(height: 1, color: AppColors.adminBorder),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
@@ -212,7 +212,7 @@ class _Sidebar extends StatelessWidget {
                     child: Text(
                       section.label,
                       style: const TextStyle(
-                        color: AppColors.darkTextTertiary,
+                        color: AppColors.adminTextTertiary,
                         fontSize: 10,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 1.1,
@@ -225,39 +225,44 @@ class _Sidebar extends StatelessWidget {
                       isActive: AdminShell._checkActive(location, item),
                       onTap: () => context.go(item.route),
                     ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                 ],
               ],
             ),
           ),
-          const Divider(height: 1, color: AppColors.darkBorder),
+          const Divider(height: 1, color: AppColors.adminBorder),
           Padding(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
             child: Column(
               children: [
-                _SidebarAction(
-                  icon: Icons.chat_bubble_outline_rounded,
-                  label: 'Поддержка WhatsApp',
-                  onTap: () => _openWhatsApp(),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _SidebarFooterIcon(
+                      tooltip: 'Поддержка WhatsApp',
+                      icon: Icons.chat_bubble_outline_rounded,
+                      onTap: _openWhatsApp,
+                    ),
+                    _SidebarFooterIcon(
+                      tooltip: 'На сайт',
+                      icon: Icons.public_rounded,
+                      onTap: _openSite,
+                    ),
+                    _SidebarFooterIcon(
+                      tooltip: 'Выйти',
+                      icon: Icons.logout_rounded,
+                      color: AppColors.errorLight,
+                      onTap: () => _logout(context),
+                    ),
+                  ],
                 ),
-                _SidebarAction(
-                  icon: Icons.public_rounded,
-                  label: 'На сайт',
-                  onTap: () => _openSite(),
-                ),
-                _SidebarAction(
-                  icon: Icons.logout_rounded,
-                  label: 'Выйти',
-                  destructive: true,
-                  onTap: () => _logout(context),
-                ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 5),
                 const Text(
-                  'v3.0.19 · build 115',
+                  'v3.0.49 · admin',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: AppColors.darkTextTertiary,
-                    fontSize: 11,
+                    color: AppColors.adminTextTertiary,
+                    fontSize: 10,
                   ),
                 ),
               ],
@@ -280,9 +285,9 @@ class _DesktopTopBar extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(28, 22, 28, 18),
       decoration: BoxDecoration(
-        color: AppColors.darkBackground,
+        color: AppColors.adminBackground,
         border: Border(
-          bottom: BorderSide(color: AppColors.darkBorder.withValues(alpha: 0.8)),
+          bottom: BorderSide(color: AppColors.adminBorder.withValues(alpha: 0.8)),
         ),
       ),
       child: Row(
@@ -294,7 +299,7 @@ class _DesktopTopBar extends StatelessWidget {
                 Text(
                   title,
                   style: const TextStyle(
-                    color: AppColors.darkTextPrimary,
+                    color: AppColors.adminTextPrimary,
                     fontSize: 24,
                     fontWeight: FontWeight.w800,
                     letterSpacing: -0.5,
@@ -304,7 +309,7 @@ class _DesktopTopBar extends StatelessWidget {
                 Text(
                   subtitle,
                   style: const TextStyle(
-                    color: AppColors.darkTextSecondary,
+                    color: AppColors.adminTextSecondary,
                     fontSize: 13,
                   ),
                 ),
@@ -318,7 +323,7 @@ class _DesktopTopBar extends StatelessWidget {
               router.go(router.state.matchedLocation);
             },
             icon: const Icon(Icons.refresh_rounded,
-                color: AppColors.darkTextSecondary),
+                color: AppColors.adminTextSecondary),
           ),
         ],
       ),
@@ -336,15 +341,8 @@ class _MobileShell extends StatelessWidget {
     if (location == '/') return 0;
     if (location.startsWith('/companies')) return 1;
     if (location.startsWith('/users')) return 2;
-    if (location.startsWith('/addresses')) return 3;
-    if (location.startsWith('/moderation')) return 4;
-    if (location.startsWith('/database') ||
-        location.startsWith('/zones') ||
-        location.startsWith('/tariffs') ||
-        location.startsWith('/orders')) {
-      return 5;
-    }
-    return 0;
+    if (location.startsWith('/orders')) return 3;
+    return 4;
   }
 
   @override
@@ -353,16 +351,14 @@ class _MobileShell extends StatelessWidget {
       (Icons.dashboard_rounded, 'Дашборд', '/'),
       (Icons.business_rounded, 'Компании', '/companies'),
       (Icons.people_alt_rounded, 'Пользователи', '/users'),
-      (Icons.map_rounded, 'Адреса', '/addresses'),
-      (Icons.local_shipping_rounded, 'Курьеры', '/couriers-map'),
-      (Icons.rule_rounded, 'Модерация', '/moderation'),
-      (Icons.storage_rounded, 'База', '/database'),
+      (Icons.receipt_long_rounded, 'Заказы', '/orders'),
+      (Icons.more_horiz_rounded, 'Ещё', ''),
     ];
 
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
+      backgroundColor: AppColors.adminBackground,
       drawer: Drawer(
-        backgroundColor: AppColors.darkSurface,
+        backgroundColor: AppColors.adminSurface,
         child: SafeArea(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -374,7 +370,7 @@ class _MobileShell extends StatelessWidget {
                     ClipRRect(
                       borderRadius: BorderRadius.circular(10),
                       child: Image.network(
-                        '/TakEsep/logo.png',
+                        Uri.base.resolve('../logo-256.png').toString(),
                         width: 36,
                         height: 36,
                         errorBuilder: (_, __, ___) => Container(
@@ -390,43 +386,63 @@ class _MobileShell extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(width: 12),
-                    const Text(
-                      'TakEsep Admin',
-                      style: TextStyle(
-                        color: AppColors.darkTextPrimary,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 16,
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'TakEsep',
+                            style: TextStyle(
+                              color: AppColors.adminTextPrimary,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 16,
+                            ),
+                          ),
+                          SizedBox(height: 2),
+                          Text(
+                            'Панель владельца',
+                            style: TextStyle(
+                              color: AppColors.adminTextTertiary,
+                              fontSize: 10,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
                 ),
               ),
-              const Divider(height: 1, color: AppColors.darkBorder),
+              const Divider(height: 1, color: AppColors.adminBorder),
               const SizedBox(height: 12),
-              _buildDrawerItem(
-                context,
-                icon: Icons.radar_rounded,
-                label: 'Зоны экосистемы',
-                onTap: () => context.go('/zones'),
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  children: [
+                    for (final section in AdminShell._sections) ...[
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 10, 16, 6),
+                        child: Text(
+                          section.label,
+                          style: const TextStyle(
+                            color: AppColors.adminTextTertiary,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.0,
+                          ),
+                        ),
+                      ),
+                      for (final item in section.items)
+                        _buildDrawerItem(
+                          context,
+                          icon: item.icon,
+                          label: item.label,
+                          onTap: () => context.go(item.route),
+                        ),
+                    ],
+                  ],
+                ),
               ),
-              _buildDrawerItem(
-                context,
-                icon: Icons.local_shipping_rounded,
-                label: 'Тарифы транспорта',
-                onTap: () => context.go('/tariffs'),
-              ),
-              _buildDrawerItem(
-                context,
-                icon: Icons.people_alt_rounded,
-                label: 'Пользователи',
-                onTap: () => context.go('/users'),
-              ),
-              _buildDrawerItem(
-                context,
-                icon: Icons.receipt_long_rounded,
-                label: 'Заказы',
-                onTap: () => context.go('/orders'),
-              ),
+              const Divider(height: 1, color: AppColors.adminBorder),
               _buildDrawerItem(
                 context,
                 icon: Icons.chat_bubble_outline_rounded,
@@ -439,8 +455,6 @@ class _MobileShell extends StatelessWidget {
                 label: 'На сайт',
                 onTap: _openSite,
               ),
-              const Spacer(),
-              const Divider(height: 1, color: AppColors.darkBorder),
               const SizedBox(height: 12),
               _buildDrawerItem(
                 context,
@@ -455,32 +469,22 @@ class _MobileShell extends StatelessWidget {
         ),
       ),
       appBar: AppBar(
-        backgroundColor: AppColors.darkSurface,
+        backgroundColor: AppColors.adminSurface,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         shape: const Border(
-          bottom: BorderSide(color: AppColors.darkBorder, width: 0.8),
+          bottom: BorderSide(color: AppColors.adminBorder, width: 0.8),
         ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              AdminShell.titleFor(location),
-              style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.3,
-              ),
-            ),
-            Text(
-              AdminShell.subtitleFor(location),
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: AppColors.darkTextTertiary,
-              ),
-            ),
-          ],
+        title: Text(
+          AdminShell.titleFor(location),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: const TextStyle(
+            fontSize: 17,
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
+            color: AppColors.adminTextPrimary,
+          ),
         ),
         actions: [
           IconButton(
@@ -489,13 +493,10 @@ class _MobileShell extends StatelessWidget {
               final router = GoRouter.of(context);
               router.go(router.state.matchedLocation);
             },
-            icon: const Icon(Icons.refresh_rounded, size: 22),
-          ),
-          Builder(
-            builder: (ctx) => IconButton(
-              tooltip: 'Меню',
-              onPressed: () => Scaffold.of(ctx).openDrawer(),
-              icon: const Icon(Icons.menu_rounded),
+            icon: const Icon(
+              Icons.refresh_rounded,
+              size: 22,
+              color: AppColors.adminTextSecondary,
             ),
           ),
           const SizedBox(width: 4),
@@ -505,25 +506,35 @@ class _MobileShell extends StatelessWidget {
       bottomNavigationBar: Container(
         decoration: const BoxDecoration(
           border: Border(
-            top: BorderSide(color: AppColors.darkBorder, width: 0.8),
+            top: BorderSide(color: AppColors.adminBorder, width: 0.8),
           ),
         ),
-        child: NavigationBar(
-          selectedIndex: _currentIndex,
-          backgroundColor: AppColors.darkSurface,
-          indicatorColor: AppColors.primary.withValues(alpha: 0.16),
-          surfaceTintColor: Colors.transparent,
-          height: 68,
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-          onDestinationSelected: (index) => context.go(destinations[index].$3),
-          destinations: [
-            for (final d in destinations)
-              NavigationDestination(
-                icon: Icon(d.$1, size: 22, color: AppColors.darkTextSecondary),
-                selectedIcon: Icon(d.$1, size: 22, color: AppColors.primaryLight),
-                label: d.$2,
-              ),
-          ],
+        child: Builder(
+          builder: (ctx) => NavigationBar(
+            selectedIndex: _currentIndex,
+            backgroundColor: AppColors.adminSurface,
+            indicatorColor: AppColors.primary.withValues(alpha: 0.16),
+            surfaceTintColor: Colors.transparent,
+            height: 68,
+            labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+            onDestinationSelected: (index) {
+              if (index == 4) {
+                Scaffold.of(ctx).openDrawer();
+                return;
+              }
+              context.go(destinations[index].$3);
+            },
+            destinations: [
+              for (final d in destinations)
+                NavigationDestination(
+                  icon: Icon(d.$1,
+                      size: 22, color: AppColors.adminTextSecondary),
+                  selectedIcon:
+                      Icon(d.$1, size: 22, color: AppColors.primaryLight),
+                  label: d.$2,
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -536,7 +547,7 @@ class _MobileShell extends StatelessWidget {
     required VoidCallback onTap,
     Color? color,
   }) {
-    final displayColor = color ?? AppColors.darkTextSecondary;
+    final displayColor = color ?? AppColors.adminTextSecondary;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       child: Material(
@@ -585,7 +596,7 @@ class _NavTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(bottom: 3),
       child: Material(
         color: isActive
             ? item.accent.withValues(alpha: 0.12)
@@ -595,7 +606,7 @@ class _NavTile extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(12),
           child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
@@ -607,18 +618,18 @@ class _NavTile extends StatelessWidget {
             child: Row(
               children: [
                 Container(
-                  width: 34,
-                  height: 34,
+                  width: 32,
+                  height: 32,
                   decoration: BoxDecoration(
                     color: isActive
                         ? item.accent.withValues(alpha: 0.18)
-                        : AppColors.darkSurfaceVariant,
+                        : AppColors.adminSurfaceVariant,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     item.icon,
                     size: 18,
-                    color: isActive ? item.accent : AppColors.darkTextTertiary,
+                    color: isActive ? item.accent : AppColors.adminTextTertiary,
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -629,8 +640,8 @@ class _NavTile extends StatelessWidget {
                       fontSize: 14,
                       fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
                       color: isActive
-                          ? AppColors.darkTextPrimary
-                          : AppColors.darkTextSecondary,
+                          ? AppColors.adminTextPrimary
+                          : AppColors.adminTextSecondary,
                     ),
                   ),
                 ),
@@ -652,43 +663,38 @@ class _NavTile extends StatelessWidget {
   }
 }
 
-class _SidebarAction extends StatelessWidget {
+class _SidebarFooterIcon extends StatelessWidget {
+  final String tooltip;
   final IconData icon;
-  final String label;
   final VoidCallback onTap;
-  final bool destructive;
+  final Color? color;
 
-  const _SidebarAction({
+  const _SidebarFooterIcon({
+    required this.tooltip,
     required this.icon,
-    required this.label,
     required this.onTap,
-    this.destructive = false,
+    this.color,
   });
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        destructive ? AppColors.errorLight : AppColors.darkTextSecondary;
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(10),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-          child: Row(
-            children: [
-              Icon(icon, size: 18, color: color),
-              const SizedBox(width: 10),
-              Text(
-                label,
-                style: TextStyle(
-                  color: color,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(8),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(8),
+          child: Container(
+            width: 40,
+            height: 34,
+            alignment: Alignment.center,
+            child: Icon(
+              icon,
+              size: 17,
+              color: color ?? AppColors.adminTextSecondary,
+            ),
           ),
         ),
       ),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:powersync/powersync.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -6,6 +8,7 @@ import 'package:uuid/uuid.dart';
 
 import 'powersync_db.dart';
 import 'supabase_sync.dart';
+import 'sync_outbox.dart';
 
 /// Repository for audit (inventory count) operations.
 class AuditRepository {
@@ -31,17 +34,70 @@ class AuditRepository {
     final auditId = _uuid.v4();
     final cleanEmployeeId = employeeId?.replaceAll('owner-', '');
 
-    // 1. Get products to snapshot from Supabase — filter by WAREHOUSE
-    var sbQuery = _supabase
-        .from('products')
-        .select('id, name, sku, barcode, quantity, cost_price, image_url')
-        .eq('warehouse_id', warehouseId);
-
+    // 1. Snapshot products from the LOCAL database first. It is the source of
+    // truth for the UI and keeps image_url/quantity available even when the
+    // device is offline. Supabase is only a fallback for an empty local cache.
+    final localParams = <dynamic>[warehouseId];
+    var localSql =
+        'SELECT id, name, sku, barcode, quantity, cost_price, image_url '
+        'FROM products WHERE warehouse_id = ?';
     if (type == AuditType.category && categoryId != null) {
-      sbQuery = sbQuery.eq('category_id', categoryId);
+      localSql += ' AND category_id = ?';
+      localParams.add(categoryId);
+    }
+    localSql += ' ORDER BY name';
+
+    final localRows = await _db.getAll(localSql, localParams);
+    var rows = <Map<String, dynamic>>[
+      for (final row in localRows) Map<String, dynamic>.from(row),
+    ];
+
+    if (rows.isEmpty) {
+      var sbQuery = _supabase
+          .from('products')
+          .select('id, name, sku, barcode, quantity, cost_price, image_url')
+          .eq('warehouse_id', warehouseId);
+
+      if (type == AuditType.category && categoryId != null) {
+        sbQuery = sbQuery.eq('category_id', categoryId);
+      }
+
+      try {
+        final remoteRows = await sbQuery;
+        rows = List<Map<String, dynamic>>.from(remoteRows);
+      } catch (e) {
+        debugPrint('[AuditRepository] Product snapshot fallback failed: $e');
+      }
     }
 
-    final rows = await sbQuery;
+    // If an old local product has no image, try to fill the snapshot from
+    // Supabase before the audit is created. Never let this optional request
+    // break the audit.
+    final missingImageIds = rows
+        .where((r) => (r['image_url'] as String?)?.isNotEmpty != true)
+        .map((r) => r['id'])
+        .whereType<String>()
+        .toList();
+    if (missingImageIds.isNotEmpty) {
+      try {
+        final images = await _supabase
+            .from('products')
+            .select('id, image_url')
+            .inFilter('id', missingImageIds);
+        final imageById = <String, String?>{
+          for (final image in images)
+            image['id'] as String: image['image_url'] as String?,
+        };
+        for (final row in rows) {
+          final imageUrl = imageById[row['id']];
+          if (imageUrl != null && imageUrl.isNotEmpty) {
+            row['image_url'] = imageUrl;
+          }
+        }
+      } catch (e) {
+        debugPrint('[AuditRepository] Could not hydrate audit images: $e');
+      }
+    }
 
     // 2. Insert audit record
     await _db.execute(
@@ -110,72 +166,43 @@ class AuditRepository {
       ));
     }
 
-    // 4. Sync audit to Supabase FIRST (so foreign key constraint on audit_items is satisfied)
-    try {
-      await _supabase.from('audits').insert({
-        'id': auditId,
-        'company_id': companyId,
-        'warehouse_id': warehouseId,
-        'warehouse_name': warehouseName,
-        'employee_id': cleanEmployeeId,
-        'employee_name': employeeName,
-        'type': type.name,
-        'status': AuditStatus.inProgress.name,
-        'category_id': categoryId,
-        'category_name': categoryName,
-        'started_at': now.toIso8601String(),
-        'created_at': now.toIso8601String(),
-        'updated_at': now.toIso8601String(),
-      });
+    // 4. Queue the audit and its snapshot. The local DB is already complete,
+    // so the counting screen opens immediately even on a slow connection.
+    await SyncOutbox.enqueue('audits', 'upsert', {
+      'id': auditId,
+      'company_id': companyId,
+      'warehouse_id': warehouseId,
+      'warehouse_name': warehouseName,
+      'employee_id': cleanEmployeeId,
+      'employee_name': employeeName,
+      'type': type.name,
+      'status': AuditStatus.inProgress.name,
+      'category_id': categoryId,
+      'category_name': categoryName,
+      'started_at': now.toIso8601String(),
+      'created_at': now.toIso8601String(),
+      'updated_at': now.toIso8601String(),
+    });
 
-      debugPrint(
-          '[AuditRepository] Audit synced to Supabase for realtime: $auditId');
-    } catch (e) {
-      debugPrint('[AuditRepository] Error syncing audit to Supabase: $e');
-      // Fallback to PowerSync sync if direct Supabase write fails
-      await SupabaseSync.upsert('audits', {
-        'id': auditId,
-        'company_id': companyId,
-        'warehouse_id': warehouseId,
-        'warehouse_name': warehouseName,
-        'employee_id': cleanEmployeeId,
-        'employee_name': employeeName,
-        'type': type.name,
-        'status': AuditStatus.inProgress.name,
-        'category_id': categoryId,
-        'category_name': categoryName,
-        'started_at': now.toIso8601String(),
+    for (final item in items) {
+      await SyncOutbox.enqueue('audit_items', 'upsert', {
+        'id': item.id,
+        'audit_id': item.auditId,
+        'product_id': item.productId,
+        'product_name': item.productName,
+        'product_sku': item.productSku,
+        'product_barcode': item.productBarcode,
+        'snapshot_quantity': item.snapshotQuantity,
+        'movements_during_audit': item.movementsDuringAudit,
+        'actual_quantity': item.actualQuantity,
+        'cost_price': item.costPrice,
+        'is_checked': false,
+        'comment': item.comment,
+        'photos': item.photos.join(','),
         'created_at': now.toIso8601String(),
-        'updated_at': now.toIso8601String(),
       });
     }
-
-    // 5. Sync audit items to Supabase AFTER audit exists in Supabase
-    if (items.isNotEmpty) {
-      try {
-        final supabaseItems = items.map((item) => {
-          'id': item.id,
-          'audit_id': item.auditId,
-          'product_id': item.productId,
-          'product_name': item.productName,
-          'product_sku': item.productSku,
-          'product_barcode': item.productBarcode,
-          'snapshot_quantity': item.snapshotQuantity,
-          'movements_during_audit': item.movementsDuringAudit,
-          'actual_quantity': item.actualQuantity,
-          'cost_price': item.costPrice,
-          'is_checked': false,
-          'comment': item.comment,
-          'photos': item.photos.join(','),
-          'created_at': now.toIso8601String(),
-        }).toList();
-
-        await _supabase.from('audit_items').insert(supabaseItems);
-        debugPrint('[AuditRepository] Batch inserted ${supabaseItems.length} audit items to Supabase');
-      } catch (e) {
-        debugPrint('[AuditRepository] Error batch syncing audit items: $e');
-      }
-    }
+    unawaited(SyncOutbox.flush());
 
     return Audit(
       id: auditId,
@@ -217,17 +244,16 @@ class AuditRepository {
       ],
     );
 
-    // Sync to Supabase directly
-    try {
-      await _supabase.from('audit_items').update({
-        'actual_quantity': actualQuantity,
-        'is_checked': true,
-        'comment': comment,
-        'photos': photos?.join(','),
-      }).eq('id', auditItemId);
-    } catch (e) {
-      print('AuditRepository updateActualQuantity Supabase sync error: $e');
-    }
+    // Local write is enough for the UI; sync in the background so counting
+    // never stalls on a slow network.
+    await SyncOutbox.enqueue('audit_items', 'update', {
+      'id': auditItemId,
+      'actual_quantity': actualQuantity,
+      'is_checked': true,
+      'comment': comment,
+      'photos': photos?.join(','),
+    });
+    unawaited(SyncOutbox.flush());
   }
 
   /// Increment actualQuantity by 1 (for barcode scanning).
@@ -249,15 +275,13 @@ class AuditRepository {
       [newQty, auditItemId],
     );
 
-    // Sync to Supabase directly
-    try {
-      await _supabase.from('audit_items').update({
-        'actual_quantity': newQty,
-        'is_checked': true,
-      }).eq('id', auditItemId);
-    } catch (e) {
-      print('AuditRepository scanItem Supabase sync error: $e');
-    }
+    // Sync in the background; the local count is already committed.
+    await SyncOutbox.enqueue('audit_items', 'update', {
+      'id': auditItemId,
+      'actual_quantity': newQty,
+      'is_checked': true,
+    });
+    unawaited(SyncOutbox.flush());
   }
 
   // ═══════════════ COMPLETE / CANCEL ═══════════════
@@ -266,51 +290,37 @@ class AuditRepository {
   /// Only items with isChecked=true get their product.quantity updated.
   Future<bool> completeAudit(String auditId) async {
     try {
-      // Get all checked items with expected metrics for live audit calculations
+      // Movements during the count must be up to date before the result is
+      // applied. Previously this was only done when a draft was reopened,
+      // so sales made during the audit were counted twice.
+      await recalcMovements(auditId);
+
       final items = await _db.getAll(
-        '''SELECT product_id, actual_quantity, snapshot_quantity, movements_during_audit
+        '''SELECT product_id, actual_quantity
            FROM audit_items
            WHERE audit_id = ? AND is_checked = 1 AND actual_quantity IS NOT NULL''',
         [auditId],
       );
 
-      // Apply corrections
+      // Apply corrections. The physically counted quantity is the source of
+      // truth; using current + discrepancy double-counted sales that happened
+      // while the audit was open.
       for (final item in items) {
         final productId = item['product_id'] as String;
-        final actualQty = item['actual_quantity'] as int;
-        final snapshotQty = item['snapshot_quantity'] as int;
-        final movements = item['movements_during_audit'] as int;
-        final expectedQty = snapshotQty + movements;
-        final discrepancy = actualQty - expectedQty;
+        final actualQty =
+            (item['actual_quantity'] as int).clamp(0, 999999999).toInt();
         final now = DateTime.now().toIso8601String();
-
-        // Get current real-time quantity from local DB
-        final prodRow = await _db.getOptional(
-          'SELECT quantity FROM products WHERE id = ?',
-          [productId],
-        );
-        final currentQty = prodRow != null ? (prodRow['quantity'] as int? ?? 0) : expectedQty;
-        final newQty = (currentQty + discrepancy).clamp(0, 999999999);
 
         await _db.execute(
           'UPDATE products SET quantity = ?, updated_at = ? WHERE id = ?',
-          [newQty, now, productId],
+          [actualQty, now, productId],
         );
 
-        // Sync updated product to Supabase (for realtime)
-        try {
-          await _supabase.from('products').update({
-            'quantity': newQty,
-            'updated_at': now,
-          }).eq('id', productId);
-        } catch (e) {
-          debugPrint('[AuditRepository] Error syncing product to Supabase: $e');
-          // Fallback to PowerSync sync if direct Supabase write fails
-          await SupabaseSync.update('products', productId, {
-            'quantity': newQty,
-            'updated_at': now,
-          });
-        }
+        await SyncOutbox.enqueue('products', 'update', {
+          'id': productId,
+          'quantity': actualQty,
+          'updated_at': now,
+        });
       }
 
       // Update audit status
@@ -320,23 +330,13 @@ class AuditRepository {
         [AuditStatus.completed.name, now, now, auditId],
       );
 
-      // Sync status (for realtime)
-      try {
-        await _supabase.from('audits').update({
-          'status': AuditStatus.completed.name,
-          'completed_at': now,
-          'updated_at': now,
-        }).eq('id', auditId);
-      } catch (e) {
-        debugPrint(
-            '[AuditRepository] Error syncing audit status to Supabase: $e');
-        // Fallback to PowerSync sync if direct Supabase write fails
-        await SupabaseSync.update('audits', auditId, {
-          'status': AuditStatus.completed.name,
-          'completed_at': now,
-          'updated_at': now,
-        });
-      }
+      await SyncOutbox.enqueue('audits', 'update', {
+        'id': auditId,
+        'status': AuditStatus.completed.name,
+        'completed_at': now,
+        'updated_at': now,
+      });
+      unawaited(SyncOutbox.flush());
 
       return true;
     } catch (e) {
@@ -486,8 +486,33 @@ class AuditRepository {
           .order('product_name');
 
       if (remoteItems.isNotEmpty) {
-        // Merge remote updates into local DB
+        final localById = <String, Map<String, dynamic>>{
+          for (final row in localItemRows) row['id'] as String: row,
+        };
+
+        // Merge remote updates into local DB without erasing anything that
+        // was already counted on this device. A remote row without an image
+        // must not null out the local image; that was why photos disappeared
+        // during an audit.
         for (final item in remoteItems) {
+          final id = item['id'] as String;
+          final local = localById[id];
+          final remoteChecked = item['is_checked'] == true;
+          final localChecked = local?['is_checked'] == 1;
+          final keepLocalCount = localChecked && !remoteChecked;
+          dynamic actualQuantity;
+          if (keepLocalCount) {
+            actualQuantity = local?['actual_quantity'];
+          } else {
+            actualQuantity =
+                item['actual_quantity'] ?? local?['actual_quantity'];
+          }
+          dynamic imageUrl = local?['product_image_url'];
+          final remoteImage = item['product_image_url'] as String?;
+          if (remoteImage != null && remoteImage.isNotEmpty) {
+            imageUrl = remoteImage;
+          }
+
           await _db.execute(
             '''INSERT OR REPLACE INTO audit_items (id, audit_id, product_id, product_name,
                product_sku, product_barcode, product_image_url,
@@ -495,21 +520,23 @@ class AuditRepository {
                actual_quantity, cost_price, is_checked, comment, photos, created_at)
                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
             [
-              item['id'],
-              item['audit_id'],
-              item['product_id'],
-              item['product_name'],
-              item['product_sku'],
-              item['product_barcode'],
-              item['product_image_url'],
-              item['snapshot_quantity'],
-              item['movements_during_audit'],
-              item['actual_quantity'],
-              item['cost_price'],
-              item['is_checked'] == true ? 1 : 0,
-              item['comment'],
-              item['photos'],
-              item['created_at'],
+              id,
+              item['audit_id'] ?? local?['audit_id'],
+              item['product_id'] ?? local?['product_id'],
+              item['product_name'] ?? local?['product_name'],
+              item['product_sku'] ?? local?['product_sku'],
+              item['product_barcode'] ?? local?['product_barcode'],
+              imageUrl,
+              item['snapshot_quantity'] ?? local?['snapshot_quantity'] ?? 0,
+              item['movements_during_audit'] ??
+                  local?['movements_during_audit'] ??
+                  0,
+              actualQuantity,
+              item['cost_price'] ?? local?['cost_price'] ?? 0,
+              (localChecked || remoteChecked) ? 1 : 0,
+              item['comment'] ?? local?['comment'],
+              item['photos'] ?? local?['photos'],
+              item['created_at'] ?? local?['created_at'],
             ],
           );
         }
@@ -594,10 +621,13 @@ class AuditRepository {
   /// Recalculate movements that occurred during the audit for each item.
   /// This checks sales, arrivals, and transfers since the audit started.
   Future<void> recalcMovements(String auditId) async {
-    final auditRows = await _db
-        .getAll('SELECT started_at FROM audits WHERE id = ?', [auditId]);
+    final auditRows = await _db.getAll(
+      'SELECT started_at, warehouse_id FROM audits WHERE id = ?',
+      [auditId],
+    );
     if (auditRows.isEmpty) return;
     final startedAt = auditRows.first['started_at'] as String;
+    final warehouseId = auditRows.first['warehouse_id'] as String?;
 
     final items = await _db.getAll(
       'SELECT id, product_id FROM audit_items WHERE audit_id = ?',
@@ -607,23 +637,28 @@ class AuditRepository {
     for (final item in items) {
       final productId = item['product_id'] as String;
 
-      // Sales (negative movement)
+      // Sales (negative movement). Only completed sales of this warehouse,
+      // otherwise a cancelled/foreign sale skews the expected quantity.
       final soldRows = await _db.getAll(
         '''SELECT COALESCE(SUM(si.quantity), 0) as total
            FROM sale_items si
            JOIN sales s ON si.sale_id = s.id
-           WHERE si.product_id = ? AND s.created_at >= ?''',
-        [productId, startedAt],
+           WHERE si.product_id = ? AND s.created_at >= ?
+             AND s.warehouse_id = ?
+             AND (s.status = 'completed' OR s.status IS NULL)''',
+        [productId, startedAt, warehouseId],
       );
       final sold = (soldRows.first['total'] as num?)?.toInt() ?? 0;
 
-      // Arrivals (positive movement)
+      // Arrivals (positive movement). Cancelled arrivals do not count.
       final arrivedRows = await _db.getAll(
         '''SELECT COALESCE(SUM(ai.quantity), 0) as total
            FROM arrival_items ai
            JOIN arrivals a ON ai.arrival_id = a.id
-           WHERE ai.product_id = ? AND a.created_at >= ?''',
-        [productId, startedAt],
+           WHERE ai.product_id = ? AND a.created_at >= ?
+             AND a.warehouse_id = ?
+             AND (a.status IS NULL OR a.status NOT IN ('cancelled', 'draft'))''',
+        [productId, startedAt, warehouseId],
       );
       final arrived = (arrivedRows.first['total'] as num?)?.toInt() ?? 0;
 

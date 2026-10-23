@@ -144,9 +144,9 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.darkSurface,
+            color: AppColors.adminSurface,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: isSelected ? AppColors.primary : AppColors.darkBorder, width: isSelected ? 1.5 : 1.0),
+            border: Border.all(color: isSelected ? AppColors.primary : AppColors.adminBorder, width: isSelected ? 1.5 : 1.0),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -171,7 +171,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                     child: Text(
                       title,
                       style: const TextStyle(
-                          color: AppColors.darkTextPrimary,
+                          color: AppColors.adminTextPrimary,
                           fontSize: 18,
                           fontWeight: FontWeight.w700),
                     ),
@@ -181,7 +181,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
               ),
               const SizedBox(height: 16),
               const Text('Лицензионный Ключ',
-                  style: TextStyle(color: AppColors.darkTextTertiary, fontSize: 12)),
+                  style: TextStyle(color: AppColors.adminTextTertiary, fontSize: 12)),
               const SizedBox(height: 4),
               Row(
                 children: [
@@ -190,7 +190,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 12, vertical: 8),
                       decoration: BoxDecoration(
-                        color: AppColors.darkSurfaceVariant,
+                        color: AppColors.adminSurfaceVariant,
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: SelectableText(
@@ -211,9 +211,9 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                         const SnackBar(content: Text('Ключ скопирован')),
                       );
                     },
-                    icon: const Icon(Icons.copy_rounded, color: AppColors.darkTextSecondary, size: 20),
+                    icon: const Icon(Icons.copy_rounded, color: AppColors.adminTextSecondary, size: 20),
                     style: IconButton.styleFrom(
-                      backgroundColor: AppColors.darkSurfaceVariant,
+                      backgroundColor: AppColors.adminSurfaceVariant,
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8)),
                     ),
@@ -221,7 +221,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              const Divider(color: AppColors.darkBorder),
+              const Divider(color: AppColors.adminBorder),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -279,9 +279,9 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
   Widget _buildTable(List<Map<String, dynamic>> companies) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: AppColors.adminSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.adminBorder),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -289,14 +289,14 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
           scrollDirection: Axis.horizontal,
           child: DataTable(
             headingRowColor:
-                WidgetStateProperty.all(AppColors.darkSurfaceVariant),
+                WidgetStateProperty.all(AppColors.adminSurfaceVariant),
             dataRowColor: WidgetStateProperty.all(Colors.transparent),
             showCheckboxColumn: true,
             columns: const [
-              DataColumn(label: Text('Компания', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600))),
-              DataColumn(label: Text('Ключ', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600))),
-              DataColumn(label: Text('Статус', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600))),
-              DataColumn(label: Text('Действия', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600))),
+              DataColumn(label: Text('Компания', style: TextStyle(color: AppColors.adminTextSecondary, fontWeight: FontWeight.w600))),
+              DataColumn(label: Text('Ключ', style: TextStyle(color: AppColors.adminTextSecondary, fontWeight: FontWeight.w600))),
+              DataColumn(label: Text('Статус', style: TextStyle(color: AppColors.adminTextSecondary, fontWeight: FontWeight.w600))),
+              DataColumn(label: Text('Действия', style: TextStyle(color: AppColors.adminTextSecondary, fontWeight: FontWeight.w600))),
             ],
             rows: companies.map((c) => _buildRow(c)).toList(),
           ),
@@ -343,7 +343,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
             ),
             const SizedBox(width: 6),
             IconButton(
-              icon: const Icon(Icons.copy_rounded, size: 14, color: AppColors.darkTextTertiary),
+              icon: const Icon(Icons.copy_rounded, size: 14, color: AppColors.adminTextTertiary),
               onPressed: () {
                 Clipboard.setData(ClipboardData(text: key));
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -394,13 +394,13 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.darkSurface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: AppColors.darkBorder)),
+        backgroundColor: AppColors.adminSurface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: AppColors.adminBorder)),
         title: Row(
           children: [
             const Icon(Icons.warning_amber_rounded, color: AppColors.errorLight),
             const SizedBox(width: 10),
-            Text(ids.length == 1 ? 'Удаление компании' : 'Массовое удаление компаний', style: const TextStyle(color: AppColors.darkTextPrimary, fontWeight: FontWeight.bold)),
+            Text(ids.length == 1 ? 'Удаление компании' : 'Массовое удаление компаний', style: const TextStyle(color: AppColors.adminTextPrimary, fontWeight: FontWeight.bold)),
           ],
         ),
         content: Column(
@@ -423,7 +423,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Отмена', style: TextStyle(color: AppColors.darkTextSecondary)),
+            child: const Text('Отмена', style: TextStyle(color: AppColors.adminTextSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -449,7 +449,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
         dialogOpened = true;
         return const Center(
           child: Card(
-            color: AppColors.darkSurface,
+            color: AppColors.adminSurface,
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Row(
@@ -538,10 +538,10 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
         return StatefulBuilder(
           builder: (ctx, setStateDialog) {
             return AlertDialog(
-              backgroundColor: AppColors.darkSurface,
+              backgroundColor: AppColors.adminSurface,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               title: const Text('Создать компанию',
-                  style: TextStyle(color: AppColors.darkTextPrimary, fontWeight: FontWeight.w700)),
+                  style: TextStyle(color: AppColors.adminTextPrimary, fontWeight: FontWeight.w700)),
               content: SizedBox(
                 width: 440,
                 child: Column(
@@ -552,8 +552,8 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                       style: const TextStyle(color: Colors.white),
                       decoration: const InputDecoration(
                         hintText: 'Название компании',
-                        hintStyle: TextStyle(color: AppColors.darkTextTertiary),
-                        prefixIcon: Icon(Icons.business_rounded, color: AppColors.darkTextTertiary),
+                        hintStyle: TextStyle(color: AppColors.adminTextTertiary),
+                        prefixIcon: Icon(Icons.business_rounded, color: AppColors.adminTextTertiary),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -568,15 +568,15 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                             labelStyle: TextStyle(
                               color: selectedPrefix == 'WH'
                                   ? AppColors.primaryLight
-                                  : AppColors.darkTextSecondary,
+                                  : AppColors.adminTextSecondary,
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                             ),
-                            backgroundColor: AppColors.darkSurface,
+                            backgroundColor: AppColors.adminSurface,
                             side: BorderSide(
                               color: selectedPrefix == 'WH'
                                   ? AppColors.primary
-                                  : AppColors.darkBorder,
+                                  : AppColors.adminBorder,
                             ),
                             onSelected: (selected) {
                               if (selected) {
@@ -598,15 +598,15 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                             labelStyle: TextStyle(
                               color: selectedPrefix == 'KT'
                                   ? AppColors.primaryLight
-                                  : AppColors.darkTextSecondary,
+                                  : AppColors.adminTextSecondary,
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
                             ),
-                            backgroundColor: AppColors.darkSurface,
+                            backgroundColor: AppColors.adminSurface,
                             side: BorderSide(
                               color: selectedPrefix == 'KT'
                                   ? AppColors.primary
-                                  : AppColors.darkBorder,
+                                  : AppColors.adminBorder,
                             ),
                             onSelected: (selected) {
                               if (selected) {
@@ -631,8 +631,8 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
                       ),
                       decoration: InputDecoration(
                         hintText: 'XXXX-XXXX-XXXX-XXXX',
-                        hintStyle: const TextStyle(color: AppColors.darkTextTertiary),
-                        prefixIcon: const Icon(Icons.vpn_key_rounded, color: AppColors.darkTextTertiary),
+                        hintStyle: const TextStyle(color: AppColors.adminTextTertiary),
+                        prefixIcon: const Icon(Icons.vpn_key_rounded, color: AppColors.adminTextTertiary),
                         suffixIcon: IconButton(
                           icon: const Icon(Icons.refresh_rounded, color: AppColors.warningLight),
                           tooltip: 'Сгенерировать новый ключ',
@@ -650,7 +650,7 @@ class _CompaniesScreenState extends ConsumerState<CompaniesScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Отмена', style: TextStyle(color: AppColors.darkTextSecondary)),
+                  child: const Text('Отмена', style: TextStyle(color: AppColors.adminTextSecondary)),
                 ),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(

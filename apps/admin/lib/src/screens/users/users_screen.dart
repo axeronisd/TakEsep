@@ -296,13 +296,13 @@ class _UsersScreenState extends State<UsersScreen>
                   tooltip: 'Обновить данные',
                   onPressed: _loadData,
                   icon: const Icon(Icons.refresh_rounded,
-                      color: AppColors.darkTextSecondary),
+                      color: AppColors.adminTextSecondary),
                   style: IconButton.styleFrom(
-                    backgroundColor: AppColors.darkSurface,
+                    backgroundColor: AppColors.adminSurface,
                     padding: const EdgeInsets.all(14),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
-                      side: const BorderSide(color: AppColors.darkBorder),
+                      side: const BorderSide(color: AppColors.adminBorder),
                     ),
                   ),
                 ),
@@ -363,14 +363,14 @@ class _UsersScreenState extends State<UsersScreen>
           Container(
             decoration: const BoxDecoration(
               border: Border(
-                  bottom: BorderSide(color: AppColors.darkBorder, width: 1)),
+                  bottom: BorderSide(color: AppColors.adminBorder, width: 1)),
             ),
             child: TabBar(
               controller: _tabController,
               isScrollable: isMobile,
               tabAlignment: isMobile ? TabAlignment.start : TabAlignment.fill,
               labelColor: AppColors.primaryLight,
-              unselectedLabelColor: AppColors.darkTextSecondary,
+              unselectedLabelColor: AppColors.adminTextSecondary,
               indicatorColor: AppColors.primary,
               indicatorSize: TabBarIndicatorSize.tab,
               dividerColor: Colors.transparent,
@@ -524,7 +524,7 @@ class _UsersScreenState extends State<UsersScreen>
                 style: const TextStyle(
                     fontFamily: 'monospace',
                     fontSize: 12,
-                    color: AppColors.darkTextSecondary),
+                    color: AppColors.adminTextSecondary),
               ),
             ),
             DataCell(Text(u['email']?.isEmpty == true ? '—' : u['email'],
@@ -532,9 +532,9 @@ class _UsersScreenState extends State<UsersScreen>
             DataCell(Text(u['phone']?.isEmpty == true ? '—' : u['phone'],
                 style: const TextStyle(color: Colors.white))),
             DataCell(Text(_formatDate(u['created_at']),
-                style: const TextStyle(color: AppColors.darkTextSecondary))),
+                style: const TextStyle(color: AppColors.adminTextSecondary))),
             DataCell(Text(_formatDate(u['last_sign_in']),
-                style: const TextStyle(color: AppColors.darkTextSecondary))),
+                style: const TextStyle(color: AppColors.adminTextSecondary))),
             DataCell(
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -618,7 +618,7 @@ class _UsersScreenState extends State<UsersScreen>
             DataCell(Text(displayEmail,
                 style: const TextStyle(color: Colors.white))),
             DataCell(Text(_formatDate(c['created_at']),
-                style: const TextStyle(color: AppColors.darkTextSecondary))),
+                style: const TextStyle(color: AppColors.adminTextSecondary))),
             DataCell(
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -740,7 +740,7 @@ class _UsersScreenState extends State<UsersScreen>
             DataCell(_buildStatusBadge(isActive)),
             DataCell(Text(warehouseNames.isEmpty ? '—' : warehouseNames,
                 style: const TextStyle(
-                    color: AppColors.darkTextSecondary, fontSize: 13),
+                    color: AppColors.adminTextSecondary, fontSize: 13),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis)),
             DataCell(
@@ -755,11 +755,11 @@ class _UsersScreenState extends State<UsersScreen>
                   ),
                   PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert_rounded,
-                        color: AppColors.darkTextSecondary),
-                    color: AppColors.darkSurface,
+                        color: AppColors.adminTextSecondary),
+                    color: AppColors.adminSurface,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
-                      side: const BorderSide(color: AppColors.darkBorder),
+                      side: const BorderSide(color: AppColors.adminBorder),
                     ),
                     onSelected: (val) {
                       if (val == 'rate') _showEditRateDialog(c);
@@ -926,11 +926,11 @@ class _UsersScreenState extends State<UsersScreen>
                   ),
                   PopupMenuButton<String>(
                     icon: const Icon(Icons.more_vert_rounded,
-                        color: AppColors.darkTextSecondary),
-                    color: AppColors.darkSurface,
+                        color: AppColors.adminTextSecondary),
+                    color: AppColors.adminSurface,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),
-                      side: const BorderSide(color: AppColors.darkBorder),
+                      side: const BorderSide(color: AppColors.adminBorder),
                     ),
                     onSelected: (val) {
                       if (val == 'password' && e['user_id'] != null) {
@@ -980,9 +980,9 @@ class _UsersScreenState extends State<UsersScreen>
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: AppColors.adminSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.adminBorder),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -990,7 +990,7 @@ class _UsersScreenState extends State<UsersScreen>
           scrollDirection: Axis.horizontal,
           child: DataTable(
             headingRowColor:
-                WidgetStateProperty.all(AppColors.darkSurfaceVariant),
+                WidgetStateProperty.all(AppColors.adminSurfaceVariant),
             dataRowColor: WidgetStateProperty.all(Colors.transparent),
             horizontalMargin: 20,
             columnSpacing: 30,
@@ -999,7 +999,7 @@ class _UsersScreenState extends State<UsersScreen>
                       label: Text(
                         col,
                         style: const TextStyle(
-                            color: AppColors.darkTextSecondary,
+                            color: AppColors.adminTextSecondary,
                             fontSize: 13,
                             fontWeight: FontWeight.w600),
                       ),
@@ -1023,9 +1023,9 @@ class _UsersScreenState extends State<UsersScreen>
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: AppColors.adminSurface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.adminBorder),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1100,19 +1100,19 @@ class _UsersScreenState extends State<UsersScreen>
                     style: const TextStyle(
                         fontFamily: 'monospace',
                         fontSize: 11,
-                        color: AppColors.darkTextTertiary)),
+                        color: AppColors.adminTextTertiary)),
                 const SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text('Создан: ${_formatDate(u['created_at'])}',
                         style: const TextStyle(
-                            fontSize: 11, color: AppColors.darkTextSecondary)),
+                            fontSize: 11, color: AppColors.adminTextSecondary)),
                     if (u['last_sign_in'] != null)
                       Text('Вход: ${_formatDate(u['last_sign_in'])}',
                           style: const TextStyle(
                               fontSize: 11,
-                              color: AppColors.darkTextSecondary)),
+                              color: AppColors.adminTextSecondary)),
                   ],
                 ),
               ],
@@ -1133,9 +1133,9 @@ class _UsersScreenState extends State<UsersScreen>
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: AppColors.adminSurface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.adminBorder),
       ),
       child: Row(
         children: [
@@ -1165,11 +1165,11 @@ class _UsersScreenState extends State<UsersScreen>
                 const SizedBox(height: 4),
                 Text(phone,
                     style: const TextStyle(
-                        color: AppColors.darkTextSecondary, fontSize: 13)),
+                        color: AppColors.adminTextSecondary, fontSize: 13)),
                 const SizedBox(height: 4),
                 Text('Дата: ${_formatDate(c['created_at'])}',
                     style: const TextStyle(
-                        color: AppColors.darkTextTertiary, fontSize: 11)),
+                        color: AppColors.adminTextTertiary, fontSize: 11)),
               ],
             ),
           ),
@@ -1213,9 +1213,9 @@ class _UsersScreenState extends State<UsersScreen>
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: AppColors.adminSurface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.adminBorder),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1257,7 +1257,7 @@ class _UsersScreenState extends State<UsersScreen>
                   children: [
                     Text(phone,
                         style: const TextStyle(
-                            color: AppColors.darkTextSecondary, fontSize: 13)),
+                            color: AppColors.adminTextSecondary, fontSize: 13)),
                     const Spacer(),
                     Text('Ставка: $rate',
                         style: const TextStyle(
@@ -1294,11 +1294,11 @@ class _UsersScreenState extends State<UsersScreen>
                     const SizedBox(width: 14),
                     PopupMenuButton<String>(
                       icon: const Icon(Icons.more_vert_rounded,
-                          color: AppColors.darkTextSecondary),
-                      color: AppColors.darkSurface,
+                          color: AppColors.adminTextSecondary),
+                      color: AppColors.adminSurface,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
-                        side: const BorderSide(color: AppColors.darkBorder),
+                        side: const BorderSide(color: AppColors.adminBorder),
                       ),
                       constraints: const BoxConstraints(),
                       padding: EdgeInsets.zero,
@@ -1406,9 +1406,9 @@ class _UsersScreenState extends State<UsersScreen>
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: AppColors.adminSurface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.adminBorder),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1460,7 +1460,7 @@ class _UsersScreenState extends State<UsersScreen>
                 const SizedBox(height: 6),
                 Text(phone,
                     style: const TextStyle(
-                        color: AppColors.darkTextSecondary, fontSize: 13)),
+                        color: AppColors.adminTextSecondary, fontSize: 13)),
                 const SizedBox(height: 6),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -1468,7 +1468,7 @@ class _UsersScreenState extends State<UsersScreen>
                     Expanded(
                       child: Text('Склад: $wh',
                           style: const TextStyle(
-                              color: AppColors.darkTextTertiary, fontSize: 12),
+                              color: AppColors.adminTextTertiary, fontSize: 12),
                           overflow: TextOverflow.ellipsis),
                     ),
                     Row(
@@ -1483,11 +1483,11 @@ class _UsersScreenState extends State<UsersScreen>
                         const SizedBox(width: 14),
                         PopupMenuButton<String>(
                           icon: const Icon(Icons.more_vert_rounded,
-                              color: AppColors.darkTextSecondary),
-                          color: AppColors.darkSurface,
+                              color: AppColors.adminTextSecondary),
+                          color: AppColors.adminSurface,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),
-                            side: const BorderSide(color: AppColors.darkBorder),
+                            side: const BorderSide(color: AppColors.adminBorder),
                           ),
                           constraints: const BoxConstraints(),
                           padding: EdgeInsets.zero,
@@ -1621,13 +1621,13 @@ class _UsersScreenState extends State<UsersScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.darkSurface,
+        backgroundColor: AppColors.adminSurface,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: AppColors.darkBorder)),
+            side: const BorderSide(color: AppColors.adminBorder)),
         title: Text(title,
             style: const TextStyle(
-                color: AppColors.darkTextPrimary, fontWeight: FontWeight.bold)),
+                color: AppColors.adminTextPrimary, fontWeight: FontWeight.bold)),
         content: SizedBox(
           width: 500,
           child: Scrollbar(
@@ -1643,7 +1643,7 @@ class _UsersScreenState extends State<UsersScreen>
                       children: [
                         Text(entry.key,
                             style: const TextStyle(
-                                color: AppColors.darkTextTertiary,
+                                color: AppColors.adminTextTertiary,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600)),
                         const SizedBox(height: 4),
@@ -1852,10 +1852,10 @@ class _UsersScreenState extends State<UsersScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.darkSurface,
+        backgroundColor: AppColors.adminSurface,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: AppColors.darkBorder)),
+            side: const BorderSide(color: AppColors.adminBorder)),
         title: Row(
           children: [
             const Icon(Icons.warning_amber_rounded,
@@ -1863,7 +1863,7 @@ class _UsersScreenState extends State<UsersScreen>
             const SizedBox(width: 10),
             const Text('Удаление аккаунта',
                 style: TextStyle(
-                    color: AppColors.darkTextPrimary,
+                    color: AppColors.adminTextPrimary,
                     fontWeight: FontWeight.bold)),
           ],
         ),
@@ -1892,7 +1892,7 @@ class _UsersScreenState extends State<UsersScreen>
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text('Отмена',
-                style: TextStyle(color: AppColors.darkTextSecondary)),
+                style: TextStyle(color: AppColors.adminTextSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -1917,7 +1917,7 @@ class _UsersScreenState extends State<UsersScreen>
         dialogCtx = ctx;
         return const Center(
           child: Card(
-            color: AppColors.darkSurface,
+            color: AppColors.adminSurface,
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Row(
@@ -2001,10 +2001,10 @@ class _UsersScreenState extends State<UsersScreen>
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.darkSurface,
+        backgroundColor: AppColors.adminSurface,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: AppColors.darkBorder)),
+            side: const BorderSide(color: AppColors.adminBorder)),
         title: Row(
           children: [
             const Icon(Icons.warning_amber_rounded,
@@ -2012,7 +2012,7 @@ class _UsersScreenState extends State<UsersScreen>
             const SizedBox(width: 10),
             const Text('Групповое удаление',
                 style: TextStyle(
-                    color: AppColors.darkTextPrimary,
+                    color: AppColors.adminTextPrimary,
                     fontWeight: FontWeight.bold)),
           ],
         ),
@@ -2042,7 +2042,7 @@ class _UsersScreenState extends State<UsersScreen>
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text('Отмена',
-                style: TextStyle(color: AppColors.darkTextSecondary)),
+                style: TextStyle(color: AppColors.adminTextSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -2067,7 +2067,7 @@ class _UsersScreenState extends State<UsersScreen>
         dialogCtx = ctx;
         return const Center(
           child: Card(
-            color: AppColors.darkSurface,
+            color: AppColors.adminSurface,
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Row(
@@ -2241,10 +2241,10 @@ class _UsersScreenState extends State<UsersScreen>
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.darkSurface,
+          backgroundColor: AppColors.adminSurface,
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
-              side: const BorderSide(color: AppColors.darkBorder)),
+              side: const BorderSide(color: AppColors.adminBorder)),
           title: const Text('Добавить курьера',
               style:
                   TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
@@ -2274,7 +2274,7 @@ class _UsersScreenState extends State<UsersScreen>
                   alignment: Alignment.centerLeft,
                   child: Text('Транспорт:',
                       style: TextStyle(
-                          fontSize: 13, color: AppColors.darkTextSecondary)),
+                          fontSize: 13, color: AppColors.adminTextSecondary)),
                 ),
                 const SizedBox(height: 8),
                 Wrap(
@@ -2314,7 +2314,7 @@ class _UsersScreenState extends State<UsersScreen>
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: const Text('Отмена',
-                  style: TextStyle(color: AppColors.darkTextSecondary)),
+                  style: TextStyle(color: AppColors.adminTextSecondary)),
             ),
             ElevatedButton.icon(
               onPressed: () async {
@@ -2356,10 +2356,10 @@ class _UsersScreenState extends State<UsersScreen>
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.darkSurface,
+          backgroundColor: AppColors.adminSurface,
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
-              side: const BorderSide(color: AppColors.darkBorder)),
+              side: const BorderSide(color: AppColors.adminBorder)),
           title: Text('Склады для ${courier['name']}',
               style: const TextStyle(
                   color: Colors.white, fontWeight: FontWeight.bold)),
@@ -2368,7 +2368,7 @@ class _UsersScreenState extends State<UsersScreen>
             child: _warehouses.isEmpty
                 ? const Center(
                     child: Text('Нет складов',
-                        style: TextStyle(color: AppColors.darkTextSecondary)))
+                        style: TextStyle(color: AppColors.adminTextSecondary)))
                 : ListView.builder(
                     itemCount: _warehouses.length,
                     itemBuilder: (_, i) {
@@ -2380,7 +2380,7 @@ class _UsersScreenState extends State<UsersScreen>
                         subtitle: Text(wh['address'] ?? '',
                             style: const TextStyle(
                                 fontSize: 12,
-                                color: AppColors.darkTextSecondary)),
+                                color: AppColors.adminTextSecondary)),
                         value: isLinked,
                         activeColor: AppColors.success,
                         onChanged: (val) async {
@@ -2415,10 +2415,10 @@ class _UsersScreenState extends State<UsersScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.darkSurface,
+        backgroundColor: AppColors.adminSurface,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: AppColors.darkBorder)),
+            side: const BorderSide(color: AppColors.adminBorder)),
         icon:
             const Icon(Icons.vpn_key, color: AppColors.successLight, size: 48),
         title: Text('Ключ для $name',
@@ -2430,7 +2430,7 @@ class _UsersScreenState extends State<UsersScreen>
             const Text('Передайте этот ключ курьеру для входа в приложение',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                    fontSize: 13, color: AppColors.darkTextSecondary)),
+                    fontSize: 13, color: AppColors.adminTextSecondary)),
             const SizedBox(height: 20),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -2488,10 +2488,10 @@ class _UsersScreenState extends State<UsersScreen>
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.darkSurface,
+          backgroundColor: AppColors.adminSurface,
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
-              side: const BorderSide(color: AppColors.darkBorder)),
+              side: const BorderSide(color: AppColors.adminBorder)),
           title: Text('Ставка курьера: $name',
               style: const TextStyle(
                   color: Colors.white, fontWeight: FontWeight.bold)),
@@ -2505,7 +2505,7 @@ class _UsersScreenState extends State<UsersScreen>
                       style: TextStyle(color: Colors.white, fontSize: 14)),
                   subtitle: Text(
                       'Использовать общую ставку ${(_globalCourierEarningRate * 100).toStringAsFixed(0)}%',
-                      style: const TextStyle(color: AppColors.darkTextSecondary, fontSize: 12)),
+                      style: const TextStyle(color: AppColors.adminTextSecondary, fontSize: 12)),
                   value: useSystemDefault,
                   activeColor: AppColors.success,
                   contentPadding: EdgeInsets.zero,
@@ -2607,7 +2607,7 @@ class _UsersScreenState extends State<UsersScreen>
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: const Text('Отмена',
-                  style: TextStyle(color: AppColors.darkTextSecondary)),
+                  style: TextStyle(color: AppColors.adminTextSecondary)),
             ),
             ElevatedButton.icon(
               onPressed: () async {
@@ -2657,10 +2657,10 @@ class _UsersScreenState extends State<UsersScreen>
       context: context,
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.darkSurface,
+          backgroundColor: AppColors.adminSurface,
           shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
-              side: const BorderSide(color: AppColors.darkBorder)),
+              side: const BorderSide(color: AppColors.adminBorder)),
           title: Text('Транспорт: ${courier['name'] ?? 'Курьер'}',
               style: const TextStyle(
                   color: Colors.white, fontWeight: FontWeight.bold)),
@@ -2671,7 +2671,7 @@ class _UsersScreenState extends State<UsersScreen>
               children: [
                 const Text('Выберите доступные виды транспорта:',
                     style: TextStyle(
-                        fontSize: 13, color: AppColors.darkTextSecondary)),
+                        fontSize: 13, color: AppColors.adminTextSecondary)),
                 const SizedBox(height: 12),
                 Wrap(
                   spacing: 8,
@@ -2704,13 +2704,13 @@ class _UsersScreenState extends State<UsersScreen>
                   ],
                 ),
                 const SizedBox(height: 16),
-                const Divider(color: AppColors.darkBorder),
+                const Divider(color: AppColors.adminBorder),
                 const SizedBox(height: 8),
                 SwitchListTile(
                   title: const Text('Разрешить велик и муравей одновременно',
                       style: TextStyle(color: Colors.white, fontSize: 14)),
                   subtitle: const Text('Получать все заказы на оба транспорта сразу',
-                      style: TextStyle(color: AppColors.darkTextSecondary, fontSize: 11)),
+                      style: TextStyle(color: AppColors.adminTextSecondary, fontSize: 11)),
                   value: allowBoth,
                   activeColor: AppColors.primary,
                   contentPadding: EdgeInsets.zero,
@@ -2725,7 +2725,7 @@ class _UsersScreenState extends State<UsersScreen>
             TextButton(
               onPressed: () => Navigator.pop(ctx),
               child: const Text('Отмена',
-                  style: TextStyle(color: AppColors.darkTextSecondary)),
+                  style: TextStyle(color: AppColors.adminTextSecondary)),
             ),
             ElevatedButton.icon(
               onPressed: () async {
@@ -2922,10 +2922,10 @@ class _UsersScreenState extends State<UsersScreen>
           }
 
           return AlertDialog(
-            backgroundColor: AppColors.darkSurface,
+            backgroundColor: AppColors.adminSurface,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
-                side: const BorderSide(color: AppColors.darkBorder)),
+                side: const BorderSide(color: AppColors.adminBorder)),
             title: const Text('Добавить сотрудника склада',
                 style: TextStyle(
                     color: Colors.white, fontWeight: FontWeight.bold)),
@@ -2956,7 +2956,7 @@ class _UsersScreenState extends State<UsersScreen>
                       const SizedBox(height: 12),
                       DropdownButtonFormField<Map<String, dynamic>>(
                         initialValue: selectedWarehouse,
-                        dropdownColor: AppColors.darkSurface,
+                        dropdownColor: AppColors.adminSurface,
                         decoration: const InputDecoration(
                           labelText: 'Склад привязки *',
                           prefixIcon: Icon(Icons.store_rounded),
@@ -2979,7 +2979,7 @@ class _UsersScreenState extends State<UsersScreen>
                       const SizedBox(height: 12),
                       DropdownButtonFormField<Map<String, dynamic>>(
                         initialValue: selectedRole,
-                        dropdownColor: AppColors.darkSurface,
+                        dropdownColor: AppColors.adminSurface,
                         decoration: const InputDecoration(
                           labelText: 'Роль *',
                           prefixIcon: Icon(Icons.badge_rounded),
@@ -3019,13 +3019,13 @@ class _UsersScreenState extends State<UsersScreen>
                         keyboardType: TextInputType.number,
                       ),
                       const SizedBox(height: 16),
-                      const Divider(color: AppColors.darkBorder),
+                      const Divider(color: AppColors.adminBorder),
                       const SizedBox(height: 8),
                       const Align(
                         alignment: Alignment.centerLeft,
                         child: Text('Дополнительные сведения (необязательно)',
                             style: TextStyle(
-                                color: AppColors.darkTextSecondary,
+                                color: AppColors.adminTextSecondary,
                                 fontWeight: FontWeight.bold,
                                 fontSize: 12)),
                       ),
@@ -3066,7 +3066,7 @@ class _UsersScreenState extends State<UsersScreen>
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
                         initialValue: selectedSalaryType,
-                        dropdownColor: AppColors.darkSurface,
+                        dropdownColor: AppColors.adminSurface,
                         decoration: const InputDecoration(
                           labelText: 'Тип начисления зарплаты',
                           prefixIcon: Icon(Icons.payments_rounded),
@@ -3119,7 +3119,7 @@ class _UsersScreenState extends State<UsersScreen>
               TextButton(
                 onPressed: () => Navigator.pop(ctx),
                 child: const Text('Отмена',
-                    style: TextStyle(color: AppColors.darkTextSecondary)),
+                    style: TextStyle(color: AppColors.adminTextSecondary)),
               ),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
@@ -3217,7 +3217,7 @@ class _UsersScreenState extends State<UsersScreen>
         dialogOpened = true;
         return const Center(
           child: Card(
-            color: AppColors.darkSurface,
+            color: AppColors.adminSurface,
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Row(
@@ -3316,20 +3316,20 @@ class _UsersScreenState extends State<UsersScreen>
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.darkSurface,
+        backgroundColor: AppColors.adminSurface,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
-            side: const BorderSide(color: AppColors.darkBorder)),
+            side: const BorderSide(color: AppColors.adminBorder)),
         title: const Text('Сменить пароль',
             style: TextStyle(
-                color: AppColors.darkTextPrimary, fontWeight: FontWeight.bold)),
+                color: AppColors.adminTextPrimary, fontWeight: FontWeight.bold)),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text('Изменение пароля для пользователя:',
                 style: TextStyle(
-                    color: AppColors.darkTextSecondary, fontSize: 13)),
+                    color: AppColors.adminTextSecondary, fontSize: 13)),
             const SizedBox(height: 4),
             Text(userIdentifier,
                 style: const TextStyle(
@@ -3351,7 +3351,7 @@ class _UsersScreenState extends State<UsersScreen>
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: const Text('Отмена',
-                style: TextStyle(color: AppColors.darkTextSecondary)),
+                style: TextStyle(color: AppColors.adminTextSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
@@ -3388,7 +3388,7 @@ class _UsersScreenState extends State<UsersScreen>
         dialogOpened = true;
         return const Center(
           child: Card(
-            color: AppColors.darkSurface,
+            color: AppColors.adminSurface,
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Row(
@@ -3653,10 +3653,10 @@ class _CourierShiftsDialogState extends State<_CourierShiftsDialog> {
     await showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.darkSurface,
+        backgroundColor: AppColors.adminSurface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppColors.darkBorder),
+          side: const BorderSide(color: AppColors.adminBorder),
         ),
         title: const Text(
           'Внести оплату курьера',
@@ -3671,8 +3671,8 @@ class _CourierShiftsDialogState extends State<_CourierShiftsDialog> {
               style: const TextStyle(color: Colors.white),
               decoration: const InputDecoration(
                 labelText: 'Сумма (сом) *',
-                labelStyle: TextStyle(color: AppColors.darkTextSecondary),
-                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.darkBorder)),
+                labelStyle: TextStyle(color: AppColors.adminTextSecondary),
+                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.adminBorder)),
                 focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
               ),
             ),
@@ -3682,8 +3682,8 @@ class _CourierShiftsDialogState extends State<_CourierShiftsDialog> {
               style: const TextStyle(color: Colors.white),
               decoration: const InputDecoration(
                 labelText: 'Примечание',
-                labelStyle: TextStyle(color: AppColors.darkTextSecondary),
-                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.darkBorder)),
+                labelStyle: TextStyle(color: AppColors.adminTextSecondary),
+                enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.adminBorder)),
                 focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: AppColors.primary)),
               ),
             ),
@@ -3692,7 +3692,7 @@ class _CourierShiftsDialogState extends State<_CourierShiftsDialog> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Отмена', style: TextStyle(color: AppColors.darkTextTertiary)),
+            child: const Text('Отмена', style: TextStyle(color: AppColors.adminTextTertiary)),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
@@ -3753,20 +3753,20 @@ class _CourierShiftsDialogState extends State<_CourierShiftsDialog> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.darkSurface,
+        backgroundColor: AppColors.adminSurface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppColors.darkBorder),
+          side: const BorderSide(color: AppColors.adminBorder),
         ),
         title: const Text('Подтверждение оплаты', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         content: Text(
           'Вы уверены, что хотите отметить долг по этой смене (${amount.toStringAsFixed(0)} сом) как закрытый/оплаченный?',
-          style: const TextStyle(color: AppColors.darkTextSecondary),
+          style: const TextStyle(color: AppColors.adminTextSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Отмена', style: TextStyle(color: AppColors.darkTextTertiary)),
+            child: const Text('Отмена', style: TextStyle(color: AppColors.adminTextTertiary)),
           ),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AppColors.success),
@@ -3809,7 +3809,7 @@ class _CourierShiftsDialogState extends State<_CourierShiftsDialog> {
         showDialog(
           context: context,
           builder: (ctx) => AlertDialog(
-            backgroundColor: AppColors.darkSurface,
+            backgroundColor: AppColors.adminSurface,
             title: const Text('Ошибка', style: TextStyle(color: Colors.white)),
             content: Text('Не удалось закрыть смену: $e', style: const TextStyle(color: Colors.red)),
             actions: [
@@ -3837,10 +3837,10 @@ class _CourierShiftsDialogState extends State<_CourierShiftsDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      backgroundColor: AppColors.darkSurface,
+      backgroundColor: AppColors.adminSurface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: const BorderSide(color: AppColors.darkBorder),
+        side: const BorderSide(color: AppColors.adminBorder),
       ),
       child: Container(
         width: 700,
@@ -3860,7 +3860,7 @@ class _CourierShiftsDialogState extends State<_CourierShiftsDialog> {
                         Text(
                           widget.courier['name'] ?? 'Курьер',
                           style: const TextStyle(
-                            color: AppColors.darkTextPrimary,
+                            color: AppColors.adminTextPrimary,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                           ),
@@ -3871,7 +3871,7 @@ class _CourierShiftsDialogState extends State<_CourierShiftsDialog> {
                         Text(
                           widget.courier['phone'] ?? '',
                           style: const TextStyle(
-                            color: AppColors.darkTextTertiary,
+                            color: AppColors.adminTextTertiary,
                             fontSize: 12,
                           ),
                         ),
@@ -3879,7 +3879,7 @@ class _CourierShiftsDialogState extends State<_CourierShiftsDialog> {
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.close_rounded, color: AppColors.darkTextTertiary),
+                    icon: const Icon(Icons.close_rounded, color: AppColors.adminTextTertiary),
                     onPressed: () => Navigator.pop(context),
                   ),
                 ],
@@ -3887,7 +3887,7 @@ class _CourierShiftsDialogState extends State<_CourierShiftsDialog> {
               const SizedBox(height: 12),
               const TabBar(
                 labelColor: AppColors.primaryLight,
-                unselectedLabelColor: AppColors.darkTextSecondary,
+                unselectedLabelColor: AppColors.adminTextSecondary,
                 indicatorColor: AppColors.primary,
                 tabs: [
                   Tab(text: 'Профиль'),
@@ -3946,7 +3946,7 @@ class _CourierShiftsDialogState extends State<_CourierShiftsDialog> {
                     child: Text(
                       entry.key,
                       style: const TextStyle(
-                        color: AppColors.darkTextTertiary,
+                        color: AppColors.adminTextTertiary,
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -3956,7 +3956,7 @@ class _CourierShiftsDialogState extends State<_CourierShiftsDialog> {
                     child: SelectableText(
                       entry.value,
                       style: const TextStyle(
-                        color: AppColors.darkTextPrimary,
+                        color: AppColors.adminTextPrimary,
                         fontSize: 13,
                       ),
                     ),
@@ -4042,7 +4042,7 @@ class _CourierShiftsDialogState extends State<_CourierShiftsDialog> {
                     const Text(
                       'Баланс по заказам (как на телефоне курьера)',
                       style: TextStyle(
-                        color: AppColors.darkTextSecondary,
+                        color: AppColors.adminTextSecondary,
                         fontSize: 11,
                       ),
                     ),
@@ -4112,7 +4112,7 @@ class _CourierShiftsDialogState extends State<_CourierShiftsDialog> {
                     const Text(
                       'Несданный долг курьера (наличные)',
                       style: TextStyle(
-                        color: AppColors.darkTextSecondary,
+                        color: AppColors.adminTextSecondary,
                         fontSize: 11,
                       ),
                     ),
@@ -4147,7 +4147,7 @@ class _CourierShiftsDialogState extends State<_CourierShiftsDialog> {
               ? const Center(
                   child: Text(
                     'История смен пуста',
-                    style: TextStyle(color: AppColors.darkTextTertiary),
+                    style: TextStyle(color: AppColors.adminTextTertiary),
                   ),
                 )
               : ListView.builder(
@@ -4181,22 +4181,22 @@ class _CourierShiftsDialogState extends State<_CourierShiftsDialog> {
                       margin: const EdgeInsets.only(bottom: 10),
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: AppColors.darkSurfaceVariant,
+                        color: AppColors.adminSurfaceVariant,
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: AppColors.darkBorder),
+                        border: Border.all(color: AppColors.adminBorder),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.date_range_rounded, size: 14, color: AppColors.darkTextSecondary),
+                              const Icon(Icons.date_range_rounded, size: 14, color: AppColors.adminTextSecondary),
                               const SizedBox(width: 6),
                               Expanded(
                                 child: Text(
                                   '$start — $end',
                                   style: const TextStyle(
-                                    color: AppColors.darkTextPrimary,
+                                    color: AppColors.adminTextPrimary,
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,
                                   ),
@@ -4219,7 +4219,7 @@ class _CourierShiftsDialogState extends State<_CourierShiftsDialog> {
                               ),
                             ],
                           ),
-                          const Divider(color: AppColors.darkBorder, height: 16),
+                          const Divider(color: AppColors.adminBorder, height: 16),
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
@@ -4231,7 +4231,7 @@ class _CourierShiftsDialogState extends State<_CourierShiftsDialog> {
                                 '${amountToReturn.toStringAsFixed(0)} с',
                                 valueColor: amountToReturn > 0 && !isSettled 
                                     ? AppColors.errorLight 
-                                    : AppColors.darkTextPrimary,
+                                    : AppColors.adminTextPrimary,
                                 bold: true,
                               ),
                             ],
@@ -4275,7 +4275,7 @@ class _ShiftMetric extends StatelessWidget {
   const _ShiftMetric(
     this.label,
     this.value, {
-    this.valueColor = AppColors.darkTextPrimary,
+    this.valueColor = AppColors.adminTextPrimary,
     this.bold = false,
   });
 
@@ -4286,7 +4286,7 @@ class _ShiftMetric extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(color: AppColors.darkTextTertiary, fontSize: 10),
+          style: const TextStyle(color: AppColors.adminTextTertiary, fontSize: 10),
         ),
         const SizedBox(height: 2),
         Text(

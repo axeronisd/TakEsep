@@ -213,12 +213,12 @@ class _AddressesScreenState extends ConsumerState<AddressesScreen> {
 
   // ── Mobile: full-screen map + draggable bottom sheet ──
   Widget _buildMobileLayout() {
-    const cardBg = AppColors.darkSurface;
+    const cardBg = AppColors.adminSurface;
     const accent = AppColors.successLight;
     const purple = AppColors.primaryLight;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
+      backgroundColor: AppColors.adminBackground,
       body: Stack(
         children: [
           FlutterMap(
@@ -307,7 +307,7 @@ class _AddressesScreenState extends ConsumerState<AddressesScreen> {
           decoration: InputDecoration(
             hintText: 'Поиск адреса...', hintStyle: TextStyle(color: Colors.grey[600], fontSize: 13),
             prefixIcon: Icon(Icons.search, color: Colors.grey[600], size: 18),
-            filled: true, fillColor: AppColors.darkSurfaceVariant,
+            filled: true, fillColor: AppColors.adminSurfaceVariant,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide.none),
             contentPadding: const EdgeInsets.symmetric(vertical: 10),
           ),
@@ -324,7 +324,7 @@ class _AddressesScreenState extends ConsumerState<AddressesScreen> {
         if (_loading)
           const Center(child: Padding(padding: EdgeInsets.all(20), child: CircularProgressIndicator(color: AppColors.successLight)))
         else if (filtered.isEmpty)
-          Center(child: Padding(padding: const EdgeInsets.all(20), child: Text('Нет адресов', style: TextStyle(color: AppColors.darkTextTertiary))))
+          Center(child: Padding(padding: const EdgeInsets.all(20), child: Text('Нет адресов', style: TextStyle(color: AppColors.adminTextTertiary))))
         else
           ...filtered.map((addr) {
             final verified = addr['verified'] == true;
@@ -334,9 +334,9 @@ class _AddressesScreenState extends ConsumerState<AddressesScreen> {
                 margin: const EdgeInsets.only(bottom: 6),
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: AppColors.darkSurface,
+                  color: AppColors.adminSurface,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.darkBorder),
+                  border: Border.all(color: AppColors.adminBorder),
                 ),
                 child: Row(children: [
                   Icon(verified ? Icons.check_circle : Icons.pending_actions_rounded,
@@ -456,9 +456,9 @@ class _AddressesScreenState extends ConsumerState<AddressesScreen> {
 
   // ── Desktop: original 3-panel layout ──
   Widget _buildDesktopLayout() {
-    const bg = AppColors.darkBackground;
-    const cardBg = AppColors.darkSurface;
-    const border = AppColors.darkBorder;
+    const bg = AppColors.adminBackground;
+    const cardBg = AppColors.adminSurface;
+    const border = AppColors.adminBorder;
     const accent = AppColors.successLight;
     const purple = AppColors.primaryLight;
     final filtered = _filteredAddresses;
@@ -617,7 +617,7 @@ class _AddressesScreenState extends ConsumerState<AddressesScreen> {
                             Container(
                               margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                               padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(color: AppColors.darkBackground, borderRadius: BorderRadius.circular(8)),
+                              decoration: BoxDecoration(color: AppColors.adminBackground, borderRadius: BorderRadius.circular(8)),
                               child: Row(children: [
                                 Icon(Icons.gps_fixed_rounded, color: Colors.grey[500], size: 14),
                                 const SizedBox(width: 8),
@@ -697,12 +697,12 @@ class _AddressesScreenState extends ConsumerState<AddressesScreen> {
           decoration: BoxDecoration(
             color: isActive
                 ? AppColors.success.withValues(alpha: 0.15)
-                : AppColors.darkSurface,
+                : AppColors.adminSurface,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
               color: isActive
                   ? AppColors.success
-                  : AppColors.darkBorder,
+                  : AppColors.adminBorder,
               width: isActive ? 1 : 0.5,
             ),
           ),
@@ -710,7 +710,7 @@ class _AddressesScreenState extends ConsumerState<AddressesScreen> {
             child: Text(
               '$label ($count)',
               style: TextStyle(
-                color: isActive ? AppColors.successLight : AppColors.darkTextTertiary,
+                color: isActive ? AppColors.successLight : AppColors.adminTextTertiary,
                 fontSize: 11,
                 fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
               ),
@@ -728,17 +728,17 @@ class _AddressesScreenState extends ConsumerState<AddressesScreen> {
       style: const TextStyle(color: Colors.white, fontSize: 13),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: const TextStyle(color: AppColors.darkTextTertiary, fontSize: 12),
-        prefixIcon: Icon(icon, size: 16, color: AppColors.darkTextSecondary),
+        labelStyle: const TextStyle(color: AppColors.adminTextTertiary, fontSize: 12),
+        prefixIcon: Icon(icon, size: 16, color: AppColors.adminTextSecondary),
         filled: true,
-        fillColor: AppColors.darkSurfaceVariant,
+        fillColor: AppColors.adminSurfaceVariant,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.darkBorder),
+          borderSide: const BorderSide(color: AppColors.adminBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: AppColors.darkBorder),
+          borderSide: const BorderSide(color: AppColors.adminBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(8),

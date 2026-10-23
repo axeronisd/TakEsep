@@ -162,12 +162,12 @@ class _CouriersMapScreenState extends ConsumerState<CouriersMapScreen> {
   }
 
   Widget _buildMobileLayout() {
-    const cardBg = AppColors.darkSurface;
+    const cardBg = AppColors.adminSurface;
     const accent = AppColors.primaryLight;
     final filtered = _filteredCouriers;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
+      backgroundColor: AppColors.adminBackground,
       body: Stack(
         children: [
           FlutterMap(
@@ -261,8 +261,8 @@ class _CouriersMapScreenState extends ConsumerState<CouriersMapScreen> {
   }
 
   Widget _buildDesktopLayout() {
-    const bg = AppColors.darkBackground;
-    const cardBg = AppColors.darkSurface;
+    const bg = AppColors.adminBackground;
+    const cardBg = AppColors.adminSurface;
     const accent = AppColors.primaryLight;
     final filtered = _filteredCouriers;
 
@@ -342,7 +342,7 @@ class _CouriersMapScreenState extends ConsumerState<CouriersMapScreen> {
                         margin: const EdgeInsets.fromLTRB(0, 0, 24, 24),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.darkBorder),
+                          border: Border.all(color: AppColors.adminBorder),
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(16),
@@ -392,7 +392,7 @@ class _CouriersMapScreenState extends ConsumerState<CouriersMapScreen> {
     return ListTile(
       onTap: () => _selectCourier(c),
       selected: isSelected,
-      selectedTileColor: AppColors.darkSurfaceVariant.withValues(alpha: 0.5),
+      selectedTileColor: AppColors.adminSurfaceVariant.withValues(alpha: 0.5),
       leading: Container(
         width: 36, height: 36,
         decoration: BoxDecoration(
@@ -450,11 +450,11 @@ class _CouriersMapScreenState extends ConsumerState<CouriersMapScreen> {
     }
 
     return Card(
-      color: AppColors.darkSurface,
+      color: AppColors.adminSurface,
       elevation: 12,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.darkBorder),
+        side: const BorderSide(color: AppColors.adminBorder),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -480,7 +480,7 @@ class _CouriersMapScreenState extends ConsumerState<CouriersMapScreen> {
                 ),
               ],
             ),
-            const Divider(color: AppColors.darkBorder, height: 20),
+            const Divider(color: AppColors.adminBorder, height: 20),
             Row(
               children: [
                 Icon(_getTransportIcon(c['transport_type']), color: AppColors.primaryLight, size: 18),
@@ -597,15 +597,15 @@ class _CouriersMapScreenState extends ConsumerState<CouriersMapScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 6),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.darkSurfaceVariant : Colors.transparent,
+            color: isSelected ? AppColors.adminSurfaceVariant : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: isSelected ? AppColors.darkBorder : Colors.transparent),
+            border: Border.all(color: isSelected ? AppColors.adminBorder : Colors.transparent),
           ),
           child: Text(
             '$label ($count)',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: isSelected ? Colors.white : AppColors.darkTextSecondary,
+              color: isSelected ? Colors.white : AppColors.adminTextSecondary,
               fontSize: 11,
               fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
             ),

@@ -14,7 +14,7 @@ class DashboardScreen extends ConsumerWidget {
     final isMobile = MediaQuery.sizeOf(context).width < 760;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
+      backgroundColor: AppColors.adminBackground,
       body: RefreshIndicator(
         onRefresh: () async {
           ref.invalidate(ecosystemStatsProvider);
@@ -25,51 +25,7 @@ class DashboardScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Welcome and header ──
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Панель управления',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Общая аналитика и показатели экосистемы TakEsep',
-                          style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.5),
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {
-                      ref.invalidate(ecosystemStatsProvider);
-                      ref.invalidate(revenueByCompanyProvider);
-                    },
-                    icon: const Icon(Icons.refresh_rounded, color: AppColors.darkTextSecondary),
-                    style: IconButton.styleFrom(
-                      backgroundColor: AppColors.darkSurface,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                        side: const BorderSide(color: AppColors.darkBorder),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 4),
 
               // ── Stats Grid ──
               statsAsync.when(
@@ -89,7 +45,7 @@ class DashboardScreen extends ConsumerWidget {
                         const SizedBox(height: 4),
                         Text(
                           e.toString(),
-                          style: const TextStyle(color: AppColors.darkTextTertiary, fontSize: 12),
+                          style: const TextStyle(color: AppColors.adminTextTertiary, fontSize: 12),
                         ),
                       ],
                     ),
@@ -106,11 +62,11 @@ class DashboardScreen extends ConsumerWidget {
 
                   return LayoutBuilder(
                     builder: (context, constraints) {
-                      int crossAxisCount = 4;
+                      int crossAxisCount = 3;
                       if (isMobile) {
                         crossAxisCount = 2;
-                      } else if (constraints.maxWidth < 980) {
-                        crossAxisCount = 3;
+                      } else if (constraints.maxWidth < 820) {
+                        crossAxisCount = 2;
                       }
 
                       return GridView.count(
@@ -119,7 +75,7 @@ class DashboardScreen extends ConsumerWidget {
                         crossAxisCount: crossAxisCount,
                         crossAxisSpacing: 16,
                         mainAxisSpacing: 16,
-                        childAspectRatio: isMobile ? 1.25 : 1.45,
+                        childAspectRatio: isMobile ? 1.35 : 1.9,
                         children: [
                           _StatCard(
                             title: 'Общая выручка',
@@ -209,7 +165,7 @@ class DashboardScreen extends ConsumerWidget {
                         height: 200,
                         alignment: Alignment.center,
                         child: const Text('Ошибка загрузки данных выручки',
-                            style: TextStyle(color: AppColors.darkTextTertiary)),
+                            style: TextStyle(color: AppColors.adminTextTertiary)),
                       ),
                       data: (revenueList) {
                         return _buildRevenueBreakdown(revenueList, isMobile);
@@ -240,9 +196,9 @@ class DashboardScreen extends ConsumerWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: AppColors.adminSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.adminBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -268,7 +224,7 @@ class DashboardScreen extends ConsumerWidget {
                 padding: EdgeInsets.symmetric(vertical: 40),
                 child: Text(
                   'Нет данных о продажах',
-                  style: TextStyle(color: AppColors.darkTextTertiary),
+                  style: TextStyle(color: AppColors.adminTextTertiary),
                 ),
               ),
             )
@@ -294,7 +250,7 @@ class DashboardScreen extends ConsumerWidget {
                         Text(
                           '${index + 1}. $name',
                           style: const TextStyle(
-                            color: AppColors.darkTextPrimary,
+                            color: AppColors.adminTextPrimary,
                             fontWeight: FontWeight.w600,
                             fontSize: 14,
                           ),
@@ -315,7 +271,7 @@ class DashboardScreen extends ConsumerWidget {
                         Container(
                           height: 8,
                           decoration: BoxDecoration(
-                            color: AppColors.darkSurfaceVariant,
+                            color: AppColors.adminSurfaceVariant,
                             borderRadius: BorderRadius.circular(4),
                           ),
                         ),
@@ -372,9 +328,9 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: AppColors.adminSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.adminBorder),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
@@ -408,13 +364,13 @@ class _StatCard extends StatelessWidget {
                       Text(
                         title,
                         style: const TextStyle(
-                          color: AppColors.darkTextTertiary,
+                          color: AppColors.adminTextTertiary,
                           fontSize: 12,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.2,
                         ),
                       ),
-                      Icon(icon, color: AppColors.darkTextTertiary, size: 20),
+                      Icon(icon, color: AppColors.adminTextTertiary, size: 20),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -437,7 +393,7 @@ class _StatCard extends StatelessWidget {
                   Text(
                     subText,
                     style: const TextStyle(
-                      color: AppColors.darkTextSecondary,
+                      color: AppColors.adminTextSecondary,
                       fontSize: 10,
                       fontWeight: FontWeight.w500,
                     ),
@@ -460,9 +416,9 @@ class _SystemStatusCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: AppColors.adminSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.adminBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -530,7 +486,7 @@ class _StatusRow extends StatelessWidget {
         Text(
           label,
           style: const TextStyle(
-            color: AppColors.darkTextSecondary,
+            color: AppColors.adminTextSecondary,
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),
@@ -593,9 +549,9 @@ class _LoadingCard extends StatelessWidget {
     return Container(
       height: height,
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: AppColors.adminSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.adminBorder),
       ),
       child: const Center(
         child: SizedBox(
@@ -603,7 +559,7 @@ class _LoadingCard extends StatelessWidget {
           height: 24,
           child: CircularProgressIndicator(
             strokeWidth: 2.5,
-            color: AppColors.darkTextSecondary,
+            color: AppColors.adminTextSecondary,
           ),
         ),
       ),

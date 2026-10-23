@@ -9,6 +9,11 @@ final salesRepositoryProvider = Provider<SalesRepository>((ref) {
   return SalesRepository();
 });
 
+/// True while a sale is being committed. The pay button is disabled and
+/// [_completeSale] returns early, so a double tap cannot create a second
+/// sale, a second receipt dialog or a second printed cheque.
+final saleProcessingProvider = StateProvider<bool>((ref) => false);
+
 // --- State Providers for POS ---
 final selectedClientProvider = StateProvider<Client?>((ref) => null);
 

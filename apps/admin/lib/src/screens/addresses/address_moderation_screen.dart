@@ -110,10 +110,10 @@ class _AddressModerationScreenState extends ConsumerState<AddressModerationScree
                 onPressed: _loadData,
                 icon: const Icon(Icons.refresh_rounded),
                 style: IconButton.styleFrom(
-                  backgroundColor: AppColors.darkSurface,
+                  backgroundColor: AppColors.adminSurface,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
-                    side: const BorderSide(color: AppColors.darkBorder),
+                    side: const BorderSide(color: AppColors.adminBorder),
                   ),
                 ),
               ),
@@ -153,7 +153,7 @@ class _AddressModerationScreenState extends ConsumerState<AddressModerationScree
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: AppColors.adminSurface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AppColors.warning.withValues(alpha: 0.5)),
       ),
@@ -199,7 +199,7 @@ class _AddressModerationScreenState extends ConsumerState<AddressModerationScree
             ],
           ),
           const SizedBox(height: 16),
-          const Divider(color: AppColors.darkBorder),
+          const Divider(color: AppColors.adminBorder),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,

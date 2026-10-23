@@ -96,16 +96,16 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
     return Stack(
       children: [
         Scaffold(
-          backgroundColor: AppColors.darkBackground,
+          backgroundColor: AppColors.adminBackground,
           // Mobile: use AppBar + Drawer for table navigation
           appBar: isMobile
               ? AppBar(
-                  backgroundColor: AppColors.darkSurface,
+                  backgroundColor: AppColors.adminSurface,
                   elevation: 0,
                   scrolledUnderElevation: 0,
                   title: Text(_selectedTableLabel ?? 'База данных',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.darkTextPrimary)),
-                  iconTheme: const IconThemeData(color: AppColors.darkTextPrimary),
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.adminTextPrimary)),
+                  iconTheme: const IconThemeData(color: AppColors.adminTextPrimary),
                   leading: Builder(
                     builder: (ctx) => IconButton(
                       icon: const Icon(Icons.menu),
@@ -131,8 +131,8 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
                     Container(
                       width: 280,
                       decoration: const BoxDecoration(
-                        color: AppColors.darkSurface,
-                        border: Border(right: BorderSide(color: AppColors.darkBorder)),
+                        color: AppColors.adminSurface,
+                        border: Border(right: BorderSide(color: AppColors.adminBorder)),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,12 +147,12 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w700,
-                                      color: AppColors.darkTextPrimary,
+                                      color: AppColors.adminTextPrimary,
                                     )),
                               ],
                             ),
                           ),
-                          const Divider(color: AppColors.darkBorder, height: 1),
+                          const Divider(color: AppColors.adminBorder, height: 1),
                           Expanded(
                             child: ListView(
                               padding: const EdgeInsets.symmetric(vertical: 8),
@@ -161,7 +161,7 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
                               }).toList(),
                             ),
                           ),
-                          const Divider(color: AppColors.darkBorder, height: 1),
+                          const Divider(color: AppColors.adminBorder, height: 1),
                           Padding(
                             padding: const EdgeInsets.all(12),
                             child: SizedBox(
@@ -196,10 +196,10 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
             color: Colors.black.withValues(alpha: 0.7),
             child: Center(
               child: Card(
-                color: AppColors.darkSurface,
+                color: AppColors.adminSurface,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
-                  side: const BorderSide(color: AppColors.darkBorder),
+                  side: const BorderSide(color: AppColors.adminBorder),
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(32),
@@ -212,10 +212,10 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
                       const SizedBox(height: 20),
                       const Text('Очистка базы...',
                           style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.darkTextPrimary)),
+                              fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.adminTextPrimary)),
                       const SizedBox(height: 8),
                       Text(_wipingStatus,
-                          style: const TextStyle(fontSize: 13, color: AppColors.darkTextSecondary)),
+                          style: const TextStyle(fontSize: 13, color: AppColors.adminTextSecondary)),
                     ],
                   ),
                 ),
@@ -228,7 +228,7 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
 
   Widget _buildSidebarDrawer(ColorScheme cs) {
     return Drawer(
-      backgroundColor: AppColors.darkSurface,
+      backgroundColor: AppColors.adminSurface,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -240,18 +240,18 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
                 Icon(Icons.storage, color: AppColors.primary, size: 22),
                 SizedBox(width: 10),
                 Text('База данных',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.darkTextPrimary)),
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.adminTextPrimary)),
               ],
             ),
           ),
-          const Divider(color: AppColors.darkBorder, height: 1),
+          const Divider(color: AppColors.adminBorder, height: 1),
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 8),
               children: _tableGroups.map((group) => _buildTableGroup(group, closeDrawer: true)).toList(),
             ),
           ),
-          const Divider(color: AppColors.darkBorder, height: 1),
+          const Divider(color: AppColors.adminBorder, height: 1),
           Padding(
             padding: const EdgeInsets.all(12),
             child: SizedBox(
@@ -279,20 +279,20 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
 
   Widget _buildTableGroup(_TableGroup group, {bool closeDrawer = false}) {
     return ExpansionTile(
-      leading: Icon(group.icon, size: 18, color: AppColors.darkTextTertiary),
+      leading: Icon(group.icon, size: 18, color: AppColors.adminTextTertiary),
       title: Text(group.label,
           style: const TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: AppColors.darkTextSecondary,
+            color: AppColors.adminTextSecondary,
             letterSpacing: 0.5,
           )),
       dense: true,
       tilePadding: const EdgeInsets.symmetric(horizontal: 12),
       childrenPadding: EdgeInsets.zero,
       initiallyExpanded: true,
-      iconColor: AppColors.darkTextTertiary,
-      collapsedIconColor: AppColors.darkTextTertiary,
+      iconColor: AppColors.adminTextTertiary,
+      collapsedIconColor: AppColors.adminTextTertiary,
       children: group.tables.map((table) {
         final isActive = _selectedTable == table.key;
         return InkWell(
@@ -313,13 +313,13 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
               children: [
                 Icon(table.icon,
                     size: 16,
-                    color: isActive ? AppColors.primaryLight : AppColors.darkTextTertiary),
+                    color: isActive ? AppColors.primaryLight : AppColors.adminTextTertiary),
                 const SizedBox(width: 10),
                 Expanded(
                   child: Text(table.label,
                       style: TextStyle(
                         fontSize: 13,
-                        color: isActive ? AppColors.darkTextPrimary : AppColors.darkTextSecondary,
+                        color: isActive ? AppColors.adminTextPrimary : AppColors.adminTextSecondary,
                         fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
                       )),
                 ),
@@ -462,13 +462,13 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.storage, size: 64, color: AppColors.darkTextTertiary),
+          Icon(Icons.storage, size: 64, color: AppColors.adminTextTertiary),
           const SizedBox(height: 16),
           Text('Выберите таблицу слева',
-              style: TextStyle(fontSize: 16, color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600)),
+              style: TextStyle(fontSize: 16, color: AppColors.adminTextSecondary, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
           Text('Вы сможете просматривать и удалять записи',
-              style: TextStyle(fontSize: 13, color: AppColors.darkTextTertiary)),
+              style: TextStyle(fontSize: 13, color: AppColors.adminTextTertiary)),
         ],
       ),
     );
@@ -500,7 +500,7 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
                       : (filtered.isEmpty && _searchQuery.isNotEmpty)
                           ? Center(
                               child: Text('Ничего не найдено по запросу "$_searchQuery"',
-                                  style: const TextStyle(color: AppColors.darkTextTertiary)),
+                                  style: const TextStyle(color: AppColors.adminTextTertiary)),
                             )
                           : isMobile
                               ? _buildMobileDataList(filtered)
@@ -519,29 +519,29 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 20, vertical: 12),
       decoration: const BoxDecoration(
-        color: AppColors.darkSurface,
-        border: Border(bottom: BorderSide(color: AppColors.darkBorder)),
+        color: AppColors.adminSurface,
+        border: Border(bottom: BorderSide(color: AppColors.adminBorder)),
       ),
       child: isMobile
           ? Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('$_totalCount записей',
-                    style: const TextStyle(fontSize: 12, color: AppColors.darkTextTertiary)),
+                    style: const TextStyle(fontSize: 12, color: AppColors.adminTextTertiary)),
                 const SizedBox(height: 8),
                 // Search
                 TextField(
                   onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
-                  style: const TextStyle(fontSize: 13, color: AppColors.darkTextPrimary),
+                  style: const TextStyle(fontSize: 13, color: AppColors.adminTextPrimary),
                   decoration: InputDecoration(
                     hintText: 'Поиск...',
-                    hintStyle: const TextStyle(color: AppColors.darkTextTertiary, fontSize: 13),
-                    prefixIcon: const Icon(Icons.search, size: 18, color: AppColors.darkTextSecondary),
+                    hintStyle: const TextStyle(color: AppColors.adminTextTertiary, fontSize: 13),
+                    prefixIcon: const Icon(Icons.search, size: 18, color: AppColors.adminTextSecondary),
                     filled: true,
-                    fillColor: AppColors.darkSurfaceVariant,
+                    fillColor: AppColors.adminSurfaceVariant,
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
-                      borderSide: const BorderSide(color: AppColors.darkBorder),
+                      borderSide: const BorderSide(color: AppColors.adminBorder),
                     ),
                     focusedBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -590,9 +590,9 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
                   children: [
                     Text(_selectedTableLabel ?? '',
                         style: const TextStyle(
-                            fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.darkTextPrimary)),
+                            fontSize: 18, fontWeight: FontWeight.w700, color: AppColors.adminTextPrimary)),
                     Text('$_totalCount записей • Таблица: $_selectedTable',
-                        style: const TextStyle(fontSize: 12, color: AppColors.darkTextTertiary)),
+                        style: const TextStyle(fontSize: 12, color: AppColors.adminTextTertiary)),
                   ],
                 ),
                 const Spacer(),
@@ -601,16 +601,16 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
                   height: 38,
                   child: TextField(
                     onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
-                    style: const TextStyle(fontSize: 13, color: AppColors.darkTextPrimary),
+                    style: const TextStyle(fontSize: 13, color: AppColors.adminTextPrimary),
                     decoration: InputDecoration(
                       hintText: 'Поиск...',
-                      hintStyle: const TextStyle(color: AppColors.darkTextTertiary, fontSize: 13),
-                      prefixIcon: const Icon(Icons.search, size: 18, color: AppColors.darkTextSecondary),
+                      hintStyle: const TextStyle(color: AppColors.adminTextTertiary, fontSize: 13),
+                      prefixIcon: const Icon(Icons.search, size: 18, color: AppColors.adminTextSecondary),
                       filled: true,
-                      fillColor: AppColors.darkSurfaceVariant,
+                      fillColor: AppColors.adminSurfaceVariant,
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
-                        borderSide: const BorderSide(color: AppColors.darkBorder),
+                        borderSide: const BorderSide(color: AppColors.adminBorder),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -625,7 +625,7 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
                   onPressed: _fetchPage,
                   icon: const Icon(Icons.refresh, size: 20),
                   tooltip: 'Обновить',
-                  style: IconButton.styleFrom(foregroundColor: AppColors.darkTextSecondary),
+                  style: IconButton.styleFrom(foregroundColor: AppColors.adminTextSecondary),
                 ),
                 if (_selectedIds.isNotEmpty) ...[
                   const SizedBox(width: 8),
@@ -681,7 +681,7 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
               'Возможно таблица не существует или нет прав.\n'
               'Для auth.users создайте VIEW: auth_users_view',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: AppColors.darkTextTertiary),
+              style: TextStyle(fontSize: 12, color: AppColors.adminTextTertiary),
             ),
             const SizedBox(height: 16),
             ElevatedButton.icon(
@@ -704,10 +704,10 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.inbox, size: 48, color: AppColors.darkTextTertiary),
+          Icon(Icons.inbox, size: 48, color: AppColors.adminTextTertiary),
           const SizedBox(height: 12),
           Text('Таблица пустая',
-              style: TextStyle(fontSize: 15, color: AppColors.darkTextSecondary)),
+              style: TextStyle(fontSize: 15, color: AppColors.adminTextSecondary)),
         ],
       ),
     );
@@ -726,11 +726,11 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
         final subtitleCandidate = row['description'] ?? row['status'] ?? row['created_at'] ?? '';
 
         return Card(
-          color: AppColors.darkSurface,
+          color: AppColors.adminSurface,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
             side: BorderSide(
-              color: isSelected ? AppColors.primary : AppColors.darkBorder,
+              color: isSelected ? AppColors.primary : AppColors.adminBorder,
               width: isSelected ? 1.5 : 1,
             ),
           ),
@@ -770,14 +770,14 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
                           style: const TextStyle(
                             fontSize: 15,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.darkTextPrimary,
+                            color: AppColors.adminTextPrimary,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       const Icon(
                         Icons.chevron_right_rounded,
-                        color: AppColors.darkTextTertiary,
+                        color: AppColors.adminTextTertiary,
                         size: 20,
                       ),
                     ],
@@ -800,7 +800,7 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
                       _formatValue(subtitleCandidate),
                       style: const TextStyle(
                         fontSize: 13,
-                        color: AppColors.darkTextSecondary,
+                        color: AppColors.adminTextSecondary,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -836,7 +836,7 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
               style: const TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w700,
-                color: AppColors.darkTextTertiary,
+                color: AppColors.adminTextTertiary,
                 letterSpacing: 0.5,
               ),
               overflow: TextOverflow.ellipsis,
@@ -846,7 +846,7 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
               _formatValue(val),
               style: const TextStyle(
                 fontSize: 12,
-                color: AppColors.darkTextSecondary,
+                color: AppColors.adminTextSecondary,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -873,7 +873,7 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
   void _showRowDetailsBottomSheet(Map<String, dynamic> row) {
     showModalBottomSheet(
       context: context,
-      backgroundColor: AppColors.darkSurface,
+      backgroundColor: AppColors.adminSurface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
@@ -893,7 +893,7 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
                     height: 4,
                     margin: const EdgeInsets.symmetric(vertical: 12),
                     decoration: BoxDecoration(
-                      color: AppColors.darkBorder,
+                      color: AppColors.adminBorder,
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -910,7 +910,7 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.darkTextPrimary,
+                            color: AppColors.adminTextPrimary,
                           ),
                         ),
                       ),
@@ -931,7 +931,7 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
                     ],
                   ),
                 ),
-                const Divider(color: AppColors.darkBorder),
+                const Divider(color: AppColors.adminBorder),
                 Expanded(
                   child: ListView.builder(
                     controller: scrollController,
@@ -946,9 +946,9 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
                         margin: const EdgeInsets.only(bottom: 12),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: AppColors.darkSurfaceVariant,
+                          color: AppColors.adminSurfaceVariant,
                           borderRadius: BorderRadius.circular(8),
-                          border: Border.all(color: AppColors.darkBorder),
+                          border: Border.all(color: AppColors.adminBorder),
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -962,7 +962,7 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
                                     style: const TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
-                                      color: AppColors.darkTextTertiary,
+                                      color: AppColors.adminTextTertiary,
                                       letterSpacing: 0.5,
                                     ),
                                   ),
@@ -971,7 +971,7 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
                                     valStr,
                                     style: TextStyle(
                                       fontSize: 14,
-                                      color: val == null ? AppColors.darkTextTertiary : AppColors.darkTextPrimary,
+                                      color: val == null ? AppColors.adminTextTertiary : AppColors.adminTextPrimary,
                                       fontFamily: key == 'id' || key == 'uid' ? 'monospace' : null,
                                     ),
                                   ),
@@ -980,7 +980,7 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
                             ),
                             IconButton(
                               icon: const Icon(Icons.content_copy_rounded, size: 16),
-                              color: AppColors.darkTextSecondary,
+                              color: AppColors.adminTextSecondary,
                               onPressed: () {
                                 Clipboard.setData(ClipboardData(text: val?.toString() ?? ''));
                                 ScaffoldMessenger.of(context).showSnackBar(
@@ -1019,7 +1019,7 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
           children: [
             // ── Header row ──
             Container(
-              color: AppColors.darkSurfaceVariant,
+              color: AppColors.adminSurfaceVariant,
               padding: const EdgeInsets.symmetric(vertical: 10),
               child: Row(
                 children: [
@@ -1052,7 +1052,7 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.darkTextSecondary,
+                            color: AppColors.adminTextSecondary,
                             letterSpacing: 0.5,
                           ),
                           overflow: TextOverflow.ellipsis,
@@ -1062,7 +1062,7 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
               ),
             ),
 
-            const Divider(height: 1, color: AppColors.darkBorder),
+            const Divider(height: 1, color: AppColors.adminBorder),
 
             // ── Data rows ──
             Expanded(
@@ -1091,7 +1091,7 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
                                 ? Colors.transparent
                                 : Colors.white.withValues(alpha: 0.02),
                         border: const Border(
-                          bottom: BorderSide(color: AppColors.darkBorder, width: 0.5),
+                          bottom: BorderSide(color: AppColors.adminBorder, width: 0.5),
                         ),
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 8),
@@ -1124,10 +1124,10 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: val == null
-                                      ? AppColors.darkTextTertiary
+                                      ? AppColors.adminTextTertiary
                                       : col == 'id'
                                           ? AppColors.primaryLight
-                                          : AppColors.darkTextSecondary,
+                                          : AppColors.adminTextSecondary,
                                   fontFamily: col == 'id' ? 'monospace' : null,
                                 ),
                                 maxLines: 2,
@@ -1153,29 +1153,29 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       decoration: const BoxDecoration(
-        color: AppColors.darkSurface,
-        border: Border(top: BorderSide(color: AppColors.darkBorder)),
+        color: AppColors.adminSurface,
+        border: Border(top: BorderSide(color: AppColors.adminBorder)),
       ),
       child: Row(
         children: [
           Text(
             'Показано ${_page * _pageSize + 1}–${(_page * _pageSize + _rows.length).clamp(0, _totalCount)} из $_totalCount',
-            style: const TextStyle(fontSize: 12, color: AppColors.darkTextTertiary),
+            style: const TextStyle(fontSize: 12, color: AppColors.adminTextTertiary),
           ),
           const Spacer(),
           IconButton(
             onPressed: _page > 0 ? () { setState(() => _page--); _fetchPage(); } : null,
             icon: const Icon(Icons.chevron_left, size: 20),
-            color: AppColors.darkTextPrimary,
-            disabledColor: AppColors.darkTextTertiary.withValues(alpha: 0.5),
+            color: AppColors.adminTextPrimary,
+            disabledColor: AppColors.adminTextTertiary.withValues(alpha: 0.5),
           ),
           Text('${_page + 1} / $totalPages',
-              style: const TextStyle(fontSize: 12, color: AppColors.darkTextSecondary)),
+              style: const TextStyle(fontSize: 12, color: AppColors.adminTextSecondary)),
           IconButton(
             onPressed: _page < totalPages - 1 ? () { setState(() => _page++); _fetchPage(); } : null,
             icon: const Icon(Icons.chevron_right, size: 20),
-            color: AppColors.darkTextPrimary,
-            disabledColor: AppColors.darkTextTertiary.withValues(alpha: 0.5),
+            color: AppColors.adminTextPrimary,
+            disabledColor: AppColors.adminTextTertiary.withValues(alpha: 0.5),
           ),
         ],
       ),
@@ -1608,22 +1608,22 @@ class _DatabaseManagerScreenState extends State<DatabaseManagerScreen> {
     return await showDialog<bool>(
           context: context,
           builder: (ctx) => AlertDialog(
-            backgroundColor: AppColors.darkSurface,
+            backgroundColor: AppColors.adminSurface,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: const BorderSide(color: AppColors.darkBorder),
+              side: const BorderSide(color: AppColors.adminBorder),
             ),
             title: Text(title,
                 style: TextStyle(
-                  color: destructive ? AppColors.errorLight : AppColors.darkTextPrimary,
+                  color: destructive ? AppColors.errorLight : AppColors.adminTextPrimary,
                   fontWeight: FontWeight.w700,
                 )),
             content: Text(message,
-                style: const TextStyle(color: AppColors.darkTextSecondary, fontSize: 14)),
+                style: const TextStyle(color: AppColors.adminTextSecondary, fontSize: 14)),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(ctx, false),
-                style: TextButton.styleFrom(foregroundColor: AppColors.darkTextSecondary),
+                style: TextButton.styleFrom(foregroundColor: AppColors.adminTextSecondary),
                 child: const Text('Отмена'),
               ),
               FilledButton(

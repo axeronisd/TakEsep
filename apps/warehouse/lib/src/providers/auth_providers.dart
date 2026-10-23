@@ -120,17 +120,17 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> _init() async {
-    // Try to load license key from local storage on startup
+    // Restore the saved session first. A license key identifies the company,
+    // not the person working at the till: an employee who signed in with
+    // their own credentials must stay that employee after an app restart.
+    final restored = _tryRestoreSession();
     final storedKey = _prefs.getString(_kLicenseKeyPref);
-    if (storedKey != null && storedKey.isNotEmpty) {
+    if (!restored && storedKey != null && storedKey.isNotEmpty) {
       final success = await loginCompany(storedKey);
       if (!success) {
         // Online login failed — try to restore cached session (offline mode)
         _tryRestoreSession();
       }
-    } else {
-      // No stored key — try cached session in case employee logged in before
-      _tryRestoreSession();
     }
     await refreshWarehouses();
   }

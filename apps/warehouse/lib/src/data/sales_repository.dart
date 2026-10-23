@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:powersync/powersync.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 import 'powersync_db.dart';
 import 'supabase_sync.dart';
+import 'sync_outbox.dart';
 
 class SalesRepository {
   SalesRepository();
@@ -75,6 +77,7 @@ class SalesRepository {
 
     final saleId = const Uuid().v4();
     final now = DateTime.now().toIso8601String();
+    final productUpdates = <Map<String, dynamic>>[];
 
     // Calculate final actual total and received
     final finalTotal = totalAmount - discountAmount;
@@ -182,13 +185,14 @@ class SalesRepository {
               [newQty, item.quantity, now, ingredientId],
             );
 
-            // Sync updated product stock to Supabase
+            // Queue the stock update for background sync
             final updatedProduct = await _db.getOptional(
               'SELECT quantity, sold_last_30_days FROM products WHERE id = ?',
               [ingredientId],
             );
             if (updatedProduct != null) {
-              await SupabaseSync.update('products', ingredientId, {
+              productUpdates.add({
+                'id': ingredientId,
                 'quantity': updatedProduct['quantity'],
                 'sold_last_30_days': updatedProduct['sold_last_30_days'],
                 'updated_at': now,
@@ -217,7 +221,8 @@ class SalesRepository {
             [item.productId],
           );
           if (updatedProduct != null) {
-            await SupabaseSync.update('products', item.productId, {
+            productUpdates.add({
+              'id': item.productId,
               'sold_last_30_days': updatedProduct['sold_last_30_days'],
               'updated_at': now,
             });
@@ -233,13 +238,14 @@ class SalesRepository {
             [item.quantity, item.quantity, now, item.productId],
           );
 
-          // Sync updated product to Supabase
+          // Queue updated product for background sync
           final updatedProduct = await _db.getOptional(
             'SELECT quantity, sold_last_30_days FROM products WHERE id = ?',
             [item.productId],
           );
           if (updatedProduct != null) {
-            await SupabaseSync.update('products', item.productId, {
+            productUpdates.add({
+              'id': item.productId,
               'quantity': updatedProduct['quantity'],
               'sold_last_30_days': updatedProduct['sold_last_30_days'],
               'updated_at': now,
@@ -307,36 +313,21 @@ class SalesRepository {
         });
       }
 
-      // Sync write off to Supabase directly
-      try {
-        await Supabase.instance.client.from('write_offs').insert({
-          'id': writeOffId,
-          'company_id': companyId,
-          'warehouse_id': warehouseId,
-          'employee_id': safeEmployeeId,
-          'employee_name': employeeName,
-          'total_cost': totalCost,
-          'items_count': ingredientsToDeduct.length,
-          'status': 'production_usage',
-          'created_at': now,
-        });
-        await Supabase.instance.client.from('write_off_items').insert(woItemsForSupabase);
-        debugPrint('[SalesRepository] Sync write_off production_usage successful: $writeOffId');
-      } catch (e) {
-        debugPrint('[SalesRepository] Error syncing write_off production_usage: $e');
-        // Fallback sync
-        await SupabaseSync.upsert('write_offs', {
-          'id': writeOffId,
-          'company_id': companyId,
-          'warehouse_id': warehouseId,
-          'employee_id': safeEmployeeId,
-          'employee_name': employeeName,
-          'total_cost': totalCost,
-          'items_count': ingredientsToDeduct.length,
-          'status': 'production_usage',
-          'created_at': now,
-        });
-        await SupabaseSync.upsertAll('write_off_items', woItemsForSupabase);
+      // Queue the write-off for background sync. The local rows above are
+      // already committed, so the cashier does not wait for the network.
+      await SyncOutbox.enqueue('write_offs', 'upsert', {
+        'id': writeOffId,
+        'company_id': companyId,
+        'warehouse_id': warehouseId,
+        'employee_id': safeEmployeeId,
+        'employee_name': employeeName,
+        'total_cost': totalCost,
+        'items_count': ingredientsToDeduct.length,
+        'status': 'production_usage',
+        'created_at': now,
+      });
+      for (final woItem in woItemsForSupabase) {
+        await SyncOutbox.enqueue('write_off_items', 'upsert', woItem);
       }
     }
 
@@ -355,120 +346,81 @@ class SalesRepository {
       );
     }
 
-    // ── Sync to Supabase (for realtime) ──
-    // Write directly to Supabase for immediate realtime sync
-    try {
-      await _supabase.from('sales').insert({
-        'id': saleId,
-        'company_id': companyId,
-        'employee_id': safeEmployeeId,
-        'warehouse_id': warehouseId,
-        'total_amount': totalAmount,
-        'discount_amount': discountAmount,
-        'payment_method': paymentMethod,
-        'status': 'completed',
-        'notes': notes,
-        'client_id': clientId,
-        'client_name': clientName,
-        'received_amount': actualReceived,
-        'sale_type': 'pos',
+    // ── Queue Supabase sync (never block the cashier) ──
+    // The sale is already committed to the local database above. Rows go to a
+    // durable outbox and are uploaded in order in the background, so a slow
+    // network cannot hold the "Оплатить" button for several seconds and a
+    // timeout cannot lose the sale.
+    await SyncOutbox.enqueue('sales', 'upsert', {
+      'id': saleId,
+      'company_id': companyId,
+      'employee_id': safeEmployeeId,
+      'warehouse_id': warehouseId,
+      'total_amount': totalAmount,
+      'discount_amount': discountAmount,
+      'payment_method': paymentMethod,
+      'status': 'completed',
+      'notes': notes,
+      'client_id': clientId,
+      'client_name': clientName,
+      'received_amount': actualReceived,
+      'sale_type': 'pos',
+      'created_at': now,
+      'updated_at': now,
+    });
+
+    final saleItemsForSupabase = <Map<String, dynamic>>[];
+    for (int i = 0; i < items.length; i++) {
+      final item = items[i];
+      saleItemsForSupabase.add({
+        'id': itemIds[i],
+        'sale_id': saleId,
+        'product_id': item.productId,
+        'product_name': item.productName,
+        'quantity': item.quantity,
+        'selling_price': item.sellingPrice,
+        'cost_price': item.costPrice,
+        'discount_amount': item.discountAmount,
+        'item_type': item.itemType,
+        'executor_id': item.executorId?.startsWith('owner-') == true
+            ? null
+            : item.executorId,
+        'executor_name': item.executorName,
         'created_at': now,
-        'updated_at': now,
       });
-
-      final saleItemsForSupabase = <Map<String, dynamic>>[];
-      for (int i = 0; i < items.length; i++) {
-        final item = items[i];
-        saleItemsForSupabase.add({
-          'id': itemIds[i],
-          'sale_id': saleId,
-          'product_id': item.productId,
-          'product_name': item.productName,
-          'quantity': item.quantity,
-          'selling_price': item.sellingPrice,
-          'cost_price': item.costPrice,
-          'discount_amount': item.discountAmount,
-          'item_type': item.itemType,
-          'executor_id': item.executorId?.startsWith('owner-') == true ? null : item.executorId,
-          'executor_name': item.executorName,
-          'created_at': now,
-        });
-      }
-      await _supabase.from('sale_items').insert(saleItemsForSupabase);
-
-      // Update client stats on Supabase to prevent synchronization rollback
-      if (clientId != null) {
-        final addedDebt =
-            finalTotal > actualReceived ? finalTotal - actualReceived : 0.0;
-        try {
-          final clientResponse = await _supabase
-              .from('clients')
-              .select('purchases_count, total_spent, debt')
-              .eq('id', clientId)
-              .single();
-          final currentPurchases = (clientResponse['purchases_count'] as num?)?.toInt() ?? 0;
-          final currentSpent = (clientResponse['total_spent'] as num?)?.toDouble() ?? 0.0;
-          final currentDebt = (clientResponse['debt'] as num?)?.toDouble() ?? 0.0;
-
-          await _supabase
-              .from('clients')
-              .update({
-                'purchases_count': currentPurchases + 1,
-                'total_spent': currentSpent + finalTotal,
-                'debt': currentDebt + addedDebt,
-                'updated_at': now,
-              })
-              .eq('id', clientId);
-          debugPrint('[SalesRepository] Client stats updated on Supabase: $clientId');
-        } catch (clientErr) {
-          debugPrint('[SalesRepository] Error updating client stats on Supabase: $clientErr');
-        }
-      }
-
-      debugPrint(
-          '[SalesRepository] Sale synced to Supabase for realtime: $saleId');
-    } catch (e) {
-      debugPrint('[SalesRepository] Error syncing sale to Supabase: $e');
-      // Fallback to PowerSync sync if direct Supabase write fails
-      await SupabaseSync.upsert('sales', {
-        'id': saleId,
-        'company_id': companyId,
-        'employee_id': employeeId,
-        'warehouse_id': warehouseId,
-        'total_amount': totalAmount,
-        'discount_amount': discountAmount,
-        'payment_method': paymentMethod,
-        'status': 'completed',
-        'notes': notes,
-        'client_id': clientId,
-        'client_name': clientName,
-        'received_amount': actualReceived,
-        'sale_type': 'pos',
-        'created_at': now,
-        'updated_at': now,
-      });
-
-      final saleItemsForSupabase = <Map<String, dynamic>>[];
-      for (int i = 0; i < items.length; i++) {
-        final item = items[i];
-        saleItemsForSupabase.add({
-          'id': itemIds[i],
-          'sale_id': saleId,
-          'product_id': item.productId,
-          'product_name': item.productName,
-          'quantity': item.quantity,
-          'selling_price': item.sellingPrice,
-          'cost_price': item.costPrice,
-          'discount_amount': item.discountAmount,
-          'item_type': item.itemType,
-          'executor_id': item.executorId,
-          'executor_name': item.executorName,
-          'created_at': now,
-        });
-      }
-      await SupabaseSync.upsertAll('sale_items', saleItemsForSupabase);
+    }
+    for (final item in saleItemsForSupabase) {
+      await SyncOutbox.enqueue('sale_items', 'upsert', item);
     }
 
+    // A product can appear on several cart lines; only the latest absolute
+    // quantity should be uploaded.
+    final latestProductUpdates = <String, Map<String, dynamic>>{};
+    for (final update in productUpdates) {
+      final id = update['id'] as String?;
+      if (id != null) latestProductUpdates[id] = update;
+    }
+    for (final update in latestProductUpdates.values) {
+      await SyncOutbox.enqueue('products', 'update', update);
+    }
+
+    if (clientId != null) {
+      final clientRow = await _db.getOptional(
+        'SELECT purchases_count, total_spent, debt FROM clients WHERE id = ?',
+        [clientId],
+      );
+      if (clientRow != null) {
+        await SyncOutbox.enqueue('clients', 'update', {
+          'id': clientId,
+          'purchases_count': clientRow['purchases_count'],
+          'total_spent': clientRow['total_spent'],
+          'debt': clientRow['debt'],
+          'updated_at': now,
+        });
+      }
+    }
+
+    unawaited(SyncOutbox.flush());
     return saleId;
   }
 
@@ -498,7 +450,6 @@ class SalesRepository {
     final companyId = sale['company_id'] as String;
     final warehouseId = sale['warehouse_id'] as String;
     final employeeId = sale['employee_id'] as String?;
-    final notes = sale['notes'] as String?;
 
     // 3. Validate stock availability before completing sale
     for (final item in saleItems) {

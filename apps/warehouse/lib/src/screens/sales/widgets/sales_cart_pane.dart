@@ -54,7 +54,7 @@ class SalesCartPane extends ConsumerWidget {
     final pad = isMobile ? AppSpacing.sm : AppSpacing.lg;
     final client = ref.watch(selectedClientProvider);
     final discountSettings = ref.watch(clientDiscountSettingsProvider);
-    final warehouses = ref.watch(warehousesProvider).valueOrNull ?? [];
+    final isProcessing = ref.watch(saleProcessingProvider);
 
     return Column(
       children: [
@@ -529,14 +529,27 @@ class SalesCartPane extends ConsumerWidget {
                     width: double.infinity,
                     height: 48,
                     child: ElevatedButton.icon(
-                      onPressed: () => _completeSale(context, ref),
-                      icon: const Icon(Icons.check_circle_rounded, size: 20),
-                      label: const Text('Оплатить',
-                          style: TextStyle(
+                      onPressed:
+                          isProcessing ? null : () => _completeSale(context, ref),
+                      icon: isProcessing
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Icon(Icons.check_circle_rounded, size: 20),
+                      label: Text(isProcessing ? 'Проводим...' : 'Оплатить',
+                          style: const TextStyle(
                               fontSize: 15, fontWeight: FontWeight.w600)),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.success,
                         foregroundColor: Colors.white,
+                        disabledBackgroundColor:
+                            AppColors.success.withValues(alpha: 0.45),
+                        disabledForegroundColor: Colors.white70,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -629,6 +642,11 @@ class SalesCartPane extends ConsumerWidget {
             ];
 
     if (companyId == null) return;
+
+    // A second tap while the first sale is still being written must not
+    // create another sale or another receipt.
+    if (ref.read(saleProcessingProvider)) return;
+    ref.read(saleProcessingProvider.notifier).state = true;
 
     try {
       final saleItems = cart
@@ -735,6 +753,12 @@ class SalesCartPane extends ConsumerWidget {
     } catch (e) {
       if (context.mounted) {
         showErrorSnackBar(context, 'Ошибка: $e');
+      }
+    } finally {
+      try {
+        ref.read(saleProcessingProvider.notifier).state = false;
+      } catch (_) {
+        // The pane may already be disposed after a successful sale.
       }
     }
   }

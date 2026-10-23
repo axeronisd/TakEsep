@@ -27,7 +27,7 @@ class CompanyDetailScreen extends ConsumerWidget {
           if (company == null) {
             return const Center(
                 child: Text('Компания не найдена',
-                    style: TextStyle(color: AppColors.darkTextTertiary)));
+                    style: TextStyle(color: AppColors.adminTextTertiary)));
           }
           return _buildContent(context, ref, company);
         },
@@ -57,7 +57,7 @@ class CompanyDetailScreen extends ConsumerWidget {
               Expanded(
                 child: Text(company['title'] ?? '',
                     style: TextStyle(
-                        color: AppColors.darkTextPrimary,
+                        color: AppColors.adminTextPrimary,
                         fontSize: isMobile ? 22 : 28,
                         fontWeight: FontWeight.w700)),
               ),
@@ -138,7 +138,7 @@ class CompanyDetailScreen extends ConsumerWidget {
           if (employees.isNotEmpty) ...[
             const Text('Сотрудники',
                 style: TextStyle(
-                    color: AppColors.darkTextPrimary,
+                    color: AppColors.adminTextPrimary,
                     fontSize: 18,
                     fontWeight: FontWeight.w600)),
             const SizedBox(height: 16),
@@ -152,7 +152,7 @@ class CompanyDetailScreen extends ConsumerWidget {
             const SizedBox(height: 32),
             const Text('Склады и Магазины (Настройки видимости)',
                 style: TextStyle(
-                    color: AppColors.darkTextPrimary,
+                    color: AppColors.adminTextPrimary,
                     fontSize: 18,
                     fontWeight: FontWeight.w600)),
             const SizedBox(height: 16),
@@ -200,9 +200,9 @@ class CompanyDetailScreen extends ConsumerWidget {
         return Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.darkSurface,
+            color: AppColors.adminSurface,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.darkBorder),
+            border: Border.all(color: AppColors.adminBorder),
           ),
           child: Row(
             children: [
@@ -210,11 +210,11 @@ class CompanyDetailScreen extends ConsumerWidget {
                 width: 36,
                 height: 36,
                 decoration: const BoxDecoration(
-                  color: AppColors.darkSurfaceVariant,
+                  color: AppColors.adminSurfaceVariant,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.storefront_rounded,
-                    color: AppColors.darkTextSecondary, size: 18),
+                    color: AppColors.adminTextSecondary, size: 18),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -224,7 +224,7 @@ class CompanyDetailScreen extends ConsumerWidget {
                     Text(
                       name,
                       style: const TextStyle(
-                          color: AppColors.darkTextPrimary,
+                          color: AppColors.adminTextPrimary,
                           fontSize: 14,
                           fontWeight: FontWeight.w600),
                     ),
@@ -232,7 +232,7 @@ class CompanyDetailScreen extends ConsumerWidget {
                     Text(
                       address,
                       style: const TextStyle(
-                          color: AppColors.darkTextTertiary, fontSize: 12),
+                          color: AppColors.adminTextTertiary, fontSize: 12),
                     ),
                   ],
                 ),
@@ -243,7 +243,7 @@ class CompanyDetailScreen extends ConsumerWidget {
                   const Text(
                     'Скрыть',
                     style: TextStyle(
-                        color: AppColors.darkTextTertiary, fontSize: 10),
+                        color: AppColors.adminTextTertiary, fontSize: 10),
                   ),
                   const SizedBox(height: 2),
                   Switch(
@@ -264,25 +264,25 @@ class CompanyDetailScreen extends ConsumerWidget {
   Widget _buildDesktopWarehouseTable(List warehouses, BuildContext context, WidgetRef ref) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: AppColors.adminSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.adminBorder),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: DataTable(
           headingRowColor:
-              WidgetStateProperty.all(AppColors.darkSurfaceVariant),
+              WidgetStateProperty.all(AppColors.adminSurfaceVariant),
           columns: const [
             DataColumn(
                 label: Text('Название',
-                    style: TextStyle(color: AppColors.darkTextSecondary))),
+                    style: TextStyle(color: AppColors.adminTextSecondary))),
             DataColumn(
                 label: Text('Адрес',
-                    style: TextStyle(color: AppColors.darkTextSecondary))),
+                    style: TextStyle(color: AppColors.adminTextSecondary))),
             DataColumn(
                 label: Text('Скрыть с витрины',
-                    style: TextStyle(color: AppColors.darkTextSecondary))),
+                    style: TextStyle(color: AppColors.adminTextSecondary))),
           ],
           rows: warehouses
               .map<DataRow>((wh) {
@@ -293,7 +293,7 @@ class CompanyDetailScreen extends ConsumerWidget {
                       style: const TextStyle(color: Colors.white))),
                   DataCell(Text(wh['address'] ?? '',
                       style: const TextStyle(
-                          color: AppColors.darkTextSecondary))),
+                          color: AppColors.adminTextSecondary))),
                   DataCell(
                     Switch(
                       value: isHidden,
@@ -325,9 +325,9 @@ class CompanyDetailScreen extends ConsumerWidget {
         return Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.darkSurface,
+            color: AppColors.adminSurface,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.darkBorder),
+            border: Border.all(color: AppColors.adminBorder),
           ),
           child: Row(
             children: [
@@ -335,11 +335,11 @@ class CompanyDetailScreen extends ConsumerWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: AppColors.darkSurfaceVariant,
+                  color: AppColors.adminSurfaceVariant,
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(Icons.person_rounded,
-                    color: AppColors.darkTextSecondary, size: 18),
+                    color: AppColors.adminTextSecondary, size: 18),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -349,7 +349,7 @@ class CompanyDetailScreen extends ConsumerWidget {
                     Text(
                       name,
                       style: const TextStyle(
-                          color: AppColors.darkTextPrimary,
+                          color: AppColors.adminTextPrimary,
                           fontSize: 14,
                           fontWeight: FontWeight.w600),
                     ),
@@ -357,7 +357,7 @@ class CompanyDetailScreen extends ConsumerWidget {
                     Text(
                       role,
                       style: const TextStyle(
-                          color: AppColors.darkTextTertiary, fontSize: 12),
+                          color: AppColors.adminTextTertiary, fontSize: 12),
                     ),
                   ],
                 ),
@@ -368,7 +368,7 @@ class CompanyDetailScreen extends ConsumerWidget {
                   const Text(
                     'PIN КОД',
                     style: TextStyle(
-                        color: AppColors.darkTextTertiary, fontSize: 10),
+                        color: AppColors.adminTextTertiary, fontSize: 10),
                   ),
                   const SizedBox(height: 2),
                   Text(
@@ -391,25 +391,25 @@ class CompanyDetailScreen extends ConsumerWidget {
   Widget _buildDesktopEmployeeTable(List employees) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: AppColors.adminSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.adminBorder),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: DataTable(
           headingRowColor:
-              WidgetStateProperty.all(AppColors.darkSurfaceVariant),
+              WidgetStateProperty.all(AppColors.adminSurfaceVariant),
           columns: const [
             DataColumn(
                 label: Text('Имя',
-                    style: TextStyle(color: AppColors.darkTextSecondary))),
+                    style: TextStyle(color: AppColors.adminTextSecondary))),
             DataColumn(
                 label: Text('Роль',
-                    style: TextStyle(color: AppColors.darkTextSecondary))),
+                    style: TextStyle(color: AppColors.adminTextSecondary))),
             DataColumn(
                 label: Text('PIN',
-                    style: TextStyle(color: AppColors.darkTextSecondary))),
+                    style: TextStyle(color: AppColors.adminTextSecondary))),
           ],
           rows: employees
               .map<DataRow>((e) => DataRow(cells: [
@@ -417,7 +417,7 @@ class CompanyDetailScreen extends ConsumerWidget {
                         style: const TextStyle(color: Colors.white))),
                     DataCell(Text(e['role'] ?? '',
                         style: const TextStyle(
-                            color: AppColors.darkTextSecondary))),
+                            color: AppColors.adminTextSecondary))),
                     DataCell(Text(e['pin_code'] ?? '****',
                         style: const TextStyle(
                             color: AppColors.primaryLight,
@@ -455,9 +455,9 @@ class _InfoCard extends StatelessWidget {
       width: isMobile ? double.infinity : 260,
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: AppColors.adminSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.adminBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -468,12 +468,12 @@ class _InfoCard extends StatelessWidget {
               const SizedBox(width: 8),
               Text(title,
                   style: const TextStyle(
-                      color: AppColors.darkTextTertiary, fontSize: 12)),
+                      color: AppColors.adminTextTertiary, fontSize: 12)),
               if (onCopy != null) ...[
                 const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.copy_rounded,
-                      size: 14, color: AppColors.darkTextSecondary),
+                      size: 14, color: AppColors.adminTextSecondary),
                   onPressed: onCopy,
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
@@ -506,17 +506,17 @@ class _StatChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: AppColors.adminSurface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.adminBorder),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: AppColors.darkTextSecondary),
+          Icon(icon, size: 16, color: AppColors.adminTextSecondary),
           const SizedBox(width: 8),
           Text(label,
-              style: const TextStyle(color: AppColors.darkTextPrimary, fontSize: 13)),
+              style: const TextStyle(color: AppColors.adminTextPrimary, fontSize: 13)),
         ],
       ),
     );

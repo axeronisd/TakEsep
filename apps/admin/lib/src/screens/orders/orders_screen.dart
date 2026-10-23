@@ -151,13 +151,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
                     IconButton(
                       tooltip: 'Обновить заказы',
                       onPressed: _loadOrders,
-                      icon: const Icon(Icons.refresh_rounded, color: AppColors.darkTextSecondary),
+                      icon: const Icon(Icons.refresh_rounded, color: AppColors.adminTextSecondary),
                       style: IconButton.styleFrom(
-                        backgroundColor: AppColors.darkSurface,
+                        backgroundColor: AppColors.adminSurface,
                         padding: const EdgeInsets.all(14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
-                          side: const BorderSide(color: AppColors.darkBorder),
+                          side: const BorderSide(color: AppColors.adminBorder),
                         ),
                       ),
                     ),
@@ -260,17 +260,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
             setState(() => _statusFilter = value);
           }
         },
-        backgroundColor: AppColors.darkSurface,
+        backgroundColor: AppColors.adminSurface,
         selectedColor: AppColors.primary.withValues(alpha: 0.25),
         labelStyle: TextStyle(
-          color: isSelected ? AppColors.primaryLight : AppColors.darkTextSecondary,
+          color: isSelected ? AppColors.primaryLight : AppColors.adminTextSecondary,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
           fontSize: 13,
         ),
         checkmarkColor: AppColors.primaryLight,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
-          side: BorderSide(color: isSelected ? AppColors.primaryLight.withValues(alpha: 0.5) : AppColors.darkBorder),
+          side: BorderSide(color: isSelected ? AppColors.primaryLight.withValues(alpha: 0.5) : AppColors.adminBorder),
         ),
       ),
     );
@@ -280,29 +280,29 @@ class _OrdersScreenState extends State<OrdersScreen> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: AppColors.adminSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.darkBorder),
+        border: Border.all(color: AppColors.adminBorder),
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: DataTable(
-            headingRowColor: WidgetStateProperty.all(AppColors.darkSurfaceVariant),
+            headingRowColor: WidgetStateProperty.all(AppColors.adminSurfaceVariant),
             dataRowColor: WidgetStateProperty.all(Colors.transparent),
             horizontalMargin: 20,
             columnSpacing: 28,
             showCheckboxColumn: true,
             columns: const [
-              DataColumn(label: Text('Номер / ID', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
-              DataColumn(label: Text('Клиент', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
-              DataColumn(label: Text('Курьер', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
-              DataColumn(label: Text('Склад', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
-              DataColumn(label: Text('Сумма', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
-              DataColumn(label: Text('Статус', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
-              DataColumn(label: Text('Создан', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
-              DataColumn(label: Text('Действия', style: TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
+              DataColumn(label: Text('Номер / ID', style: TextStyle(color: AppColors.adminTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
+              DataColumn(label: Text('Клиент', style: TextStyle(color: AppColors.adminTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
+              DataColumn(label: Text('Курьер', style: TextStyle(color: AppColors.adminTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
+              DataColumn(label: Text('Склад', style: TextStyle(color: AppColors.adminTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
+              DataColumn(label: Text('Сумма', style: TextStyle(color: AppColors.adminTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
+              DataColumn(label: Text('Статус', style: TextStyle(color: AppColors.adminTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
+              DataColumn(label: Text('Создан', style: TextStyle(color: AppColors.adminTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
+              DataColumn(label: Text('Действия', style: TextStyle(color: AppColors.adminTextSecondary, fontWeight: FontWeight.w600, fontSize: 13))),
             ],
             rows: _filteredOrders.map((o) {
               final id = o['id'] as String;
@@ -341,17 +341,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         ),
                         Text(
                           id.substring(0, 8),
-                          style: const TextStyle(fontFamily: 'monospace', color: AppColors.darkTextTertiary, fontSize: 11),
+                          style: const TextStyle(fontFamily: 'monospace', color: AppColors.adminTextTertiary, fontSize: 11),
                         ),
                       ],
                     ),
                   ),
                   DataCell(Text(customer, style: const TextStyle(color: Colors.white))),
-                  DataCell(Text(courier, style: TextStyle(color: courier == 'Не назначен' ? AppColors.darkTextTertiary : Colors.white))),
+                  DataCell(Text(courier, style: TextStyle(color: courier == 'Не назначен' ? AppColors.adminTextTertiary : Colors.white))),
                   DataCell(Text(warehouse, style: const TextStyle(color: Colors.white))),
                   DataCell(Text(total, style: const TextStyle(color: AppColors.successLight, fontWeight: FontWeight.bold))),
                   DataCell(_buildStatusBadge(status)),
-                  DataCell(Text(_formatDate(o['created_at']), style: const TextStyle(color: AppColors.darkTextSecondary))),
+                  DataCell(Text(_formatDate(o['created_at']), style: const TextStyle(color: AppColors.adminTextSecondary))),
                   DataCell(
                     Row(
                       mainAxisSize: MainAxisSize.min,
@@ -393,9 +393,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.darkSurface,
+        color: AppColors.adminSurface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: isSelected ? AppColors.primary : AppColors.darkBorder, width: isSelected ? 1.5 : 1.0),
+        border: Border.all(color: isSelected ? AppColors.primary : AppColors.adminBorder, width: isSelected ? 1.5 : 1.0),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -433,17 +433,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
             ],
           ),
           const SizedBox(height: 6),
-          Text('Клиент: $customer', style: const TextStyle(color: AppColors.darkTextSecondary, fontSize: 13)),
+          Text('Клиент: $customer', style: const TextStyle(color: AppColors.adminTextSecondary, fontSize: 13)),
           const SizedBox(height: 4),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('Создан: ${_formatDate(o['created_at'])}', style: const TextStyle(color: AppColors.darkTextTertiary, fontSize: 11)),
+              Text('Создан: ${_formatDate(o['created_at'])}', style: const TextStyle(color: AppColors.adminTextTertiary, fontSize: 11)),
               Text(total, style: const TextStyle(color: AppColors.successLight, fontWeight: FontWeight.bold, fontSize: 14)),
             ],
           ),
           const SizedBox(height: 10),
-          const Divider(color: AppColors.darkBorder, height: 1),
+          const Divider(color: AppColors.adminBorder, height: 1),
           const SizedBox(height: 6),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
@@ -550,17 +550,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
             setState(() => _typeFilter = value);
           }
         },
-        backgroundColor: AppColors.darkSurface,
+        backgroundColor: AppColors.adminSurface,
         selectedColor: AppColors.primary.withValues(alpha: 0.25),
         labelStyle: TextStyle(
-          color: isSelected ? AppColors.primaryLight : AppColors.darkTextSecondary,
+          color: isSelected ? AppColors.primaryLight : AppColors.adminTextSecondary,
           fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
           fontSize: 13,
         ),
         checkmarkColor: AppColors.primaryLight,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
-          side: BorderSide(color: isSelected ? AppColors.primaryLight.withValues(alpha: 0.5) : AppColors.darkBorder),
+          side: BorderSide(color: isSelected ? AppColors.primaryLight.withValues(alpha: 0.5) : AppColors.adminBorder),
         ),
       ),
     );
@@ -654,12 +654,12 @@ class _OrdersScreenState extends State<OrdersScreen> {
           final double? deliveryLng = (o['delivery_lng'] as num?)?.toDouble();
           
           return AlertDialog(
-            backgroundColor: AppColors.darkSurface,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: AppColors.darkBorder)),
+            backgroundColor: AppColors.adminSurface,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: AppColors.adminBorder)),
             title: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Заказ ${o['order_number'] ?? ''}', style: const TextStyle(color: AppColors.darkTextPrimary, fontWeight: FontWeight.bold)),
+                Text('Заказ ${o['order_number'] ?? ''}', style: const TextStyle(color: AppColors.adminTextPrimary, fontWeight: FontWeight.bold)),
                 _buildStatusBadge(o['status'] ?? ''),
               ],
             ),
@@ -699,9 +699,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
-                          color: AppColors.darkSurfaceVariant,
+                          color: AppColors.adminSurfaceVariant,
                           borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.darkBorder),
+                          border: Border.all(color: AppColors.adminBorder),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -733,11 +733,11 @@ class _OrdersScreenState extends State<OrdersScreen> {
                               const SizedBox(height: 6),
                               Text(
                                 'Курьер $courier ($courierPhone) подтвердил, что посылка осмотрена, не содержит запрещенных веществ и вся ответственность лежит на нем.',
-                                style: const TextStyle(color: AppColors.darkTextSecondary, fontSize: 11, height: 1.4),
+                                style: const TextStyle(color: AppColors.adminTextSecondary, fontSize: 11, height: 1.4),
                               ),
                             ],
                             const SizedBox(height: 12),
-                            const Divider(color: AppColors.darkBorder),
+                            const Divider(color: AppColors.adminBorder),
                             const SizedBox(height: 8),
                             
                             // Sender / Recipient
@@ -748,10 +748,10 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text('Отправитель:', style: TextStyle(color: AppColors.darkTextTertiary, fontSize: 12, fontWeight: FontWeight.bold)),
+                                      const Text('Отправитель:', style: TextStyle(color: AppColors.adminTextTertiary, fontSize: 12, fontWeight: FontWeight.bold)),
                                       const SizedBox(height: 2),
                                       Text(customer, style: const TextStyle(color: Colors.white, fontSize: 13)),
-                                      Text('Тел: $senderPhone', style: const TextStyle(color: AppColors.darkTextSecondary, fontSize: 12)),
+                                      Text('Тел: $senderPhone', style: const TextStyle(color: AppColors.adminTextSecondary, fontSize: 12)),
                                     ],
                                   ),
                                 ),
@@ -759,17 +759,17 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text('Получатель:', style: TextStyle(color: AppColors.darkTextTertiary, fontSize: 12, fontWeight: FontWeight.bold)),
+                                      const Text('Получатель:', style: TextStyle(color: AppColors.adminTextTertiary, fontSize: 12, fontWeight: FontWeight.bold)),
                                       const SizedBox(height: 2),
                                       const Text('Контактное лицо', style: TextStyle(color: Colors.white, fontSize: 13)),
-                                      Text('Тел: $recipientPhone', style: const TextStyle(color: AppColors.darkTextSecondary, fontSize: 12)),
+                                      Text('Тел: $recipientPhone', style: const TextStyle(color: AppColors.adminTextSecondary, fontSize: 12)),
                                     ],
                                   ),
                                 ),
                               ],
                             ),
                             const SizedBox(height: 12),
-                            const Divider(color: AppColors.darkBorder),
+                            const Divider(color: AppColors.adminBorder),
                             const SizedBox(height: 8),
 
                             // Point A (Pickup) and Point B (Delivery)
@@ -780,26 +780,26 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text('Точка А (Отправление):', style: TextStyle(color: AppColors.darkTextTertiary, fontSize: 12, fontWeight: FontWeight.bold)),
+                                      const Text('Точка А (Отправление):', style: TextStyle(color: AppColors.adminTextTertiary, fontSize: 12, fontWeight: FontWeight.bold)),
                                       const SizedBox(height: 2),
                                       Text(o['pickup_address'] ?? warehouse, style: const TextStyle(color: Colors.white, fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
                                       const SizedBox(height: 4),
                                       if (pickupLat != null && pickupLng != null) ...[
-                                        Text('Координаты: ${pickupLat.toStringAsFixed(6)}, ${pickupLng.toStringAsFixed(6)}', style: const TextStyle(fontFamily: 'monospace', color: AppColors.darkTextSecondary, fontSize: 11)),
+                                        Text('Координаты: ${pickupLat.toStringAsFixed(6)}, ${pickupLng.toStringAsFixed(6)}', style: const TextStyle(fontFamily: 'monospace', color: AppColors.adminTextSecondary, fontSize: 11)),
                                         const SizedBox(height: 6),
                                         ElevatedButton.icon(
                                           onPressed: () => _launchMapUrl(pickupLat, pickupLng),
                                           icon: const Icon(Icons.map_rounded, size: 14),
                                           label: const Text('На карте', style: TextStyle(fontSize: 11)),
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: AppColors.darkSurface,
+                                            backgroundColor: AppColors.adminSurface,
                                             foregroundColor: AppColors.primaryLight,
                                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                             minimumSize: Size.zero,
                                           ),
                                         ),
                                       ] else ...[
-                                        const Text('Координаты не указаны', style: TextStyle(color: AppColors.darkTextTertiary, fontSize: 11)),
+                                        const Text('Координаты не указаны', style: TextStyle(color: AppColors.adminTextTertiary, fontSize: 11)),
                                       ],
                                     ],
                                   ),
@@ -809,26 +809,26 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Text('Точка Б (Доставка):', style: TextStyle(color: AppColors.darkTextTertiary, fontSize: 12, fontWeight: FontWeight.bold)),
+                                      const Text('Точка Б (Доставка):', style: TextStyle(color: AppColors.adminTextTertiary, fontSize: 12, fontWeight: FontWeight.bold)),
                                       const SizedBox(height: 2),
                                       Text(o['delivery_address'] ?? '—', style: const TextStyle(color: Colors.white, fontSize: 12), maxLines: 2, overflow: TextOverflow.ellipsis),
                                       const SizedBox(height: 4),
                                       if (deliveryLat != null && deliveryLng != null) ...[
-                                        Text('Координаты: ${deliveryLat.toStringAsFixed(6)}, ${deliveryLng.toStringAsFixed(6)}', style: const TextStyle(fontFamily: 'monospace', color: AppColors.darkTextSecondary, fontSize: 11)),
+                                        Text('Координаты: ${deliveryLat.toStringAsFixed(6)}, ${deliveryLng.toStringAsFixed(6)}', style: const TextStyle(fontFamily: 'monospace', color: AppColors.adminTextSecondary, fontSize: 11)),
                                         const SizedBox(height: 6),
                                         ElevatedButton.icon(
                                           onPressed: () => _launchMapUrl(deliveryLat, deliveryLng),
                                           icon: const Icon(Icons.map_rounded, size: 14),
                                           label: const Text('На карте', style: TextStyle(fontSize: 11)),
                                           style: ElevatedButton.styleFrom(
-                                            backgroundColor: AppColors.darkSurface,
+                                            backgroundColor: AppColors.adminSurface,
                                             foregroundColor: AppColors.primaryLight,
                                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                                             minimumSize: Size.zero,
                                           ),
                                         ),
                                       ] else ...[
-                                        const Text('Координаты не указаны', style: TextStyle(color: AppColors.darkTextTertiary, fontSize: 11)),
+                                        const Text('Координаты не указаны', style: TextStyle(color: AppColors.adminTextTertiary, fontSize: 11)),
                                       ],
                                     ],
                                   ),
@@ -908,7 +908,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       itemsLoading
                           ? const Center(child: Padding(padding: EdgeInsets.all(12), child: CircularProgressIndicator()))
                           : items.isEmpty
-                              ? const Text('Позиции не найдены', style: TextStyle(color: AppColors.darkTextTertiary))
+                              ? const Text('Позиции не найдены', style: TextStyle(color: AppColors.adminTextTertiary))
                               : Table(
                                   columnWidths: const {
                                     0: FlexColumnWidth(4),
@@ -918,7 +918,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                                   },
                                   children: [
                                     TableRow(
-                                      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.darkBorder))),
+                                      decoration: const BoxDecoration(border: Border(bottom: BorderSide(color: AppColors.adminBorder))),
                                       children: [
                                         _tableHeaderCell('Товар'),
                                         _tableHeaderCell('Цена'),
@@ -946,13 +946,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         _buildFinRow('Доход курьера', '${o['courier_earning']} с', isDim: true),
                       if (o['platform_earning'] != null)
                         _buildFinRow('Комиссия платформы', '${o['platform_earning']} с', isDim: true),
-                      const Divider(color: AppColors.darkBorder),
+                      const Divider(color: AppColors.adminBorder),
                       _buildFinRow('Итоговая сумма', '${o['total'] ?? 0} с', isBold: true, isAccent: true),
                       
                       const SizedBox(height: 16),
                       // General details
                       _buildDialogSectionHeader('📅 Системные данные'),
-                      Text('ID заказа: ${o['id']}', style: const TextStyle(fontFamily: 'monospace', color: AppColors.darkTextSecondary, fontSize: 12)),
+                      Text('ID заказа: ${o['id']}', style: const TextStyle(fontFamily: 'monospace', color: AppColors.adminTextSecondary, fontSize: 12)),
                       const SizedBox(height: 4),
                       Text('Создан: ${_formatDate(o['created_at'])}', style: const TextStyle(color: Colors.white, fontSize: 13)),
                       if (o['delivered_at'] != null) ...[
@@ -989,7 +989,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
   Widget _tableHeaderCell(String label) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Text(label, style: const TextStyle(color: AppColors.darkTextSecondary, fontWeight: FontWeight.bold, fontSize: 12)),
+      child: Text(label, style: const TextStyle(color: AppColors.adminTextSecondary, fontWeight: FontWeight.bold, fontSize: 12)),
     );
   }
 
@@ -1010,14 +1010,14 @@ class _OrdersScreenState extends State<OrdersScreen> {
   Widget _buildFinRow(String label, String value, {bool isBold = false, bool isAccent = false, bool isDim = false}) {
     Color valueColor = Colors.white;
     if (isAccent) valueColor = AppColors.successLight;
-    if (isDim) valueColor = AppColors.darkTextSecondary;
+    if (isDim) valueColor = AppColors.adminTextSecondary;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(color: isDim ? AppColors.darkTextTertiary : AppColors.darkTextSecondary, fontSize: 13)),
+          Text(label, style: TextStyle(color: isDim ? AppColors.adminTextTertiary : AppColors.adminTextSecondary, fontSize: 13)),
           Text(
             value,
             style: TextStyle(
@@ -1041,13 +1041,13 @@ class _OrdersScreenState extends State<OrdersScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.darkSurface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: AppColors.darkBorder)),
+        backgroundColor: AppColors.adminSurface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: const BorderSide(color: AppColors.adminBorder)),
         title: Row(
           children: [
             const Icon(Icons.warning_amber_rounded, color: AppColors.errorLight),
             const SizedBox(width: 10),
-            Text(ids.length == 1 ? 'Удаление заказа' : 'Удаление заказов', style: const TextStyle(color: AppColors.darkTextPrimary, fontWeight: FontWeight.bold)),
+            Text(ids.length == 1 ? 'Удаление заказа' : 'Удаление заказов', style: const TextStyle(color: AppColors.adminTextPrimary, fontWeight: FontWeight.bold)),
           ],
         ),
         content: Column(
@@ -1070,7 +1070,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
-            child: const Text('Отмена', style: TextStyle(color: AppColors.darkTextSecondary)),
+            child: const Text('Отмена', style: TextStyle(color: AppColors.adminTextSecondary)),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(

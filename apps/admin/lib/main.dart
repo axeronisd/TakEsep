@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:takesep_design_system/takesep_design_system.dart';
 import 'src/services/session_storage_helper.dart';
 import 'src/routing/app_router.dart';
+import 'src/theme/admin_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -36,7 +36,7 @@ class TakEsepAdminApp extends ConsumerWidget {
     return MaterialApp.router(
       title: 'TakEsep Admin',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme: buildAdminTheme(),
       routerConfig: router,
     );
   }

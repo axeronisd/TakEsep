@@ -101,14 +101,14 @@ class _TransportTariffsScreenState extends State<TransportTariffsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.darkSurface,
+        backgroundColor: AppColors.adminSurface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppColors.darkBorder),
+          side: const BorderSide(color: AppColors.adminBorder),
         ),
         title: Text(
           'Редактировать тариф: $name',
-          style: const TextStyle(color: AppColors.darkTextPrimary, fontSize: 18, fontWeight: FontWeight.bold),
+          style: const TextStyle(color: AppColors.adminTextPrimary, fontSize: 18, fontWeight: FontWeight.bold),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -116,7 +116,7 @@ class _TransportTariffsScreenState extends State<TransportTariffsScreen> {
           children: [
             const Text(
               'Укажите цену доставки за 1 километр:',
-              style: TextStyle(color: AppColors.darkTextSecondary, fontSize: 13),
+              style: TextStyle(color: AppColors.adminTextSecondary, fontSize: 13),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -125,15 +125,15 @@ class _TransportTariffsScreenState extends State<TransportTariffsScreen> {
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
               ],
-              style: const TextStyle(color: AppColors.darkTextPrimary),
+              style: const TextStyle(color: AppColors.adminTextPrimary),
               decoration: InputDecoration(
                 suffixText: 'сом/км',
-                suffixStyle: const TextStyle(color: AppColors.darkTextTertiary),
+                suffixStyle: const TextStyle(color: AppColors.adminTextTertiary),
                 filled: true,
-                fillColor: AppColors.darkSurfaceVariant,
+                fillColor: AppColors.adminSurfaceVariant,
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.darkBorder),
+                  borderSide: const BorderSide(color: AppColors.adminBorder),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -146,7 +146,7 @@ class _TransportTariffsScreenState extends State<TransportTariffsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Отмена', style: TextStyle(color: AppColors.darkTextSecondary)),
+            child: const Text('Отмена', style: TextStyle(color: AppColors.adminTextSecondary)),
           ),
           FilledButton(
             onPressed: () {
@@ -182,14 +182,14 @@ class _TransportTariffsScreenState extends State<TransportTariffsScreen> {
     final isMobile = MediaQuery.of(context).size.width < 760;
 
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
+      backgroundColor: AppColors.adminBackground,
       appBar: isMobile
           ? AppBar(
-              backgroundColor: AppColors.darkSurface,
+              backgroundColor: AppColors.adminSurface,
               elevation: 0,
               title: const Text('Тарифы доставки',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.darkTextPrimary)),
-              iconTheme: const IconThemeData(color: AppColors.darkTextPrimary),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: AppColors.adminTextPrimary)),
+              iconTheme: const IconThemeData(color: AppColors.adminTextPrimary),
               actions: [
                 IconButton(
                   onPressed: _loadTariffs,
@@ -203,7 +203,7 @@ class _TransportTariffsScreenState extends State<TransportTariffsScreen> {
           : _error != null
               ? _buildErrorView()
               : _transports.isEmpty
-                  ? const Center(child: Text('Нет тарифов в базе', style: TextStyle(color: AppColors.darkTextSecondary)))
+                  ? const Center(child: Text('Нет тарифов в базе', style: TextStyle(color: AppColors.adminTextSecondary)))
                   : SingleChildScrollView(
                       child: Padding(
                         padding: const EdgeInsets.all(24.0),
@@ -219,15 +219,15 @@ class _TransportTariffsScreenState extends State<TransportTariffsScreen> {
                                     children: [
                                       Text('Тарифы транспорта',
                                           style: TextStyle(
-                                              fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.darkTextPrimary)),
+                                              fontSize: 22, fontWeight: FontWeight.w800, color: AppColors.adminTextPrimary)),
                                       SizedBox(height: 4),
                                       Text('Настройка стоимости доставки за один километр',
-                                          style: TextStyle(fontSize: 13, color: AppColors.darkTextTertiary)),
+                                          style: TextStyle(fontSize: 13, color: AppColors.adminTextTertiary)),
                                     ],
                                   ),
                                   IconButton(
                                     onPressed: _loadTariffs,
-                                    icon: const Icon(Icons.refresh_rounded, color: AppColors.darkTextSecondary),
+                                    icon: const Icon(Icons.refresh_rounded, color: AppColors.adminTextSecondary),
                                     tooltip: 'Обновить',
                                   ),
                                 ],
@@ -253,10 +253,10 @@ class _TransportTariffsScreenState extends State<TransportTariffsScreen> {
                                 final iconData = _getIconForTransport(transport['icon']);
 
                                 return Card(
-                                  color: AppColors.darkSurface,
+                                  color: AppColors.adminSurface,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(16),
-                                    side: const BorderSide(color: AppColors.darkBorder),
+                                    side: const BorderSide(color: AppColors.adminBorder),
                                   ),
                                   child: Padding(
                                     padding: const EdgeInsets.all(16.0),
@@ -280,13 +280,13 @@ class _TransportTariffsScreenState extends State<TransportTariffsScreen> {
                                                 children: [
                                                   Text(name,
                                                       style: const TextStyle(
-                                                          color: AppColors.darkTextPrimary,
+                                                          color: AppColors.adminTextPrimary,
                                                           fontSize: 15,
                                                           fontWeight: FontWeight.bold),
                                                       overflow: TextOverflow.ellipsis),
                                                   Text('ID: $id',
                                                       style: const TextStyle(
-                                                          color: AppColors.darkTextTertiary, fontSize: 11)),
+                                                          color: AppColors.adminTextTertiary, fontSize: 11)),
                                                 ],
                                               ),
                                             ),
@@ -300,7 +300,7 @@ class _TransportTariffsScreenState extends State<TransportTariffsScreen> {
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
                                                 const Text('Тариф за 1 км',
-                                                    style: TextStyle(color: AppColors.darkTextTertiary, fontSize: 11)),
+                                                    style: TextStyle(color: AppColors.adminTextTertiary, fontSize: 11)),
                                                 Text('${pricePerKm.toStringAsFixed(0)} сом',
                                                     style: const TextStyle(
                                                         color: AppColors.primaryLight,
@@ -312,10 +312,10 @@ class _TransportTariffsScreenState extends State<TransportTariffsScreen> {
                                               crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
                                                 const Text('Макс. вес',
-                                                    style: TextStyle(color: AppColors.darkTextTertiary, fontSize: 11)),
+                                                    style: TextStyle(color: AppColors.adminTextTertiary, fontSize: 11)),
                                                 Text('${maxWeight.toStringAsFixed(0)} кг',
                                                     style: const TextStyle(
-                                                        color: AppColors.darkTextSecondary,
+                                                        color: AppColors.adminTextSecondary,
                                                         fontSize: 13,
                                                         fontWeight: FontWeight.w600)),
                                               ],
@@ -347,10 +347,10 @@ class _TransportTariffsScreenState extends State<TransportTariffsScreen> {
 
   Widget _buildCourierRateSettingsCard() {
     return Card(
-      color: AppColors.darkSurface,
+      color: AppColors.adminSurface,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: const BorderSide(color: AppColors.darkBorder),
+        side: const BorderSide(color: AppColors.adminBorder),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20.0),
@@ -371,12 +371,12 @@ class _TransportTariffsScreenState extends State<TransportTariffsScreen> {
                 children: [
                   const Text(
                     'Базовая (системная) ставка заработка курьера',
-                    style: TextStyle(color: AppColors.darkTextPrimary, fontSize: 16, fontWeight: FontWeight.bold),
+                    style: TextStyle(color: AppColors.adminTextPrimary, fontSize: 16, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Данный процент применяется к стоимости доставки по умолчанию для всех курьеров. Если у курьера задана индивидуальная ставка в профиле, применяется она. Сейчас базовая ставка составляет ${(_courierEarningRate * 100).toStringAsFixed(0)}%, платформа оставляет ${((1.0 - _courierEarningRate) * 100).toStringAsFixed(0)}%.',
-                    style: const TextStyle(color: AppColors.darkTextTertiary, fontSize: 13),
+                    style: const TextStyle(color: AppColors.adminTextTertiary, fontSize: 13),
                   ),
                 ],
               ),
@@ -407,14 +407,14 @@ class _TransportTariffsScreenState extends State<TransportTariffsScreen> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.darkSurface,
+        backgroundColor: AppColors.adminSurface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: const BorderSide(color: AppColors.darkBorder),
+          side: const BorderSide(color: AppColors.adminBorder),
         ),
         title: const Text(
           'Редактировать базовую ставку курьера',
-          style: TextStyle(color: AppColors.darkTextPrimary, fontSize: 18, fontWeight: FontWeight.bold),
+          style: TextStyle(color: AppColors.adminTextPrimary, fontSize: 18, fontWeight: FontWeight.bold),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -422,7 +422,7 @@ class _TransportTariffsScreenState extends State<TransportTariffsScreen> {
           children: [
             const Text(
               'Укажите базовый процент дохода курьера от стоимости доставки:',
-              style: TextStyle(color: AppColors.darkTextSecondary, fontSize: 13),
+              style: TextStyle(color: AppColors.adminTextSecondary, fontSize: 13),
             ),
             const SizedBox(height: 12),
             TextField(
@@ -431,15 +431,15 @@ class _TransportTariffsScreenState extends State<TransportTariffsScreen> {
               inputFormatters: [
                 FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d*')),
               ],
-              style: const TextStyle(color: AppColors.darkTextPrimary),
+              style: const TextStyle(color: AppColors.adminTextPrimary),
               decoration: InputDecoration(
                 suffixText: '%',
-                suffixStyle: const TextStyle(color: AppColors.darkTextTertiary),
+                suffixStyle: const TextStyle(color: AppColors.adminTextTertiary),
                 filled: true,
-                fillColor: AppColors.darkSurfaceVariant,
+                fillColor: AppColors.adminSurfaceVariant,
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.darkBorder),
+                  borderSide: const BorderSide(color: AppColors.adminBorder),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -452,7 +452,7 @@ class _TransportTariffsScreenState extends State<TransportTariffsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('Отмена', style: TextStyle(color: AppColors.darkTextSecondary)),
+            child: const Text('Отмена', style: TextStyle(color: AppColors.adminTextSecondary)),
           ),
           FilledButton(
             onPressed: () {
@@ -479,7 +479,7 @@ class _TransportTariffsScreenState extends State<TransportTariffsScreen> {
           const SizedBox(height: 16),
           const Text('Ошибка загрузки тарифов', style: TextStyle(color: AppColors.errorLight, fontSize: 16)),
           const SizedBox(height: 8),
-          Text(_error ?? '', style: const TextStyle(color: AppColors.darkTextTertiary, fontSize: 12)),
+          Text(_error ?? '', style: const TextStyle(color: AppColors.adminTextTertiary, fontSize: 12)),
           const SizedBox(height: 16),
           ElevatedButton(
             onPressed: _loadTariffs,

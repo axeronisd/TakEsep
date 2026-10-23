@@ -50,6 +50,30 @@ class SupabaseSync {
     }
   }
 
+  /// Upload one queued row and report whether it succeeded.
+  /// Unlike [upsert]/[update], the outbox needs a real success/failure result.
+  static Future<bool> tryPush(
+    String table,
+    String operation,
+    Map<String, dynamic> data,
+  ) async {
+    try {
+      final cleaned = _sanitize(table, data);
+      if (operation == 'update') {
+        final id = data['id'];
+        if (id == null) return false;
+        cleaned.remove('id');
+        await _supabase.from(table).update(cleaned).eq('id', id);
+      } else {
+        await _supabase.from(table).upsert(cleaned);
+      }
+      return true;
+    } catch (e) {
+      print('❌ SupabaseSync.tryPush($table/$operation) FAILED: $e');
+      return false;
+    }
+  }
+
   /// Batch upsert multiple rows.
   static Future<void> upsertAll(String table, List<Map<String, dynamic>> rows) async {
     if (rows.isEmpty) return;

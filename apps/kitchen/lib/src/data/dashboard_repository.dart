@@ -854,7 +854,10 @@ class DashboardRepository {
       final salesResults = await _db.getAll(
         '''SELECT s.id, s.total_amount, s.discount_amount, s.payment_method,
                   s.status, s.notes, s.created_at, s.employee_id,
-                  COALESCE(e.name, c.owner_name, 'Владелец') as employee_name,
+                  CASE WHEN s.employee_id IS NULL
+                       THEN COALESCE(c.owner_name, 'Владелец')
+                       ELSE COALESCE(e.name, 'Сотрудник')
+                  END as employee_name,
                   s.client_name, s.received_amount,
                   (SELECT COUNT(*) FROM sale_items si WHERE si.sale_id = s.id) as items_count,
                   (SELECT SUM(si.quantity) FROM sale_items si WHERE si.sale_id = s.id) as total_qty
@@ -876,7 +879,10 @@ class DashboardRepository {
       final arrivalsResults = await _db.getAll(
         '''SELECT a.id, a.total_amount, a.supplier, a.status, a.notes,
                   a.created_at, a.employee_id,
-                  COALESCE(e.name, c.owner_name, 'Владелец') as employee_name,
+                  CASE WHEN a.employee_id IS NULL
+                       THEN COALESCE(c.owner_name, 'Владелец')
+                       ELSE COALESCE(e.name, 'Сотрудник')
+                  END as employee_name,
                   (SELECT COUNT(*) FROM arrival_items ai WHERE ai.arrival_id = a.id) as items_count,
                   (SELECT SUM(ai.quantity) FROM arrival_items ai WHERE ai.arrival_id = a.id) as total_qty
            FROM arrivals a
@@ -1145,7 +1151,10 @@ class DashboardRepository {
   Future<Map<String, dynamic>?> getSaleDetail(String saleId) async {
     try {
       final sale = await _db.get(
-        '''SELECT s.*, COALESCE(e.name, c.owner_name, 'Владелец') as employee_name
+        '''SELECT s.*, CASE WHEN s.employee_id IS NULL
+                              THEN COALESCE(c.owner_name, 'Владелец')
+                              ELSE COALESCE(e.name, 'Сотрудник')
+                         END as employee_name
            FROM sales s
            LEFT JOIN employees e ON s.employee_id = e.id
            LEFT JOIN companies c ON s.company_id = c.id
@@ -1183,7 +1192,10 @@ class DashboardRepository {
   Future<Map<String, dynamic>?> getArrivalDetail(String arrivalId) async {
     try {
       final arrival = await _db.get(
-        '''SELECT a.*, COALESCE(e.name, c.owner_name, 'Владелец') as employee_name
+        '''SELECT a.*, CASE WHEN a.employee_id IS NULL
+                              THEN COALESCE(c.owner_name, 'Владелец')
+                              ELSE COALESCE(e.name, 'Сотрудник')
+                         END as employee_name
            FROM arrivals a
            LEFT JOIN employees e ON a.employee_id = e.id
            LEFT JOIN companies c ON a.company_id = c.id

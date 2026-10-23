@@ -165,7 +165,7 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
 
     Widget listPanel = Container(
       width: isMobile ? double.infinity : 320,
-      color: AppColors.darkSurface,
+      color: AppColors.adminSurface,
       child: Column(
         children: [
           Container(
@@ -173,7 +173,7 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
             decoration: BoxDecoration(
               border: Border(
                   bottom: BorderSide(
-                      color: AppColors.darkBorder.withValues(alpha: 0.5))),
+                      color: AppColors.adminBorder.withValues(alpha: 0.5))),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -410,7 +410,7 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
               width: isMobile ? double.infinity : 300,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: AppColors.darkSurface,
+                color: AppColors.adminSurface,
                 borderRadius: BorderRadius.circular(16),
                 border:
                     Border.all(color: (_editingZoneId != null ? AppColors.info : AppColors.success).withValues(alpha: 0.5)),
@@ -509,7 +509,7 @@ class _EcosystemZonesScreenState extends ConsumerState<EcosystemZonesScreen> {
     );
 
     return Scaffold(
-      backgroundColor: AppColors.darkBackground,
+      backgroundColor: AppColors.adminBackground,
       floatingActionButton: isMobile
           ? FloatingActionButton.extended(
               onPressed: () =>

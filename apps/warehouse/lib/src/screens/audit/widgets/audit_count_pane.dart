@@ -493,8 +493,22 @@ class _AuditItemCardState extends ConsumerState<_AuditItemCard> {
       diffIcon = Icons.arrow_downward_rounded;
     }
 
-    final hasImage = item.productImageUrl != null &&
-        item.productImageUrl!.isNotEmpty;
+    // Old audits may have been created before image_url was copied into the
+    // audit snapshot. Fall back to the live product image so photos do not
+    // disappear from the counting screen.
+    var imageUrl = item.productImageUrl;
+    if (imageUrl == null || imageUrl.isEmpty) {
+      final products = ref.watch(inventoryProvider).valueOrNull;
+      if (products != null) {
+        for (final product in products) {
+          if (product.id == item.productId) {
+            imageUrl = product.imageUrl;
+            break;
+          }
+        }
+      }
+    }
+    final showImage = imageUrl != null && imageUrl.isNotEmpty;
 
     return Container(
       decoration: BoxDecoration(
@@ -513,16 +527,16 @@ class _AuditItemCardState extends ConsumerState<_AuditItemCard> {
           // Photo
           ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: hasImage
-                ? (item.productImageUrl!.startsWith('http')
+            child: showImage
+                ? (imageUrl.startsWith('http')
                     ? CachedImageWidget(
-                        imageUrl: item.productImageUrl!,
+                        imageUrl: imageUrl,
                         width: 48,
                         height: 48,
                         fit: BoxFit.cover,
                       )
                     : Image.file(
-                        java_io.File(item.productImageUrl!),
+                        java_io.File(imageUrl),
                         width: 48,
                         height: 48,
                         fit: BoxFit.cover,
