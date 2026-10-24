@@ -262,22 +262,6 @@
     }
     .hero-aside .mini-icon svg { width: 15px; height: 15px; }
 
-    /* ===== FACTS ===== */
-    .facts { border-block: 1px solid var(--line); background: rgba(255, 255, 255, .48); }
-    .facts-grid {
-      display: grid; grid-template-columns: repeat(4, 1fr);
-      gap: 24px; padding-block: 21px;
-    }
-    .fact { display: flex; align-items: center; gap: 12px; min-width: 0; }
-    .fact-icon {
-      width: 36px; height: 36px; flex: none; display: flex;
-      align-items: center; justify-content: center; line-height: 0;
-      border-radius: 11px; background: var(--violet-soft); color: var(--violet-dark);
-    }
-    .fact-icon svg { display: block; width: 17px; height: 17px; }
-    .fact strong { display: block; font-size: .8rem; font-weight: 700; letter-spacing: -.01em; }
-    .fact strong + span { display: block; margin-top: 2px; color: var(--muted); font-size: .68rem; line-height: 1.45; }
-
     /* ===== SCREENS / PRODUCT TOUR ===== */
     #screens { background: var(--surface); border-block: 1px solid var(--line); }
     .screens-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; }
@@ -614,7 +598,6 @@
       .menu-btn { display: grid; }
       .nav-actions > .btn-sm { display: none; }
       .mobile-menu { inset: 70px 0 0; }
-      .facts-grid { grid-template-columns: 1fr 1fr; gap: 16px 28px; padding-block: 18px; }
       .section { padding: 72px 0; }
       .section-head { margin-bottom: 28px; }
       .hero { padding: 44px 0 46px; }
@@ -674,11 +657,6 @@
       .shot-frame { padding: 7px; border-radius: 18px; }
       .shot-bar { padding-bottom: 7px; }
       .shot-caption { font-size: .5rem; }
-      .facts-grid { grid-template-columns: 1fr 1fr; gap: 14px 18px; padding-block: 16px; }
-      .fact { padding: 0; border: 0; }
-      .fact-icon { width: 33px; height: 33px; border-radius: 10px; }
-      .fact strong { font-size: .72rem; }
-      .fact strong + span { font-size: .6rem; }
       .section { padding: 58px 0; }
       .section-head h2 { font-size: clamp(2rem, 9vw, 2.8rem); }
       .section-head p { font-size: .88rem; }
@@ -829,27 +807,6 @@
             <span class="mini-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8"/></svg></span>
             <div><b data-i18n="hero.asideTitle">Аналитика по магазину</b><br><span data-i18n="hero.asideText">выручка, прибыль и топ товаров</span></div>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="facts" aria-label="Коротко о TakEsep">
-      <div class="wrap facts-grid">
-        <div class="fact">
-          <span class="fact-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg></span>
-          <div><strong data-i18n="facts.apps">Одна система</strong><span data-i18n="facts.appsText">3 приложения для магазина</span></div>
-        </div>
-        <div class="fact">
-          <span class="fact-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18M7 15h4"/></svg></span>
-          <div><strong data-i18n="facts.price">1 000 сом/мес</strong><span data-i18n="facts.priceText">Доставка и витрина включены</span></div>
-        </div>
-        <div class="fact">
-          <span class="fact-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3 5 6v5c0 4.5 2.8 7.7 7 10 4.2-2.3 7-5.5 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg></span>
-          <div><strong data-i18n="facts.training">Обучение бесплатно</strong><span data-i18n="facts.trainingText">Поможем на старте</span></div>
-        </div>
-        <div class="fact">
-          <span class="fact-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10 5h4M11 18.5h2"/></svg></span>
-          <div><strong data-i18n="facts.equipment">Без оборудования</strong><span data-i18n="facts.equipmentText">Достаточно телефона</span></div>
         </div>
       </div>
     </section>
