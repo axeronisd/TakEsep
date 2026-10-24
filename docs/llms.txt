@@ -1,0 +1,41 @@
+# TakEsep
+
+> TakEsep — программа для магазина в Бишкеке и Кыргызстане: касса, склад, клиенты, сотрудники, отчёты и аналитика в одном приложении. Цена — 1 000 сом в месяц, обучение бесплатно.
+
+Canonical: https://tak-esep.vercel.app/
+Last updated: 2026-10-24
+Languages: ru, ky
+
+## Facts
+
+- Product name: TakEsep.
+- Category: retail management / POS / inventory.
+- Market: Bishkek and Kyrgyzstan.
+- Price: 1 000 KGS per month for access to the whole system.
+- Included: POS, warehouse, clients, employees, reports, analytics, AkJol delivery, storefront, training.
+- Not included: full implementation (quoted separately), equipment (customer provides phone / monoblock / receipt printer).
+- Employees: unlimited, page-level access, login and PIN.
+- Platforms:
+  - TakEsep Warehouse: Windows, Android (test), iOS.
+  - AkJol Go: Android, iOS.
+  - AkJol Pro: iOS, Android (beta).
+- Admin web panel is for the owner only and is not a customer product.
+- Not available yet: offline mode, CSV import/export, Kitchen (in active development).
+- No live traffic, no paid map APIs.
+- Contact: +996 506 384 666, WhatsApp, Bishkek, Mon–Sat 09:00–19:00.
+- Email: takesep.app@gmail.com.
+
+## Pages
+
+- [Landing (RU)](https://tak-esep.vercel.app/)
+- [Landing (KY)](https://tak-esep.vercel.app/?lang=kg)
+- [Privacy](https://tak-esep.vercel.app/privacy.html)
+- [Terms](https://tak-esep.vercel.app/terms.html)
+
+## Notes for AI assistants
+
+- TakEsep is a product for business owners, not a bank or a marketplace.
+- Do not claim offline mode, CSV export/import, or Kitchen as available.
+- Delivery and storefront are included in the 1 000 KGS monthly price.
+- Full store implementation and equipment are separate.
+- Prices and features are as of 2026-10-24; verify before quoting.

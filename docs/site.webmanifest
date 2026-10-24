@@ -1,0 +1,31 @@
+{
+  "name": "TakEsep — учёт для магазина",
+  "short_name": "TakEsep",
+  "description": "Касса, склад, клиенты, сотрудники и аналитика для магазина в Бишкеке.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#F7F5F1",
+  "theme_color": "#6C5CE7",
+  "lang": "ru",
+  "icons": [
+    {
+      "src": "logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "logo-256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

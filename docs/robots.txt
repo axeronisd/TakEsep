@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /app/
+Disallow: /index-legacy.html
+Disallow: /landing-concept.html
+Disallow: /landing-v2.html
+Disallow: /landing-v3.html
+Disallow: /landing-v4.html
+Disallow: /landing-studio.html
+Disallow: /preview/
+
+Sitemap: https://tak-esep.vercel.app/sitemap.xml
