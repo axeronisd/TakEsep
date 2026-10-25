@@ -2,7 +2,7 @@
 
 > TakEsep — программа для магазина в Бишкеке и Кыргызстане: касса, склад, клиенты, сотрудники, отчёты и аналитика в одном приложении. Цена — 1 000 сом в месяц, обучение бесплатно.
 
-Canonical: https://tak-esep.vercel.app/
+Canonical: https://www.takesep.com/
 Last updated: 2026-10-24
 Languages: ru, ky
 
@@ -27,10 +27,10 @@ Languages: ru, ky
 
 ## Pages
 
-- [Landing (RU)](https://tak-esep.vercel.app/)
-- [Landing (KY)](https://tak-esep.vercel.app/?lang=kg)
-- [Privacy](https://tak-esep.vercel.app/privacy.html)
-- [Terms](https://tak-esep.vercel.app/terms.html)
+- [Landing (RU)](https://www.takesep.com/)
+- [Landing (KY)](https://www.takesep.com/?lang=kg)
+- [Privacy](https://www.takesep.com/privacy.html)
+- [Terms](https://www.takesep.com/terms.html)
 
 ## Notes for AI assistants
 

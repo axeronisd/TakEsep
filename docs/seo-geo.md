@@ -1,7 +1,7 @@
 # TakEsep — SEO и GEO для лендинга
 
 Дата: 24.10.2026  
-Основной домен в разметке: `https://tak-esep.vercel.app/`  
+Основной домен в разметке: `https://www.takesep.com/`  
 Если продовый домен другой — заменить его в `canonical`, `hreflang`, OG, `robots.txt`, `sitemap.xml`, `llms.txt` и JSON-LD.
 
 ## Что уже сделано
@@ -11,7 +11,7 @@
 - `title`: `TakEsep — учёт для магазина в Бишкеке` (37 символов).
 - `description`: 127 символов, с городом, категорией, ценой и обучением.
 - `robots`: `index,follow,max-image-preview:large,max-snippet:-1`.
-- `canonical` на `https://tak-esep.vercel.app/`.
+- `canonical` на `https://www.takesep.com/`.
 - `hreflang`: `ru`, `ky`, `x-default`.
 - `?lang=kg` — отдельный URL для кыргызской версии; canonical и `og:url` переключаются вместе с языком.
 - Open Graph: `og:title`, `og:description`, `og:url`, `og:image` 1200×630, `og:locale`, `og:locale:alternate`.
@@ -97,14 +97,14 @@
 
 ## Ссылки и доверие
 
-- Указать сайт `https://tak-esep.vercel.app/` в App Store / Google Play у разработчика.
+- Указать сайт `https://www.takesep.com/` в App Store / Google Play у разработчика.
 - Добавить сайт в профили WhatsApp Business и Instagram, если они есть.
 - Партнёрские ссылки от поставщиков оборудования и локальных бизнес-сообществ.
 - Не покупать массовые каталоги и не делать фейковые отзывы.
 
 ## Ограничения
 
-- Домен `https://tak-esep.vercel.app/`; при переезде на свой домен заменить во всех SEO-файлах.
+- Домен `https://www.takesep.com/`; при переезде на свой домен заменить во всех SEO-файлах.
 - Нет реального уличного адреса — локальную карточку не создаём.
 - Нет отзывов и кейсов — не выдумываем.
 - Офлайн, CSV и Kitchen указаны как «в разработке».

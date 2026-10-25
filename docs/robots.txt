@@ -10,4 +10,4 @@ Disallow: /landing-v4.html
 Disallow: /landing-studio.html
 Disallow: /preview/
 
-Sitemap: https://tak-esep.vercel.app/sitemap.xml
+Sitemap: https://www.takesep.com/sitemap.xml
