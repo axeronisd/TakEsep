@@ -13,7 +13,7 @@
 - `robots`: `index,follow,max-image-preview:large,max-snippet:-1`.
 - `canonical` на `https://www.takesep.com/`.
 - `hreflang`: `ru`, `ky`, `x-default`.
-- `?lang=kg` — отдельный URL для кыргызской версии; canonical и `og:url` переключаются вместе с языком.
+- `/kg/` — отдельный URL для кыргызской версии; canonical и `og:url` переключаются вместе с языком.
 - Open Graph: `og:title`, `og:description`, `og:url`, `og:image` 1200×630, `og:locale`, `og:locale:alternate`.
 - Twitter Card: `summary_large_image`.
 - Один `h1`, все 20 изображений с `alt`, у изображений заданы размеры.
@@ -65,7 +65,7 @@
 
 ## Что сделать в панелях
 
-1. **Google Search Console** — подтвердить домен, отправить `sitemap.xml`, проверить «Проверка URL» для `/` и `/?lang=kg`.
+1. **Google Search Console** — подтвердить домен, отправить `sitemap.xml`, проверить «Проверка URL» для `/` и `//kg/`.
 2. **Яндекс Вебмастер** — подтвердить домен, отправить sitemap, проверить регион «Бишкек / Кыргызстан».
 3. **Bing Webmaster Tools** — отправить sitemap.
 4. Проверить Rich Results для `SoftwareApplication`, `FAQPage`, `HowTo`.

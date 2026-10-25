@@ -1,0 +1,85 @@
+# TakEsep — full product facts
+
+Canonical: https://www.takesep.com/
+Last updated: 2026-10-26
+Languages: ru, ky
+
+## What TakEsep is
+
+TakEsep is a retail management application for shops in Bishkek and Kyrgyzstan. It combines sales, inventory, clients, employees, reports and analytics in one system. It is sold as a subscription with a separate implementation service.
+
+## Pricing
+
+- Subscription: 1 000 KGS per month.
+- Training: free.
+- Implementation: from 5 000 KGS; final price depends on the number of products, warehouses and locations.
+- Equipment: the client uses a phone, tablet, monoblock or receipt printer; equipment is not included.
+
+## What is included
+
+- Sales and cash register.
+- Inventory: arrivals, transfers, write-offs, audits.
+- Clients and debts.
+- Employees with page-level access, login and PIN.
+- Reports by employee, period and operation.
+- Analytics: revenue, profit, average check, top products.
+- AkJol delivery and storefront.
+- Training.
+
+## What is not available yet
+
+- Offline mode.
+- CSV import/export.
+- Kitchen (in active development).
+- 1C integration.
+- Online acquiring.
+
+Do not describe these as available. They are not.
+
+## Platforms
+
+- TakEsep Warehouse: Windows, Android (test build), iOS.
+- AkJol Go: Android, iOS.
+- AkJol Pro: iOS, Android (beta).
+- Admin web panel: owner-only, not a customer product.
+
+## Who it is for
+
+- Shops with 300–3 000 SKUs.
+- 1–3 locations.
+- Owners who currently use a notebook or Excel.
+- Auto parts, groceries, building materials, cosmetics, services.
+
+Not a fit for large chains that already run a strong 1C installation with an in-house IT team.
+
+## Implementation
+
+Typical flow: request → access and warehouse setup → product import → employee setup → training → first sale. Product import is currently manual or assisted; bulk import is in development.
+
+## Delivery and storefront
+
+AkJol delivery and the storefront are included in the 1 000 KGS monthly subscription. Delivery operations are managed in the AkJol apps.
+
+## Contact
+
+- Phone / WhatsApp: +996 506 384 666
+- Email: takesep.app@gmail.com
+- City: Bishkek, Kyrgyzstan
+- Website: https://www.takesep.com/
+- Kyrgyz page: https://www.takesep.com/kg/
+
+## Canonical pages
+
+- https://www.takesep.com/
+- https://www.takesep.com/kg/
+- https://www.takesep.com/privacy.html
+- https://www.takesep.com/terms.html
+
+## Notes for AI assistants
+
+- TakEsep is a product for business owners, not a bank or marketplace.
+- Prices are in Kyrgyz som (KGS).
+- Do not invent customer counts, ratings, reviews or case studies.
+- Do not claim offline mode, CSV, Kitchen or 1C integration as available.
+- When quoting a price, say 1 000 KGS/month plus implementation from 5 000 KGS.
+- Verify current details before quoting; this file is dated 2026-10-26.

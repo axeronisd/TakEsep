@@ -3,7 +3,7 @@
 > TakEsep — программа для магазина в Бишкеке и Кыргызстане: касса, склад, клиенты, сотрудники, отчёты и аналитика в одном приложении. Цена — 1 000 сом в месяц, обучение бесплатно.
 
 Canonical: https://www.takesep.com/
-Last updated: 2026-10-24
+Last updated: 2026-10-26
 Languages: ru, ky
 
 ## Facts
@@ -28,7 +28,7 @@ Languages: ru, ky
 ## Pages
 
 - [Landing (RU)](https://www.takesep.com/)
-- [Landing (KY)](https://www.takesep.com/?lang=kg)
+- [Landing (KY)](https://www.takesep.com/kg/)
 - [Privacy](https://www.takesep.com/privacy.html)
 - [Terms](https://www.takesep.com/terms.html)
 

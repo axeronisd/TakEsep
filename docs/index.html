@@ -16,13 +16,14 @@
   <meta name="ICBM" content="42.8746, 74.5698">
   <link rel="canonical" href="https://www.takesep.com/" id="canonicalLink">
   <link rel="alternate" hreflang="ru" href="https://www.takesep.com/">
-  <link rel="alternate" hreflang="ky" href="https://www.takesep.com/?lang=kg">
+  <link rel="alternate" hreflang="ky" href="https://www.takesep.com/kg/">
   <link rel="alternate" hreflang="x-default" href="https://www.takesep.com/">
   <link rel="icon" href="logo-256.png" type="image/png">
   <link rel="apple-touch-icon" href="logo-256.png">
   <link rel="manifest" href="site.webmanifest">
   <link rel="sitemap" type="application/xml" href="sitemap.xml">
   <link rel="alternate" type="text/plain" href="https://www.takesep.com/llms.txt" title="LLM facts">
+  <link rel="alternate" type="text/plain" href="https://www.takesep.com/llms-full.txt" title="LLM full facts">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="preload" as="image" href="screens/analytics.webp" type="image/webp" fetchpriority="high">
@@ -1939,7 +1940,7 @@
         if (metaDescription) {
           metaDescription.setAttribute('content', isKg ? (KG['meta.description'] ?? ruDescription) : ruDescription);
         }
-        const pageUrl = isKg ? `${canonicalBase}?lang=kg` : canonicalBase;
+        const pageUrl = isKg ? `${canonicalBase}kg/` : canonicalBase;
         if (canonicalLink) canonicalLink.setAttribute('href', pageUrl);
         if (ogUrl) ogUrl.setAttribute('content', pageUrl);
         if (ogLocale) ogLocale.setAttribute('content', isKg ? 'ky_KG' : 'ru_RU');
@@ -1954,6 +1955,14 @@
       $$('.lang-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
           const lang = btn.dataset.lang === 'kg' ? 'kg' : 'ru';
+          if (lang === 'kg' && !window.__FORCE_KG__) {
+            window.location.href = '/kg/';
+            return;
+          }
+          if (lang === 'ru' && window.__FORCE_KG__) {
+            window.location.href = '/';
+            return;
+          }
           applyLanguage(lang);
           const url = new URL(window.location.href);
           if (lang === 'kg') {
@@ -1965,13 +1974,16 @@
         });
       });
       const requestedLang = new URLSearchParams(window.location.search).get('lang');
-      const initialLang = requestedLang === 'kg'
+      const forcedKg = !!window.__FORCE_KG__;
+      const initialLang = forcedKg
         ? 'kg'
-        : requestedLang === 'ru'
-          ? 'ru'
-          : (getStoredLang() === 'kg' ? 'kg' : 'ru');
+        : requestedLang === 'kg'
+          ? 'kg'
+          : requestedLang === 'ru'
+            ? 'ru'
+            : (getStoredLang() === 'kg' ? 'kg' : 'ru');
       applyLanguage(initialLang);
-      if (initialLang === 'kg' && requestedLang !== 'kg') {
+      if (initialLang === 'kg' && requestedLang !== 'kg' && !forcedKg) {
         const url = new URL(window.location.href);
         url.searchParams.set('lang', 'kg');
         history.replaceState(null, '', url);

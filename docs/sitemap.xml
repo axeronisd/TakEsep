@@ -3,28 +3,28 @@
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://www.takesep.com/</loc>
-    <lastmod>2026-10-24</lastmod>
+    <lastmod>2026-10-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="ru" href="https://www.takesep.com/"/>
-    <xhtml:link rel="alternate" hreflang="ky" href="https://www.takesep.com/?lang=kg"/>
+    <xhtml:link rel="alternate" hreflang="ky" href="https://www.takesep.com/kg/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://www.takesep.com/"/>
   </url>
   <url>
-    <loc>https://www.takesep.com/?lang=kg</loc>
-    <lastmod>2026-10-24</lastmod>
+    <loc>https://www.takesep.com/kg/</loc>
+    <lastmod>2026-10-26</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://www.takesep.com/privacy.html</loc>
-    <lastmod>2026-10-24</lastmod>
+    <lastmod>2026-10-26</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://www.takesep.com/terms.html</loc>
-    <lastmod>2026-10-24</lastmod>
+    <lastmod>2026-10-26</lastmod>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>

@@ -2,5 +2,13 @@
   "cleanUrls": true,
   "rewrites": [
     { "source": "/app/(.*)", "destination": "/app/index.html" }
+  ],
+  "redirects": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "tak-esep.vercel.app" }],
+      "destination": "https://www.takesep.com/$1",
+      "permanent": true
+    }
   ]
 }
