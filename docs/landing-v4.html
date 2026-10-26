@@ -854,11 +854,11 @@
       .hero-media .shot-frame { transform: none; }
       .js .reveal { opacity: 1; transform: none; transition: none; }
     }
-    .js .reveal { opacity: 0; transform: translateY(16px); transition: opacity .65s var(--ease), transform .65s var(--ease); }
+    .js .reveal { opacity: 0; transform: translateY(22px); transition: opacity .75s var(--ease), transform .75s var(--ease); }
     .js .reveal.in { opacity: 1; transform: none; }
-    .js .reveal.d1 { transition-delay: .07s; }
-    .js .reveal.d2 { transition-delay: .14s; }
-    .js .reveal.d3 { transition-delay: .21s; }
+    .js .reveal.d1 { transition-delay: .1s; }
+    .js .reveal.d2 { transition-delay: .2s; }
+    .js .reveal.d3 { transition-delay: .3s; }
 
     @keyframes panelIn { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: none; } }
 
@@ -2163,9 +2163,8 @@
               revealObserver.unobserve(entry.target);
             }
           });
-        }, { threshold: 0.08, rootMargin: '0px 0px -6% 0px' });
+        }, { threshold: 0.14, rootMargin: '0px 0px -10% 0px' });
         revealItems.forEach((el) => revealObserver.observe(el));
-        setTimeout(() => revealItems.forEach((el) => el.classList.add('in')), 3000);
       }
 
       /* ---------- contact form -> WhatsApp ---------- */
