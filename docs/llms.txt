@@ -29,6 +29,9 @@ Languages: ru, ky
 
 - [Landing (RU)](https://www.takesep.com/)
 - [Landing (KY)](https://www.takesep.com/kg/)
+- [Программа для магазина в Бишкеке](https://www.takesep.com/programma-dlya-magazina-bishkek/)
+- [Касса для магазина](https://www.takesep.com/kassa-dlya-magazina/)
+- [Складской учёт](https://www.takesep.com/skladskoy-uchet/)
 - [Privacy](https://www.takesep.com/privacy.html)
 - [Terms](https://www.takesep.com/terms.html)
 

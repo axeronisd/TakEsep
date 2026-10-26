@@ -17,6 +17,24 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://www.takesep.com/programma-dlya-magazina-bishkek/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.takesep.com/kassa-dlya-magazina/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.takesep.com/skladskoy-uchet/</loc>
+    <lastmod>2026-10-26</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
     <loc>https://www.takesep.com/privacy.html</loc>
     <lastmod>2026-10-26</lastmod>
     <changefreq>yearly</changefreq>
