@@ -445,6 +445,59 @@
       color: var(--muted); font-size: .72rem;
     }
     .hero-note svg { width: 14px; height: 14px; color: var(--green); }
+    .hero-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 20px; }
+    .hero-pills a {
+      display: inline-flex; align-items: center; padding: 6px 10px; border-radius: 999px;
+      border: 1px solid var(--line); background: rgba(255,255,255,.55); color: var(--muted);
+      font-size: .66rem; font-weight: 600; transition: .2s ease;
+    }
+    .hero-pills a:hover { color: var(--violet-dark); border-color: rgba(108,92,231,.28); background: var(--violet-soft); }
+
+    .hero-media { position: relative; perspective: 1200px; }
+    .hero-media .shot-frame {
+      transform: rotateY(-5deg) rotateX(1.2deg);
+      transform-origin: 60% 50%;
+      transition: transform .6s cubic-bezier(.22,.61,.36,1);
+    }
+    .hero-media:hover .shot-frame { transform: rotateY(-1.2deg) rotateX(0) translateY(-3px); }
+    .hero-shot-swap {
+      position: relative; aspect-ratio: 1600 / 825; overflow: hidden;
+      border-radius: 15px; background: #12121a; border: 1px solid rgba(23,23,31,.08);
+    }
+    .hero-shot-swap img {
+      position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+      border: 0; border-radius: 0; opacity: 0;
+      animation: heroShot 18s infinite;
+    }
+    .hero-shot-swap img:nth-child(1) { animation-delay: 0s; }
+    .hero-shot-swap img:nth-child(2) { animation-delay: 6s; }
+    .hero-shot-swap img:nth-child(3) { animation-delay: 12s; }
+    @keyframes heroShot {
+      0%, 26% { opacity: 1; }
+      33%, 93% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+    .hero-float {
+      position: absolute; z-index: 4; display: flex; align-items: center; gap: 8px;
+      padding: 9px 11px; border: 1px solid var(--line); border-radius: 12px;
+      background: rgba(255,255,255,.94); box-shadow: 0 16px 36px -20px rgba(23,23,31,.38);
+      font-size: .62rem; color: var(--muted); backdrop-filter: blur(8px);
+      animation: floaty 7s ease-in-out infinite;
+    }
+    .hero-float .mini-icon {
+      width: 27px; height: 27px; display: grid; place-items: center; border-radius: 8px;
+      background: var(--green-soft); color: var(--green); flex: none;
+    }
+    .hero-float .mini-icon svg { width: 14px; height: 14px; }
+    .hero-float b { display: block; color: var(--ink); font-size: .76rem; line-height: 1.1; }
+    .hero-float div span { display: block; margin-top: 2px; font-size: .55rem; color: var(--muted-2); }
+    .hero-float small { display: block; margin-top: 2px; font-size: .55rem; color: var(--muted-2); }
+    .float-sale { top: -46px; left: 10%; }
+    .float-stock { bottom: -52px; left: 10%; animation-delay: -3.2s; }
+    @keyframes floaty {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-7px); }
+    }
 
     .hero-media { position: relative; }
     .shot-frame {
@@ -469,7 +522,7 @@
       padding: 9px 4px 2px; color: var(--muted-2); font-size: .58rem;
     }
     .hero-aside {
-      position: absolute; z-index: 2; right: -14px; bottom: -18px;
+      position: absolute; z-index: 2; right: 0; top: -46px; bottom: auto;
       display: flex; align-items: center; gap: 10px; padding: 10px 12px;
       border: 1px solid var(--line); border-radius: 12px; background: var(--surface);
       box-shadow: 0 14px 34px -18px rgba(23, 23, 31, .32);
@@ -794,6 +847,13 @@
     .sticky-cta { display: none; }
 
     /* ===== MOTION ===== */
+    @media (prefers-reduced-motion: reduce) {
+      .hero-shot-swap img { animation: none; }
+      .hero-shot-swap img:first-child { opacity: 1; }
+      .hero-float { animation: none; }
+      .hero-media .shot-frame { transform: none; }
+      .js .reveal { opacity: 1; transform: none; transition: none; }
+    }
     .js .reveal { opacity: 0; transform: translateY(16px); transition: opacity .65s var(--ease), transform .65s var(--ease); }
     .js .reveal.in { opacity: 1; transform: none; }
     .js .reveal.d1 { transition-delay: .07s; }
@@ -806,6 +866,9 @@
     @media (max-width: 1080px) {
       .hero-grid { grid-template-columns: .9fr 1.1fr; gap: 30px; }
       .hero h1 { font-size: clamp(2.8rem, 5.2vw, 4.4rem); }
+      .hero-float { display: none; }
+      .hero-aside { display: none; }
+      .hero-media .shot-frame { transform: none; }
       .nav-links { gap: 17px; }
       .screen-panel.active { grid-template-columns: .82fr 1.18fr; gap: 30px; }
       .footer-grid { grid-template-columns: 1.25fr .65fr .65fr .65fr; gap: 22px; }
@@ -873,6 +936,8 @@
       .hero-meta { gap: 13px; }
       .hero-meta div { min-width: 0; flex: 1 1 40%; }
       .hero-meta .sep { display: none; }
+      .hero-pills { gap: 5px; margin-top: 16px; }
+      .hero-pills a { font-size: .61rem; padding: 5px 8px; }
       .hero-aside { display: none; }
       .shot-frame { padding: 7px; border-radius: 18px; }
       .shot-bar { padding-bottom: 7px; }
@@ -997,6 +1062,13 @@
               <span data-i18n="hero.secondary">Смотреть обзор</span>
             </a>
           </div>
+          <div class="hero-pills" aria-label="Разделы продукта">
+            <a href="#screens" data-i18n="hero.pillSales">Продажи</a>
+            <a href="#features" data-i18n="hero.pillStock">Склад</a>
+            <a href="#features" data-i18n="hero.pillClients">Клиенты</a>
+            <a href="#features" data-i18n="hero.pillEmployees">Сотрудники</a>
+            <a href="#screens" data-i18n="hero.pillAnalytics">Аналитика</a>
+          </div>
           <div class="hero-meta">
             <div><strong data-i18n="hero.price">1 000 сом/мес</strong><span data-i18n="hero.priceNote">обучение бесплатно</span></div>
             <div class="sep" aria-hidden="true"></div>
@@ -1011,13 +1083,25 @@
         </div>
 
         <div class="hero-media">
+          <div class="hero-float float-sale">
+            <span class="mini-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 19V9m5 10V5m5 14v-7m5 7V8"/></svg></span>
+            <div><small data-i18n="hero.floatExample">пример</small><b data-i18n="hero.floatSaleValue">1 240 сом</b><span data-i18n="hero.floatSaleLabel">продажа</span></div>
+          </div>
+          <div class="hero-float float-stock">
+            <span class="mini-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7.5 12 3l8 4.5v9L12 21l-8-4.5v-9Z"/><path d="M4 7.5 12 12l8-4.5M12 12v9"/></svg></span>
+            <div><small data-i18n="hero.floatExample">пример</small><b data-i18n="hero.floatStockValue">3 шт</b><span data-i18n="hero.floatStockLabel">остаток</span></div>
+          </div>
           <div class="shot-frame">
             <div class="shot-bar">
               <span class="shot-dots" aria-hidden="true"><i></i><i></i><i></i></span>
               <span class="shot-title">TakEsep</span>
               <span class="shot-label" data-i18n="hero.shotLabel">Аналитика · пример</span>
             </div>
-            <img src="screens/analytics.webp" alt="Экран аналитики TakEsep" width="1600" height="825" fetchpriority="high" data-i18n-alt="hero.shotAlt">
+            <div class="hero-shot-swap">
+              <img src="screens/analytics.webp" alt="Экран аналитики TakEsep" width="1600" height="825" fetchpriority="high" data-i18n-alt="hero.shotAlt">
+              <img src="screens/sale.webp" alt="Экран продажи TakEsep" width="1600" height="825" loading="lazy">
+              <img src="screens/products.webp" alt="Экран товаров TakEsep" width="1600" height="825" loading="lazy">
+            </div>
             <div class="shot-caption">
               <span data-i18n="hero.shotCaption">Пример экрана, не реальные данные</span>
               <span data-i18n="hero.shotPlatform">Windows · Android · iOS</span>
@@ -1638,6 +1722,16 @@
         "hero.equipment": "Жабдуусуз",
         "hero.equipmentNote": "телефон жетиштүү",
         "hero.note": "Жеткирүү жана витрина кирет",
+        "hero.pillSales": "Сатуулар",
+        "hero.pillStock": "Кампа",
+        "hero.pillClients": "Кардарлар",
+        "hero.pillEmployees": "Кызматкерлер",
+        "hero.pillAnalytics": "Аналитика",
+        "hero.floatExample": "үлгү",
+        "hero.floatSaleValue": "1 240 сом",
+        "hero.floatSaleLabel": "сатуу",
+        "hero.floatStockValue": "3 даана",
+        "hero.floatStockLabel": "калдык",
         "hero.shotLabel": "Аналитика · үлгү",
         "hero.shotCaption": "Экрандын үлгүсү, реалдуу маалымат эмес",
         "hero.shotPlatform": "Windows · Android · iOS",
